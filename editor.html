@@ -332,7 +332,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
    EDITOR STATE
 ═══════════════════════════════════════════════════ */
 // Working copies with localStorage overrides applied
-let editorCards   = JSON.parse(JSON.stringify(ALL_CARDS));
+let editorCards   = JSON.parse(JSON.stringify([...ALL_CARDS, ...FUSION_MONSTERS]));
 let editorEnemies = {};
 Object.keys(ENEMIES).forEach(id => { editorEnemies[id] = JSON.parse(JSON.stringify(ENEMIES[id])); });
 let editorActs    = JSON.parse(JSON.stringify(MAP_DATA));
@@ -347,6 +347,7 @@ let editorStarterDeck = [
 try {
   const saved = JSON.parse(localStorage.getItem('dd_custom') || '{}');
   if (saved.cards)   saved.cards.forEach(c => { const i = editorCards.findIndex(x=>x.id===c.id); if(i>=0) editorCards[i]=c; else editorCards.push(c); });
+  if (saved.fusionMonsters) saved.fusionMonsters.forEach(c => { const i = editorCards.findIndex(x=>x.id===c.id); if(i>=0) editorCards[i]=c; else editorCards.push(c); });
   if (saved.enemies) saved.enemies.forEach(e => { editorEnemies[e.id] = e; });
   if (saved.acts)    editorActs = saved.acts;
   if (saved.recipes) editorRecipes = saved.recipes;
@@ -914,10 +915,9 @@ function saveActs() { showToast('Acts gespeichert — nutze "Im Spiel speichern"
 ═══════════════════════════════════════════════════ */
 function renderFusionEditor() {
   const area = document.getElementById('fusion-editor-area');
-  const monsters = editorCards.filter(c=>c.type==='monster');
-  const fusions  = editorCards.filter(c=>c.type==='fusion');
-  const mOpts = monsters.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-  const fOpts = fusions.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  const monsters = getFusionMonsterCandidates();
+  const mOpts = buildFusionSelectOptions(monsters);
+  const hasMonsters = monsters.length > 0;
 
   area.innerHTML = `
     <div style="margin-bottom:20px">
@@ -942,21 +942,53 @@ function renderFusionEditor() {
       <div style="font-size:12px;color:var(--gold);letter-spacing:2px;margin-bottom:14px">NEUES REZEPT</div>
       <div class="field-row">
         <div class="field-group"><label>Material 1</label>
-          <select id="new-mat1">${mOpts}</select></div>
+          <input id="new-mat1-search" placeholder="Monster suchen..." oninput="filterFusionSelect('new-mat1', this.value)">
+          <select id="new-mat1"${hasMonsters?'':' disabled'}>${mOpts}</select></div>
         <div class="field-group"><label>Material 2</label>
-          <select id="new-mat2">${mOpts}</select></div>
-        <div class="field-group"><label>Ergebnis (Fusion)</label>
-          <select id="new-result">${fOpts}</select></div>
+          <input id="new-mat2-search" placeholder="Monster suchen..." oninput="filterFusionSelect('new-mat2', this.value)">
+          <select id="new-mat2"${hasMonsters?'':' disabled'}>${mOpts}</select></div>
+        <div class="field-group"><label>Ergebnis (Monster)</label>
+          <input id="new-result-search" placeholder="Ergebnis suchen..." oninput="filterFusionSelect('new-result', this.value)">
+          <select id="new-result"${hasMonsters?'':' disabled'}>${mOpts}</select></div>
       </div>
-      <button class="btn-save" onclick="addRecipe()">+ Rezept hinzufügen</button>
+      ${hasMonsters ? '' : '<div style="margin:12px 0;color:var(--red);font-size:12px">Keine Monsterkarten vorhanden. Lege zuerst Monster im Karten-Tab an.</div>'}
+      <button class="btn-save" onclick="addRecipe()"${hasMonsters?'':' disabled'}>+ Rezept hinzufügen</button>
     </div>
   `;
 }
 
+function getFusionMonsterCandidates() {
+  return editorCards
+    .filter(c => c.type === 'monster')
+    .sort((a, b) => a.name.localeCompare(b.name, 'de'));
+}
+
+function buildFusionSelectOptions(cards) {
+  return cards.map(c => `<option value="${c.id}">${esc(c.name)} (${esc(c.id)})</option>`).join('');
+}
+
+function filterFusionSelect(selectId, query) {
+  const select = document.getElementById(selectId);
+  if(!select) return;
+
+  const normalized = String(query || '').trim().toLowerCase();
+  const cards = getFusionMonsterCandidates().filter(card => {
+    if(!normalized) return true;
+    return card.name.toLowerCase().includes(normalized) || card.id.toLowerCase().includes(normalized);
+  });
+
+  const currentValue = select.value;
+  select.innerHTML = buildFusionSelectOptions(cards);
+  if(cards.some(card => card.id === currentValue)) select.value = currentValue;
+}
+
 function addRecipe() {
-  const mat1  = document.getElementById('new-mat1').value;
-  const mat2  = document.getElementById('new-mat2').value;
-  const result= document.getElementById('new-result').value;
+  const mat1Sel   = document.getElementById('new-mat1');
+  const mat2Sel   = document.getElementById('new-mat2');
+  const resultSel = document.getElementById('new-result');
+  const mat1   = mat1Sel ? mat1Sel.value : '';
+  const mat2   = mat2Sel ? mat2Sel.value : '';
+  const result = resultSel ? resultSel.value : '';
   if(!mat1||!mat2||!result){alert('Alle Felder ausfüllen.'); return;}
   editorRecipes.push({mat1,mat2,result});
   renderFusionEditor();
@@ -1116,8 +1148,11 @@ function loadBattleStats() {
    SPEICHERN / EXPORT / IMPORT
 ═══════════════════════════════════════════════════ */
 function saveToGame() {
+  const regularCards = editorCards.filter(card => card.type !== 'fusion');
+  const fusionCards  = editorCards.filter(card => card.type === 'fusion');
   const data = {
-    cards:      editorCards,
+    cards:      regularCards,
+    fusionMonsters: fusionCards,
     enemies:    Object.values(editorEnemies),
     acts:       editorActs,
     recipes:    editorRecipes,
@@ -1129,8 +1164,10 @@ function saveToGame() {
 }
 
 function exportJSON() {
+  const regularCards = editorCards.filter(card => card.type !== 'fusion');
+  const fusionCards  = editorCards.filter(card => card.type === 'fusion');
   const data={version:'2.0',timestamp:new Date().toISOString(),
-    cards:editorCards,enemies:Object.values(editorEnemies),
+    cards:regularCards,fusionMonsters:fusionCards,enemies:Object.values(editorEnemies),
     acts:editorActs,recipes:editorRecipes,config:editorConfig,starterDeck:editorStarterDeck};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');
@@ -1150,6 +1187,10 @@ function importJSON() {
       try {
         const data=JSON.parse(ev.target.result);
         if(data.cards) editorCards=data.cards;
+        if(data.fusionMonsters) data.fusionMonsters.forEach(c => {
+          const i = editorCards.findIndex(x=>x.id===c.id);
+          if(i>=0) editorCards[i]=c; else editorCards.push(c);
+        });
         if(data.enemies) data.enemies.forEach(en=>{editorEnemies[en.id]=en;});
         if(data.acts) editorActs=data.acts;
         if(data.recipes) editorRecipes=data.recipes;
