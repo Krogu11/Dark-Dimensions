@@ -1,151 +1,334 @@
 /* ============================================================
-   core/effects.js — Zentrales Effektsystem v3.0
+   core/effects.js — Effektsystem v4.0 (Modular, Multi-Effekt)
    ============================================================
-   Neue Effekte:
-     burn300, burn400, burn1600, heal1500
-     raceBuffATK150, raceBuffATK300, raceBuffDEF250
-     buffAllAtk300, buffAllAtk500
-     stealHand, stealField
-     graveRevive, graveReviveSpell, massRevive
-     shield300
-     weaken200, weaken800, weakenAll300
-     drain500 (spell-version), drain500Trap
-     destroyAllSpell → identisch mit destroyAll (Umbenennung)
+
+   NEUE ARCHITEKTUR:
+   Karten speichern Effekte als Array von Objekten:
+     card.effects = [
+       { type: 'burn',         amount: 400 },
+       { type: 'heal',         amount: 200 },
+       { type: 'specialSummon',cardId: 'dark_knight' }
+     ]
+
+   Rückwärtskompatibel: card.effect (String) wird automatisch
+   in das neue Format konvertiert.
+
+   ALLE EFFEKTTYPEN:
+   ─ Schaden    : burn, burnPercent, drain
+   ─ Heilung    : heal, healPercent
+   ─ Buff       : buff (ATK self), buffDef (DEF self), buffAll, buffDefAll
+   ─ Schwächen  : weakenOne, weakenAll, weakenDefOne
+   ─ Zerstören  : destroy1, destroyAll, destroyAttacker, destroyAllAtk
+   ─ Beschwören : revive, reviveBest, massRevive, specialSummon
+   ─ Karten     : draw, stealHand, stealField
+   ─ Defensiv   : shield, taunt, negate
+   ─ Rasse      : raceBuffATK
+   ─ Kombiniert : healBuff (legacy alias)
+   ─ Passiv     : burnOnAttack, weakenOnAttack (hooks in engine.js)
    ============================================================ */
 
+/* ══════════════════════════════════════════════════
+   INTERNE HILFSFUNKTIONEN
+══════════════════════════════════════════════════ */
+
 /**
- * Führt einen Monster-On-Summon-Effekt aus.
+ * Konvertiert card.effect (String, Altformat) in ein effects-Array.
+ * Gibt das card.effects-Array zurück — oder leeres Array.
  */
-function applyOnSummonEffect(card, isPlayer) {
-  if (!card.effect) return;
+function _resolveEffects(card) {
+  // Neues Format: Array von Objekten
+  if (Array.isArray(card.effects) && card.effects.length > 0) {
+    return card.effects;
+  }
 
-  const bs = BATTLE_STATE;
-  const friendlyField = isPlayer ? bs.playerField : bs.enemyField;
-  const enemyField    = isPlayer ? bs.enemyField  : bs.playerField;
-  const tag = isPlayer ? '' : '(Gegner) ';
+  // Altformat: einzelner String → in Objekt konvertieren
+  if (typeof card.effect === 'string' && card.effect) {
+    return [_legacyStringToEffect(card.effect)];
+  }
 
-  switch (card.effect) {
+  return [];
+}
 
-    /* ── Heilung ── */
-    case 'heal500':
-      if (isPlayer) bs.playerLP = Math.min(bs.playerLP + 500, RUN_STATE.maxHP);
-      else          bs.enemyLP  = Math.min(bs.enemyLP  + 500, bs.enemy.hp);
-      battleLog(`💚 ${tag}${card.name}: +500 LP`, 'heal');
-      break;
+/**
+ * Übersetzt einen alten Effekt-String in ein Effekt-Objekt.
+ */
+function _legacyStringToEffect(str) {
+  const map = {
+    heal500:         { type:'heal',      amount:500  },
+    heal800:         { type:'heal',      amount:800  },
+    heal1000:        { type:'heal',      amount:1000 },
+    heal1500:        { type:'heal',      amount:1500 },
+    buff300:         { type:'buff',      amount:300  },
+    buff400:         { type:'buff',      amount:400  },
+    buffAllAtk300:   { type:'buffAll',   amount:300  },
+    buffAllAtk400:   { type:'buffAll',   amount:400  },
+    buffAllAtk500:   { type:'buffAll',   amount:500  },
+    burn300:         { type:'burn',      amount:300  },
+    burn400:         { type:'burn',      amount:400  },
+    burn600:         { type:'burn',      amount:600  },
+    burn800:         { type:'burn',      amount:800  },
+    burn1200:        { type:'burn',      amount:1200 },
+    burn1600:        { type:'burn',      amount:1600 },
+    destroy1:        { type:'destroy1'              },
+    destroyAll:      { type:'destroyAll'            },
+    destroyAllSpell: { type:'destroyAll'            },
+    drain500:        { type:'drain',     amount:500  },
+    drain1000:       { type:'drain',     amount:1000 },
+    revive:          { type:'revive'                },
+    graveRevive:     { type:'revive'                },
+    graveReviveSpell:{ type:'reviveBest'            },
+    massRevive:      { type:'massRevive'            },
+    draw1:           { type:'draw',      count:1     },
+    draw2:           { type:'draw',      count:2     },
+    weaken200:       { type:'weakenOne', amount:200  },
+    weaken500:       { type:'weakenOne', amount:500  },
+    weaken800:       { type:'weakenOne', amount:800  },
+    weakenAll300:    { type:'weakenAll', amount:300  },
+    taunt:           { type:'taunt'                 },
+    stealHand:       { type:'stealHand'             },
+    stealField:      { type:'stealField'            },
+    shield300:       { type:'shield',    amount:300  },
+    raceBuffATK150:  { type:'raceBuffATK',amount:150 },
+    raceBuffATK300:  { type:'raceBuffATK',amount:300 },
+    destroyAttacker: { type:'destroyAttacker'        },
+    destroyAllAtk:   { type:'destroyAllAtk'          },
+    negate:          { type:'negate'                },
+    negateEffect:    { type:'negate'                },
+    healBuff:        { type:'healBuff'              },
+    drain500Trap:    { type:'drain',     amount:500  },
+  };
+  return map[str] || { type: str };
+}
 
-    case 'heal800':
-      if (isPlayer) bs.playerLP = Math.min(bs.playerLP + 800, RUN_STATE.maxHP);
-      else          bs.enemyLP  = Math.min(bs.enemyLP  + 800, bs.enemy.hp);
-      battleLog(`💚 ${tag}${card.name}: +800 LP`, 'heal');
-      break;
+/**
+ * Führt EINEN Effekt-Eintrag aus.
+ * @param {Object} eff      – Effekt-Objekt { type, amount, count, cardId, … }
+ * @param {Object} card     – Die auslösende Karte
+ * @param {boolean} isPlayer – true = Spieler-Effekt
+ */
+function _applyOneEffect(eff, card, isPlayer) {
+  const bs  = BATTLE_STATE;
+  const fld = isPlayer ? bs.playerField : bs.enemyField;
+  const eFld = isPlayer ? bs.enemyField  : bs.playerField;
+  const tag  = isPlayer ? '' : '(Gegner) ';
+  const maxLP = isPlayer ? RUN_STATE.maxHP : bs.enemy.hp;
 
-    case 'heal1000':
-      if (isPlayer) bs.playerLP = Math.min(bs.playerLP + 1000, RUN_STATE.maxHP);
-      else          bs.enemyLP  = Math.min(bs.enemyLP  + 1000, bs.enemy.hp);
-      battleLog(`💚 ${tag}${card.name}: +1000 LP`, 'heal');
-      break;
-
-    case 'heal1500':
-      if (isPlayer) bs.playerLP = Math.min(bs.playerLP + 1500, RUN_STATE.maxHP);
-      else          bs.enemyLP  = Math.min(bs.enemyLP  + 1500, bs.enemy.hp);
-      battleLog(`💚 ${tag}${card.name}: +1500 LP`, 'heal');
-      break;
-
-    /* ── Self-Buff ── */
-    case 'buff300':
-      card.atk += 300;
-      battleLog(`⬆ ${tag}${card.name}: ATK +300 → ${card.atk}`, 'buff');
-      break;
-
-    case 'buff400':
-      card.atk += 400;
-      battleLog(`⬆ ${tag}${card.name}: ATK +400 → ${card.atk}`, 'buff');
-      break;
-
-    /* ── Feld-Buff ── */
-    case 'buffAllAtk300':
-      friendlyField.forEach(c => { if (c && c !== card) c.atk += 300; });
-      battleLog(`⬆ ${tag}${card.name}: Alle Verbündeten +300 ATK`, 'buff');
-      break;
+  switch (eff.type) {
 
     /* ── Direktschaden ── */
-    case 'burn300':
-      if (isPlayer) bs.enemyLP  -= 300; else bs.playerLP -= 300;
-      battleLog(`🔥 ${tag}${card.name}: 300 Direktschaden`, 'damage');
-      animateDamageNumber(isPlayer ? 'enemy' : 'player', 300);
+    case 'burn': {
+      const dmg = eff.amount || 0;
+      if (isPlayer) bs.enemyLP  -= dmg; else bs.playerLP -= dmg;
+      battleLog(`🔥 ${tag}${card.name}: ${dmg} Direktschaden`, 'damage');
+      animateDamageNumber(isPlayer ? 'enemy' : 'player', dmg);
       break;
+    }
 
-    case 'burn400':
-      if (isPlayer) bs.enemyLP  -= 400; else bs.playerLP -= 400;
-      battleLog(`🔥 ${tag}${card.name}: 400 Direktschaden`, 'damage');
-      animateDamageNumber(isPlayer ? 'enemy' : 'player', 400);
+    /* ── Prozentualer Schaden (% des gegnerischen max-LP) ── */
+    case 'burnPercent': {
+      const pct  = eff.amount || 10;
+      const dmg  = Math.floor((isPlayer ? bs.enemy.hp : RUN_STATE.maxHP) * pct / 100);
+      if (isPlayer) bs.enemyLP  -= dmg; else bs.playerLP -= dmg;
+      battleLog(`🔥 ${tag}${card.name}: ${pct}% Schaden (${dmg} LP)`, 'damage');
+      animateDamageNumber(isPlayer ? 'enemy' : 'player', dmg);
       break;
+    }
 
-    case 'burn600':
-      if (isPlayer) bs.enemyLP  -= 600; else bs.playerLP -= 600;
-      battleLog(`🔥 ${tag}${card.name}: 600 Direktschaden`, 'damage');
-      animateDamageNumber(isPlayer ? 'enemy' : 'player', 600);
+    /* ── Heilung ── */
+    case 'heal': {
+      const hp = eff.amount || 0;
+      if (isPlayer) bs.playerLP = Math.min(bs.playerLP + hp, maxLP);
+      else          bs.enemyLP  = Math.min(bs.enemyLP  + hp, maxLP);
+      battleLog(`💚 ${tag}${card.name}: +${hp} LP`, 'heal');
       break;
+    }
 
-    /* ── Zerstören ── */
+    /* ── Prozentualer Heal ── */
+    case 'healPercent': {
+      const pct = eff.amount || 10;
+      const hp  = Math.floor(maxLP * pct / 100);
+      if (isPlayer) bs.playerLP = Math.min(bs.playerLP + hp, maxLP);
+      else          bs.enemyLP  = Math.min(bs.enemyLP  + hp, maxLP);
+      battleLog(`💚 ${tag}${card.name}: +${pct}% LP (+${hp})`, 'heal');
+      break;
+    }
+
+    /* ── Drain (Schaden + Heilung) ── */
+    case 'drain': {
+      const dmg = eff.amount || 0;
+      if (isPlayer) {
+        bs.enemyLP  -= dmg;
+        bs.playerLP  = Math.min(bs.playerLP + dmg, maxLP);
+      } else {
+        bs.playerLP -= dmg;
+        bs.enemyLP   = Math.min(bs.enemyLP  + dmg, maxLP);
+      }
+      battleLog(`🩸 ${tag}${card.name}: Drain ${dmg} LP`, 'damage');
+      animateDamageNumber(isPlayer ? 'enemy' : 'player', dmg);
+      break;
+    }
+
+    /* ── Selbst-Buff ATK ── */
+    case 'buff': {
+      const amt = eff.amount || 0;
+      card.atk += amt;
+      battleLog(`⬆ ${tag}${card.name}: ATK +${amt} → ${card.atk}`, 'buff');
+      break;
+    }
+
+    /* ── Selbst-Buff DEF ── */
+    case 'buffDef': {
+      const amt = eff.amount || 0;
+      card.def += amt;
+      battleLog(`🛡 ${tag}${card.name}: DEF +${amt} → ${card.def}`, 'buff');
+      break;
+    }
+
+    /* ── Alle Verbündeten ATK ── */
+    case 'buffAll': {
+      const amt = eff.amount || 0;
+      fld.forEach(c => { if (c && c !== card) c.atk += amt; });
+      battleLog(`⬆ ${tag}${card.name}: Alle Verbündeten +${amt} ATK`, 'buff');
+      break;
+    }
+
+    /* ── Alle Verbündeten DEF ── */
+    case 'buffDefAll': {
+      const amt = eff.amount || 0;
+      fld.forEach(c => { if (c && c !== card) c.def += amt; });
+      battleLog(`🛡 ${tag}${card.name}: Alle Verbündeten +${amt} DEF`, 'buff');
+      break;
+    }
+
+    /* ── Schwächste/erste feindliche Karte schwächen ATK ── */
+    case 'weakenOne': {
+      const amt = eff.amount || 0;
+      const t   = eFld.find(c => c !== null);
+      if (t) {
+        t.atk = Math.max(0, t.atk - amt);
+        battleLog(`⬇ ${tag}${card.name}: ${t.name} -${amt} ATK → ${t.atk}`, 'buff');
+      }
+      break;
+    }
+
+    /* ── Schwächste/erste feindliche Karte schwächen DEF ── */
+    case 'weakenDefOne': {
+      const amt = eff.amount || 0;
+      const t   = eFld.find(c => c !== null);
+      if (t) {
+        t.def = Math.max(0, t.def - amt);
+        battleLog(`⬇ ${tag}${card.name}: ${t.name} -${amt} DEF`, 'buff');
+      }
+      break;
+    }
+
+    /* ── Alle Feinde schwächen ATK ── */
+    case 'weakenAll': {
+      const amt = eff.amount || 0;
+      eFld.forEach(e => { if (e) e.atk = Math.max(0, e.atk - amt); });
+      battleLog(`⬇ ${tag}${card.name}: Alle Feinde -${amt} ATK`, 'buff');
+      break;
+    }
+
+    /* ── 1 Feind zerstören (schwächstes zuerst, dann erstes) ── */
     case 'destroy1': {
-      const target = enemyField.findIndex(c => c !== null);
-      if (target >= 0) {
-        battleLog(`💥 ${tag}${card.name}: Zerstört ${enemyField[target].name}`, 'damage');
-        _destroyCardOnField(enemyField, target, !isPlayer);
+      // Schwächstes Monster bevorzugen
+      const aliveSlots = eFld.map((c,i) => c ? i : -1).filter(i => i >= 0);
+      if (aliveSlots.length > 0) {
+        const target = aliveSlots.reduce((a, b) =>
+          (eFld[a]?.atk ?? 9999) < (eFld[b]?.atk ?? 9999) ? a : b
+        );
+        battleLog(`💥 ${tag}${card.name}: Zerstört ${eFld[target].name}`, 'damage');
+        _destroyCardOnField(eFld, target, !isPlayer);
       } else {
         battleLog(`✨ ${tag}${card.name}: Kein Ziel`, '');
       }
       break;
     }
 
-    case 'destroyAll':
-      for (let i = 0; i < enemyField.length; i++) {
-        if (enemyField[i]) {
-          battleLog(`💥 ${tag}${card.name}: Zerstört ${enemyField[i].name}`, 'damage');
-          _destroyCardOnField(enemyField, i, !isPlayer);
-        }
+    /* ── Alle Feinde zerstören ── */
+    case 'destroyAll': {
+      let count = 0;
+      for (let i = 0; i < eFld.length; i++) {
+        if (eFld[i]) { battleLog(`💥 ${tag}${card.name}: Zerstört ${eFld[i].name}`, 'damage'); _destroyCardOnField(eFld, i, !isPlayer); count++; }
       }
+      if (count === 0) battleLog(`✨ ${tag}${card.name}: Keine Ziele`, '');
       break;
+    }
 
-    /* ── Drain: Schaden + Heilung ── */
-    case 'drain500':
-      if (isPlayer) { bs.enemyLP -= 500; bs.playerLP = Math.min(bs.playerLP + 500, RUN_STATE.maxHP); }
-      else          { bs.playerLP -= 500; bs.enemyLP  = Math.min(bs.enemyLP  + 500, bs.enemy.hp); }
-      battleLog(`🩸 ${tag}${card.name}: Drain 500 LP`, 'damage');
-      animateDamageNumber(isPlayer ? 'enemy' : 'player', 500);
-      break;
-
-    /* ── Revive: Monster vom Friedhof ── */
-    case 'revive':
-    case 'graveRevive': {
-      const grave = isPlayer ? bs.playerGrave : bs.enemyGrave;
-      const field = isPlayer ? bs.playerField : bs.enemyField;
-      const monsters = grave.filter(c => c.type === 'monster' || c.type === 'fusion');
-      const monster  = monsters.at(-1); // zuletzt gestorben
-      if (monster) {
-        const slot = field.findIndex(c => c === null);
-        if (slot >= 0) {
-          field[slot] = { ...monster, mode:'attack', uid: crypto.randomUUID() };
-          battleLog(`✨ ${tag}${card.name}: Wiederbelebt ${monster.name}`, 'heal');
-          applyFieldSynergies(isPlayer);
-        }
-      } else {
-        battleLog(`✨ ${tag}${card.name}: Kein Monster auf dem Friedhof`, '');
+    /* ── Angreifer zerstören (nur in Trap-Kontext sinnvoll) ── */
+    case 'destroyAttacker': {
+      // Wird per checkAndActivateTraps mit attackerSlot aufgerufen,
+      // daher hier als Fallback: erstes feindliches Monster
+      const ai = eFld.findIndex(c => c !== null);
+      if (ai >= 0) {
+        battleLog(`💥 ${tag}${card.name}: ${eFld[ai].name} zerstört!`, 'damage');
+        _destroyCardOnField(eFld, ai, !isPlayer);
       }
       break;
     }
 
-    /* ── Massenrevival (Fusion-Effekt) ── */
+    /* ── Alle angreifenden Monster zerstören ── */
+    case 'destroyAllAtk': {
+      eFld.forEach((c, i) => {
+        if (c && c.mode === 'attack') {
+          battleLog(`💥 ${tag}${card.name}: ${c.name} zerstört!`, 'damage');
+          _destroyCardOnField(eFld, i, !isPlayer);
+        }
+      });
+      break;
+    }
+
+    /* ── Karte ziehen ── */
+    case 'draw': {
+      const n = eff.count || 1;
+      if (isPlayer) { for (let i = 0; i < n; i++) engineDrawCard(); }
+      battleLog(`🃏 ${tag}${card.name}: ${n} Karte${n > 1 ? 'n' : ''} ziehen`, 'buff');
+      break;
+    }
+
+    /* ── Letztes Monster vom Friedhof ── */
+    case 'revive': {
+      const grave    = isPlayer ? bs.playerGrave : bs.enemyGrave;
+      const monsters = grave.filter(c => c.type === 'monster' || c.type === 'fusion');
+      const monster  = monsters.at(-1);
+      if (monster) {
+        const slot = fld.findIndex(c => c === null);
+        if (slot >= 0) {
+          fld[slot] = { ...monster, mode:'attack', uid: crypto.randomUUID() };
+          battleLog(`✨ ${tag}${card.name}: ${monster.name} wiederbelebt`, 'heal');
+          applyFieldSynergies(isPlayer);
+        }
+      } else {
+        battleLog(`✨ ${tag}${card.name}: Friedhof leer`, '');
+      }
+      break;
+    }
+
+    /* ── Stärkstes Monster vom Friedhof ── */
+    case 'reviveBest': {
+      const grave    = isPlayer ? bs.playerGrave : bs.enemyGrave;
+      const monsters = grave.filter(c => c.type === 'monster' || c.type === 'fusion');
+      if (monsters.length === 0) { battleLog(`✨ ${tag}${card.name}: Friedhof leer`, ''); break; }
+      const best = monsters.reduce((a, b) => a.atk >= b.atk ? a : b);
+      const slot  = fld.findIndex(c => c === null);
+      if (slot >= 0) {
+        fld[slot] = { ...best, mode:'attack', uid: crypto.randomUUID() };
+        battleLog(`✨ ${tag}${card.name}: ${best.name} (${best.atk} ATK) wiederbelebt!`, 'heal');
+        applyFieldSynergies(isPlayer);
+      }
+      break;
+    }
+
+    /* ── Alle Monster vom Friedhof ── */
     case 'massRevive': {
-      const grave = isPlayer ? bs.playerGrave : bs.enemyGrave;
-      const field = isPlayer ? bs.playerField : bs.enemyField;
+      const grave    = isPlayer ? bs.playerGrave : bs.enemyGrave;
       const monsters = grave.filter(c => c.type === 'monster');
       let revived = 0;
       for (const m of monsters) {
-        const slot = field.findIndex(c => c === null);
+        const slot = fld.findIndex(c => c === null);
         if (slot < 0) break;
-        field[slot] = { ...m, mode:'attack', uid: crypto.randomUUID() };
+        fld[slot] = { ...m, mode:'attack', uid: crypto.randomUUID() };
         revived++;
       }
       battleLog(`💀 ${tag}${card.name}: ${revived} Monster wiederbelebt!`, 'heal');
@@ -153,228 +336,176 @@ function applyOnSummonEffect(card, isPlayer) {
       break;
     }
 
-    /* ── Draw ── */
-    case 'draw1':
-      if (isPlayer) { engineDrawCard(); battleLog(`🃏 ${card.name}: 1 Karte ziehen`, 'buff'); }
-      break;
+    /* ── Spezialbeschwörung: Karte X aus Deck/Pool ── */
+    case 'specialSummon': {
+      const cid  = eff.cardId;
+      if (!cid) { battleLog(`⚠ specialSummon: Keine cardId`, 'warn'); break; }
+      const slot  = fld.findIndex(c => c === null);
+      if (slot < 0) { battleLog(`⚠ ${tag}${card.name}: Kein freier Slot`, 'warn'); break; }
 
-    /* ── Weaken ── */
-    case 'weaken200': {
-      const t = enemyField.find(c => c !== null);
-      if (t) { t.atk = Math.max(0, t.atk - 200); battleLog(`⬇ ${tag}${card.name}: ${t.name} -200 ATK`, 'buff'); }
-      break;
-    }
-
-    case 'weaken500': {
-      const t = enemyField.find(c => c !== null);
-      if (t) { t.atk = Math.max(0, t.atk - 500); battleLog(`⬇ ${tag}${card.name}: ${t.name} -500 ATK`, 'buff'); }
-      break;
-    }
-
-    case 'weaken800': {
-      const t = enemyField.find(c => c !== null);
-      if (t) { t.atk = Math.max(0, t.atk - 800); battleLog(`⬇ ${tag}${card.name}: ${t.name} -800 ATK`, 'buff'); }
-      break;
-    }
-
-    /* ── Taunt ── */
-    case 'taunt':
-      card.isTaunt = true;
-      battleLog(`🛡 ${tag}${card.name}: Zieht alle Angriffe auf sich`, 'buff');
-      break;
-
-    /* ── Rassen-Buff (Kobold-Karten) ── */
-    case 'raceBuffATK150': {
-      const race = card.race;
-      friendlyField.forEach(c => {
-        if (c && c !== card && c.race === race) { c.atk += 150; }
-      });
-      battleLog(`⬆ ${tag}${card.name}: Alle ${race} +150 ATK`, 'buff');
-      break;
-    }
-
-    case 'raceBuffATK300': {
-      const race = card.race;
-      friendlyField.forEach(c => {
-        if (c && c !== card && c.race === race) { c.atk += 300; }
-      });
-      battleLog(`⬆ ${tag}${card.name}: Alle ${race} +300 ATK`, 'buff');
-      break;
-    }
-
-    /* ── Stehlen: Karte aus Gegnerkiste ── */
-    case 'stealHand': {
-      if (!isPlayer) break; // Gegner nutzt diese Mechanik nur limitiert
-      const enemyHand = bs.enemyHand;
-      if (!enemyHand || enemyHand.length === 0) {
-        battleLog(`✨ ${card.name}: Keine Karte in der Gegnerhand`, '');
-        break;
+      // Karte suchen: im Deck, in Handkarten, oder im globalen Pool
+      let target = null;
+      const deck = isPlayer ? bs.playerDeck : bs.enemyDeck;
+      const deckIdx = deck ? deck.findIndex(c => c.id === cid) : -1;
+      if (deckIdx >= 0) {
+        target = deck.splice(deckIdx, 1)[0];
+      } else {
+        // Fallback: aus globalem Karten-Pool klonen
+        const allCards = [
+          ...(window.DD_CUSTOM?.cards || []),
+          ...(typeof CARDS !== 'undefined' ? CARDS : [])
+        ];
+        const found = allCards.find(c => c.id === cid);
+        if (found) target = cloneCard(found);
       }
-      const idx = Math.floor(Math.random() * enemyHand.length);
-      const stolen = enemyHand.splice(idx, 1)[0];
-      bs.hand.push(stolen);
-      battleLog(`🃏 ${card.name}: Gestohlen — ${stolen.name} aus der Gegnerhand!`, 'buff');
+
+      if (target) {
+        fld[slot] = { ...target, mode:'attack', uid: crypto.randomUUID() };
+        battleLog(`⚡ ${tag}${card.name}: Beschwört ${target.name}!`, 'summon');
+        applyOnSummonEffect(fld[slot], isPlayer); // Kettenbeschwörung möglich
+        applyFieldSynergies(isPlayer);
+      } else {
+        battleLog(`✨ ${tag}${card.name}: ${cid} nicht gefunden`, '');
+      }
       break;
     }
 
-    /* ── Stehlen: Gegnerfeld-Monster übernehmen ── */
+    /* ── Stiehlt Karte aus Gegnerhand ── */
+    case 'stealHand': {
+      if (!isPlayer) break;
+      const eHand = bs.enemyHand;
+      if (!eHand || eHand.length === 0) { battleLog(`✨ ${card.name}: Gegnerhand leer`, ''); break; }
+      const idx    = Math.floor(Math.random() * eHand.length);
+      const stolen = eHand.splice(idx, 1)[0];
+      bs.hand.push(stolen);
+      battleLog(`🃏 ${card.name}: Gestohlen — ${stolen.name}!`, 'buff');
+      break;
+    }
+
+    /* ── Übernimmt ein Gegnerfeld-Monster ── */
     case 'stealField': {
-      const targetIdx = enemyField.findIndex(c => c !== null);
-      if (targetIdx < 0) { battleLog(`✨ ${card.name}: Kein Ziel auf dem Gegnerfeld`, ''); break; }
-      const slot = friendlyField.findIndex(c => c === null);
-      if (slot < 0) { battleLog(`⚠ ${card.name}: Kein freier Slot`, 'warn'); break; }
-      const stolen = enemyField[targetIdx];
-      enemyField[targetIdx] = null;
-      friendlyField[slot]   = { ...stolen, mode:'attack', uid: crypto.randomUUID() };
+      const tIdx = eFld.findIndex(c => c !== null);
+      if (tIdx < 0) { battleLog(`✨ ${card.name}: Kein Ziel auf Gegnerfeld`, ''); break; }
+      const fSlot = fld.findIndex(c => c === null);
+      if (fSlot < 0) { battleLog(`⚠ ${card.name}: Kein freier Slot`, 'warn'); break; }
+      const stolen = eFld[tIdx];
+      eFld[tIdx]   = null;
+      fld[fSlot]   = { ...stolen, mode:'attack', uid: crypto.randomUUID() };
       battleLog(`⚡ ${card.name}: ${stolen.name} übernommen!`, 'buff');
       applyFieldSynergies(isPlayer);
       applyFieldSynergies(!isPlayer);
       break;
     }
 
-    /* ── Shield (physischer Schutz) ── */
-    case 'shield300':
-      card._shield = (card._shield || 0) + 300;
-      battleLog(`🛡 ${tag}${card.name}: +300 Rüstung aktiv`, 'buff');
+    /* ── Rüstung ── */
+    case 'shield': {
+      const amt = eff.amount || 0;
+      card._shield = (card._shield || 0) + amt;
+      battleLog(`🛡 ${tag}${card.name}: +${amt} Rüstung aktiv`, 'buff');
+      break;
+    }
+
+    /* ── Taunt (wird bevorzugt angegriffen) ── */
+    case 'taunt':
+      card.isTaunt = true;
+      battleLog(`🛡 ${tag}${card.name}: Zieht alle Angriffe auf sich`, 'buff');
       break;
 
-    /* ── HealBuff (Fusion-Effekt) ── */
+    /* ── Angriff negieren ── */
+    case 'negate':
+      battleLog(`🛡 ${tag}${card.name}: Angriff negiert!`, 'buff');
+      // Rückgabe-Flag wird im Trap-Kontext behandelt
+      break;
+
+    /* ── Rassen-Buff ATK ── */
+    case 'raceBuffATK': {
+      const amt  = eff.amount || 0;
+      const race = card.race;
+      if (!race) break;
+      fld.forEach(c => { if (c && c !== card && c.race === race) c.atk += amt; });
+      battleLog(`⬆ ${tag}${card.name}: Alle ${race} +${amt} ATK`, 'buff');
+      break;
+    }
+
+    /* ── Rassen-Buff DEF ── */
+    case 'raceBuffDEF': {
+      const amt  = eff.amount || 0;
+      const race = card.race;
+      if (!race) break;
+      fld.forEach(c => { if (c && c !== card && c.race === race) c.def += amt; });
+      battleLog(`🛡 ${tag}${card.name}: Alle ${race} +${amt} DEF`, 'buff');
+      break;
+    }
+
+    /* ── Passiver Angriffs-Burn (wird in engine.js beim Angriff geprüft) ── */
+    case 'burnOnAttack':
+      card._burnOnAttack = eff.amount || 0;
+      // Kein battleLog hier — wird beim Angriff ausgelöst
+      break;
+
+    /* ── Legacy: healBuff (500 LP + 400 ATK) ── */
     case 'healBuff':
-      if (isPlayer) bs.playerLP = Math.min(bs.playerLP + 500, RUN_STATE.maxHP);
+      if (isPlayer) bs.playerLP = Math.min(bs.playerLP + 500, maxLP);
       card.atk += 400;
       battleLog(`✨ ${tag}${card.name}: +500 LP & ATK +400`, 'heal');
       break;
-  }
 
+    default:
+      // Unbekannter Effekt — ignorieren
+      break;
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   ÖFFENTLICHE EFFEKT-AUSLÖSER
+══════════════════════════════════════════════════ */
+
+/**
+ * Monster-On-Summon-Effekte ausführen.
+ * Unterstützt card.effects (Array) UND card.effect (String, Legacy).
+ */
+function applyOnSummonEffect(card, isPlayer) {
+  const effs = _resolveEffects(card);
+  if (effs.length === 0) return;
+
+  for (const eff of effs) {
+    _applyOneEffect(eff, card, isPlayer);
+  }
   checkWinCondition();
 }
 
-/* ──────────────────────────────────────────────────
-   SPELL-EFFEKTE (von Hand aktiviert)
-────────────────────────────────────────────────── */
+/**
+ * Spell-Effekte (von Hand aktiviert).
+ * Gleiche Effektliste wie Summon — Kontext entscheidet.
+ */
 function applySpellEffect(card, isPlayer) {
-  const bs = BATTLE_STATE;
-  const enemyField    = isPlayer ? bs.enemyField  : bs.playerField;
-  const friendlyField = isPlayer ? bs.playerField : bs.enemyField;
+  const effs = _resolveEffects(card);
+  if (effs.length === 0) return;
 
-  switch (card.effect) {
-
-    case 'burn400':
-      if (isPlayer) bs.enemyLP  -= 400; else bs.playerLP -= 400;
-      battleLog(`🔥 ${card.name}: 400 Direktschaden`, 'damage');
-      animateDamageNumber(isPlayer ? 'enemy' : 'player', 400);
-      break;
-
-    case 'burn800':
-      if (isPlayer) bs.enemyLP  -= 800; else bs.playerLP -= 800;
-      battleLog(`🔥 ${card.name}: 800 Direktschaden`, 'damage');
-      animateDamageNumber(isPlayer ? 'enemy' : 'player', 800);
-      break;
-
-    case 'burn1200':
-      if (isPlayer) bs.enemyLP  -= 1200; else bs.playerLP -= 1200;
-      battleLog(`⚡ ${card.name}: 1200 Direktschaden`, 'damage');
-      animateDamageNumber(isPlayer ? 'enemy' : 'player', 1200);
-      break;
-
-    case 'burn1600':
-      if (isPlayer) bs.enemyLP  -= 1600; else bs.playerLP -= 1600;
-      battleLog(`🔥 ${card.name}: 1600 HÖLLENFEUER!`, 'damage');
-      animateDamageNumber(isPlayer ? 'enemy' : 'player', 1600);
-      break;
-
-    case 'heal1000':
-      if (isPlayer) bs.playerLP = Math.min(bs.playerLP + 1000, RUN_STATE.maxHP);
-      else          bs.enemyLP  = Math.min(bs.enemyLP  + 1000, bs.enemy.hp);
-      battleLog(`💚 ${card.name}: +1000 LP`, 'heal');
-      break;
-
-    case 'heal1500':
-      if (isPlayer) bs.playerLP = Math.min(bs.playerLP + 1500, RUN_STATE.maxHP);
-      else          bs.enemyLP  = Math.min(bs.enemyLP  + 1500, bs.enemy.hp);
-      battleLog(`💚 ${card.name}: +1500 LP`, 'heal');
-      break;
-
-    case 'buffAllAtk400':
-      friendlyField.forEach(c => { if (c) c.atk += 400; });
-      battleLog(`⬆ ${card.name}: Alle Monster +400 ATK`, 'buff');
-      break;
-
-    case 'buffAllAtk500':
-      friendlyField.forEach(c => { if (c) c.atk += 500; });
-      battleLog(`⬆ ${card.name}: Alle Monster +500 ATK`, 'buff');
-      break;
-
-    case 'destroyAllSpell':
-    case 'destroyAll':
-      for (let i = 0; i < enemyField.length; i++) {
-        if (enemyField[i]) {
-          _destroyCardOnField(enemyField, i, !isPlayer);
-        }
-      }
-      battleLog(`💥 ${card.name}: Alle feindlichen Monster vernichtet!`, 'damage');
-      applyFieldSynergies(!isPlayer);
-      break;
-
-    case 'draw2':
-      if (isPlayer) { engineDrawCard(); engineDrawCard(); }
-      battleLog(`🃏 ${card.name}: 2 Karten ziehen`, 'buff');
-      break;
-
-    case 'drain1000':
-      if (isPlayer) {
-        bs.enemyLP  -= 1000;
-        bs.playerLP  = Math.min(bs.playerLP + 1000, RUN_STATE.maxHP);
-      } else {
-        bs.playerLP -= 1000;
-        bs.enemyLP   = Math.min(bs.enemyLP  + 1000, bs.enemy.hp);
-      }
-      battleLog(`🩸 ${card.name}: Drain 1000 LP`, 'damage');
-      animateDamageNumber(isPlayer ? 'enemy' : 'player', 1000);
-      break;
-
-    case 'graveReviveSpell': {
-      const grave = isPlayer ? bs.playerGrave : bs.enemyGrave;
-      const field = isPlayer ? bs.playerField : bs.enemyField;
-      const monsters = grave.filter(c => c.type === 'monster' || c.type === 'fusion');
-      if (monsters.length === 0) { battleLog(`✨ ${card.name}: Friedhof leer`, ''); break; }
-      /* Stärkstes Monster */
-      const strongest = monsters.reduce((a, b) => a.atk >= b.atk ? a : b);
-      const slot = field.findIndex(c => c === null);
-      if (slot >= 0) {
-        field[slot] = { ...strongest, mode:'attack', uid: crypto.randomUUID() };
-        battleLog(`✨ ${card.name}: ${strongest.name} aus dem Friedhof beschworen!`, 'heal');
-        applyFieldSynergies(isPlayer);
-      }
-      break;
-    }
-
-    case 'stealHand': {
-      if (!isPlayer) break;
-      const enemyHand = bs.enemyHand;
-      if (!enemyHand || enemyHand.length === 0) {
-        battleLog(`✨ ${card.name}: Gegnerhand leer`, '');
-        break;
-      }
-      const idx = Math.floor(Math.random() * enemyHand.length);
-      const stolen = enemyHand.splice(idx, 1)[0];
-      bs.hand.push(stolen);
-      battleLog(`🃏 ${card.name}: Gestohlen → ${stolen.name}!`, 'buff');
-      break;
-    }
-
-    case 'weakenAll300':
-      enemyField.forEach(e => { if (e) e.atk = Math.max(0, e.atk - 300); });
-      battleLog(`⬇ ${card.name}: Alle Feinde -300 ATK`, 'buff');
-      break;
+  for (const eff of effs) {
+    _applyOneEffect(eff, card, isPlayer);
   }
-
   checkWinCondition();
 }
 
-/* ──────────────────────────────────────────────────
-   TRAP-EFFEKTE (Spieler-Fallen bei Gegner-Angriff)
-────────────────────────────────────────────────── */
+/**
+ * Wird aus engine.js aufgerufen wenn ein Monster
+ * mit burnOnAttack-Passiv angreift.
+ */
+function applyBurnOnAttack(card, isPlayer) {
+  if (!card._burnOnAttack) return;
+  const bs  = BATTLE_STATE;
+  const dmg = card._burnOnAttack;
+  if (isPlayer) bs.enemyLP  -= dmg; else bs.playerLP -= dmg;
+  battleLog(`🔥 ${card.name}: ${dmg} Brandschaden beim Angriff!`, 'damage');
+  animateDamageNumber(isPlayer ? 'enemy' : 'player', dmg);
+  checkWinCondition();
+}
+
+/* ══════════════════════════════════════════════════
+   FALLEN (Spieler- und Gegner-Fallen)
+══════════════════════════════════════════════════ */
+
 function checkAndActivateTraps(attackerSlot) {
   const bs = BATTLE_STATE;
   let attackCancelled = false;
@@ -385,16 +516,15 @@ function checkAndActivateTraps(attackerSlot) {
     battleLog(`⚡ Falle aktiviert: ${card.name}!`, 'damage');
     bs.playerSTZone[idx] = null;
 
-    switch (card.effect) {
-      case 'destroyAttacker':
+    const effs = _resolveEffects(card);
+    for (const eff of effs) {
+      if (eff.type === 'destroyAttacker') {
         if (bs.enemyField[attackerSlot]) {
           battleLog(`💥 ${card.name}: ${bs.enemyField[attackerSlot].name} zerstört!`, 'damage');
           _destroyCardOnField(bs.enemyField, attackerSlot, false);
           attackCancelled = true;
         }
-        break;
-
-      case 'destroyAllAtk':
+      } else if (eff.type === 'destroyAllAtk') {
         bs.enemyField.forEach((c, i) => {
           if (c && c.mode === 'attack') {
             battleLog(`💥 ${card.name}: ${c.name} zerstört!`, 'damage');
@@ -402,25 +532,12 @@ function checkAndActivateTraps(attackerSlot) {
           }
         });
         attackCancelled = true;
-        break;
-
-      case 'heal800':
-        bs.playerLP = Math.min(bs.playerLP + 800, RUN_STATE.maxHP);
-        battleLog(`💚 ${card.name}: +800 LP`, 'heal');
-        break;
-
-      case 'drain500Trap':
-        bs.enemyLP -= 500;
-        bs.playerLP = Math.min(bs.playerLP + 500, RUN_STATE.maxHP);
-        battleLog(`🩸 ${card.name}: Drain 500 LP vom Angreifer!`, 'damage');
-        animateDamageNumber('enemy', 500);
-        break;
-
-      case 'negate':
-      case 'negateEffect':
+      } else if (eff.type === 'negate') {
         battleLog(`🛡 ${card.name}: Angriff negiert!`, 'buff');
         attackCancelled = true;
-        break;
+      } else {
+        _applyOneEffect(eff, card, true);
+      }
     }
   });
 
@@ -428,9 +545,6 @@ function checkAndActivateTraps(attackerSlot) {
   return attackCancelled;
 }
 
-/* ──────────────────────────────────────────────────
-   GEGNER-FALLEN (aktivieren wenn SPIELER angreift)
-────────────────────────────────────────────────── */
 function checkEnemyTraps(playerAttackerSlot) {
   const bs = BATTLE_STATE;
   let attackCancelled = false;
@@ -442,18 +556,16 @@ function checkEnemyTraps(playerAttackerSlot) {
     bs.enemySTZone[idx] = null;
     card.hidden = false;
 
-    switch (card.effect) {
-      case 'destroyAttacker': {
+    const effs = _resolveEffects(card);
+    for (const eff of effs) {
+      if (eff.type === 'destroyAttacker') {
         const attacker = bs.playerField[playerAttackerSlot];
         if (attacker) {
           battleLog(`💥 ${card.name}: ${attacker.name} zerstört!`, 'damage');
           _destroyCardOnField(bs.playerField, playerAttackerSlot, true);
           attackCancelled = true;
         }
-        break;
-      }
-
-      case 'destroyAllAtk':
+      } else if (eff.type === 'destroyAllAtk') {
         bs.playerField.forEach((c, i) => {
           if (c && c.mode === 'attack') {
             battleLog(`💥 ${card.name}: ${c.name} zerstört!`, 'damage');
@@ -461,25 +573,12 @@ function checkEnemyTraps(playerAttackerSlot) {
           }
         });
         attackCancelled = true;
-        break;
-
-      case 'heal800':
-        bs.enemyLP = Math.min(bs.enemyLP + 800, bs.enemy.hp);
-        battleLog(`💚 ${card.name}: Gegner +800 LP`, 'heal');
-        break;
-
-      case 'drain500Trap':
-        bs.playerLP -= 500;
-        bs.enemyLP  = Math.min(bs.enemyLP + 500, bs.enemy.hp);
-        battleLog(`🩸 ${card.name}: Gegner saugt 500 LP!`, 'damage');
-        animateDamageNumber('player', 500);
-        break;
-
-      case 'negate':
-      case 'negateEffect':
+      } else if (eff.type === 'negate') {
         battleLog(`🛡 ${card.name}: Dein Angriff wurde negiert!`, 'buff');
         attackCancelled = true;
-        break;
+      } else {
+        _applyOneEffect(eff, card, false);
+      }
     }
   });
 
@@ -492,73 +591,105 @@ function checkEnemyTraps(playerAttackerSlot) {
   return attackCancelled;
 }
 
-/* ──────────────────────────────────────────────────
-   INTERNE HILFSFUNKTION:
-   Karte von einem Feld-Slot zerstören + Synergien
-────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════
+   HILFSFUNKTIONEN
+══════════════════════════════════════════════════ */
+
 function _destroyCardOnField(field, slotIdx, isPlayerCard) {
   const card = field[slotIdx];
   if (!card) return;
+  const fieldId = isPlayerCard ? 'player-field' : 'enemy-field';
+  animateCardShatter(fieldId, slotIdx);
+  if (!isPlayerCard && typeof gainDimensionsSeelen === 'function') {
+    gainDimensionsSeelen(1, true);
+    if (typeof battleLog === 'function') battleLog('✦ +1 DS', 'buff');
+  }
   sendToGrave(card, isPlayerCard);
-  /* Death-Synergien prüfen BEVOR Slot geleert wird */
   checkOnDeathSynergies(card, isPlayerCard);
   field[slotIdx] = null;
 }
 
-/* ── Hilfsfunktion: Karte auf Friedhof ── */
 function sendToGrave(card, isPlayerCard) {
   if (!card) return;
   if (isPlayerCard) BATTLE_STATE.playerGrave.push(card);
   else              BATTLE_STATE.enemyGrave.push(card);
 }
 
-/* ──────────────────────────────────────────────────
-   Effekt-Beschreibungen (für UI / Hover)
-────────────────────────────────────────────────── */
-function getEffectDescription(effect) {
-  const DESCS = {
-    heal500:         '+500 LP bei Beschwörung',
-    heal800:         '+800 LP bei Beschwörung',
-    heal1000:        '+1000 LP bei Beschwörung',
-    heal1500:        '+1500 LP bei Beschwörung',
-    buff300:         'Selbst +300 ATK bei Beschwörung',
-    buff400:         'Selbst +400 ATK bei Beschwörung',
-    buffAllAtk300:   'Alle Verbündeten +300 ATK',
-    buffAllAtk400:   'Alle Verbündeten +400 ATK',
-    buffAllAtk500:   'Alle Verbündeten +500 ATK',
-    burn300:         '300 Direktschaden bei Beschwörung',
-    burn400:         '400 Direktschaden bei Beschwörung',
-    burn600:         '600 Direktschaden bei Beschwörung',
-    burn800:         '800 Direktschaden (Spell)',
-    burn1200:        '1200 Direktschaden (Spell)',
-    burn1600:        '1600 Direktschaden (Spell)',
-    destroy1:        'Zerstört 1 Gegnermonster bei Beschwörung',
-    destroyAll:      'Zerstört ALLE Gegnermonster bei Beschwörung',
-    destroyAllSpell: 'Zerstört ALLE Gegnermonster (Spell)',
-    drain500:        'Saugt 500 LP vom Gegner',
-    drain1000:       'Saugt 1000 LP vom Gegner (Spell)',
-    drain500Trap:    'Saugt 500 LP bei Aktivierung (Falle)',
-    revive:          'Belebt Monster aus Friedhof',
-    graveRevive:     'Belebt zuletzt gestorbenes Monster',
-    graveReviveSpell:'Belebt stärkstes Monster aus Friedhof (Spell)',
-    massRevive:      'Belebt ALLE Monster aus Friedhof',
-    draw1:           'Ziehe 1 Karte bei Beschwörung',
-    draw2:           'Ziehe 2 Karten (Spell)',
-    weaken200:       'Gegner -200 ATK bei Beschwörung',
-    weaken500:       'Gegner -500 ATK bei Beschwörung',
-    weaken800:       'Gegner -800 ATK bei Beschwörung',
-    weakenAll300:    'Alle Feinde -300 ATK (Spell)',
-    taunt:           'Zieht alle Angriffe auf sich',
-    stealHand:       'Stiehlt Karte aus Gegnerhand',
-    stealField:      'Übernimmt ein Gegnerfeld-Monster',
-    shield300:       '+300 Rüstung (reduziert eingehenden ATK)',
-    raceBuffATK150:  '+150 ATK für alle Gleichrassigen auf dem Feld',
-    raceBuffATK300:  '+300 ATK für alle Gleichrassigen auf dem Feld',
-    destroyAttacker: 'Zerstört angreifendes Monster (Falle)',
-    destroyAllAtk:   'Zerstört alle angreifenden Monster (Falle)',
-    negate:          'Negiert Angriff (Falle)',
-    negateEffect:    'Negiert Effekt/Angriff (Falle)',
-    healBuff:        '+500 LP & +400 ATK',
-  };
-  return DESCS[effect] || effect;
+/* ══════════════════════════════════════════════════
+   EFFEKT-BESCHREIBUNG (für UI / Hover-Preview)
+══════════════════════════════════════════════════ */
+
+/**
+ * Gibt eine lesbare Beschreibung für card.effects (Array)
+ * oder card.effect (String, Legacy) zurück.
+ */
+function getEffectDescription(effectInput, card) {
+  if (!effectInput) return '';
+
+  // Altes String-Format (Legacy)
+  if (typeof effectInput === 'string') {
+    const eff = _legacyStringToEffect(effectInput);
+    return _describeOneEffect(eff, card);
+  }
+
+  // Neues Array-Format
+  if (Array.isArray(effectInput)) {
+    return effectInput.map(e => _describeOneEffect(e, card)).filter(Boolean).join(' • ');
+  }
+
+  return String(effectInput);
+}
+
+function _describeOneEffect(eff, card) {
+  if (!eff || !eff.type) return '';
+  const a = eff.amount || 0;
+  const n = eff.count  || 1;
+
+  switch (eff.type) {
+    case 'burn':           return `🔥 ${a} Direktschaden`;
+    case 'burnPercent':    return `🔥 ${a}% Schaden (Gegner-LP)`;
+    case 'heal':           return `💚 Heile ${a} LP`;
+    case 'healPercent':    return `💚 Heile ${a}% max. LP`;
+    case 'drain':          return `🩸 Drain ${a} LP`;
+    case 'buff':           return `⬆ +${a} ATK (selbst)`;
+    case 'buffDef':        return `🛡 +${a} DEF (selbst)`;
+    case 'buffAll':        return `⬆ Alle Verbündeten +${a} ATK`;
+    case 'buffDefAll':     return `🛡 Alle Verbündeten +${a} DEF`;
+    case 'weakenOne':      return `⬇ Feind -${a} ATK`;
+    case 'weakenDefOne':   return `⬇ Feind -${a} DEF`;
+    case 'weakenAll':      return `⬇ Alle Feinde -${a} ATK`;
+    case 'destroy1':       return `💥 Zerstört 1 feindl. Monster`;
+    case 'destroyAll':     return `💥 Zerstört ALLE feindl. Monster`;
+    case 'destroyAttacker':return `💥 Zerstört angreifendes Monster`;
+    case 'destroyAllAtk':  return `💥 Zerstört alle angreifenden Monster`;
+    case 'draw':           return `🃏 Ziehe ${n} Karte${n > 1 ? 'n' : ''}`;
+    case 'revive':         return `✨ Belebt letztes Monster aus Friedhof`;
+    case 'reviveBest':     return `✨ Belebt stärkstes Monster aus Friedhof`;
+    case 'massRevive':     return `💀 Belebt ALLE Monster aus Friedhof`;
+    case 'specialSummon': {
+      const cid = eff.cardId || '?';
+      const name = _lookupCardName(cid);
+      return `⚡ Beschwört ${name} bei Beschwörung`;
+    }
+    case 'stealHand':      return `🃏 Stiehlt Karte aus Gegnerhand`;
+    case 'stealField':     return `⚡ Übernimmt ein Gegnerfeld-Monster`;
+    case 'shield':         return `🛡 +${a} Rüstung`;
+    case 'taunt':          return `🛡 Taunt: Wird bevorzugt angegriffen`;
+    case 'negate':         return `🛡 Negiert Angriff`;
+    case 'raceBuffATK':    return `⬆ Gleichrassige +${a} ATK`;
+    case 'raceBuffDEF':    return `🛡 Gleichrassige +${a} DEF`;
+    case 'burnOnAttack':   return `🔥 Bei Angriff: +${a} Brandschaden`;
+    case 'healBuff':       return `✨ +500 LP & +400 ATK`;
+    default: return eff.type;
+  }
+}
+
+/** Hilfsfunktion: Kartenname via ID nachschlagen */
+function _lookupCardName(cardId) {
+  const all = [
+    ...(window.DD_CUSTOM?.cards || []),
+    ...(window.DD_CUSTOM?.fusionMonsters || []),
+    ...(typeof CARDS !== 'undefined' ? CARDS : []),
+  ];
+  return all.find(c => c.id === cardId)?.name || cardId;
 }

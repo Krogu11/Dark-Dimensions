@@ -28,7 +28,6 @@ const ENEMIES = {
     portrait:  '👺',
     theme:     'Kobold',
     hp:        4000,
-    gold:      [15, 25],
     behavior:  'swarm',
     difficulty: 1,
     fieldBonus:  0,
@@ -36,6 +35,7 @@ const ENEMIES = {
     multiAttack: false,
     startField:  ['kobold_jung', 'kobold_jung', 'kobold_speer'],
     startTraps:  ['sacredwall'],
+    startFieldCard: 'feld_koboldwald',   // 🌲 Koboldwald aktiv von Beginn
     startHandCount: 5,
     deckIds: [
       'kobold_jung','kobold_jung','kobold_jung','kobold_jung',
@@ -61,7 +61,6 @@ const ENEMIES = {
     portrait:  '💀',
     theme:     'Untoter',
     hp:        4500,
-    gold:      [20, 35],
     behavior:  'control',
     difficulty: 1,
     fieldBonus:  100,
@@ -93,7 +92,6 @@ const ENEMIES = {
     portrait:  '⚔️',
     theme:     'Ork',
     hp:        5000,
-    gold:      [30, 50],
     behavior:  'aggressive',
     difficulty: 2,
     fieldBonus:  200,
@@ -125,7 +123,6 @@ const ENEMIES = {
     portrait:  '🌑',
     theme:     'Dämon',
     hp:        6500,
-    gold:      [60, 80],
     behavior:  'boss_balanced',
     difficulty: 3,
     fieldBonus:  250,
@@ -163,7 +160,6 @@ const ENEMIES = {
     portrait:  '🗡️',
     theme:     'Schattenwesen',
     hp:        5200,
-    gold:      [25, 40],
     behavior:  'aggressive',
     difficulty: 2,
     fieldBonus:  250,
@@ -196,7 +192,6 @@ const ENEMIES = {
     portrait:  '🧿',
     theme:     'Untoter',
     hp:        5800,
-    gold:      [30, 45],
     behavior:  'control',
     difficulty: 3,
     fieldBonus:  200,
@@ -228,7 +223,6 @@ const ENEMIES = {
     portrait:  '🤖',
     theme:     'Maschine',
     hp:        7500,
-    gold:      [50, 70],
     behavior:  'tank',
     difficulty: 3,
     fieldBonus:  400,
@@ -261,7 +255,6 @@ const ENEMIES = {
     portrait:  '🌀',
     theme:     'Dämon',
     hp:        9000,
-    gold:      [80, 110],
     behavior:  'boss_aggro',
     difficulty: 4,
     fieldBonus:  350,
@@ -299,7 +292,6 @@ const ENEMIES = {
     portrait:  '🐉',
     theme:     'Drache',
     hp:        7000,
-    gold:      [45, 65],
     behavior:  'boss_aggro',
     difficulty: 4,
     fieldBonus:  400,
@@ -332,7 +324,6 @@ const ENEMIES = {
     portrait:  '💠',
     theme:     'Elementar',
     hp:        9500,
-    gold:      [70, 100],
     behavior:  'final_boss',
     difficulty: 5,
     fieldBonus:  500,
@@ -365,7 +356,6 @@ const ENEMIES = {
     portrait:  '👁️',
     theme:     'Gemischt',
     hp:        14000,
-    gold:      [150, 200],
     behavior:  'final_boss',
     difficulty: 6,
     fieldBonus:  700,
@@ -429,17 +419,28 @@ const ENEMIES = {
 
 /* ──────────────────────────────────────────────────
    DD_CUSTOM OVERRIDE — Editor
+   DD_CUSTOM.enemies ist ein OBJEKT: { [enemyId]: { ...overrides } }
 ────────────────────────────────────────────────── */
 (function _applyEnemyOverrides() {
   if (!window.DD_CUSTOM || !window.DD_CUSTOM.enemies) return;
-  window.DD_CUSTOM.enemies.forEach(custom => {
-    if (ENEMIES[custom.id]) {
-      ENEMIES[custom.id] = Object.assign({}, ENEMIES[custom.id], custom);
+  const overrides = window.DD_CUSTOM.enemies;
+  // Unterstützt sowohl Objekt- als auch Array-Format (Abwärtskompatibilität)
+  const entries = Array.isArray(overrides)
+    ? overrides.map(c => [c.id, c])
+    : Object.entries(overrides);
+  entries.forEach(([id, custom]) => {
+    if (ENEMIES[id]) {
+      ENEMIES[id] = Object.assign({}, ENEMIES[id], custom);
     } else {
-      ENEMIES[custom.id] = custom;
+      ENEMIES[id] = { id, ...custom };
     }
   });
 })();
+
+/** Gibt alle Gegner als Array zurück (für den Editor). */
+function getEnemyList() {
+  return Object.values(ENEMIES);
+}
 
 function getEnemy(enemyId) {
   const enemy = ENEMIES[enemyId];
@@ -456,3 +457,4 @@ function getEnemy(enemyId) {
     deckIds: [...deckIds],
   };
 }
+

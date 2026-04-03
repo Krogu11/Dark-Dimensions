@@ -1,13 +1,22 @@
 /* ============================================================
-   core/drops.js — Gewichtetes Drop-System mit Seeded RNG
+   core/drops.js — Gewichtetes Drop-System
    ============================================================
-   Verwendung:
-     const result = resolveDropForEnemy(enemy, rank, type);
-     // → { card, key, totalWeight, roll } | null
+   Einheitliche Droptabelle — kein Rang mehr erforderlich.
 
-   Seeded RNG (Mulberry32-Algorithmus):
-     const rng  = createSeededRNG(12345);
-     const roll = rng(); // → float [0, 1)
+   Drop-Format (neu):
+     enemy.dropTable.drops = [{ cardId, weight }, ...]
+
+   Legacy-Format (Rückwärtskompatibilität):
+     enemy.dropTable.S_POW / A_POW / … / TEC
+     → Fallback-Kette: S_POW → A_POW → … → TEC
+
+   Öffentliche API:
+     resolveDropForEnemy(enemy [, seed])
+     simulateDrops(enemy, n [, seed])
+     analyzeDropPool(dropTable)
+     weightedDraw(pool [, rngFn])
+     createSeededRNG(seed)
+     setDropSeed(seed) / clearDropSeed()
    ============================================================ */
 
 /* ──────────────────────────────────────────────────
@@ -57,35 +66,35 @@ function weightedDraw(pool, rngFn) {
     roll -= entry.weight || 1;
     if (roll <= 0) return { entry, roll: rawRoll, totalWeight };
   }
-  // Fallback: letztes Element
+  /* Fallback: letztes Element */
   return { entry: pool[pool.length - 1], roll: rawRoll, totalWeight };
 }
 
 /* ──────────────────────────────────────────────────
-   FALLBACK-KETTE für Drop-Keys
-   Wenn S_POW leer, versuche A_POW → B_POW → C_POW → D_POW
+   EINHEITLICHER POOL-RESOLVER
+   Unterstützt neues Format (drops) + Legacy-Keys
 ────────────────────────────────────────────────── */
-const _powFallback = ['S_POW', 'A_POW', 'B_POW', 'C_POW', 'D_POW'];
-
-function _resolvePool(dropTable, key) {
+/**
+ * Gibt den Drop-Pool für eine dropTable zurück.
+ * Bevorzugt neues Format (dropTable.drops),
+ * fällt sonst auf Legacy-Keys zurück (S_POW → … → TEC).
+ * @param {Object} dropTable
+ * @returns {Array|null}
+ */
+function _getUnifiedPool(dropTable) {
   if (!dropTable) return null;
 
-  const direct = dropTable[key];
-  if (direct && direct.length > 0) return { pool: direct, resolvedKey: key };
-
-  // TEC kann auf D_POW zurückfallen
-  if (key === 'TEC') {
-    if (dropTable['D_POW'] && dropTable['D_POW'].length > 0)
-      return { pool: dropTable['D_POW'], resolvedKey: 'D_POW' };
-    return null;
+  /* Neues Format */
+  if (Array.isArray(dropTable.drops) && dropTable.drops.length > 0) {
+    return dropTable.drops;
   }
 
-  // POW: Fallback-Kette aufwärts prüfen
-  const startIdx = _powFallback.indexOf(key);
-  for (let i = startIdx + 1; i < _powFallback.length; i++) {
-    const fb = _powFallback[i];
-    if (dropTable[fb] && dropTable[fb].length > 0)
-      return { pool: dropTable[fb], resolvedKey: fb };
+  /* Legacy-Format: Fallback-Kette S_POW → A_POW → B_POW → C_POW → D_POW → TEC */
+  const legacyKeys = ['S_POW', 'A_POW', 'B_POW', 'C_POW', 'D_POW', 'TEC'];
+  for (const key of legacyKeys) {
+    if (Array.isArray(dropTable[key]) && dropTable[key].length > 0) {
+      return dropTable[key];
+    }
   }
   return null;
 }
@@ -96,20 +105,16 @@ function _resolvePool(dropTable, key) {
 /**
  * Bestimmt die Drop-Karte für einen Gegner nach dem Kampf.
  * @param {Object}  enemy   — Gegner-Objekt (mit .dropTable)
- * @param {string}  rank    — 'S'|'A'|'B'|'C'|'D'
- * @param {string}  type    — 'POW'|'TEC'
  * @param {number}  [seed]  — optionaler Seed für deterministische Tests
- * @returns {{ card, key, resolvedKey, totalWeight, roll } | null}
+ * @returns {{ card, totalWeight, roll, dropChance } | null}
  */
-function resolveDropForEnemy(enemy, rank, type, seed) {
+function resolveDropForEnemy(enemy, seed) {
   if (!enemy || !enemy.dropTable) return null;
 
-  const key = getRankDropKey(rank, type);
-  const rngFn = seed !== undefined ? createSeededRNG(seed) : _rng;
-  const resolved = _resolvePool(enemy.dropTable, key);
-  if (!resolved) return null;
+  const pool = _getUnifiedPool(enemy.dropTable);
+  if (!pool || pool.length === 0) return null;
 
-  const { pool, resolvedKey } = resolved;
+  const rngFn = seed !== undefined ? createSeededRNG(seed) : _rng;
   const drawn = weightedDraw(pool, rngFn);
   if (!drawn) return null;
 
@@ -118,12 +123,10 @@ function resolveDropForEnemy(enemy, rank, type, seed) {
 
   return {
     card,
-    key,
-    resolvedKey,
-    totalWeight: drawn.totalWeight,
-    roll: drawn.roll,
-    entryWeight: drawn.entry.weight,
-    dropChance: Math.round((drawn.entry.weight / drawn.totalWeight) * 10000) / 100,
+    totalWeight:  drawn.totalWeight,
+    roll:         drawn.roll,
+    entryWeight:  drawn.entry.weight,
+    dropChance:   Math.round((drawn.entry.weight / drawn.totalWeight) * 10000) / 100,
   };
 }
 
@@ -133,19 +136,15 @@ function resolveDropForEnemy(enemy, rank, type, seed) {
 /**
  * Simuliert N Drops und gibt Häufigkeitsstatistiken zurück.
  * @param {Object} enemy
- * @param {string} rank
- * @param {string} type
  * @param {number} n       — Anzahl Simulationen
  * @param {number} [seed]  — Seed für reproduzierbare Ergebnisse
  * @returns {Array<{cardId, name, count, percent, rarity}>}
  */
-function simulateDrops(enemy, rank, type, n, seed) {
-  const rngFn = seed !== undefined ? createSeededRNG(seed) : () => Math.random();
-  const key   = getRankDropKey(rank, type);
-  const resolved = _resolvePool(enemy.dropTable, key);
-  if (!resolved) return [];
+function simulateDrops(enemy, n, seed) {
+  const pool = _getUnifiedPool(enemy && enemy.dropTable);
+  if (!pool || pool.length === 0) return [];
 
-  const { pool } = resolved;
+  const rngFn = seed !== undefined ? createSeededRNG(seed) : () => Math.random();
   const counts = {};
 
   for (let i = 0; i < n; i++) {
@@ -173,16 +172,14 @@ function simulateDrops(enemy, rank, type, n, seed) {
    GEWICHTSANALYSE (für Editor-Balancing-UI)
 ────────────────────────────────────────────────── */
 /**
- * Gibt für einen Drop-Key alle Karten mit Prozentanteil zurück.
+ * Gibt alle Karten der einheitlichen Droptabelle mit Prozentanteil zurück.
  * @param {Object} dropTable
- * @param {string} key
  * @returns {Array<{cardId, name, weight, totalWeight, percent, rarity}>}
  */
-function analyzeDropPool(dropTable, key) {
-  const resolved = _resolvePool(dropTable, key);
-  if (!resolved) return [];
+function analyzeDropPool(dropTable) {
+  const pool = _getUnifiedPool(dropTable);
+  if (!pool || pool.length === 0) return [];
 
-  const { pool } = resolved;
   const total = pool.reduce((s, e) => s + (e.weight || 1), 0);
 
   return pool.map(entry => {

@@ -1,58 +1,62 @@
-/* ============================================================
+﻿/* ============================================================
    ui/reward.js — Karten-Belohnung, Shop, Lager
    ============================================================
-   Neu: Ranking-basiertes Drop-System nach gewonnenem Kampf
+   Vereinfachtes Drop-System: kein Rang, einheitliche Droptabelle.
    ============================================================ */
 
 /* ─────────────────────────────────────────────────────
-   REWARD SCREEN: Rang-Anzeige + 1 Drop-Karte
+   REWARD SCREEN: Sieg-Anzeige + 1 Drop-Karte
 ───────────────────────────────────────────────────── */
 function showRewardScreen() {
+  /* _isFreeDuel SOFORT sichern — vor möglichen Side-Effects */
+  const isFreeDuel = !!RUN_STATE._isFreeDuel;
+
   const bs    = BATTLE_STATE;
   const enemy = bs.enemy;
 
-  // Rang berechnen (ranking.js)
-  const rankResult   = calculateBattleRank(
-    bs.rankingStats,
-    bs.playerLP,
-    bs.rankingStats.startPlayerLP || RUN_STATE.maxHP
-  );
+  /* Drop aus einheitlicher Tabelle ziehen (drops.js) */
+  const dropResult  = enemy ? resolveDropForEnemy(enemy) : null;
+  const droppedCard = dropResult ? dropResult.card : null;
 
-  // Drop-Karte ermitteln (drops.js)
-  const dropResult   = enemy ? resolveDropForEnemy(enemy, rankResult.rank, rankResult.type) : null;
-  const droppedCard  = dropResult ? dropResult.card : null;
-
-  renderRankRewardScreen(rankResult, droppedCard, dropResult);
+  _renderRewardScreen(droppedCard, dropResult, isFreeDuel);
   showScreen('reward');
 }
 
 /* ─────────────────────────────────────────────────────
-   RANG-REWARD RENDERN
+   REWARD SCREEN RENDERN
 ───────────────────────────────────────────────────── */
-function renderRankRewardScreen(rankResult, droppedCard, dropResult) {
+function _renderRewardScreen(droppedCard, dropResult, isFreeDuel) {
   const container = document.getElementById('reward-cards');
   if (!container) return;
   container.innerHTML = '';
 
-  // Rang-Buchstabe updaten
-  const rankEl  = document.getElementById('reward-rank-letter');
-  const typeEl  = document.getElementById('reward-rank-type');
-  const scoreEl = document.getElementById('reward-rank-score');
-  const subEl   = document.getElementById('reward-sub-text');
+  /* Sieg-Header animieren */
+  const victoryEl = document.getElementById('reward-victory-icon');
+  if (victoryEl && window.gsap) {
+    gsap.fromTo(victoryEl,
+      { scale: 0.3, opacity: 0 },
+      { scale: 1,   opacity: 1, duration: 0.5, ease: 'elastic.out(1,0.5)', delay: 0.1 }
+    );
+  }
 
-  if (rankEl) {
-    rankEl.textContent = rankResult.rank;
-    rankEl.style.color = getRankColor(rankResult.rank);
-    if (window.gsap) {
-      gsap.fromTo(rankEl,
-        { scale: 0.3, opacity: 0 },
-        { scale: 1,   opacity: 1, duration: 0.5, ease: 'elastic.out(1,0.5)', delay: 0.1 }
-      );
+  const subEl = document.getElementById('reward-sub-text');
+  if (subEl) {
+    if (!droppedCard) {
+      subEl.textContent = 'KEINE KARTE VERFÜGBAR';
+    } else if (isFreeDuel) {
+      subEl.textContent = 'BEUTE — geht direkt ins Kartenbuch';
+    } else {
+      subEl.textContent = 'DEIN DROP';
     }
   }
-  if (typeEl)  typeEl.textContent  = rankResult.type === 'TEC' ? '🧠 TAKTIK' : '⚔ KRAFT';
-  if (scoreEl) scoreEl.textContent = `Score: ${rankResult.score}`;
-  if (subEl)   subEl.textContent   = droppedCard ? 'DEIN DROP' : 'KEINE KARTE VERFÜGBAR';
+
+  /* "Überspringen"-Button kontextuell anpassen */
+  const skipBtn = document.getElementById('btn-skip-reward');
+  if (skipBtn) {
+    skipBtn.textContent = isFreeDuel
+      ? 'Ablehnen — zurück zur Liste'
+      : 'Überspringen — weiter';
+  }
 
   // Kein Drop? Weiter-Button anzeigen
   if (!droppedCard) {
@@ -67,36 +71,58 @@ function renderRankRewardScreen(rankResult, droppedCard, dropResult) {
   const wrapper = document.createElement('div');
   wrapper.className = 'reward-card-wrapper';
 
-  const el = createCardEl(droppedCard, false);
-  el.style.transform = 'scale(1.2)';
-
-  const info = document.createElement('div');
-  info.className = 'reward-card-info';
-
-  const typeNames = { monster:'Monster', spell:'Zauber', trap:'Falle', fusion:'Fusion' };
+  const typeNames   = { monster:'Monster', spell:'Zauber', trap:'Falle', fusion:'Fusion' };
   const rarityNames = { common:'Gewöhnlich', uncommon:'Ungewöhnlich', rare:'Selten', epic:'Episch', legendary:'Legendär' };
+  const typeIcon    = { monster:'🐉', spell:'✨', trap:'⚡', fusion:'⚗' }[droppedCard.type] || '?';
 
   // Drop-Chance anzeigen (wenn verfügbar)
   const chanceStr = dropResult
     ? `<div class="reward-drop-chance">${dropResult.dropChance}% Drop-Chance</div>`
     : '';
 
+  // Artwork-Block wenn Bild vorhanden, sonst kleines Karten-Element
+  if (droppedCard.image) {
+    const artWrap = document.createElement('div');
+    artWrap.className = 'reward-art-wrap';
+    artWrap.innerHTML = `
+      <img src="${droppedCard.image}" class="reward-art-img" alt="${droppedCard.name}">
+      <div class="reward-art-overlay rarity-${droppedCard.rarity}">
+        <span class="reward-art-icon">${typeIcon}</span>
+        <span class="reward-art-name">${droppedCard.name}</span>
+      </div>
+    `;
+    wrapper.appendChild(artWrap);
+  } else {
+    const el = createCardEl(droppedCard, false);
+    el.style.transform = 'scale(1.2)';
+    wrapper.appendChild(el);
+  }
+
+  const info = document.createElement('div');
+  info.className = 'reward-card-info';
   info.innerHTML = `
     <div class="reward-card-name">${droppedCard.name}</div>
     <div class="reward-card-type">${typeNames[droppedCard.type] || droppedCard.type}</div>
     <div class="reward-card-rarity rarity-${droppedCard.rarity}">
       ${rarityNames[droppedCard.rarity] || droppedCard.rarity}
     </div>
-    ${droppedCard.effect ? `<div class="reward-effect">${getEffectDescription(droppedCard.effect)}</div>` : ''}
+    ${droppedCard.type === 'monster' || droppedCard.type === 'fusion' ? `
+      <div class="reward-card-stats">⚔ ${droppedCard.atk} / 🛡 ${droppedCard.def}</div>` : ''}
+    ${(droppedCard.effects?.length > 0 || droppedCard.effect) ? `<div class="reward-effect">${getEffectDescription(droppedCard.effects || droppedCard.effect, droppedCard)}</div>` : ''}
     ${chanceStr}
   `;
 
   const btn = document.createElement('button');
-  btn.className   = 'btn-reward-pick';
-  btn.textContent = '✓ Dem Deck hinzufügen';
-  btn.addEventListener('click', () => pickRewardCard(droppedCard));
+  btn.className = 'btn-reward-pick';
+  if (isFreeDuel) {
+    // Freies Duell: Karte geht direkt ins Kartenbuch, nicht ins Run-Deck
+    btn.textContent = '🎒 Zum Beutel hinzufügen';
+    btn.addEventListener('click', () => pickFreeDuelCard(droppedCard));
+  } else {
+    btn.textContent = '✓ Dem Deck hinzufügen';
+    btn.addEventListener('click', () => pickRewardCard(droppedCard));
+  }
 
-  wrapper.appendChild(el);
   wrapper.appendChild(info);
   wrapper.appendChild(btn);
   container.appendChild(wrapper);
@@ -109,16 +135,84 @@ function renderRankRewardScreen(rankResult, droppedCard, dropResult) {
   }
 }
 
+/**
+ * Kampagnen-Run: Karte ins Run-Deck + Buffer.
+ * Buffer wird erst bei Boss-Sieg (commitRunProgress) permanent ins Kartenbuch übernommen.
+ */
 function pickRewardCard(card) {
   RUN_STATE.deck.push(cloneCard(card));
   battleLog && battleLog(`🃏 ${card.name} dem Deck hinzugefügt`, 'summon');
-  showScreen('map');
-  renderMap();
+
+  /* In Run-Buffer aufnehmen — wird nach Boss-Sieg permanent ins Kartenbuch übertragen */
+  if (typeof earnRunCard === 'function') earnRunCard(card.id);
+
+  _afterReward();
+}
+
+/**
+ * Freies Duell: Karte sofort und dauerhaft ins Kartenbuch (Beutel).
+ * Kein Einfluss auf Run-Deck oder Run-Buffer.
+ */
+function pickFreeDuelCard(card) {
+  console.log('[FreeDuel] pickFreeDuelCard aufgerufen:', card?.id, card?.name);
+  console.log('[FreeDuel] SAVE_STATE:', SAVE_STATE ? 'vorhanden' : 'NULL');
+  console.log('[FreeDuel] SAVE_STATE.slot:', SAVE_STATE?.slot ? 'vorhanden' : 'NULL');
+
+  if (!card || !card.id) {
+    console.error('[FreeDuel] Karte hat keine ID!', card);
+    _afterReward();
+    return;
+  }
+
+  if (SAVE_STATE && SAVE_STATE.slot) {
+    // cardCollection ist ein Array — mehrere Kopien derselben Karte sind erlaubt
+    if (!Array.isArray(SAVE_STATE.slot.cardCollection)) {
+      SAVE_STATE.slot.cardCollection = [];
+    }
+    SAVE_STATE.slot.cardCollection.push(card.id);
+    console.log('[FreeDuel] cardCollection nach Push:', SAVE_STATE.slot.cardCollection);
+
+    if (typeof saveCurrentSlotWithFeedback === 'function') {
+      saveCurrentSlotWithFeedback('Spiel gespeichert');
+      console.log('[FreeDuel] saveCurrentSlotWithFeedback() aufgerufen');
+    } else if (typeof saveCurrentSlot === 'function') {
+      saveCurrentSlot();
+      console.log('[FreeDuel] saveCurrentSlot() aufgerufen');
+    } else {
+      console.error('[FreeDuel] saveCurrentSlot ist keine Funktion!');
+    }
+  } else {
+    console.error('[FreeDuel] Kein SAVE_STATE.slot — Karte kann nicht gespeichert werden!');
+  }
+
+  battleLog && battleLog(`🎒 ${card.name} zum Beutel hinzugefügt`, 'summon');
+  _afterReward();
 }
 
 function skipReward() {
-  showScreen('map');
-  renderMap();
+  _afterReward();
+}
+
+/** Zentrale Rückkehr-Logik nach Reward-Screen. */
+function _afterReward() {
+  if (RUN_STATE._freeDuelReturn) {
+    /* Freies Duell: direkt zurück zur Gegner-Liste */
+    RUN_STATE._freeDuelReturn = false;
+    RUN_STATE._isFreeDuel     = false;
+    renderFreeDuelScreen();
+    showScreen('freeduel');
+  } else if (RUN_STATE._worldMode && RUN_STATE._dungeonComplete) {
+    /* World-Mode: Dungeon abgeschlossen → zurück zur Weltenkarte */
+    if (typeof completeDungeonLocation === 'function') {
+      completeDungeonLocation();
+    } else {
+      strictDataError('Dungeon-Abschluss konnte nicht verarbeitet werden.', 'Worldmap-Funktion completeDungeonLocation fehlt.');
+    }
+  } else {
+    /* Normaler Run: zurück zur Dungeon-Karte */
+    showScreen('map');
+    renderMap();
+  }
 }
 
 /* ─────────────────────────────────────────────────────
@@ -126,7 +220,25 @@ function skipReward() {
 ───────────────────────────────────────────────────── */
 let _shopOffer = [];
 
+/* Flag: Shop wurde vom Hauptmenü aus geöffnet (kein Map-Node) */
+let _shopFromMainMenu = false;
+let _shopReturnMode   = 'mainmenu';
+
 function showShopScreen() {
+  _shopFromMainMenu = false;
+  _shopOffer = buildShopOffer();
+  renderShop();
+  showScreen('shop');
+}
+
+/**
+ * Shop aus dem Hauptmenü öffnen.
+ * DS kommen aus dem persistenten Meta-State, gekaufte Karten gehen in die Sammlung.
+ */
+function showMainMenuShop(returnMode = 'mainmenu') {
+  if (!SAVE_STATE || !SAVE_STATE.slot) return;
+  _shopFromMainMenu = true;
+  _shopReturnMode = returnMode;
   _shopOffer = buildShopOffer();
   renderShop();
   showScreen('shop');
@@ -137,7 +249,7 @@ function renderShop() {
   if (!container) return;
   container.innerHTML = '';
 
-  document.getElementById('shop-gold').textContent = RUN_STATE.gold;
+  document.getElementById('shop-ds').textContent = typeof getDimensionsSeelen === 'function' ? getDimensionsSeelen() : 0;
 
   _shopOffer.forEach((card, i) => {
     const wrapper = document.createElement('div');
@@ -146,12 +258,13 @@ function renderShop() {
     const el       = createCardEl(card, false);
     const priceTag = document.createElement('div');
     priceTag.className   = 'shop-price';
-    priceTag.textContent = `💰 ${card.price} Gold`;
+    priceTag.textContent = `✦ ${card.price} DS`;
 
     const btn = document.createElement('button');
     btn.className   = 'btn-shop-buy';
-    btn.textContent = RUN_STATE.gold >= card.price ? 'Kaufen' : 'Zu teuer';
-    btn.disabled    = RUN_STATE.gold < card.price;
+    const canAfford = typeof getDimensionsSeelen === 'function' ? getDimensionsSeelen() >= card.price : false;
+    btn.textContent = canAfford ? 'Kaufen' : 'Zu teuer';
+    btn.disabled    = !canAfford;
     btn.addEventListener('click', () => buyCard(i));
 
     wrapper.appendChild(el);
@@ -163,50 +276,54 @@ function renderShop() {
       gsap.fromTo(wrapper, { opacity:0, x:-20 }, { opacity:1, x:0, duration:0.4, delay:i*0.1 });
     }
   });
-
-  renderRemoveCardZone();
 }
 
 function buyCard(offerIndex) {
   const card = _shopOffer[offerIndex];
-  if (!card || RUN_STATE.gold < card.price) return;
-  RUN_STATE.gold -= card.price;
-  RUN_STATE.deck.push(cloneCard(card));
+  if (!card || typeof spendDimensionsSeelen !== 'function' || !spendDimensionsSeelen(card.price, false)) return;
+
+  if (_shopFromMainMenu) {
+    /* Hauptmenü-Shop: Karte geht in die persistente Sammlung des Slots */
+    if (SAVE_STATE && SAVE_STATE.slot) {
+      if (!SAVE_STATE.slot.cardCollection) SAVE_STATE.slot.cardCollection = [];
+      SAVE_STATE.slot.cardCollection.push(card.id);
+    }
+  } else {
+    /* Run-Shop: Karte geht ins aktive Run-Deck */
+    RUN_STATE.deck.push(cloneCard(card));
+  }
+
   _shopOffer.splice(offerIndex, 1);
+  if (_shopFromMainMenu) {
+    if (typeof saveCurrentSlotWithFeedback === 'function') {
+      saveCurrentSlotWithFeedback('Spiel gespeichert');
+    } else if (typeof saveCurrentSlot === 'function') {
+      saveCurrentSlot();
+    }
+  }
   renderShop();
 }
 
-function renderRemoveCardZone() {
-  const zone = document.getElementById('shop-remove-zone');
-  if (!zone) return;
-  zone.innerHTML = `
-    <h3>🗑 Karte aus Deck entfernen</h3>
-    <p style="font-size:12px;color:#888">Kosten: 25 Gold. Stärkt dein Deck durch Fokussierung.</p>
-    <div id="remove-card-list" class="remove-card-list"></div>
-  `;
-
-  const list = document.getElementById('remove-card-list');
-  RUN_STATE.deck.forEach((card, i) => {
-    const el = document.createElement('div');
-    el.className = 'remove-card-item';
-    el.innerHTML = `<span>${card.name}</span><span class="rarity-${card.rarity}">${card.rarity}</span>`;
-    el.addEventListener('click', () => removeCardFromDeck(i));
-    list.appendChild(el);
-  });
-}
-
-function removeCardFromDeck(index) {
-  if (RUN_STATE.gold < 25)          { alert('Nicht genug Gold (25 benötigt)'); return; }
-  if (RUN_STATE.deck.length <= 5)   { alert('Deck muss mindestens 5 Karten haben'); return; }
-  RUN_STATE.deck.splice(index, 1);
-  RUN_STATE.gold -= 25;
-  renderShop();
-}
 
 function leaveShop() {
-  completeNode(RUN_STATE.currentNodeId);
-  showScreen('map');
-  renderMap();
+  if (_shopFromMainMenu) {
+    _shopFromMainMenu = false;
+    if (_shopReturnMode === 'hub' && typeof showHubScreen === 'function' && typeof _getWorldMapData === 'function') {
+      const worldMap = _getWorldMapData();
+      const currentLoc = worldMap ? worldMap.find(loc => loc.id === WORLD_STATE.currentLocationId) : null;
+      if (currentLoc) {
+        showHubScreen(currentLoc);
+        return;
+      }
+    }
+    if (typeof renderMainMenu === 'function') renderMainMenu();
+    showScreen('mainmenu');
+  } else {
+    /* Run-Shop: Node abschließen und zurück zur Karte */
+    completeNode(RUN_STATE.currentNodeId);
+    showScreen('map');
+    renderMap();
+  }
 }
 
 /* ─────────────────────────────────────────────────────
@@ -230,42 +347,9 @@ function restHeal() {
   renderMap();
 }
 
-function restRemoveCard() {
-  showRemoveCardScreen();
-}
-
-function showRemoveCardScreen() {
-  const overlay = document.getElementById('remove-overlay');
-  if (!overlay) return;
-
-  const list = document.getElementById('remove-overlay-list');
-  list.innerHTML = '';
-
-  RUN_STATE.deck.forEach((card, i) => {
-    const row = document.createElement('div');
-    row.className = 'remove-overlay-row';
-    row.innerHTML = `
-      <div class="remove-row-card">
-        <span>${card.name}</span>
-        <span class="rarity-${card.rarity}">${card.rarity}</span>
-        ${card.type === 'monster' ? `<span>ATK ${card.atk}</span>` : ''}
-      </div>
-      <button class="btn-remove" onclick="removeForRest(${i})">Entfernen</button>
-    `;
-    list.appendChild(row);
-  });
-
-  overlay.style.display = 'flex';
-}
-
-function removeForRest(index) {
-  RUN_STATE.deck.splice(index, 1);
-  document.getElementById('remove-overlay').style.display = 'none';
+/** Lagerfeuer überspringen — kein Heileffekt, Node abschließen und weiter. */
+function restSkip() {
   completeNode(RUN_STATE.currentNodeId);
   showScreen('map');
   renderMap();
-}
-
-function closeRemoveOverlay() {
-  document.getElementById('remove-overlay').style.display = 'none';
 }

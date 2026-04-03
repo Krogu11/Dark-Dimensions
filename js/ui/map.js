@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    ui/map.js — World Map Rendering
    SVG-basiert: Knoten + Verbindungslinien
    ============================================================ */
@@ -7,15 +7,19 @@ function renderMap() {
   const container = document.getElementById('map-container');
   if (!container) return;
 
-  const actData = getActData(RUN_STATE.currentActIndex);
+  const actData = (typeof getRunActData === 'function')
+    ? getRunActData()
+    : (RUN_STATE.currentActId ? getActData(RUN_STATE.currentActId) : getActData(RUN_STATE.currentActIndex));
   if (!actData) return;
+
+  if (typeof setMusicPlaylist === 'function') setMusicPlaylist(MUSIC_PLAYLISTS.campaign);
 
   // Hintergrund
   document.getElementById('screen-map').style.background = actData.background;
 
   // HUD aktualisieren
   document.getElementById('run-hp').textContent   = RUN_STATE.playerHP;
-  document.getElementById('run-gold').textContent = RUN_STATE.gold;
+  document.getElementById('run-ds').textContent = typeof getDimensionsSeelen === 'function' ? getDimensionsSeelen() : 0;
   document.getElementById('run-act-name').textContent = actData.actName;
   document.getElementById('run-deck-count').textContent = RUN_STATE.deck.length;
   document.getElementById('run-maxhp').textContent = RUN_STATE.maxHP;
@@ -40,7 +44,6 @@ function renderMap() {
   // ── Linien zuerst (hinter Knoten) ──
   actData.nodes.forEach(node => {
     node.next.forEach(nextId => {
-      if (nextId === 'act2' || nextId === 'act3' || nextId === 'victory') return;
       const target = actData.nodes.find(n => n.id === nextId);
       if (!target) return;
 
@@ -125,7 +128,8 @@ const NODE_LABELS = {
 
 /* ── Node-Klick-Handler ── */
 function onNodeClick(node) {
-  RUN_STATE.currentNodeId = node.id;
+  RUN_STATE.currentNodeId   = node.id;
+  RUN_STATE.currentNodeType = node.type; // für Boss-Erkennung in engine.js
 
   switch (node.type) {
     case 'battle':

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -51,6 +51,8 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 .btn-sm{padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:4px;cursor:pointer;font-size:11px;}
 .btn-sm:hover{border-color:var(--accent);}
 .btn-danger-sm{padding:4px 10px;background:transparent;border:1px solid var(--red);color:var(--red);border-radius:4px;cursor:pointer;font-size:11px;}
+/* Effekt-Builder */
+#cf-effects-builder{background:#0a0a18;border:1px solid var(--border);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;}
 /* Card Preview */
 .card-preview-wrap{position:sticky;top:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;}
 .card-preview-wrap h4{font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:10px;}
@@ -86,10 +88,34 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 .drop-add-row{display:flex;gap:8px;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
 .drop-add-row select,.drop-add-row input{flex:1;}
 .drop-add-row button{padding:4px 10px;background:var(--accent);border:none;color:#fff;border-radius:4px;cursor:pointer;font-size:11px;}
-/* Act Editor */
-.act-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;}
-.act-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer;}
+/* Act Editor — Redesigned */
+.act-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0;margin-bottom:16px;overflow:hidden;}
+.act-header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.03);}
 .act-title{font-weight:700;font-size:14px;color:var(--gold);flex:1;}
+.ae-mode-toggle{display:flex;gap:0;border:1px solid var(--border);border-radius:5px;overflow:hidden;}
+.ae-mode-btn{padding:4px 12px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:11px;font-weight:600;transition:background .15s,color .15s;}
+.ae-mode-btn.active{background:var(--accent);color:#fff;}
+.ae-body{padding:16px;}
+.ae-section{margin-bottom:16px;}
+.ae-section-label{font-size:10px;color:var(--gold);letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid rgba(255,215,0,.15);}
+.ae-row{display:flex;gap:12px;align-items:center;margin-bottom:6px;flex-wrap:wrap;}
+.ae-dist-row{display:grid;grid-template-columns:60px 1fr 45px;align-items:center;gap:8px;margin-bottom:5px;}
+.ae-dist-label{font-size:11px;color:var(--muted);}
+.ae-dist-val{font-size:11px;color:var(--text);text-align:right;font-weight:700;}
+.ae-dist-slider{-webkit-appearance:none;width:100%;height:5px;border-radius:3px;background:var(--border);outline:none;cursor:pointer;}
+.ae-dist-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;}
+.ae-pool-entry{display:flex;align-items:center;gap:6px;margin:4px 0;padding:6px 8px;background:var(--bg);border-radius:5px;border:1px solid rgba(255,255,255,.05);}
+.ae-pool-entry select,.ae-pool-entry input{padding:3px 5px;background:var(--surface);border:1px solid var(--border);border-radius:3px;color:var(--text);font-size:11px;}
+.ae-pool-weight{width:55px;}
+.ae-pool-pct{width:42px;text-align:right;font-size:10px;color:var(--muted);}
+.ae-pool-del{color:var(--red);cursor:pointer;font-size:15px;padding:0 2px;flex-shrink:0;}
+.ae-pool-del:hover{color:#ff6666;}
+.ae-boss-row{display:flex;align-items:center;gap:10px;}
+/* Visualization */
+.ae-viz-wrap{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;margin-top:12px;}
+.ae-viz-label{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
+.ae-viz-svg{width:100%;height:120px;display:block;}
+/* Node rows (for fixed mode) */
 .node-row{display:flex;align-items:flex-start;gap:12px;padding:10px;background:var(--surface2);border-radius:6px;margin-bottom:8px;}
 .node-badge{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;flex-shrink:0;}
 .node-battle{background:rgba(255,136,68,.2);color:#ff8844;border:1px solid #ff8844;}
@@ -105,6 +131,10 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 .pt-normal{background:rgba(100,100,200,.3);color:#aac;}
 .pt-elite{background:rgba(200,100,255,.3);color:#c4f;}
 .pt-boss{background:rgba(255,50,50,.3);color:#f55;}
+/* Distribution bar indicator */
+.ae-dist-total{font-size:10px;padding:3px 8px;border-radius:3px;font-weight:700;}
+.ae-dist-ok{background:rgba(74,222,128,.15);color:#4ade80;border:1px solid rgba(74,222,128,.3);}
+.ae-dist-warn{background:rgba(255,165,0,.15);color:#ffa500;border:1px solid rgba(255,165,0,.3);}
 /* Fusion Recipe */
 .recipe-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border-radius:6px;margin-bottom:6px;}
 .recipe-arrow{color:var(--accent);font-weight:700;font-size:16px;}
@@ -129,6 +159,33 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:#fff;padding:8px 20px;border-radius:20px;font-size:12px;font-weight:700;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;z-index:999;}
 #toast.visible{opacity:1;transform:translateX(-50%) translateY(0);}
 *{scrollbar-width:thin;scrollbar-color:#333 transparent;}
+/* ── Filter-Bar (Karten-Tab) ── */
+.cf-filter-bar{display:flex;flex-direction:column;gap:3px;padding:6px 8px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.15);}
+.cf-filter-select{width:100%;padding:3px 5px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;cursor:pointer;}
+.cf-filter-select:focus{outline:none;border-color:var(--accent);}
+.cf-filter-row{display:flex;gap:4px;}
+.cf-filter-row .cf-filter-select{flex:1;}
+/* ── Card Art ── */
+.cf-art-wrap{display:flex;align-items:center;gap:12px;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;}
+.cf-art-thumb{width:64px;height:86px;border-radius:5px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--surface2);flex-shrink:0;}
+.cf-art-thumb img{width:100%;height:100%;object-fit:cover;}
+.pc-art{width:100%;height:78px;object-fit:cover;border-radius:4px;margin-bottom:4px;}
+/* ── Chip Picker (Gegner Startfeld / Fallen) ── */
+.chip-area{display:flex;flex-wrap:wrap;gap:4px;padding:6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;min-height:34px;margin-bottom:6px;}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:11px;background:var(--surface2);border:1px solid var(--border);}
+.chip.chip-monster{border-color:#ff8844;color:#ff8844;}
+.chip.chip-trap{border-color:#cc44ff;color:#cc44ff;}
+.chip-del{color:var(--red);cursor:pointer;font-size:13px;line-height:1;margin-left:2px;}
+.chip-del:hover{color:#ff6666;}
+.chip-picker-row{display:flex;gap:6px;align-items:center;}
+.chip-search{flex:1;padding:4px 7px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;}
+.chip-search:focus{outline:none;border-color:var(--accent);}
+/* ── Fusion recipe filter ── */
+.recipe-filter{padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;width:220px;}
+/* ── Info tooltip ── */
+.info-hint{display:inline-block;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.12);color:var(--muted);font-size:9px;text-align:center;line-height:14px;cursor:help;margin-left:4px;flex-shrink:0;}
+/* ── Active filter indicator ── */
+.filter-active{border-color:var(--accent)!important;color:var(--accent)!important;}
 </style>
 </head>
 <body>
@@ -149,6 +206,8 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
   <button class="tab-btn"         onclick="switchTab('acts')">🗺 Akte</button>
   <button class="tab-btn"         onclick="switchTab('fusions')">⚗ Fusionen</button>
   <button class="tab-btn"         onclick="switchTab('config')">⚙ Konfiguration</button>
+  <button class="tab-btn"         onclick="switchTab('synergies')">⚗ Synergien</button>
+  <button class="tab-btn"         onclick="switchTab('worldmap')">🌍 Weltenkarte</button>
   <button class="tab-btn"         onclick="switchTab('debug')">🔧 Debug</button>
 </div>
 
@@ -156,10 +215,43 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 <div id="tab-cards" class="tab-panel active">
   <div class="sidebar">
     <div class="sidebar-hdr">🃏 KARTEN <span id="card-count" style="color:var(--muted);font-weight:400;margin-left:4px"></span></div>
-    <input class="sidebar-search" id="card-search" type="text" placeholder="Suchen…" oninput="filterCardList()">
+    <input class="sidebar-search" id="card-search" type="text" placeholder="Name oder ID suchen…" oninput="filterCardList()">
+    <div class="cf-filter-bar">
+      <select class="cf-filter-select" id="cf-filter-type" onchange="filterCardList()">
+        <option value="">— Alle Typen —</option>
+        <option value="monster">⚔ Monster</option>
+        <option value="spell">✨ Zauber</option>
+        <option value="trap">🪤 Falle</option>
+        <option value="fusion">⚗ Fusion</option>
+      </select>
+      <div class="cf-filter-row">
+        <select class="cf-filter-select" id="cf-filter-rarity" onchange="filterCardList()">
+          <option value="">— Seltenheit —</option>
+          <option value="common">Common</option>
+          <option value="uncommon">Uncommon</option>
+          <option value="rare">Rare</option>
+          <option value="epic">Epic</option>
+          <option value="legendary">Legendary</option>
+        </select>
+        <select class="cf-filter-select" id="cf-filter-race" onchange="filterCardList()">
+          <option value="">— Rasse —</option>
+          <option value="Kobold">Kobold</option>
+          <option value="Ork">Ork</option>
+          <option value="Dämon">Dämon</option>
+          <option value="Drache">Drache</option>
+          <option value="Untoter">Untoter</option>
+          <option value="Mensch">Mensch</option>
+          <option value="Bestie">Bestie</option>
+          <option value="Maschine">Maschine</option>
+          <option value="Schattenwesen">Schattenwesen</option>
+          <option value="Elementar">Elementar</option>
+        </select>
+      </div>
+    </div>
     <div class="sidebar-list" id="card-list"></div>
     <div class="sidebar-footer">
       <button onclick="newCard()">+ Neu</button>
+      <button onclick="clearCardFilters()" style="font-size:10px" title="Filter zurücksetzen">↺</button>
       <button onclick="deleteCard()" style="border-color:var(--red);color:var(--red)">🗑</button>
     </div>
   </div>
@@ -231,14 +323,16 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
       <h3>🎮 RUN-KONFIGURATION</h3>
       <div class="field-row">
         <div class="field-group"><label>Start-LP (Spieler)</label><input id="cfg-startlp" type="number" value="4000" min="1000" max="20000"></div>
-        <div class="field-group"><label>Start-Gold</label><input id="cfg-startgold" type="number" value="50" min="0" max="1000"></div>
       </div>
       <div class="field-row">
         <div class="field-group"><label>Max Handkarten</label><input id="cfg-maxhand" type="number" value="7" min="3" max="12"></div>
         <div class="field-group"><label>Lager-Heilung (%)</label><input id="cfg-restratio" type="number" value="30" min="5" max="100"></div>
       </div>
       <div class="field-row">
-        <div class="field-group"><label>Shop: Karte entfernen (Gold)</label><input id="cfg-removecost" type="number" value="25" min="0" max="200"></div>
+        <div class="field-group"><label>Beschwörungen/Runde (Spieler) <span class="info-hint" title="Wie viele Monster der Spieler pro Runde beschwören darf (Normal + Fusion zählen zusammen)">i</span></label><input id="cfg-maxsummons" type="number" value="2" min="1" max="5"></div>
+      </div>
+      <div class="field-row">
+        <div class="field-group"><label>Shop: Karte entfernen (DS)</label><input id="cfg-removecost" type="number" value="25" min="0" max="200"></div>
         <div class="field-group"><label>Flucht-Kosten (%)</label><input id="cfg-fleecost" type="number" value="15" min="1" max="50"></div>
       </div>
     </div>
@@ -264,7 +358,89 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
       </div>
     </div>
 
+    <div class="config-section">
+      <h3>🎵 MUSIK PLAYLISTS</h3>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:12px">
+        Ein Track pro Zeile. Menü gilt für Titel, Freies Duell und Hauptmenü-Shop.
+        Kampagne gilt für Worldmap, Dungeons und Kämpfe. Ruhig/Story gilt für Hubs, Story und Dialoge.
+      </p>
+      <div class="field-group">
+        <label>Menü Playlist</label>
+        <textarea id="cfg-music-menu" rows="4" placeholder="audio/menu_theme_1.mp3&#10;audio/menu_theme_2.mp3"></textarea>
+      </div>
+      <div class="field-group">
+        <label>Kampagnen Playlist</label>
+        <textarea id="cfg-music-campaign" rows="4" placeholder="audio/campaign_theme_1.mp3&#10;audio/campaign_theme_2.mp3"></textarea>
+      </div>
+      <div class="field-group">
+        <label>Ruhig / Story Playlist</label>
+        <textarea id="cfg-music-story" rows="4" placeholder="audio/story_theme_1.mp3&#10;audio/story_theme_2.mp3"></textarea>
+      </div>
+    </div>
+
+    <div class="config-section">
+      <h3>🎮 FREIES DUELL — GEGNER-REIHENFOLGE</h3>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:12px">
+        Lege fest, in welcher Reihenfolge die Gegner im Freien Duell angezeigt werden. Nutze die Pfeile zum Verschieben.
+        Gegner, die nicht in der Liste stehen, werden am Ende angehängt.
+      </p>
+      <div id="roster-order-list" style="display:flex;flex-direction:column;gap:5px;max-width:520px"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn-sm" onclick="resetRosterOrder()">↩ Standard wiederherstellen</button>
+      </div>
+    </div>
+
     <button class="btn-save" style="align-self:flex-start" onclick="saveConfig()">✓ Konfiguration speichern</button>
+  </div>
+</div>
+
+<!-- ══════════ TAB: SYNERGIEN ══════════ -->
+<div id="tab-synergies" class="tab-panel" style="flex-direction:column;overflow:hidden">
+  <div style="padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0">
+    <span style="font-size:11px;color:var(--muted)">Passe Rassen-Synergien für besseres Balancing an. Änderungen überschreiben nur die Werte — der Typ bleibt erhalten.</span>
+    <button class="btn-save" style="margin-left:auto" onclick="saveSynergies()">✓ Synergien speichern</button>
+    <button class="btn-sm" onclick="resetSynergies()">↩ Zurücksetzen</button>
+  </div>
+  <div id="synergy-editor-area" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px"></div>
+</div>
+
+<!-- ══════════ TAB: WELTENKARTE ══════════ -->
+<div id="tab-worldmap" class="tab-panel" style="flex-direction:column;overflow:hidden">
+
+  <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0">
+    <span style="font-weight:700;color:var(--gold);font-size:12px;letter-spacing:1px">🌍 WELTENKARTE</span>
+    <span style="color:var(--muted);font-size:11px">Klicke auf die Karte um einen Ort zu platzieren. Ziehe Orte um sie zu verschieben.</span>
+    <div style="flex:1"></div>
+    <button class="btn-sm" onclick="addWorldMapLocation()">+ Ort hinzufügen</button>
+    <button class="btn-sm" onclick="clearWorldMap()" style="border-color:var(--red);color:var(--red)">🗑 Karte leeren</button>
+  </div>
+
+  <div style="display:flex;flex:1;overflow:hidden">
+
+    <!-- Canvas: Kartendarstellung -->
+    <div style="flex:1;position:relative;overflow:hidden;background:#0a0c14;border-right:1px solid var(--border)">
+      <div id="wm-editor-canvas" style="position:absolute;inset:0;cursor:crosshair" onclick="wmCanvasClick(event)">
+        <!-- SVG Verbindungslinien -->
+        <svg id="wm-editor-svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></svg>
+        <!-- Nodes werden dynamisch gerendert -->
+        <div id="wm-editor-nodes" style="position:absolute;inset:0"></div>
+        <!-- Leere-Karte-Hinweis -->
+        <div id="wm-empty-hint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--muted);pointer-events:none">
+          <div style="font-size:32px">🗺</div>
+          <div>Klicke irgendwo auf die Karte um den ersten Ort zu platzieren</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rechte Seite: Ort-Detailformular -->
+    <div style="width:320px;flex-shrink:0;overflow-y:auto;display:flex;flex-direction:column;gap:0">
+      <div id="wm-detail-panel" style="padding:14px;flex:1">
+        <div style="color:var(--muted);font-size:12px;text-align:center;padding:20px 0">
+          Wähle einen Ort auf der Karte aus, um ihn zu bearbeiten.
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -272,25 +448,9 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 <div id="tab-debug" class="tab-panel">
   <div class="debug-panel">
     <div class="debug-card">
-      <h3>📊 RANG-SIMULATOR</h3>
-      <div class="input-row"><label>Verbliebene LP:</label><input id="dbg-lp" type="number" value="2800"></div>
-      <div class="input-row"><label>Start-LP:</label><input id="dbg-maxlp" type="number" value="4000"></div>
-      <div class="input-row"><label>Rundenanzahl:</label><input id="dbg-turns" type="number" value="4"></div>
-      <div class="input-row"><label>Höchster Einzelschaden:</label><input id="dbg-dmg" type="number" value="2500"></div>
-      <div class="input-row"><label>Gesamtschaden:</label><input id="dbg-total" type="number" value="6000"></div>
-      <div class="input-row"><label>Monster zerstört:</label><input id="dbg-kills" type="number" value="3"></div>
-      <div class="input-row"><label>Spells/Fallen gespielt:</label><input id="dbg-spells" type="number" value="1"></div>
-      <button class="btn-save" style="width:100%" onclick="calcDebugRank()">🎯 Rang berechnen</button>
-      <div class="debug-result" id="dbg-rank-result">—</div>
-    </div>
-    <div class="debug-card">
       <h3>🎲 DROP-TESTER</h3>
       <div class="input-row"><label>Gegner:</label>
         <select id="dbg-enemy" style="flex:1;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)"></select></div>
-      <div class="input-row"><label>Rang:</label>
-        <select id="dbg-rank" style="flex:1;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)">
-          <option>S_POW</option><option>A_POW</option><option>B_POW</option><option>C_POW</option><option>D_POW</option><option>TEC</option>
-        </select></div>
       <div class="input-row"><label>Seed (leer=Zufall):</label><input id="dbg-seed" type="number" placeholder="z.B. 42"></div>
       <div style="display:flex;gap:5px;margin-bottom:8px">
         <button class="btn-save" style="flex:1" onclick="testDrop(1)">1×</button>
@@ -304,9 +464,6 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
       <h3>📈 DROP-CHANCE-ANALYSE</h3>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <select id="dbg-analysis-enemy" onchange="runAnalysis()" style="flex:1;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)"></select>
-        <select id="dbg-analysis-key" onchange="runAnalysis()" style="width:90px;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)">
-          <option>S_POW</option><option>A_POW</option><option>B_POW</option><option>C_POW</option><option>D_POW</option><option>TEC</option>
-        </select>
       </div>
       <div id="dbg-analysis-result"></div>
     </div>
@@ -326,6 +483,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 <script src="js/data/map.js"></script>
 <script src="js/core/ranking.js"></script>
 <script src="js/core/drops.js"></script>
+<script src="js/core/actgenerator.js"></script>
 
 <script>
 /* ═══════════════════════════════════════════════════
@@ -335,7 +493,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 let editorCards   = JSON.parse(JSON.stringify([...ALL_CARDS, ...FUSION_MONSTERS]));
 let editorEnemies = {};
 Object.keys(ENEMIES).forEach(id => { editorEnemies[id] = JSON.parse(JSON.stringify(ENEMIES[id])); });
-let editorActs    = JSON.parse(JSON.stringify(MAP_DATA));
+let editorActs    = JSON.parse(JSON.stringify(MAP_DATA)).map(normalizeEditorAct);
 let editorRecipes = JSON.parse(JSON.stringify(FUSION_RECIPES));
 let editorConfig  = {};
 let editorStarterDeck = [
@@ -349,43 +507,348 @@ try {
   if (saved.cards)   saved.cards.forEach(c => { const i = editorCards.findIndex(x=>x.id===c.id); if(i>=0) editorCards[i]=c; else editorCards.push(c); });
   if (saved.fusionMonsters) saved.fusionMonsters.forEach(c => { const i = editorCards.findIndex(x=>x.id===c.id); if(i>=0) editorCards[i]=c; else editorCards.push(c); });
   if (saved.enemies) saved.enemies.forEach(e => { editorEnemies[e.id] = e; });
-  if (saved.acts)    editorActs = saved.acts;
+  if (saved.acts)    editorActs = saved.acts.map(normalizeEditorAct);
   if (saved.recipes) editorRecipes = saved.recipes;
   if (saved.config)  editorConfig  = saved.config;
   if (saved.starterDeck) editorStarterDeck = saved.starterDeck;
 } catch(e) {}
 
+/* Weltenkarte */
+let editorWorldMap = [];
+function editorActId(act) {
+  if (!act || typeof act !== 'object') return '';
+  if (typeof act.id === 'string' && act.id.trim()) return act.id.trim();
+  if (act.actIndex !== undefined && act.actIndex !== null) return `act_${act.actIndex}`;
+  return '';
+}
+function normalizeEditorWorldMapLocation(loc) {
+  if (!loc || typeof loc !== 'object') return loc;
+  const normalized = { ...loc };
+  if ((!normalized.actId || !String(normalized.actId).trim()) && normalized.actIndex !== undefined && normalized.actIndex !== null) {
+    const act = editorActs.find(a => Number(a.actIndex) === Number(normalized.actIndex));
+    normalized.actId = act ? editorActId(act) : '';
+  }
+  if (normalized.bgm === undefined) normalized.bgm = '';
+  if (normalized.battleBgm === undefined) normalized.battleBgm = '';
+  delete normalized.actIndex;
+  return normalized;
+}
+
+function normalizeEditorAct(act) {
+  if (!act || typeof act !== 'object') return act;
+  return {
+    ...act,
+    bgm: typeof act.bgm === 'string' ? act.bgm : '',
+    battleBgm: typeof act.battleBgm === 'string' ? act.battleBgm : '',
+  };
+}
+try {
+  const saved = JSON.parse(localStorage.getItem('dd_custom') || '{}');
+  if (Array.isArray(saved.worldMap)) editorWorldMap = saved.worldMap.map(normalizeEditorWorldMapLocation);
+} catch(e) {}
+
 let selectedCardId  = null;
 let selectedEnemyId = null;
+let selectedWmLocId = null;   // aktuell ausgewählter Weltenkarten-Ort
 
-const EFFECTS_ALL = [
-  {v:'',label:'— kein Effekt —'},
-  {v:'heal500',label:'Heile 500 LP (Beschwörung)'},{v:'heal800',label:'Heile 800 LP (Falle)'},
-  {v:'heal1000',label:'Heile 1000 LP (Spell)'},{v:'buff400',label:'+400 ATK (bei Beschwörung)'},
-  {v:'buffAllAtk400',label:'+400 ATK alle Monster (Spell)'},{v:'burn600',label:'600 LP Schaden (Beschwörung)'},
-  {v:'burn800',label:'800 LP Schaden (Spell)'},{v:'burn1200',label:'1200 LP Schaden (Spell)'},
-  {v:'drain500',label:'Drain 500 LP (Beschwörung)'},{v:'drain1000',label:'Drain 1000 LP (Spell)'},
-  {v:'destroy1',label:'Zerstöre 1 Gegner-Monster'},{v:'destroyAll',label:'Zerstöre ALLE Gegner-Monster'},
-  {v:'destroyAllSpell',label:'Zerstöre alle feindl. Monster (Spell)'},{v:'destroyAttacker',label:'Zerstöre Angreifer (Falle)'},
-  {v:'destroyAllAtk',label:'Zerstöre alle angreifenden Monster (Falle)'},{v:'weaken500',label:'-500 ATK Gegner-Monster'},
-  {v:'draw1',label:'Ziehe 1 Karte'},{v:'draw2',label:'Ziehe 2 Karten (Spell)'},
-  {v:'revive',label:'Wiedergeburt aus Friedhof'},{v:'taunt',label:'Taunt (muss zuerst angegriffen werden)'},
-  {v:'negate',label:'Negiere einen Angriff (Falle)'},
+/* ═══════════════════════════════════════════════════
+   NEUES EFFEKTSYSTEM v4.0 — Modularer Multi-Effekt-Builder
+═══════════════════════════════════════════════════ */
+
+/**
+ * Alle verfügbaren Effekttypen mit Metadaten.
+ * param: 'amount' | 'count' | 'cardId' | null
+ */
+const EFFECT_TYPES = [
+  // Schaden
+  { type:'burn',          label:'🔥 Direktschaden',           param:'amount', unit:'LP',  default:400,  groups:['monster','fusion','spell','trap'] },
+  { type:'burnPercent',   label:'🔥 Schaden % (Gegner-LP)',   param:'amount', unit:'%',   default:10,   groups:['monster','fusion','spell'] },
+  { type:'drain',         label:'🩸 Drain (Schaden+Heal)',    param:'amount', unit:'LP',  default:500,  groups:['monster','fusion','spell','trap'] },
+  // Heilung
+  { type:'heal',          label:'💚 Heilung',                 param:'amount', unit:'LP',  default:500,  groups:['monster','fusion','spell','trap'] },
+  { type:'healPercent',   label:'💚 Heilung % (max LP)',      param:'amount', unit:'%',   default:10,   groups:['monster','fusion','spell'] },
+  // ATK-Buff
+  { type:'buff',          label:'⬆ Selbst ATK +',            param:'amount', unit:'ATK', default:400,  groups:['monster','fusion'] },
+  { type:'buffDef',       label:'🛡 Selbst DEF +',            param:'amount', unit:'DEF', default:400,  groups:['monster','fusion'] },
+  { type:'buffAll',       label:'⬆ Alle Verbündeten ATK +',  param:'amount', unit:'ATK', default:300,  groups:['monster','fusion','spell'] },
+  { type:'buffDefAll',    label:'🛡 Alle Verbündeten DEF +',  param:'amount', unit:'DEF', default:300,  groups:['monster','fusion','spell'] },
+  // Schwächen
+  { type:'weakenOne',     label:'⬇ Feind ATK −',             param:'amount', unit:'ATK', default:500,  groups:['monster','fusion','spell'] },
+  { type:'weakenDefOne',  label:'⬇ Feind DEF −',             param:'amount', unit:'DEF', default:500,  groups:['monster','fusion','spell'] },
+  { type:'weakenAll',     label:'⬇ Alle Feinde ATK −',       param:'amount', unit:'ATK', default:300,  groups:['monster','fusion','spell'] },
+  // Zerstören
+  { type:'destroy1',      label:'💥 Zerstöre 1 feindl. Monster', param:null, unit:null, default:null, groups:['monster','fusion','spell','trap'] },
+  { type:'destroyAll',    label:'💥 Zerstöre ALLE feindl. Monster', param:null, unit:null, default:null, groups:['monster','fusion','spell'] },
+  { type:'destroyAttacker',label:'💥 Zerstöre Angreifer',    param:null, unit:null, default:null, groups:['trap'] },
+  { type:'destroyAllAtk', label:'💥 Zerstöre alle angreif. Monster', param:null, unit:null, default:null, groups:['trap'] },
+  // Karten
+  { type:'draw',          label:'🃏 Karten ziehen',           param:'count',  unit:'',    default:1,    groups:['monster','fusion','spell'] },
+  { type:'stealHand',     label:'🃏 Karte aus Gegnerhand stehlen', param:null, unit:null, default:null, groups:['monster','fusion','spell'] },
+  { type:'stealField',    label:'⚡ Gegner-Monster übernehmen', param:null, unit:null, default:null, groups:['monster','fusion','spell'] },
+  // Beschwörung
+  { type:'revive',        label:'✨ Letztes Monster aus Friedhof', param:null, unit:null, default:null, groups:['monster','fusion','spell'] },
+  { type:'reviveBest',    label:'✨ Stärkstes Monster aus Friedhof', param:null, unit:null, default:null, groups:['monster','fusion','spell'] },
+  { type:'massRevive',    label:'💀 ALLE Monster aus Friedhof', param:null, unit:null, default:null, groups:['monster','fusion'] },
+  { type:'specialSummon', label:'⚡ Beschwöre Monster (ID)',  param:'cardId', unit:null, default:'',   groups:['monster','fusion','spell'] },
+  // Defensiv
+  { type:'shield',        label:'🛡 Rüstung +',              param:'amount', unit:'',    default:300,  groups:['monster','fusion'] },
+  { type:'taunt',         label:'🛡 Taunt (bevorzugtes Ziel)', param:null, unit:null, default:null, groups:['monster','fusion'] },
+  { type:'negate',        label:'🛡 Angriff negieren',        param:null, unit:null, default:null, groups:['trap'] },
+  // Rasse
+  { type:'raceBuffATK',   label:'⬆ Gleichrassige ATK +',    param:'amount', unit:'ATK', default:150,  groups:['monster','fusion'] },
+  { type:'raceBuffDEF',   label:'🛡 Gleichrassige DEF +',    param:'amount', unit:'DEF', default:150,  groups:['monster','fusion'] },
+  // Passiv
+  { type:'burnOnAttack',  label:'🔥 Brandschaden beim Angriff', param:'amount', unit:'LP', default:200, groups:['monster','fusion'] },
 ];
+
+/* Temporäres Array für Effekte in Bearbeitung */
+let _editingEffects = [];
+
+function getEffectMeta(type) {
+  return EFFECT_TYPES.find(e => e.type === type);
+}
+
+function getEffectsForType(type) {
+  return EFFECT_TYPES.filter(e => e.groups.includes(type));
+}
+
+/* ── Effekt-Builder rendern — field-Typ bekommt eigenen Builder ── */
+function renderEffectBuilder(cardType) {
+  const container = document.getElementById('cf-effects-builder');
+  if (!container) return;
+  if (cardType === 'field') { renderFieldEffectBuilder(container); return; }
+
+  const allowed = getEffectsForType(cardType);
+
+  container.innerHTML = `
+    <div id="cf-effects-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
+      ${_editingEffects.map((eff, i) => _renderEffectTag(eff, i)).join('')}
+      ${_editingEffects.length === 0 ? '<div style="color:var(--muted);font-size:12px">— Noch keine Effekte —</div>' : ''}
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <select id="eff-type-select" style="flex:2;min-width:180px" onchange="onEffectTypeChange()">
+        <option value="">— Effekt wählen —</option>
+        ${allowed.map(e => `<option value="${e.type}">${e.label}</option>`).join('')}
+      </select>
+      <div id="eff-param-wrap" style="display:none;flex:1;min-width:100px">
+        <input id="eff-param-input" type="number" placeholder="Wert" min="1" max="99999"
+          style="width:100%;padding:6px;background:#0e0e1e;border:1px solid #333;color:#ccc;border-radius:5px">
+      </div>
+      <div id="eff-cardid-wrap" style="display:none;flex:2;min-width:150px">
+        <input id="eff-cardid-input" type="text" placeholder="Karten-ID (z.B. dark_knight)"
+          style="width:100%;padding:6px;background:#0e0e1e;border:1px solid #333;color:#ccc;border-radius:5px">
+      </div>
+      <button onclick="addEffectEntry()" style="background:rgba(100,200,100,0.15);border-color:#4caf50;color:#7aff7a;white-space:nowrap">+ Hinzufügen</button>
+    </div>
+  `;
+}
+
+/* ════════════════════════════════════════════════════════
+   FELD-EFFEKT-BUILDER (für Karten mit type:'field')
+   Effekt-Schema:
+     { type:'statBoost'|'debuff',   target:'all'|'race', stat:'atk'|'def',
+       race:'Kobold'|..., amount:250, trigger:'passive' }
+     { type:'heal'|'burn'|'drain',  target:'both'|'player'|'enemy',
+       amount:300, trigger:'each_turn' }
+════════════════════════════════════════════════════════ */
+
+const FIELD_RACES = ['','Kobold','Ork','Dämon','Drache','Untoter','Mensch','Bestie','Maschine','Schattenwesen','Elementar'];
+
+function renderFieldEffectBuilder(container) {
+  const rows = _editingEffects.map((fx, i) => _renderFieldFxRow(fx, i)).join('');
+  container.innerHTML = `
+    <div id="field-fx-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+      ${rows || '<div style="color:var(--muted);font-size:12px">— Noch keine Spielfeld-Effekte —</div>'}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button onclick="addFieldFxEntry('passive')"
+        style="background:rgba(100,200,100,.15);border-color:#4caf50;color:#7aff7a;font-size:11px">
+        + Passiver Stat-Effekt (ATK/DEF Buff/Debuff)
+      </button>
+      <button onclick="addFieldFxEntry('each_turn')"
+        style="background:rgba(100,100,255,.15);border-color:#5566ff;color:#99aaff;font-size:11px">
+        + Rundeneffekt (Heal/Burn/Drain)
+      </button>
+    </div>`;
+}
+
+function _renderFieldFxRow(fx, i) {
+  const isPassive  = fx.trigger === 'passive';
+  const isRaceTarget = fx.target === 'race';
+
+  const typeOpts = isPassive
+    ? [['statBoost','⬆ Stat-Buff'],['debuff','⬇ Stat-Malus']]
+    : [['heal','💚 Heilung/Runde'],['burn','🔥 Schaden/Runde'],['drain','🩸 Drain/Runde']];
+
+  const targetOpts = isPassive
+    ? [['all','Alle Monster'],['race','Rasse (Filter)']]
+    : [['both','Beide Spieler'],['player','Spieler'],['enemy','Gegner']];
+
+  const statOpts = [['atk','ATK'],['def','DEF']];
+  const raceOpts = FIELD_RACES;
+
+  return `
+  <div style="background:#0e0e1e;border:1px solid rgba(130,80,255,.3);border-radius:8px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">
+    <div style="font-size:10px;color:${isPassive?'#7aff7a':'#99aaff'};font-weight:700;width:100%;text-transform:uppercase;letter-spacing:1px">
+      ${isPassive?'⚡ PASSIV (Stat-Effekt)':'🔄 PRO RUNDE (LP-Effekt)'}
+    </div>
+    <div class="field-group" style="flex:1.5;min-width:110px">
+      <label>Typ</label>
+      <select data-fi="${i}" data-fld="type" onchange="onFieldFxChange(${i})">
+        ${typeOpts.map(([v,l])=>`<option value="${v}"${fx.type===v?' selected':''}>${l}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field-group" style="flex:1.5;min-width:120px">
+      <label>Ziel</label>
+      <select data-fi="${i}" data-fld="target" onchange="onFieldFxChange(${i})">
+        ${targetOpts.map(([v,l])=>`<option value="${v}"${fx.target===v?' selected':''}>${l}</option>`).join('')}
+      </select>
+    </div>
+    ${isPassive?`
+    <div class="field-group" style="flex:1;min-width:80px">
+      <label>Stat</label>
+      <select data-fi="${i}" data-fld="stat">
+        ${statOpts.map(([v,l])=>`<option value="${v}"${(fx.stat||'atk')===v?' selected':''}>${l}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field-group" style="${!isRaceTarget?'display:none':''}flex:1.5;min-width:110px" id="field-race-wrap-${i}">
+      <label>Rasse</label>
+      <select data-fi="${i}" data-fld="race">
+        ${raceOpts.map(r=>`<option value="${r}"${(fx.race||'')===r?' selected':''}>${r||'— (alle)'}</option>`).join('')}
+      </select>
+    </div>`:''}
+    <div class="field-group" style="flex:1;min-width:80px">
+      <label>${isPassive?'Menge (ATK/DEF)':'Menge (LP)'}</label>
+      <input type="number" min="0" max="99999" value="${fx.amount||0}" data-fi="${i}" data-fld="amount">
+    </div>
+    <button onclick="removeFieldFxEntry(${i})"
+      style="padding:5px 10px;background:rgba(255,50,50,.1);border-color:#ff5555;color:#ff8888;align-self:flex-end">✕</button>
+  </div>`;
+}
+
+function onFieldFxChange(idx) {
+  // Race-Wrapper ein-/ausblenden
+  const targetSel = document.querySelector(`[data-fi="${idx}"][data-fld="target"]`);
+  const raceWrap  = document.getElementById(`field-race-wrap-${idx}`);
+  if (targetSel && raceWrap) {
+    raceWrap.style.display = targetSel.value === 'race' ? '' : 'none';
+  }
+}
+
+function _collectFieldFxFromDOM() {
+  const rows = document.querySelectorAll('[data-fi][data-fld]');
+  const byIdx = {};
+  rows.forEach(el => {
+    const i = el.dataset.fi;
+    if (!byIdx[i]) byIdx[i] = {};
+    byIdx[i][el.dataset.fld] = el.value || el.dataset.default || '';
+  });
+  return Object.entries(byIdx).map(([i, fx]) => ({
+    type:    fx.type    || 'statBoost',
+    target:  fx.target  || 'all',
+    ...(fx.stat   ? {stat:  fx.stat}  : {}),
+    ...(fx.race && fx.race !== '' ? {race: fx.race} : {}),
+    amount:  Number(fx.amount) || 0,
+    trigger: _editingEffects[Number(i)]?.trigger || 'passive',
+  }));
+}
+
+function addFieldFxEntry(trigger) {
+  _editingEffects = _collectFieldFxFromDOM();
+  if (trigger === 'passive') {
+    _editingEffects.push({type:'statBoost', target:'all', stat:'atk', amount:250, trigger:'passive'});
+  } else {
+    _editingEffects.push({type:'heal', target:'both', amount:300, trigger:'each_turn'});
+  }
+  renderEffectBuilder('field');
+}
+
+function removeFieldFxEntry(idx) {
+  _editingEffects = _collectFieldFxFromDOM();
+  _editingEffects.splice(idx, 1);
+  renderEffectBuilder('field');
+}
+
+function _renderEffectTag(eff, idx) {
+  const meta  = getEffectMeta(eff.type);
+  const label = meta ? meta.label : eff.type;
+  let valueStr = '';
+  if (eff.amount !== undefined) valueStr = ` <strong>${eff.amount}${meta?.unit || ''}</strong>`;
+  else if (eff.count  !== undefined) valueStr = ` <strong>×${eff.count}</strong>`;
+  else if (eff.cardId !== undefined) valueStr = ` <strong>${eff.cardId}</strong>`;
+  return `
+    <div style="display:flex;align-items:center;gap:8px;background:#12122a;border:1px solid #2a2a55;border-radius:6px;padding:6px 10px">
+      <span style="font-size:12px;flex:1">${label}${valueStr}</span>
+      <button onclick="removeEffectEntry(${idx})" style="padding:2px 8px;background:rgba(255,50,50,0.1);border-color:#ff5555;color:#ff8888;font-size:11px">✕</button>
+    </div>`;
+}
+
+function onEffectTypeChange() {
+  const type = (document.getElementById('eff-type-select') || {}).value;
+  const meta = getEffectMeta(type);
+  const paramWrap  = document.getElementById('eff-param-wrap');
+  const cardidWrap = document.getElementById('eff-cardid-wrap');
+  if (!paramWrap || !cardidWrap) return;
+
+  if (meta?.param === 'amount' || meta?.param === 'count') {
+    paramWrap.style.display  = '';
+    cardidWrap.style.display = 'none';
+    const inp = document.getElementById('eff-param-input');
+    if (inp) inp.value = meta.default || '';
+  } else if (meta?.param === 'cardId') {
+    paramWrap.style.display  = 'none';
+    cardidWrap.style.display = '';
+  } else {
+    paramWrap.style.display  = 'none';
+    cardidWrap.style.display = 'none';
+  }
+}
+
+function addEffectEntry() {
+  const typeEl  = document.getElementById('eff-type-select');
+  const paramEl = document.getElementById('eff-param-input');
+  const cidEl   = document.getElementById('eff-cardid-input');
+  if (!typeEl || !typeEl.value) { showToast('Bitte Effekttyp wählen'); return; }
+
+  const meta = getEffectMeta(typeEl.value);
+  const entry = { type: typeEl.value };
+
+  if (meta?.param === 'amount')  { const v = parseInt(paramEl?.value || 0); if (!v) { showToast('Wert eingeben'); return; } entry.amount = v; }
+  if (meta?.param === 'count')   { const v = parseInt(paramEl?.value || 1); entry.count  = Math.max(1, v); }
+  if (meta?.param === 'cardId')  { const v = (cidEl?.value || '').trim(); if (!v) { showToast('Karten-ID eingeben'); return; } entry.cardId = v; }
+
+  _editingEffects.push(entry);
+  const cardType = (document.getElementById('cf-type') || {}).value || 'monster';
+  renderEffectBuilder(cardType);
+  updatePreview();
+}
+
+function removeEffectEntry(idx) {
+  _editingEffects.splice(idx, 1);
+  const cardType = (document.getElementById('cf-type') || {}).value || 'monster';
+  renderEffectBuilder(cardType);
+  updatePreview();
+}
+
+/* Temporäres Karten-Bild während des Bearbeitens */
+let _editingCardArt = null;
 
 /* ═══════════════════════════════════════════════════
    TAB SWITCHING
 ═══════════════════════════════════════════════════ */
 function switchTab(name) {
-  const names = ['cards','enemies','drops','acts','fusions','config','debug'];
+  const names = ['cards','enemies','drops','acts','fusions','config','synergies','worldmap','debug'];
   document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', names[i]===name));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
-  if(name==='drops')   initDropTab();
-  if(name==='acts')    renderActEditor();
-  if(name==='fusions') renderFusionEditor();
-  if(name==='config')  initConfig();
-  if(name==='debug')   initDebugTab();
+  const panel = document.getElementById('tab-'+name);
+  if (panel) panel.classList.add('active');
+  if (name==='drops')      initDropTab();
+  if (name==='acts')       renderActEditor();
+  if (name==='fusions')    renderFusionEditor();
+  if (name==='config')     initConfig();
+  if (name==='debug')      initDebugTab();
+  if (name==='synergies')  { if (typeof initSynergyTab === 'function') initSynergyTab(); }
+  if (name==='worldmap')   initWorldMapEditor();
 }
 
 function showToast(msg='Gespeichert ✓') {
@@ -401,17 +864,33 @@ function initCardTab() { renderCardList(); }
 
 function renderCardList(filter='') {
   const list = document.getElementById('card-list');
-  const fl = filter.toLowerCase();
+  const fl       = filter.toLowerCase();
+  const typeF    = (document.getElementById('cf-filter-type')   ||{}).value || '';
+  const rarityF  = (document.getElementById('cf-filter-rarity') ||{}).value || '';
+  const raceF    = (document.getElementById('cf-filter-race')   ||{}).value || '';
+
+  // Update filter visual state
+  ['cf-filter-type','cf-filter-rarity','cf-filter-race'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle('filter-active', !!el.value);
+  });
+
   list.innerHTML = '';
   let count = 0;
   editorCards.forEach(card => {
-    if(fl && !card.name.toLowerCase().includes(fl) && !card.id.includes(fl)) return;
+    if(fl     && !card.name.toLowerCase().includes(fl) && !card.id.toLowerCase().includes(fl)) return;
+    if(typeF  && card.type   !== typeF)   return;
+    if(rarityF&& card.rarity !== rarityF) return;
+    if(raceF  && (card.race  || '') !== raceF) return;
     count++;
     const el = document.createElement('div');
     el.className = 'list-item'+(card.id===selectedCardId?' active':'');
-    el.innerHTML = `<span class="item-name">${card.name}</span>
-      ${card.race?`<span style="font-size:9px;color:#7ac8ff;flex-shrink:0">${card.race}</span>`:''}
-      <span class="item-badge rarity-${card.rarity}">${{monster:'M',spell:'S',trap:'T',fusion:'F'}[card.type]||'?'}</span>`;
+    const typeIcon = {monster:'⚔',spell:'✨',trap:'🪤',fusion:'⚗',field:'🗺'}[card.type]||'?';
+    el.innerHTML = `
+      ${card.image?`<div style="width:20px;height:26px;border-radius:2px;overflow:hidden;flex-shrink:0"><img src="${card.image}" style="width:100%;height:100%;object-fit:cover"></div>`:`<span style="font-size:11px;flex-shrink:0">${typeIcon}</span>`}
+      <span class="item-name">${esc(card.name)}</span>
+      ${card.race?`<span style="font-size:9px;color:#7ac8ff;flex-shrink:0">${card.race.substring(0,4)}</span>`:''}
+      <span class="item-badge rarity-${card.rarity}">${card.rarity.substring(0,1).toUpperCase()}</span>`;
     el.onclick = ()=>selectCard(card.id);
     list.appendChild(el);
   });
@@ -419,6 +898,14 @@ function renderCardList(filter='') {
 }
 
 function filterCardList() { renderCardList(document.getElementById('card-search').value); }
+
+function clearCardFilters() {
+  ['cf-filter-type','cf-filter-rarity','cf-filter-race'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  const s=document.getElementById('card-search'); if(s) s.value='';
+  renderCardList();
+}
 
 function selectCard(id) {
   selectedCardId = id;
@@ -428,39 +915,154 @@ function selectCard(id) {
 }
 
 function renderCardForm(card) {
+  _editingCardArt = card.image || null;
+
+  // Spielfeld-Karte: fieldEffects laden
+  if (card.type === 'field') {
+    _editingEffects = Array.isArray(card.fieldEffects) ? JSON.parse(JSON.stringify(card.fieldEffects)) : [];
+  }
+  // Normale Karte: effects laden (neues Format bevorzugt, Legacy konvertieren)
+  else if (Array.isArray(card.effects) && card.effects.length > 0) {
+    _editingEffects = JSON.parse(JSON.stringify(card.effects));
+  } else if (card.effect) {
+    // Legacy-String in Objekt konvertieren
+    const map = {
+      heal500:{type:'heal',amount:500}, heal800:{type:'heal',amount:800},
+      heal1000:{type:'heal',amount:1000}, heal1500:{type:'heal',amount:1500},
+      buff300:{type:'buff',amount:300}, buff400:{type:'buff',amount:400},
+      buffAllAtk300:{type:'buffAll',amount:300}, buffAllAtk400:{type:'buffAll',amount:400},
+      buffAllAtk500:{type:'buffAll',amount:500},
+      burn300:{type:'burn',amount:300}, burn400:{type:'burn',amount:400},
+      burn600:{type:'burn',amount:600}, burn800:{type:'burn',amount:800},
+      burn1200:{type:'burn',amount:1200}, burn1600:{type:'burn',amount:1600},
+      destroy1:{type:'destroy1'}, destroyAll:{type:'destroyAll'}, destroyAllSpell:{type:'destroyAll'},
+      drain500:{type:'drain',amount:500}, drain1000:{type:'drain',amount:1000},
+      revive:{type:'revive'}, graveRevive:{type:'revive'}, graveReviveSpell:{type:'reviveBest'},
+      massRevive:{type:'massRevive'},
+      draw1:{type:'draw',count:1}, draw2:{type:'draw',count:2},
+      weaken200:{type:'weakenOne',amount:200}, weaken500:{type:'weakenOne',amount:500},
+      weaken800:{type:'weakenOne',amount:800}, weakenAll300:{type:'weakenAll',amount:300},
+      taunt:{type:'taunt'}, stealHand:{type:'stealHand'}, stealField:{type:'stealField'},
+      shield300:{type:'shield',amount:300},
+      raceBuffATK150:{type:'raceBuffATK',amount:150}, raceBuffATK300:{type:'raceBuffATK',amount:300},
+      destroyAttacker:{type:'destroyAttacker'}, destroyAllAtk:{type:'destroyAllAtk'},
+      negate:{type:'negate'}, negateEffect:{type:'negate'},
+      healBuff:{type:'healBuff'},
+    };
+    _editingEffects = map[card.effect] ? [map[card.effect]] : [{type:card.effect}];
+  } else {
+    _editingEffects = [];
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  const effects = getEffectsForType(card.type); // kept for other places that might use it
+  const hasArt  = !!_editingCardArt;
   document.getElementById('card-form-col').innerHTML = `
     <div class="field-row">
-      <div class="field-group"><label>ID</label><input id="cf-id" value="${esc(card.id)}" oninput="updatePreview()"></div>
-      <div class="field-group" style="flex:2"><label>Name</label><input id="cf-name" value="${esc(card.name)}" oninput="updatePreview()"></div>
+      <div class="field-group"><label>ID <span class="info-hint" title="Interne Kennung — wird im Code und für Deck-Definitionen verwendet">i</span></label>
+        <input id="cf-id" value="${esc(card.id)}" oninput="updatePreview()"></div>
+      <div class="field-group" style="flex:2"><label>Name</label>
+        <input id="cf-name" value="${esc(card.name)}" oninput="updatePreview()"></div>
     </div>
     <div class="field-row">
       <div class="field-group"><label>Typ</label>
-        <select id="cf-type" onchange="updatePreview()">
-          ${['monster','spell','trap','fusion'].map(t=>`<option value="${t}"${card.type===t?' selected':''}>${t}</option>`).join('')}
+        <select id="cf-type" onchange="onTypeChange();updatePreview()">
+          ${['monster','spell','trap','fusion','field'].map(t=>`<option value="${t}"${card.type===t?' selected':''}>${{monster:'⚔ Monster',spell:'✨ Zauber',trap:'🪤 Falle',fusion:'⚗ Fusion',field:'🗺 Spielfeld'}[t]}</option>`).join('')}
         </select></div>
       <div class="field-group"><label>Seltenheit</label>
         <select id="cf-rarity" onchange="updatePreview()">
-          ${['common','uncommon','rare','epic','legendary'].map(r=>`<option value="${r}"${card.rarity===r?' selected':''}>${r}</option>`).join('')}
+          ${['common','uncommon','rare','epic','legendary'].map(r=>`<option value="${r}"${card.rarity===r?' selected':''}>${r.charAt(0).toUpperCase()+r.slice(1)}</option>`).join('')}
         </select></div>
     </div>
-    <div class="field-row">
+    <div class="field-row" id="cf-stats-row" style="${(card.type==='spell'||card.type==='trap'||card.type==='field')?'opacity:.4;pointer-events:none':''}">
       <div class="field-group"><label>ATK</label><input id="cf-atk" type="number" value="${card.atk||0}" oninput="updatePreview()"></div>
       <div class="field-group"><label>DEF</label><input id="cf-def" type="number" value="${card.def||0}" oninput="updatePreview()"></div>
     </div>
-    <div class="field-group"><label>Rasse (nur Monster)</label>
+    ${card.type==='field'?`<div style="font-size:10px;color:var(--muted);padding:6px 10px;background:rgba(130,80,255,.12);border:1px solid rgba(130,80,255,.3);border-radius:6px">
+      🗺 <b>Spielfeld-Karte</b> — Das hochgeladene Bild (unten) wird gleichzeitig als Kampf-Hintergrund verwendet.
+      Die Effekte gelten <b>global für beide Seiten</b>.
+    </div>`:''}
+    <div class="field-group" id="cf-race-row" style="${(card.type==='spell'||card.type==='trap'||card.type==='field')?'display:none':''}">
+      <label>Rasse</label>
       <select id="cf-race" onchange="updatePreview()">
         ${['','Kobold','Ork','Dämon','Drache','Untoter','Mensch','Bestie','Maschine','Schattenwesen','Elementar']
-          .map(r=>`<option value="${r}"${(card.race||'')===r?' selected':''}>${r||'— (kein Monster)'}</option>`).join('')}
+          .map(r=>`<option value="${r}"${(card.race||'')===r?' selected':''}>${r||'— (keine Rasse)'}</option>`).join('')}
       </select></div>
-    <div class="field-group"><label>Effekt</label>
-      <select id="cf-effect" onchange="updatePreview()">
-        ${EFFECTS_ALL.map(e=>`<option value="${e.v}"${(card.effect||'')===e.v?' selected':''}>${e.label}</option>`).join('')}
-      </select></div>
-    <div class="field-group"><label>Flavor-Text</label><input id="cf-flavor" value="${esc(card.flavor||'')}"></div>
+    <div class="field-group">
+      <label>${card.type==='field'?'Spielfeld-Effekte':'Effekte'} <span style="font-size:10px;color:var(--muted)">(mehrere möglich)</span></label>
+      <div id="cf-effects-builder"></div>
+    </div>
+    <div class="field-group"><label>Flavor-Text</label>
+      <input id="cf-flavor" value="${esc(card.flavor||'')}" oninput="updatePreview()"></div>
+
+    <div class="field-group">
+      <label>${card.type==='field'?'🖼 Bild (Karten-Art + Kampf-Hintergrund)':'🖼 Karten-Artwork'}</label>
+      <div class="cf-art-wrap">
+        <div class="cf-art-thumb" id="cf-art-thumb">
+          ${hasArt?`<img src="${card.image}">`:'<span style="font-size:24px;color:var(--muted)">🖼</span>'}
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <label for="cf-art-upload" class="btn-sm" style="cursor:pointer;text-align:center">📁 Bild hochladen (PNG/JPG)</label>
+          <input type="file" id="cf-art-upload" accept="image/*" style="display:none" onchange="uploadCardArt(this)">
+          ${hasArt?`<button class="btn-danger-sm" onclick="clearCardArt()">✕ Artwork entfernen</button>`:''}
+          <div style="font-size:10px;color:var(--muted)">${card.type==='field'?'Wird als Karten-Bild UND Kampf-Hintergrund verwendet.':'Wird als Base64 in der Karte gespeichert.'}</div>
+        </div>
+      </div>
+    </div>
+
     <div style="display:flex;gap:8px;padding-top:4px">
       <button class="btn-save" onclick="saveCard()">✓ Speichern</button>
       <button class="btn-danger-sm" onclick="deleteCard()">🗑 Löschen</button>
     </div>`;
+  // Effekt-Builder initialisieren (nach innerHTML-Render)
+  renderEffectBuilder(card.type);
+  updatePreview();
+}
+
+function onTypeChange() {
+  const type      = (document.getElementById('cf-type')||{}).value || 'monster';
+  const isMonster = type === 'monster' || type === 'fusion';
+  const statsRow  = document.getElementById('cf-stats-row');
+  const raceRow   = document.getElementById('cf-race-row');
+  if (statsRow) statsRow.style.cssText = isMonster ? '' : 'opacity:.4;pointer-events:none';
+  if (raceRow)  raceRow.style.display  = isMonster ? '' : 'none';
+  // Bei Typ-Wechsel Effekte zurücksetzen (Schema ändert sich)
+  _editingEffects = [];
+  renderEffectBuilder(type);
+}
+
+function uploadCardArt(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      // Auf max. 300×300 skalieren und als JPEG komprimieren (~30-50 KB statt 2-3 MB)
+      const MAX = 300;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const w = Math.round(img.width  * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width  = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      _editingCardArt = canvas.toDataURL('image/jpeg', 0.75);
+      const thumb = document.getElementById('cf-art-thumb');
+      if(thumb) thumb.innerHTML = `<img src="${_editingCardArt}">`;
+      updatePreview();
+      const kb = Math.round(_editingCardArt.length * 0.75 / 1024);
+      showToast(`Artwork hochgeladen ✓ (~${kb} KB)`);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearCardArt() {
+  _editingCardArt = null;
+  const thumb = document.getElementById('cf-art-thumb');
+  if(thumb) thumb.innerHTML = '<span style="font-size:24px;color:var(--muted)">🖼</span>';
   updatePreview();
 }
 
@@ -469,14 +1071,25 @@ function updatePreview() {
   if(!el) return;
   const v = id => { const e=document.getElementById(id); return e?e.value:''; };
   const type=v('cf-type'), name=v('cf-name'), atk=v('cf-atk'), def=v('cf-def');
-  const effect=v('cf-effect'), flavor=v('cf-flavor'), rarity=v('cf-rarity'), race=v('cf-race');
-  const effLabel = EFFECTS_ALL.find(e=>e.v===effect);
+  const flavor=v('cf-flavor'), rarity=v('cf-rarity'), race=v('cf-race');
   const rc = {common:'#aaa',uncommon:'#6ee7b7',rare:'#60a5fa',epic:'#c084fc',legendary:'#ffd700'}[rarity]||'#aaa';
+  const isMonster = type==='monster'||type==='fusion';
+  // Effekt-Labels für Preview aus _editingEffects bauen
+  const effLabels = _editingEffects.map(e => {
+    const meta = getEffectMeta(e.type);
+    let lbl = meta ? meta.label : e.type;
+    if (e.amount !== undefined) lbl += ` ${e.amount}${meta?.unit||''}`;
+    else if (e.count !== undefined) lbl += ` ×${e.count}`;
+    else if (e.cardId !== undefined) lbl += ` (${e.cardId})`;
+    return lbl;
+  }).join(' • ');
   el.className = `preview-card type-${type}`;
-  el.innerHTML = `<div class="pc-name" style="color:${rc}">${esc(name)||'—'}</div>
+  el.innerHTML = `
+    ${_editingCardArt?`<img class="pc-art" src="${_editingCardArt}">`:''}
+    <div class="pc-name" style="color:${rc}">${esc(name)||'—'}</div>
     <div class="pc-type">${type.toUpperCase()}${race?` · <span style="color:#7ac8ff;font-size:10px">${race}</span>`:''}</div>
-    ${(type==='monster'||type==='fusion')?`<div class="pc-stats"><span>ATK ${atk}</span><span>DEF ${def}</span></div>`:''}
-    ${effect?`<div class="pc-effect">${effLabel?effLabel.label:effect}</div>`:''}
+    ${isMonster?`<div class="pc-stats"><span>ATK ${atk}</span><span>DEF ${def}</span></div>`:''}
+    ${effLabels?`<div class="pc-effect">${effLabels}</div>`:''}
     ${flavor?`<div class="pc-flavor">${esc(flavor)}</div>`:''}`;
 }
 
@@ -486,14 +1099,22 @@ function saveCard() {
   if(!id||!name){alert('ID und Name sind Pflicht.'); return;}
   const type = document.getElementById('cf-type').value;
   const race = document.getElementById('cf-race')?.value||'';
+  const isMonster = type==='monster'||type==='fusion';
+  // Bei Spielfeld-Karten: aktuelle Werte aus DOM lesen (field-spezifischer Builder)
+  if (type === 'field') _editingEffects = _collectFieldFxFromDOM();
+  const efxData = JSON.parse(JSON.stringify(_editingEffects));
   const card = {
-    id,name,type,
-    rarity:document.getElementById('cf-rarity').value,
-    atk:parseInt(document.getElementById('cf-atk').value)||0,
-    def:parseInt(document.getElementById('cf-def').value)||0,
-    ...(race && (type==='monster'||type==='fusion') ? {race} : {}),
-    effect:document.getElementById('cf-effect').value||null,
-    flavor:document.getElementById('cf-flavor').value||'',
+    id, name, type,
+    rarity: document.getElementById('cf-rarity').value,
+    atk: parseInt(document.getElementById('cf-atk').value)||0,
+    def: parseInt(document.getElementById('cf-def').value)||0,
+    ...(race && isMonster ? {race} : {}),
+    // Spielfeld-Karte: Effekte unter fieldEffects speichern
+    ...(type === 'field'
+      ? { fieldEffects: efxData, effects: [], effect: null }
+      : { effects: efxData, effect: null }),
+    flavor: document.getElementById('cf-flavor').value || '',
+    ...(_editingCardArt ? {image: _editingCardArt} : {}),
   };
   const idx = editorCards.findIndex(c=>c.id===id);
   if(idx>=0) editorCards[idx]=card; else editorCards.push(card);
@@ -504,7 +1125,8 @@ function saveCard() {
 
 function newCard() {
   selectedCardId=null;
-  renderCardForm({id:'neue_karte_'+Date.now(),name:'Neue Karte',type:'monster',rarity:'common',atk:1000,def:800,race:'',effect:null,flavor:''});
+  _editingEffects=[];
+  renderCardForm({id:'neue_karte_'+Date.now(),name:'Neue Karte',type:'monster',rarity:'common',atk:1000,def:800,race:'',effects:[],effect:null,flavor:''});
 }
 
 function deleteCard() {
@@ -589,8 +1211,6 @@ function renderEnemyForm(enemy) {
 
     <div class="field-row">
       <div class="field-group"><label>LP</label><input id="ef-hp" type="number" value="${enemy.hp||3000}"></div>
-      <div class="field-group"><label>Gold min</label><input id="ef-gmin" type="number" value="${(enemy.gold||[20,40])[0]}"></div>
-      <div class="field-group"><label>Gold max</label><input id="ef-gmax" type="number" value="${(enemy.gold||[20,40])[1]}"></div>
     </div>
     <div class="field-row">
       <div class="field-group"><label>Behavior</label>
@@ -603,8 +1223,45 @@ function renderEnemyForm(enemy) {
       <div class="field-group"><label>Multi-Angriff</label>
         <select id="ef-multi"><option value="false"${!enemy.multiAttack?' selected':''}>Nein</option><option value="true"${enemy.multiAttack?' selected':''}>Ja</option></select></div>
     </div>
-    <div class="field-group"><label>Startfeld (IDs, Komma-getrennt)</label><input id="ef-startfield" value="${(enemy.startField||[]).join(',')}"></div>
-    <div class="field-group"><label>Startfallen (IDs, Komma-getrennt)</label><input id="ef-starttraps" value="${(enemy.startTraps||[]).join(',')}"></div>
+    <div class="field-group">
+      <label>⚔ Startfeld
+        <span class="info-hint" title="Diese Monster stehen beim Kampfbeginn bereits auf dem Feld des Gegners (max. 5)">i</span>
+      </label>
+      <div class="chip-area" id="ef-field-chips">
+        ${(enemy.startField||[]).map((id,i)=>{const c=editorCards.find(x=>x.id===id);return`<span class="chip chip-monster">${c?c.name:id}<span class="chip-del" onclick="removeFieldCard(${i})">×</span></span>`;}).join('')}
+      </div>
+      <div class="chip-picker-row">
+        <input class="chip-search" id="ef-field-search" placeholder="Monster suchen…" oninput="filterFieldSearch(this.value)">
+        <select id="ef-field-select" style="flex:1;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px">
+          ${editorCards.filter(c=>c.type==='monster'||c.type==='fusion').map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
+        </select>
+        <button class="btn-sm" onclick="addFieldCard()" style="white-space:nowrap">+ Hinzufügen</button>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>🪤 Startfallen
+        <span class="info-hint" title="Diese Fallen liegen beim Kampfbeginn bereits verdeckt in der Spell/Trap-Zone des Gegners (max. 3)">i</span>
+      </label>
+      <div class="chip-area" id="ef-trap-chips">
+        ${(enemy.startTraps||[]).map((id,i)=>{const c=editorCards.find(x=>x.id===id);return`<span class="chip chip-trap">${c?c.name:id}<span class="chip-del" onclick="removeTrapCard(${i})">×</span></span>`;}).join('')}
+      </div>
+      <div class="chip-picker-row">
+        <input class="chip-search" id="ef-trap-search" placeholder="Falle suchen…" oninput="filterTrapSearch(this.value)">
+        <select id="ef-trap-select" style="flex:1;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px">
+          ${editorCards.filter(c=>c.type==='trap'||c.type==='spell').map(c=>`<option value="${c.id}">${esc(c.name)} (${c.type})</option>`).join('')}
+        </select>
+        <button class="btn-sm" onclick="addTrapCard()" style="white-space:nowrap">+ Hinzufügen</button>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>🗺 Start-Spielfeldkarte
+        <span class="info-hint" title="Diese Spielfeldkarte wird beim Kampfbeginn automatisch für den Gegner ausgelegt. Sie beeinflusst BEIDE Seiten.">i</span>
+      </label>
+      <select id="ef-startfieldcard" style="padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px">
+        <option value="">— Kein Spielfeld —</option>
+        ${editorCards.filter(c=>c.type==='field').map(fc=>`<option value="${fc.id}" ${(enemy.startFieldCard===fc.id)?'selected':''}>${fc.name} (${fc.rarity})</option>`).join('')}
+      </select>
+    </div>
     <div class="field-group"><label>Starthand (Anzahl)</label><input id="ef-starthand" type="number" min="0" max="10" value="${enemy.startHandCount||3}"></div>
     <div class="field-group">
       <label>Deck (${(enemy.deckIds||[]).length} Karten — × zum Entfernen)</label>
@@ -623,6 +1280,78 @@ function renderEnemyForm(enemy) {
   `;
 }
 
+/* ── Chip-Picker Helfer (Startfeld / Fallen) ── */
+function _refreshFieldChips() {
+  const enemy = editorEnemies[selectedEnemyId];
+  if(!enemy) return;
+  const area = document.getElementById('ef-field-chips');
+  if(!area) return;
+  area.innerHTML = (enemy.startField||[]).map((id,i)=>{
+    const c=editorCards.find(x=>x.id===id);
+    return `<span class="chip chip-monster">${esc(c?c.name:id)}<span class="chip-del" onclick="removeFieldCard(${i})">×</span></span>`;
+  }).join('');
+}
+function _refreshTrapChips() {
+  const enemy = editorEnemies[selectedEnemyId];
+  if(!enemy) return;
+  const area = document.getElementById('ef-trap-chips');
+  if(!area) return;
+  area.innerHTML = (enemy.startTraps||[]).map((id,i)=>{
+    const c=editorCards.find(x=>x.id===id);
+    return `<span class="chip chip-trap">${esc(c?c.name:id)}<span class="chip-del" onclick="removeTrapCard(${i})">×</span></span>`;
+  }).join('');
+}
+
+function addFieldCard() {
+  const enemy = editorEnemies[selectedEnemyId];
+  if(!enemy) return;
+  if(!enemy.startField) enemy.startField=[];
+  if(enemy.startField.length>=5){showToast('Max. 5 Monster auf dem Startfeld');return;}
+  const sel = document.getElementById('ef-field-select');
+  if(!sel||!sel.value) return;
+  enemy.startField.push(sel.value);
+  _refreshFieldChips();
+}
+function removeFieldCard(i) {
+  const enemy = editorEnemies[selectedEnemyId];
+  if(!enemy||!enemy.startField) return;
+  enemy.startField.splice(i,1);
+  _refreshFieldChips();
+}
+function filterFieldSearch(q) {
+  const sel = document.getElementById('ef-field-select');
+  if(!sel) return;
+  const fl = q.toLowerCase();
+  sel.innerHTML = editorCards
+    .filter(c=>(c.type==='monster'||c.type==='fusion')&&(!fl||c.name.toLowerCase().includes(fl)||c.id.includes(fl)))
+    .map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+}
+
+function addTrapCard() {
+  const enemy = editorEnemies[selectedEnemyId];
+  if(!enemy) return;
+  if(!enemy.startTraps) enemy.startTraps=[];
+  if(enemy.startTraps.length>=3){showToast('Max. 3 Fallen in der Startzone');return;}
+  const sel = document.getElementById('ef-trap-select');
+  if(!sel||!sel.value) return;
+  enemy.startTraps.push(sel.value);
+  _refreshTrapChips();
+}
+function removeTrapCard(i) {
+  const enemy = editorEnemies[selectedEnemyId];
+  if(!enemy||!enemy.startTraps) return;
+  enemy.startTraps.splice(i,1);
+  _refreshTrapChips();
+}
+function filterTrapSearch(q) {
+  const sel = document.getElementById('ef-trap-select');
+  if(!sel) return;
+  const fl = q.toLowerCase();
+  sel.innerHTML = editorCards
+    .filter(c=>(c.type==='trap'||c.type==='spell')&&(!fl||c.name.toLowerCase().includes(fl)||c.id.includes(fl)))
+    .map(c=>`<option value="${c.id}">${esc(c.name)} (${c.type})</option>`).join('');
+}
+
 function updatePortraitPreview() {
   const val = document.getElementById('ef-portrait').value;
   const box = document.getElementById('portrait-preview-box');
@@ -637,13 +1366,25 @@ function uploadPortrait(input) {
   if(!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    const b64 = e.target.result;
-    // Store in current enemy form (save will persist it)
-    if(editorEnemies[selectedEnemyId]) editorEnemies[selectedEnemyId].portrait = b64;
-    const box = document.getElementById('portrait-preview-box');
-    if(box) box.innerHTML = `<img src="${b64}" style="width:60px;height:60px;object-fit:cover;border-radius:50%">`;
-    document.getElementById('ef-portrait').value = '';
-    showToast('Portrait hochgeladen ✓');
+    const img = new Image();
+    img.onload = () => {
+      // Portraits sind rund und klein (60px) — 150px reicht, JPEG 0.75
+      const MAX = 150;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const w = Math.round(img.width  * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width  = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const b64 = canvas.toDataURL('image/jpeg', 0.75);
+      if(editorEnemies[selectedEnemyId]) editorEnemies[selectedEnemyId].portrait = b64;
+      const box = document.getElementById('portrait-preview-box');
+      if(box) box.innerHTML = `<img src="${b64}" style="width:60px;height:60px;object-fit:cover;border-radius:50%">`;
+      document.getElementById('ef-portrait').value = '';
+      showToast('Portrait hochgeladen ✓');
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
@@ -681,15 +1422,16 @@ function saveEnemy() {
   if(emojiVal) enemy.portrait = emojiVal;
   // (base64 was already stored on upload)
   enemy.hp  = parseInt(document.getElementById('ef-hp').value)||3000;
-  enemy.gold= [parseInt(document.getElementById('ef-gmin').value)||20, parseInt(document.getElementById('ef-gmax').value)||50];
+  delete enemy.gold;
   enemy.behavior  = document.getElementById('ef-behavior').value;
   enemy.difficulty= parseInt(document.getElementById('ef-diff').value)||1;
   enemy.fieldBonus= parseInt(document.getElementById('ef-bonus').value)||0;
   enemy.maxSummons= parseInt(document.getElementById('ef-summons').value)||1;
   enemy.multiAttack= document.getElementById('ef-multi').value==='true';
-  enemy.startHandCount = parseInt(document.getElementById('ef-starthand').value)||3;
-  enemy.startField = document.getElementById('ef-startfield').value.split(',').map(s=>s.trim()).filter(Boolean);
-  enemy.startTraps = document.getElementById('ef-starttraps').value.split(',').map(s=>s.trim()).filter(Boolean);
+  enemy.startHandCount  = parseInt(document.getElementById('ef-starthand').value)||3;
+  enemy.startFieldCard  = document.getElementById('ef-startfieldcard')?.value || '';
+  if (!enemy.startFieldCard) delete enemy.startFieldCard;
+  // startField und startTraps werden live in den Arrays gehalten (Chip-Picker) — kein Lesen nötig
   if(enemy.id!==oldId) {
     editorEnemies[enemy.id]=enemy;
     delete editorEnemies[oldId];
@@ -702,12 +1444,10 @@ function saveEnemy() {
 function newEnemy() {
   const id='neuer_gegner_'+Date.now();
   editorEnemies[id]={id,name:'Neuer Gegner',title:'—',portrait:'👾',
-    hp:3000,gold:[20,40],behavior:'aggressive',difficulty:2,fieldBonus:0,
+  hp:3000,behavior:'aggressive',difficulty:2,fieldBonus:0,
     maxSummons:1,multiAttack:false,startField:[],startTraps:[],startHandCount:3,
     deckIds:['goblin','goblin','soldier','soldier','fireball'],
-    dropTable:{S_POW:[{cardId:'knight',weight:10}],A_POW:[{cardId:'soldier',weight:20}],
-               B_POW:[{cardId:'goblin',weight:30}],C_POW:[{cardId:'goblin',weight:40}],
-               D_POW:[{cardId:'goblin',weight:50}],TEC:[{cardId:'fireball',weight:20}]}};
+    dropTable:{drops:[{cardId:'knight',weight:10},{cardId:'soldier',weight:20},{cardId:'goblin',weight:40},{cardId:'fireball',weight:20}]}};
   selectedEnemyId=id;
   initEnemyTab();
   renderEnemyForm(editorEnemies[id]);
@@ -731,70 +1471,97 @@ function initDropTab() {
   renderDropTable();
 }
 
+/* ── Migration: Legacy-dropTable (S_POW etc.) → drops[] ── */
+function _migrateDropTable(enemy) {
+  if (!enemy.dropTable) { enemy.dropTable = { drops: [] }; return; }
+  if (Array.isArray(enemy.dropTable.drops)) return; // bereits neu
+  /* S_POW zuerst, dann Fallback-Kette */
+  const legacyKeys = ['S_POW','A_POW','B_POW','C_POW','D_POW','TEC'];
+  for (const key of legacyKeys) {
+    if (Array.isArray(enemy.dropTable[key]) && enemy.dropTable[key].length > 0) {
+      enemy.dropTable.drops = enemy.dropTable[key].map(e=>({cardId:e.cardId,weight:e.weight||1}));
+      return;
+    }
+  }
+  enemy.dropTable.drops = [];
+}
+
 function renderDropTable() {
   const enemyId = document.getElementById('drop-enemy-select').value;
   const enemy   = editorEnemies[enemyId];
   if(!enemy) return;
+  _migrateDropTable(enemy);
   document.getElementById('drop-enemy-info').textContent=`LP: ${enemy.hp} | ${enemy.title||enemy.name}`;
   const area = document.getElementById('drop-table-area');
   area.innerHTML='';
-  if(!enemy.dropTable) enemy.dropTable={};
-  const keys=[{key:'S_POW',label:'S-Rang POW',cls:'rank-S'},{key:'A_POW',label:'A-Rang POW',cls:'rank-A'},
-    {key:'B_POW',label:'B-Rang POW',cls:'rank-B'},{key:'C_POW',label:'C-Rang POW',cls:'rank-C'},
-    {key:'D_POW',label:'D-Rang POW',cls:'rank-D'},{key:'TEC',label:'TEC (Taktik)',cls:'rank-TEC'}];
-  keys.forEach(({key,label,cls})=>{
-    const pool=enemy.dropTable[key]||[];
-    const total=pool.reduce((s,e)=>s+(e.weight||1),0);
-    const sec=document.createElement('div');
-    sec.className='drop-section'; sec.style.cssText='min-width:250px;flex:1;max-width:400px';
-    sec.innerHTML=`<div class="drop-section-header">
-        <span class="rank-tag ${cls}">${label}</span>
-        <span style="font-size:11px;color:var(--muted)">Gesamt: ${total}</span></div>
-      <div id="pool-${key}-${enemyId}">
-        ${pool.map((entry,i)=>{
-          const pct=total>0?(entry.weight/total*100).toFixed(1):0;
-          const c=editorCards.find(x=>x.id===entry.cardId);
-          return `<div class="drop-entry">
-            <div class="de-card rarity-${c?c.rarity:'common'}">${c?c.name:entry.cardId}</div>
-            <input class="de-weight" type="number" min="1" value="${entry.weight}"
-              onchange="updateWeight('${enemyId}','${key}',${i},this.value)"
-              style="padding:3px 5px;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text)">
-            <div class="de-pct">${pct}%</div>
-            <div class="de-bar"><div class="de-bar-fill" style="width:${pct}%"></div></div>
-            <div class="de-del" onclick="removeDropEntry('${enemyId}','${key}',${i})">×</div></div>`;
-        }).join('')}
-      </div>
-      <div class="drop-add-row">
-        <select id="add-card-${key}-${enemyId}" style="padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text)">
-          ${editorCards.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select>
-        <input id="add-w-${key}-${enemyId}" type="number" min="1" value="10" style="width:55px;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text)">
-        <button onclick="addDropEntry('${enemyId}','${key}')">+ Add</button></div>
-      <div style="display:flex;gap:5px;margin-top:8px">
-        <button class="btn-save" style="flex:1;font-size:10px;padding:4px" onclick="quickSim('${enemyId}','${key}',100,this)">🎲 100×</button>
-        <button class="btn-sm" style="flex:1;font-size:10px;padding:4px" onclick="quickSim('${enemyId}','${key}',1000,this)">🎲 1000×</button></div>
-      <div id="sim-${key}-${enemyId}" style="margin-top:6px;font-size:11px"></div>`;
-    area.appendChild(sec);
-  });
+
+  const pool  = enemy.dropTable.drops;
+  const total = pool.reduce((s,e)=>s+(e.weight||1),0);
+
+  const sec = document.createElement('div');
+  sec.className='drop-section';
+  sec.style.cssText='min-width:320px;flex:1;max-width:600px';
+  sec.innerHTML=`
+    <div class="drop-section-header">
+      <span style="font-size:12px;color:var(--gold);letter-spacing:2px">DROPTABELLE</span>
+      <span style="font-size:11px;color:var(--muted)">Gesamt-Gewicht: ${total}</span>
+    </div>
+    <div id="pool-drops-${enemyId}">
+      ${pool.map((entry,i)=>{
+        const pct = total>0 ? (entry.weight/total*100).toFixed(1) : 0;
+        const c   = editorCards.find(x=>x.id===entry.cardId);
+        return `<div class="drop-entry">
+          <div class="de-card rarity-${c?c.rarity:'common'}">${c?c.name:entry.cardId}</div>
+          <input class="de-weight" type="number" min="1" value="${entry.weight}"
+            onchange="updateWeight('${enemyId}',${i},this.value)"
+            style="padding:3px 5px;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text)">
+          <div class="de-pct">${pct}%</div>
+          <div class="de-bar"><div class="de-bar-fill" style="width:${pct}%"></div></div>
+          <div class="de-del" onclick="removeDropEntry('${enemyId}',${i})">×</div></div>`;
+      }).join('')}
+    </div>
+    <div class="drop-add-row">
+      <select id="add-card-drops-${enemyId}" style="padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text)">
+        ${editorCards.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select>
+      <input id="add-w-drops-${enemyId}" type="number" min="1" value="10"
+        style="width:55px;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text)">
+      <button onclick="addDropEntry('${enemyId}')">+ Hinzufügen</button>
+    </div>
+    <div style="display:flex;gap:5px;margin-top:8px">
+      <button class="btn-save" style="flex:1;font-size:10px;padding:4px" onclick="quickSim('${enemyId}',100)">🎲 100×</button>
+      <button class="btn-sm"  style="flex:1;font-size:10px;padding:4px" onclick="quickSim('${enemyId}',1000)">🎲 1000×</button>
+    </div>
+    <div id="sim-drops-${enemyId}" style="margin-top:6px;font-size:11px"></div>`;
+  area.appendChild(sec);
 }
 
-function updateWeight(eId,key,idx,val) { const e=editorEnemies[eId]; if(!e||!e.dropTable||!e.dropTable[key]) return; e.dropTable[key][idx].weight=parseInt(val)||1; renderDropTable(); }
-function removeDropEntry(eId,key,idx) { const e=editorEnemies[eId]; if(!e||!e.dropTable||!e.dropTable[key]) return; e.dropTable[key].splice(idx,1); renderDropTable(); }
-function addDropEntry(eId,key) {
+function updateWeight(eId,idx,val) {
   const e=editorEnemies[eId];
-  const cId=document.getElementById(`add-card-${key}-${eId}`).value;
-  const w=parseInt(document.getElementById(`add-w-${key}-${eId}`).value)||10;
-  if(!e||!cId) return;
-  if(!e.dropTable) e.dropTable={};
-  if(!e.dropTable[key]) e.dropTable[key]=[];
-  e.dropTable[key].push({cardId:cId,weight:w});
+  if(!e||!e.dropTable||!e.dropTable.drops) return;
+  e.dropTable.drops[idx].weight=parseInt(val)||1;
   renderDropTable();
 }
-function quickSim(eId,key,n,btn) {
+function removeDropEntry(eId,idx) {
+  const e=editorEnemies[eId];
+  if(!e||!e.dropTable||!e.dropTable.drops) return;
+  e.dropTable.drops.splice(idx,1);
+  renderDropTable();
+}
+function addDropEntry(eId) {
+  const e=editorEnemies[eId];
+  const cId=document.getElementById(`add-card-drops-${eId}`).value;
+  const w=parseInt(document.getElementById(`add-w-drops-${eId}`).value)||10;
+  if(!e||!cId) return;
+  if(!e.dropTable) e.dropTable={};
+  if(!Array.isArray(e.dropTable.drops)) e.dropTable.drops=[];
+  e.dropTable.drops.push({cardId:cId,weight:w});
+  renderDropTable();
+}
+function quickSim(eId,n) {
   const enemy=editorEnemies[eId];
   if(!enemy) return;
-  const [rank,type]=key==='TEC'?['D','TEC']:[key[0],'POW'];
-  const results=simulateDrops(enemy,rank,type,n);
-  const out=document.getElementById(`sim-${key}-${eId}`);
+  const results=simulateDrops(enemy,n);
+  const out=document.getElementById(`sim-drops-${eId}`);
   if(!results.length){out.textContent='Keine Ergebnisse';return;}
   const maxPct=results[0].percent;
   out.innerHTML=results.map(r=>{
@@ -810,79 +1577,338 @@ function quickSim(eId,key,n,btn) {
 /* ═══════════════════════════════════════════════════
    ████  ACT-EDITOR  ████
 ═══════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════
+   ████  AKT-EDITOR  ████ (erweitert)
+═══════════════════════════════════════════════════ */
+
+const AE_DEFAULT_CONFIGS = [
+  { // Akt 1
+    layers:3, minWidth:1, maxWidth:3,
+    distribution:{battle:55,elite:20,shop:15,rest:10},
+    battlePool:[{enemyId:'goblin_chief',weight:10},{enemyId:'skeleton_mage',weight:8}],
+    elitePool: [{enemyId:'orc_warlord',weight:10}],
+    bossId:'forest_demon',
+  },
+  { // Akt 2
+    layers:4, minWidth:1, maxWidth:3,
+    distribution:{battle:50,elite:20,shop:15,rest:15},
+    battlePool:[{enemyId:'shadow_knight',weight:10},{enemyId:'dark_priest',weight:8}],
+    elitePool: [{enemyId:'iron_golem_guard',weight:10}],
+    bossId:'chaos_lord',
+  },
+  { // Akt 3
+    layers:4, minWidth:2, maxWidth:3,
+    distribution:{battle:55,elite:25,shop:10,rest:10},
+    battlePool:[{enemyId:'void_reaper',weight:10}],
+    elitePool: [{enemyId:'soul_devourer',weight:10}],
+    bossId:'dark_dimension_god',
+  },
+];
+
+function _aeEnsureDefaults(act, actIdx) {
+  if (!act.mode) act.mode = 'fixed';
+  if (!act.generatorConfig) act.generatorConfig = JSON.parse(JSON.stringify(AE_DEFAULT_CONFIGS[actIdx] || AE_DEFAULT_CONFIGS[0]));
+  if (typeof act.bgm !== 'string') act.bgm = '';
+  if (typeof act.battleBgm !== 'string') act.battleBgm = '';
+}
+
 function renderActEditor() {
   const area = document.getElementById('act-editor-area');
   area.innerHTML = '';
   editorActs.forEach((act, actIdx) => {
-    const sec = document.createElement('div');
-    sec.className = 'act-card';
-    const battleNodes = act.nodes.filter(n=>n.type!=='start');
-    sec.innerHTML = `
-      <div class="act-header">
-        <span class="act-title">${act.actName||`Akt ${actIdx+1}`}</span>
-        <span style="font-size:11px;color:var(--muted)">${battleNodes.length} Knoten</span>
-      </div>
-      <div class="field-row" style="margin-bottom:14px">
-        <div class="field-group"><label>Akt-Name</label>
-          <input value="${esc(act.actName)}" oninput="updateActName(${actIdx},this.value)"></div>
-        <div class="field-group"><label>Hintergrund (CSS)</label>
-          <input value="${esc(act.background)}" oninput="updateActBg(${actIdx},this.value)"></div>
-      </div>
-      <div id="act-nodes-${actIdx}">
-        ${battleNodes.map((node,ni)=>renderNodeRow(node,actIdx,ni)).join('')}
-      </div>
-    `;
-    area.appendChild(sec);
+    _aeEnsureDefaults(act, actIdx);
+    const card = document.createElement('div');
+    card.className = 'act-card';
+    card.id = `ae-card-${actIdx}`;
+    card.innerHTML = _renderActCard(act, actIdx);
+    area.appendChild(card);
+    // Render viz after DOM insertion
+    _renderActViz(actIdx);
   });
 }
 
-function renderNodeRow(node, actIdx, ni) {
-  const typeClass = `node-${node.type}`;
-  const pool = node.enemyPool||[];
-  const fixedEnemy = editorEnemies[node.enemyId];
-  const poolHtml = pool.map((entry,pi)=>{
-    const e=editorEnemies[entry.enemyId];
-    const typeColors = {normal:'pt-normal',elite:'pt-elite',boss:'pt-boss'};
-    return `<div class="pool-entry">
-      <select onchange="updatePoolEntry(${actIdx},'${node.id}',${pi},'enemyId',this.value)"
-        style="width:160px">
-        ${Object.values(editorEnemies).map(en=>`<option value="${en.id}"${entry.enemyId===en.id?' selected':''}>${en.name}</option>`).join('')}
-      </select>
-      <select onchange="updatePoolEntry(${actIdx},'${node.id}',${pi},'enemyType',this.value)" style="width:75px">
-        ${['normal','elite','boss'].map(t=>`<option value="${t}"${entry.enemyType===t?' selected':''}>${t}</option>`).join('')}
-      </select>
-      <span>Gewicht:</span>
-      <input type="number" min="1" value="${entry.weight||10}"
-        onchange="updatePoolEntry(${actIdx},'${node.id}',${pi},'weight',parseInt(this.value)||1)"
-        style="width:55px">
-      <span onclick="removePoolEntry(${actIdx},'${node.id}',${pi})" style="color:var(--red);cursor:pointer">×</span>
-    </div>`;
-  }).join('');
+function _renderActCard(act, actIdx) {
+  const isRandom = act.mode === 'random';
+  const cfg = act.generatorConfig;
+  const dist = cfg.distribution || {battle:50,elite:20,shop:15,rest:15};
+  const total = Object.values(dist).reduce((s,v)=>s+(Number(v)||0),0);
+  const distOk = total === 100;
 
-  return `<div class="node-row">
-    <span class="node-badge ${typeClass}">${node.type.toUpperCase()}</span>
-    <div class="node-info">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${node.id}</div>
-      ${(node.type==='shop'||node.type==='rest'||node.type==='start')
-        ? `<span style="color:var(--muted);font-size:11px">— kein Gegner —</span>`
-        : `<div style="margin-bottom:6px">
-            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">
-              Fixer Gegner: <select style="background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text);padding:2px 4px;font-size:11px"
-                onchange="updateNodeFixed(${actIdx},'${node.id}',this.value)">
-                ${Object.values(editorEnemies).map(en=>`<option value="${en.id}"${node.enemyId===en.id?' selected':''}>${en.name}</option>`).join('')}
-              </select>
-              <span style="color:var(--muted)"> (wird durch Pool überschrieben wenn gesetzt)</span>
-            </div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">🎲 Gegner-Pool (zufällig gewichtet pro Run):</div>
-            <div id="pool-entries-${actIdx}-${node.id}">${poolHtml}</div>
-            <button class="btn-sm" style="margin-top:4px;font-size:10px"
-              onclick="addPoolEntry(${actIdx},'${node.id}')">+ Pool-Eintrag</button>
-          </div>`
-      }
+  const enemyOpts = Object.values(editorEnemies).map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+
+  const battlePoolHtml = (cfg.battlePool||[]).map((entry,pi)=>_renderAePoolEntry(actIdx,'battlePool',pi,entry,enemyOpts)).join('');
+  const elitePoolHtml  = (cfg.elitePool||[]).map((entry,pi)=>_renderAePoolEntry(actIdx,'elitePool',pi,entry,enemyOpts)).join('');
+
+  const bossOpts = Object.values(editorEnemies).map(e=>`<option value="${e.id}"${cfg.bossId===e.id?' selected':''}>${e.name}</option>`).join('');
+
+  const fixedNodes = (act.nodes||[]).filter(n=>n.type!=='start');
+
+  return `
+  <div class="act-header">
+    <span class="act-title">${act.actName||`Akt ${actIdx+1}`}</span>
+    <span style="font-size:11px;color:var(--muted);margin-right:10px">${isRandom?'🎲 Zufallsgeneriert':'🔧 Fest definiert'}</span>
+    <div class="ae-mode-toggle">
+      <button class="ae-mode-btn${!isRandom?' active':''}" onclick="aeSetMode(${actIdx},'fixed')">🔧 Fest</button>
+      <button class="ae-mode-btn${isRandom?' active':''}"  onclick="aeSetMode(${actIdx},'random')">🎲 Zufall</button>
     </div>
+  </div>
+  <div class="ae-body">
+    <!-- Basis-Felder -->
+    <div class="ae-section">
+      <div class="field-row">
+        <div class="field-group" style="flex:2"><label>Akt-Name</label>
+          <input value="${esc(act.actName)}" oninput="updateActName(${actIdx},this.value)"></div>
+        <div class="field-group" style="flex:3"><label>Hintergrund (CSS)</label>
+          <input value="${esc(act.background)}" oninput="updateActBg(${actIdx},this.value)"></div>
+      </div>
+    </div>
+
+    ${isRandom ? `
+    <!-- ── ZUFALLS-MODUS ── -->
+    <div class="ae-section">
+      <div class="ae-section-label">⚙ Struktur</div>
+      <div class="ae-row">
+        <div class="field-group" style="min-width:100px"><label>Layer-Anzahl</label>
+          <input type="number" min="2" max="8" value="${cfg.layers||4}"
+            style="width:70px" onchange="aeSetCfg(${actIdx},'layers',parseInt(this.value)||4);_renderActViz(${actIdx})"></div>
+        <div class="field-group" style="min-width:80px"><label>Min Breite</label>
+          <input type="number" min="1" max="3" value="${cfg.minWidth||1}"
+            style="width:60px" onchange="aeSetCfg(${actIdx},'minWidth',parseInt(this.value)||1)"></div>
+        <div class="field-group" style="min-width:80px"><label>Max Breite</label>
+          <input type="number" min="1" max="4" value="${cfg.maxWidth||3}"
+            style="width:60px" onchange="aeSetCfg(${actIdx},'maxWidth',parseInt(this.value)||3)"></div>
+      </div>
+    </div>
+
+    <div class="ae-section">
+      <div class="ae-section-label">
+        📊 Node-Verteilung
+        <span class="ae-dist-total ${distOk?'ae-dist-ok':'ae-dist-warn'}" id="ae-dist-total-${actIdx}">
+          ${total}% ${distOk?'✓':'≠100%'}
+        </span>
+      </div>
+      ${_renderDistRow(actIdx,'battle','⚔ Kampf',dist.battle||50,'#ff8844')}
+      ${_renderDistRow(actIdx,'elite', '⚡ Elite', dist.elite||20,'#cc44ff')}
+      ${_renderDistRow(actIdx,'shop',  '🏪 Shop',  dist.shop ||15,'#44aaff')}
+      ${_renderDistRow(actIdx,'rest',  '🏕 Rast',  dist.rest ||15,'#44ff88')}
+    </div>
+
+    <div class="ae-section">
+      <div class="ae-section-label">⚔ Gegner-Pool: Kampf</div>
+      <div id="ae-battle-pool-${actIdx}">${battlePoolHtml}</div>
+      <button class="btn-sm" style="margin-top:6px;font-size:10px"
+        onclick="aeAddPoolEntry(${actIdx},'battlePool')">+ Eintrag hinzufügen</button>
+    </div>
+
+    <div class="ae-section">
+      <div class="ae-section-label">⚡ Gegner-Pool: Elite</div>
+      <div id="ae-elite-pool-${actIdx}">${elitePoolHtml}</div>
+      <button class="btn-sm" style="margin-top:6px;font-size:10px"
+        onclick="aeAddPoolEntry(${actIdx},'elitePool')">+ Eintrag hinzufügen</button>
+    </div>
+
+    <div class="ae-section">
+      <div class="ae-section-label">💀 Boss</div>
+      <div class="ae-boss-row">
+        <select style="flex:1;max-width:260px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)"
+          onchange="aeSetBoss(${actIdx},this.value)">${bossOpts}</select>
+        <span style="font-size:11px;color:var(--muted)">Tritt immer am Ende des Acts auf</span>
+      </div>
+    </div>
+
+    <!-- Visualisierung -->
+    <div class="ae-viz-wrap">
+      <div class="ae-viz-label">
+        <span>🗺 VORSCHAU (zufällig)</span>
+        <button class="btn-sm" style="font-size:10px" onclick="aeRefreshViz(${actIdx})">🎲 Neu generieren</button>
+      </div>
+      <svg class="ae-viz-svg" id="ae-viz-${actIdx}" viewBox="0 0 600 120" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+    ` : `
+    <!-- ── FEST-MODUS ── -->
+    <div class="ae-section">
+      <div class="ae-section-label">🗺 Knoten & Gegner</div>
+      <div id="act-nodes-${actIdx}">
+        ${fixedNodes.map((node,ni)=>renderNodeRow(node,actIdx,ni)).join('')}
+      </div>
+    </div>
+
+    <!-- Visualisierung für feste Acts -->
+    <div class="ae-viz-wrap">
+      <div class="ae-viz-label"><span>🗺 STRUKTUR-VORSCHAU</span></div>
+      <svg class="ae-viz-svg" id="ae-viz-${actIdx}" viewBox="0 0 600 120" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    `}
   </div>`;
 }
 
+function _renderDistRow(actIdx, key, label, val, color) {
+  return `<div class="ae-dist-row">
+    <span class="ae-dist-label">${label}</span>
+    <input type="range" class="ae-dist-slider" min="0" max="100" step="5" value="${val}"
+      style="accent-color:${color}"
+      oninput="aeSetDist(${actIdx},'${key}',parseInt(this.value));document.getElementById('ae-dist-val-${actIdx}-${key}').textContent=this.value+'%'"
+      onchange="aeUpdateDistTotal(${actIdx})">
+    <span class="ae-dist-val" id="ae-dist-val-${actIdx}-${key}">${val}%</span>
+  </div>`;
+}
+
+function _renderAePoolEntry(actIdx, poolKey, pi, entry, enemyOpts) {
+  return `<div class="ae-pool-entry" id="ae-pool-${actIdx}-${poolKey}-${pi}">
+    <select style="flex:1;min-width:140px" onchange="aeSetPoolEntry(${actIdx},'${poolKey}',${pi},'enemyId',this.value)">
+      ${Object.values(editorEnemies).map(e=>`<option value="${e.id}"${entry.enemyId===e.id?' selected':''}>${e.name}</option>`).join('')}
+    </select>
+    <span style="font-size:10px;color:var(--muted);flex-shrink:0">Gewicht</span>
+    <input type="number" class="ae-pool-weight" min="1" max="100" value="${entry.weight||10}"
+      onchange="aeSetPoolEntry(${actIdx},'${poolKey}',${pi},'weight',parseInt(this.value)||1)">
+    <span class="ae-pool-del" onclick="aeRemovePoolEntry(${actIdx},'${poolKey}',${pi})">×</span>
+  </div>`;
+}
+
+/* ── Viz Renderer ── */
+function _renderActViz(actIdx) {
+  const act = editorActs[actIdx];
+  if (!act) return;
+  const svgEl = document.getElementById(`ae-viz-${actIdx}`);
+  if (!svgEl) return;
+
+  let nodes;
+  if (act.mode === 'random' && act.generatorConfig) {
+    // Generiere Vorschau
+    try {
+      if (typeof generateAct !== 'undefined') {
+        const preview = generateAct(actIdx, act.actName, act.background, act.generatorConfig);
+        nodes = preview.nodes;
+      } else { nodes = null; }
+    } catch(e) { nodes = null; }
+  } else {
+    nodes = act.nodes || [];
+  }
+
+  if (!nodes) { svgEl.innerHTML = '<text x="50%" y="50%" fill="#555" text-anchor="middle" dominant-baseline="middle" font-size="12">actgenerator.js nicht geladen</text>'; return; }
+
+  _drawActViz(svgEl, nodes);
+}
+
+function _drawActViz(svgEl, nodes) {
+  const W=600, H=120;
+  const nodeColors = {start:'#888',battle:'#ff8844',elite:'#cc44ff',shop:'#44aaff',rest:'#44ff88',boss:'#ff2244'};
+  let html = '';
+
+  // Draw connections first (behind nodes)
+  nodes.forEach(n => {
+    const nx = (n.x/100)*W;
+    const ny = (n.y/100)*H;
+    (n.next||[]).forEach(nextId => {
+      const t = nodes.find(x=>x.id===nextId);
+      if (!t) return;
+      const tx=(t.x/100)*W, ty=(t.y/100)*H;
+      html += `<line x1="${nx}" y1="${ny}" x2="${tx}" y2="${ty}" stroke="#333" stroke-width="1.5" stroke-dasharray="${n.type==='start'?'4,2':'none'}"/>`;
+    });
+  });
+
+  // Draw nodes
+  nodes.forEach(n => {
+    const cx=(n.x/100)*W, cy=(n.y/100)*H;
+    const col = nodeColors[n.type]||'#888';
+    const r = n.type==='boss'?9 : n.type==='start'?6 : 7;
+    const icon = {start:'▶',battle:'⚔',elite:'⚡',shop:'🏪',rest:'🏕',boss:'💀'}[n.type]||'?';
+    html += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" fill-opacity=".25" stroke="${col}" stroke-width="1.5"/>`;
+    html += `<text x="${cx}" y="${cy+1}" text-anchor="middle" dominant-baseline="middle" font-size="${n.type==='boss'?10:8}" fill="${col}">${icon}</text>`;
+  });
+
+  svgEl.innerHTML = html;
+}
+
+function aeRefreshViz(actIdx) {
+  _renderActViz(actIdx);
+}
+
+/* ── State-Mutationen ── */
+function aeSetMode(actIdx, mode) {
+  const act = editorActs[actIdx];
+  if (!act) return;
+  act.mode = mode;
+  // Re-render this act card
+  const card = document.getElementById(`ae-card-${actIdx}`);
+  if (card) {
+    card.innerHTML = _renderActCard(act, actIdx);
+    _renderActViz(actIdx);
+  }
+}
+
+function aeSetCfg(actIdx, key, val) {
+  const act = editorActs[actIdx];
+  if (!act || !act.generatorConfig) return;
+  act.generatorConfig[key] = val;
+}
+
+function aeSetDist(actIdx, key, val) {
+  const act = editorActs[actIdx];
+  if (!act || !act.generatorConfig) return;
+  if (!act.generatorConfig.distribution) act.generatorConfig.distribution = {};
+  act.generatorConfig.distribution[key] = val;
+}
+
+function aeUpdateDistTotal(actIdx) {
+  const act = editorActs[actIdx];
+  if (!act || !act.generatorConfig) return;
+  const dist = act.generatorConfig.distribution || {};
+  const total = Object.values(dist).reduce((s,v)=>s+(Number(v)||0),0);
+  const el = document.getElementById(`ae-dist-total-${actIdx}`);
+  if (el) {
+    el.className = `ae-dist-total ${total===100?'ae-dist-ok':'ae-dist-warn'}`;
+    el.textContent = `${total}% ${total===100?'✓':'≠100%'}`;
+  }
+}
+
+function aeSetBoss(actIdx, enemyId) {
+  const act = editorActs[actIdx];
+  if (!act || !act.generatorConfig) return;
+  act.generatorConfig.bossId = enemyId;
+}
+
+function aeSetPoolEntry(actIdx, poolKey, pi, field, val) {
+  const act = editorActs[actIdx];
+  if (!act || !act.generatorConfig) return;
+  const pool = act.generatorConfig[poolKey];
+  if (!pool || !pool[pi]) return;
+  pool[pi][field] = field === 'weight' ? Number(val) : val;
+}
+
+function aeAddPoolEntry(actIdx, poolKey) {
+  const act = editorActs[actIdx];
+  if (!act || !act.generatorConfig) return;
+  if (!act.generatorConfig[poolKey]) act.generatorConfig[poolKey] = [];
+  const firstEnemy = Object.keys(editorEnemies)[0] || 'goblin_chief';
+  act.generatorConfig[poolKey].push({ enemyId: firstEnemy, weight: 10 });
+  // Re-render pool section only
+  const poolKey2 = poolKey === 'battlePool' ? 'battle' : 'elite';
+  const poolEl = document.getElementById(`ae-${poolKey2}-pool-${actIdx}`);
+  if (poolEl) {
+    poolEl.innerHTML = act.generatorConfig[poolKey].map((entry,pi)=>
+      _renderAePoolEntry(actIdx, poolKey, pi, entry, '')
+    ).join('');
+  }
+}
+
+function aeRemovePoolEntry(actIdx, poolKey, pi) {
+  const act = editorActs[actIdx];
+  if (!act || !act.generatorConfig) return;
+  const pool = act.generatorConfig[poolKey];
+  if (!pool) return;
+  pool.splice(pi, 1);
+  const poolKey2 = poolKey === 'battlePool' ? 'battle' : 'elite';
+  const poolEl = document.getElementById(`ae-${poolKey2}-pool-${actIdx}`);
+  if (poolEl) {
+    poolEl.innerHTML = pool.map((entry,pi2)=>
+      _renderAePoolEntry(actIdx, poolKey, pi2, entry, '')
+    ).join('');
+  }
+}
+
+/* ── Fixed mode helpers (bestehende API) ── */
 function updateActName(actIdx,val) { if(editorActs[actIdx]) editorActs[actIdx].actName=val; }
 function updateActBg(actIdx,val)   { if(editorActs[actIdx]) editorActs[actIdx].background=val; }
 function updateNodeFixed(actIdx,nodeId,enemyId) {
@@ -908,7 +1934,100 @@ function removePoolEntry(actIdx,nodeId,pi) {
   node.enemyPool.splice(pi,1);
   renderActEditor();
 }
-function saveActs() { showToast('Acts gespeichert — nutze "Im Spiel speichern" zum Aktivieren.'); }
+
+function renderNodeRow(node, actIdx, ni) {
+  const typeClass = `node-${node.type}`;
+  const pool = node.enemyPool||[];
+  const poolHtml = pool.map((entry,pi)=>{
+    return `<div class="pool-entry">
+      <select onchange="updatePoolEntry(${actIdx},'${node.id}',${pi},'enemyId',this.value)" style="width:160px">
+        ${Object.values(editorEnemies).map(en=>`<option value="${en.id}"${entry.enemyId===en.id?' selected':''}>${en.name}</option>`).join('')}
+      </select>
+      <select onchange="updatePoolEntry(${actIdx},'${node.id}',${pi},'enemyType',this.value)" style="width:75px">
+        ${['normal','elite','boss'].map(t=>`<option value="${t}"${entry.enemyType===t?' selected':''}>${t}</option>`).join('')}
+      </select>
+      <span>Gewicht:</span>
+      <input type="number" min="1" value="${entry.weight||10}"
+        onchange="updatePoolEntry(${actIdx},'${node.id}',${pi},'weight',parseInt(this.value)||1)" style="width:55px">
+      <span onclick="removePoolEntry(${actIdx},'${node.id}',${pi})" style="color:var(--red);cursor:pointer">×</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="node-row">
+    <span class="node-badge ${typeClass}">${node.type.toUpperCase()}</span>
+    <div class="node-info">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${node.id}</div>
+      ${(node.type==='shop'||node.type==='rest'||node.type==='start')
+        ? `<span style="color:var(--muted);font-size:11px">— kein Gegner —</span>`
+        : `<div style="margin-bottom:6px">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">
+              Fixer Gegner:
+              <select style="background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text);padding:2px 4px;font-size:11px"
+                onchange="updateNodeFixed(${actIdx},'${node.id}',this.value)">
+                ${Object.values(editorEnemies).map(en=>`<option value="${en.id}"${node.enemyId===en.id?' selected':''}>${en.name}</option>`).join('')}
+              </select>
+              <span style="color:var(--muted);font-size:10px"> (wird durch Pool überschrieben)</span>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">🎲 Gegner-Pool:</div>
+            <div id="pool-entries-${actIdx}-${node.id}">${poolHtml}</div>
+            <button class="btn-sm" style="margin-top:4px;font-size:10px"
+              onclick="addPoolEntry(${actIdx},'${node.id}')">+ Pool-Eintrag</button>
+          </div>`
+      }
+    </div>
+  </div>`;
+}
+
+function saveActs() {
+  // Ensure all acts have mode field set
+  editorActs.forEach((act, i) => _aeEnsureDefaults(act, i));
+
+  /* ── Validierung: Rest-Nodes prüfen ── */
+  const warnings = [];
+  editorActs.forEach((act, i) => {
+    const name = act.actName || `Akt ${i + 1}`;
+
+    if (act.mode === 'random' && act.generatorConfig) {
+      const dist   = act.generatorConfig.distribution || {};
+      const layers = Number(act.generatorConfig.layers) || 4;
+      const restPct = Number(dist.rest) || 0;
+
+      if (restPct === 0) {
+        warnings.push(`⚠ "${name}" (Zufalls-Modus): Rest-Gewichtung ist 0 → Kein Lagerfeuer möglich!`);
+      } else if (layers <= 2) {
+        warnings.push(`ℹ "${name}" (Zufalls-Modus): Nur ${layers} Layer → Das Spiel erzwingt mindestens 1 Rest-Node.`);
+      }
+    } else if (act.mode !== 'random') {
+      /* Fester Modus: Nodes direkt prüfen */
+      const nodes = act.nodes || [];
+      const hasRest = nodes.some(n => n.type === 'rest');
+      if (!hasRest) {
+        warnings.push(`⚠ "${name}" (Fester Modus): Kein Lagerfeuer-Node vorhanden → Spieler kann nicht rasten.`);
+      }
+    }
+  });
+
+  if (warnings.length > 0) {
+    const msg = warnings.join('\n');
+    console.warn('[DD Editor] Act-Validierung:\n' + msg);
+    showToast('⚠ Acts gespeichert — Validierungshinweise (Details in Konsole)', 'warn');
+    /* Visueller Hinweis unter dem Speichern-Button */
+    let box = document.getElementById('act-validation-warnings');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'act-validation-warnings';
+      box.style.cssText = 'margin-top:12px;padding:12px;background:rgba(255,180,0,0.1);border:1px solid #c8a84b;border-radius:8px;font-size:12px;line-height:1.7;color:#c8a84b;white-space:pre-line';
+      const saveBtn = document.querySelector('.btn-save');
+      if (saveBtn && saveBtn.parentNode) saveBtn.parentNode.insertBefore(box, saveBtn.nextSibling);
+    }
+    box.textContent = msg;
+  } else {
+    /* Validierungs-Box entfernen wenn alles ok */
+    const box = document.getElementById('act-validation-warnings');
+    if (box) box.remove();
+    showToast('Acts konfiguriert ✓ — "Im Spiel speichern" zum Aktivieren');
+  }
+}
 
 /* ═══════════════════════════════════════════════════
    ████  FUSIONEN-TAB  ████
@@ -921,18 +2040,21 @@ function renderFusionEditor() {
 
   area.innerHTML = `
     <div style="margin-bottom:20px">
-      <div style="font-size:12px;color:var(--gold);letter-spacing:2px;margin-bottom:14px">AKTIVE REZEPTE (${editorRecipes.length})</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+        <div style="font-size:12px;color:var(--gold);letter-spacing:2px">AKTIVE REZEPTE (${editorRecipes.length})</div>
+        <input class="recipe-filter" id="recipe-search" placeholder="🔍 Karte suchen…" oninput="filterRecipeList(this.value)">
+      </div>
       <div id="recipe-list">
         ${editorRecipes.map((r,i)=>{
           const m1=editorCards.find(c=>c.id===r.mat1);
           const m2=editorCards.find(c=>c.id===r.mat2);
           const res=editorCards.find(c=>c.id===r.result);
-          return `<div class="recipe-row">
-            <div class="recipe-mat">${m1?m1.name:r.mat1}</div>
+          return `<div class="recipe-row" data-mat1="${(m1?m1.name:r.mat1).toLowerCase()}" data-mat2="${(m2?m2.name:r.mat2).toLowerCase()}" data-res="${(res?res.name:r.result).toLowerCase()}">
+            <div class="recipe-mat">${m1?esc(m1.name):r.mat1}</div>
             <div class="recipe-arrow">+</div>
-            <div class="recipe-mat">${m2?m2.name:r.mat2}</div>
+            <div class="recipe-mat">${m2?esc(m2.name):r.mat2}</div>
             <div class="recipe-arrow">→</div>
-            <div class="recipe-result">${res?res.name:r.result}</div>
+            <div class="recipe-result">${res?esc(res.name):r.result}</div>
             <div class="de-del" onclick="removeRecipe(${i})">×</div>
           </div>`;
         }).join('')}
@@ -955,6 +2077,15 @@ function renderFusionEditor() {
       <button class="btn-save" onclick="addRecipe()"${hasMonsters?'':' disabled'}>+ Rezept hinzufügen</button>
     </div>
   `;
+}
+
+function filterRecipeList(q) {
+  const fl = (q||'').toLowerCase();
+  document.querySelectorAll('#recipe-list .recipe-row').forEach(row => {
+    if(!fl) { row.style.display=''; return; }
+    const match = row.dataset.mat1.includes(fl)||row.dataset.mat2.includes(fl)||row.dataset.res.includes(fl);
+    row.style.display = match ? '' : 'none';
+  });
 }
 
 function getFusionMonsterCandidates() {
@@ -1005,18 +2136,117 @@ function saveFusions() { showToast('Fusionen gespeichert — nutze "Im Spiel spe
 /* ═══════════════════════════════════════════════════
    ████  KONFIGURATION-TAB  ████
 ═══════════════════════════════════════════════════ */
+/* Standard-Roster-Reihenfolge (gleiche Liste wie im Spiel) */
+const DEFAULT_ROSTER_ORDER = [
+  'goblin_chief', 'skeleton_mage', 'orc_warlord', 'forest_demon',
+  'shadow_knight', 'dark_priest', 'iron_golem_guard', 'chaos_lord',
+  'void_reaper', 'soul_devourer', 'dark_dimension_god',
+];
+
+/* Aktuelle Arbeitsreihenfolge (wird beim Initialisieren befüllt) */
+let _rosterOrder = [];
+
+function _setPlaylistEditorValue(id, tracks) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = Array.isArray(tracks) ? tracks.join('\n') : '';
+}
+
+function _getPlaylistEditorValue(id) {
+  const el = document.getElementById(id);
+  if (!el) return [];
+  return String(el.value || '')
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+}
+
 function initConfig() {
   const cfg = editorConfig;
   const setVal = (id,def) => { const el=document.getElementById(id); if(el) el.value=cfg[id]!==undefined?cfg[id]:def; };
-  setVal('cfg-startlp',4000); setVal('cfg-startgold',50); setVal('cfg-maxhand',7);
+  setVal('cfg-startlp',4000); setVal('cfg-maxhand',7);
   setVal('cfg-restratio',30); setVal('cfg-removecost',25); setVal('cfg-fleecost',15);
+  setVal('cfg-maxsummons',2);
   setVal('cfg-price-common',30); setVal('cfg-price-uncommon',45); setVal('cfg-price-rare',60);
   setVal('cfg-price-epic',100); setVal('cfg-price-legendary',150);
+  _setPlaylistEditorValue('cfg-music-menu', cfg['cfg-music-menu']);
+  _setPlaylistEditorValue('cfg-music-campaign', cfg['cfg-music-campaign']);
+  _setPlaylistEditorValue('cfg-music-story', cfg['cfg-music-story']);
 
   // Starter deck
   const addSel = document.getElementById('starter-deck-add');
   if(addSel) addSel.innerHTML = editorCards.filter(c=>c.type!=='fusion').map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   renderStarterDeck();
+
+  // Roster-Reihenfolge initialisieren
+  initRosterOrder();
+}
+
+/* ── Roster-Reihenfolge ── */
+function initRosterOrder() {
+  // Saved order oder Standard
+  const saved = editorConfig['cfg-roster-order'];
+  const base  = (saved && Array.isArray(saved) && saved.length > 0) ? saved : [...DEFAULT_ROSTER_ORDER];
+
+  // Alle bekannten Enemy-IDs einsammeln (Standard + Custom)
+  const allIds = new Set([...DEFAULT_ROSTER_ORDER, ...Object.keys(editorEnemies)]);
+
+  // Bestehende IDs aus base behalten, dann unbekannte anhängen
+  _rosterOrder = base.filter(id => allIds.has(id));
+  allIds.forEach(id => { if (!_rosterOrder.includes(id)) _rosterOrder.push(id); });
+
+  renderRosterOrderList();
+}
+
+function renderRosterOrderList() {
+  const list = document.getElementById('roster-order-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  _rosterOrder.forEach((id, idx) => {
+    const enemy = editorEnemies[id] ||
+      (typeof ENEMIES !== 'undefined' && ENEMIES[id] ? ENEMIES[id] : null);
+    const name    = enemy ? (enemy.name || id) : id;
+    const portrait = enemy ? _portraitThumb(enemy.portrait) : '👾';
+    const isDefault = DEFAULT_ROSTER_ORDER.includes(id);
+
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex;align-items:center;gap:8px;padding:6px 10px;
+      background:var(--surface2);border:1px solid var(--border);border-radius:6px;`;
+
+    row.innerHTML = `
+      <span style="font-size:1.1rem;width:24px;text-align:center">${portrait}</span>
+      <span style="flex:1;font-size:12px;color:var(--text)">${name}</span>
+      <span style="font-size:10px;color:var(--muted);width:60px">${id}</span>
+      ${!isDefault ? `<span style="font-size:10px;color:#aa44ff;background:rgba(170,68,255,0.15);
+        padding:1px 6px;border-radius:10px;border:1px solid rgba(170,68,255,0.3)">Custom</span>` : ''}
+      <button onclick="rosterOrderMove(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}
+        style="background:var(--surface);border:1px solid var(--border);color:var(--text);
+        padding:2px 7px;border-radius:4px;cursor:pointer;font-size:13px">▲</button>
+      <button onclick="rosterOrderMove(${idx},  1)" ${idx === _rosterOrder.length-1 ? 'disabled' : ''}
+        style="background:var(--surface);border:1px solid var(--border);color:var(--text);
+        padding:2px 7px;border-radius:4px;cursor:pointer;font-size:13px">▼</button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function rosterOrderMove(idx, dir) {
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= _rosterOrder.length) return;
+  const tmp = _rosterOrder[idx];
+  _rosterOrder[idx]    = _rosterOrder[newIdx];
+  _rosterOrder[newIdx] = tmp;
+  renderRosterOrderList();
+}
+
+function resetRosterOrder() {
+  _rosterOrder = [...DEFAULT_ROSTER_ORDER];
+  // Custom enemies anhängen
+  Object.keys(editorEnemies).forEach(id => {
+    if (!_rosterOrder.includes(id)) _rosterOrder.push(id);
+  });
+  renderRosterOrderList();
 }
 
 function renderStarterDeck() {
@@ -1041,16 +2271,21 @@ function removeStarterCard(i) { editorStarterDeck.splice(i,1); renderStarterDeck
 function saveConfig() {
   const getVal = id => { const el=document.getElementById(id); return el?parseInt(el.value)||0:0; };
   editorConfig['cfg-startlp']     = getVal('cfg-startlp');
-  editorConfig['cfg-startgold']   = getVal('cfg-startgold');
   editorConfig['cfg-maxhand']     = getVal('cfg-maxhand');
   editorConfig['cfg-restratio']   = getVal('cfg-restratio');
   editorConfig['cfg-removecost']  = getVal('cfg-removecost');
   editorConfig['cfg-fleecost']    = getVal('cfg-fleecost');
+  editorConfig['cfg-maxsummons']  = Math.max(1, getVal('cfg-maxsummons') || 2);
   editorConfig['cfg-price-common']    = getVal('cfg-price-common');
   editorConfig['cfg-price-uncommon']  = getVal('cfg-price-uncommon');
   editorConfig['cfg-price-rare']      = getVal('cfg-price-rare');
   editorConfig['cfg-price-epic']      = getVal('cfg-price-epic');
   editorConfig['cfg-price-legendary'] = getVal('cfg-price-legendary');
+  editorConfig['cfg-music-menu']      = _getPlaylistEditorValue('cfg-music-menu');
+  editorConfig['cfg-music-campaign']  = _getPlaylistEditorValue('cfg-music-campaign');
+  editorConfig['cfg-music-story']     = _getPlaylistEditorValue('cfg-music-story');
+  // Roster-Reihenfolge speichern
+  editorConfig['cfg-roster-order'] = [..._rosterOrder];
   showToast('Konfiguration gespeichert ✓');
 }
 
@@ -1061,46 +2296,28 @@ function initDebugTab() {
   const opts=Object.values(editorEnemies).map(e=>`<option value="${e.id}">${_portraitThumb(e.portrait)} ${e.name}</option>`).join('');
   document.getElementById('dbg-enemy').innerHTML=opts;
   document.getElementById('dbg-analysis-enemy').innerHTML=opts;
-  runAnalysis(); loadBattleStats();
+  runAnalysis();
+  loadBattleStats();
 }
 
-function calcDebugRank() {
-  const lp=+document.getElementById('dbg-lp').value||0;
-  const maxlp=+document.getElementById('dbg-maxlp').value||4000;
-  const turns=+document.getElementById('dbg-turns').value||1;
-  const dmg=+document.getElementById('dbg-dmg').value||0;
-  const total=+document.getElementById('dbg-total').value||0;
-  const kills=+document.getElementById('dbg-kills').value||0;
-  const spells=+document.getElementById('dbg-spells').value||0;
-  const result=calculateBattleRank({maxSingleDamage:dmg,enemyMonstersDestroyed:kills,spellsTrapsPlayed:spells,turnsElapsed:turns,totalDamageDealt:total},lp,maxlp);
-  const rc={S:'#ffd700',A:'#c0a0ff',B:'#60c0ff',C:'#80ff80',D:'#999'}[result.rank]||'#fff';
-  document.getElementById('dbg-rank-result').innerHTML=`
-    <div class="rank-display-big" style="color:${rc}">${result.rank}</div>
-    <div style="text-align:center;color:${rc};font-weight:700;letter-spacing:2px;margin-bottom:6px">${result.type==='TEC'?'🧠 TAKTIK':'⚔ KRAFT'}</div>
-    <div style="font-size:11px;color:var(--muted)">Score: <b style="color:#fff">${result.score}</b> | POW: ${result.powScore} | TEC: ${result.tecScore}</div>
-    <div style="font-size:10px;color:var(--muted);margin-top:4px">Drop-Key: <b style="color:#64b4ff">${getRankDropKey(result.rank,result.type)}</b></div>`;
-}
+/* calcDebugRank: entfernt — Rang-System wurde abgeschafft */
 
 function testDrop(n) {
   const eId=document.getElementById('dbg-enemy').value;
-  const fullKey=document.getElementById('dbg-rank').value;
   const seedVal=document.getElementById('dbg-seed').value;
   const enemy=editorEnemies[eId]; if(!enemy) return;
   const seed=seedVal?parseInt(seedVal):undefined;
-  const [rank,type]=fullKey==='TEC'?['D','TEC']:[fullKey[0],'POW'];
+  const out=document.getElementById('dbg-drop-result');
   if(n===1){
-    const result=resolveDropForEnemy(enemy,rank,type,seed);
-    const out=document.getElementById('dbg-drop-result');
-    if(!result){out.textContent='⚠ Keine Karte';return;}
+    const result=resolveDropForEnemy(enemy,seed);
+    if(!result){out.textContent='⚠ Keine Karte — Droptabelle leer oder fehlerhaft';return;}
     const c=result.card;
     const col={common:'#aaa',rare:'#60a5fa',epic:'#c084fc',legendary:'#ffd700'}[c.rarity]||'#aaa';
     out.innerHTML=`<div style="color:${col};font-weight:700;font-size:14px">${c.name}</div>
       <div style="color:var(--muted);font-size:11px">${c.type} · ${c.rarity}</div>
-      <div style="font-size:11px;margin-top:4px">Drop-Chance: <b>${result.dropChance}%</b></div>
-      <div style="font-size:10px;color:var(--muted)">Tabelle: ${result.resolvedKey}</div>`;
+      <div style="font-size:11px;margin-top:4px">Drop-Chance: <b>${result.dropChance}%</b></div>`;
   } else {
-    const results=simulateDrops(enemy,rank,type,n,seed);
-    const out=document.getElementById('dbg-drop-result');
+    const results=simulateDrops(enemy,n,seed);
     out.innerHTML=`<div style="margin-bottom:6px;font-size:11px">${n}× Simuliert:</div>`+
       results.map(r=>{
         const col={common:'#aaa',rare:'#60a5fa',epic:'#c084fc',legendary:'#ffd700'}[r.rarity]||'#aaa';
@@ -1114,21 +2331,17 @@ function testDrop(n) {
 
 function runAnalysis() {
   const eId=document.getElementById('dbg-analysis-enemy').value;
-  const key=document.getElementById('dbg-analysis-key').value;
   const enemy=editorEnemies[eId];
   const out=document.getElementById('dbg-analysis-result');
-  if(!enemy||!enemy.dropTable){out.textContent='Keine Daten';return;}
-  const pool=enemy.dropTable[key]||[];
-  const total=pool.reduce((s,e)=>s+(e.weight||1),0);
-  if(!pool.length){out.innerHTML='<div style="color:var(--muted)">Keine Einträge</div>';return;}
-  out.innerHTML=pool.map(entry=>{
-    const c=editorCards.find(x=>x.id===entry.cardId);
-    const pct=total>0?(entry.weight/total*100).toFixed(2):0;
-    const col={common:'#aaa',rare:'#60a5fa',epic:'#c084fc',legendary:'#ffd700'}[c?c.rarity:'common']||'#aaa';
+  if(!enemy){out.textContent='Keine Daten';return;}
+  const results=analyzeDropPool(enemy.dropTable);
+  if(!results.length){out.innerHTML='<div style="color:var(--muted)">Keine Einträge in der Droptabelle</div>';return;}
+  out.innerHTML=results.map(entry=>{
+    const col={common:'#aaa',rare:'#60a5fa',epic:'#c084fc',legendary:'#ffd700'}[entry.rarity]||'#aaa';
     return `<div class="sim-result-row">
-      <div style="width:130px;color:${col}">${c?c.name:entry.cardId}</div>
-      <div class="sim-bar" style="flex:1"><div class="sim-bar-fill" style="width:${pct}%;background:${col}"></div></div>
-      <div style="width:55px;text-align:right;font-weight:700;color:${col}">${pct}%</div></div>`;
+      <div style="width:130px;color:${col}">${entry.name}</div>
+      <div class="sim-bar" style="flex:1"><div class="sim-bar-fill" style="width:${entry.percent}%;background:${col}"></div></div>
+      <div style="width:55px;text-align:right;font-weight:700;color:${col}">${entry.percent}%</div></div>`;
   }).join('');
 }
 
@@ -1145,20 +2358,427 @@ function loadBattleStats() {
 }
 
 /* ═══════════════════════════════════════════════════
+   WELTENKARTE-EDITOR
+═══════════════════════════════════════════════════ */
+
+function initWorldMapEditor() {
+  renderWmCanvas();
+  renderWmDetail(null);
+}
+
+/* ── Canvas rendern ── */
+function renderWmCanvas() {
+  const nodesDiv = document.getElementById('wm-editor-nodes');
+  const svg      = document.getElementById('wm-editor-svg');
+  const hint     = document.getElementById('wm-empty-hint');
+  if (!nodesDiv || !svg) return;
+
+  nodesDiv.innerHTML = '';
+  svg.innerHTML      = '';
+  if (hint) hint.style.display = editorWorldMap.length === 0 ? 'flex' : 'none';
+
+  /* Nodes */
+  editorWorldMap.forEach(loc => {
+    const el = document.createElement('div');
+    el.dataset.id = loc.id;
+    el.style.cssText = `
+      position:absolute;
+      left:${loc.x||50}%;top:${loc.y||50}%;
+      transform:translate(-50%,-50%);
+      width:52px;text-align:center;cursor:pointer;
+      user-select:none;
+    `;
+    const isSelected = selectedWmLocId === loc.id;
+    const typeColor = { dungeon:'#7c3aed', hub:'#2a7040', story:'#7a5a10' }[loc.type] || '#444';
+    const typeIcon  = { dungeon:'⚔', hub:'🏕', story:'📜' }[loc.type] || '•';
+
+    el.innerHTML = `
+      <div style="
+        width:38px;height:38px;border-radius:50%;
+        background:${isSelected ? typeColor : '#1a1a38'};
+        border:2px solid ${isSelected ? '#fff' : typeColor};
+        display:flex;align-items:center;justify-content:center;
+        font-size:16px;margin:0 auto 4px;
+        box-shadow:${isSelected ? '0 0 12px '+typeColor+'aa' : 'none'};
+        transition:all .2s;
+      ">${typeIcon}</div>
+      <div style="font-size:10px;color:#c0c0e0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:60px;margin-left:-4px">${loc.name||loc.id}</div>
+    `;
+
+    /* Klick → auswählen */
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      selectedWmLocId = loc.id;
+      renderWmCanvas();
+      renderWmDetail(loc.id);
+    });
+
+    /* Drag: Position verschieben */
+    el.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
+      e.preventDefault(); e.stopPropagation();
+      const canvas = document.getElementById('wm-editor-canvas');
+      if (!canvas) return;
+      const onMove = ev => {
+        const cr = canvas.getBoundingClientRect();
+        loc.x = Math.max(5, Math.min(95, ((ev.clientX - cr.left) / cr.width)  * 100));
+        loc.y = Math.max(5, Math.min(95, ((ev.clientY - cr.top)  / cr.height) * 100));
+        renderWmCanvas();
+      };
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    nodesDiv.appendChild(el);
+  });
+
+  /* Verbindungslinien */
+  requestAnimationFrame(() => {
+    const canvas = document.getElementById('wm-editor-canvas');
+    const svgEl  = document.getElementById('wm-editor-svg');
+    if (!canvas || !svgEl) return;
+    const cr = canvas.getBoundingClientRect();
+    if (cr.width === 0) return;
+    const drawn = new Set();
+    editorWorldMap.forEach(loc => {
+      (loc.connections || []).forEach(targetId => {
+        const key = [loc.id, targetId].sort().join('→');
+        if (drawn.has(key)) return;
+        drawn.add(key);
+        const fromEl = nodesDiv.querySelector(`[data-id="${loc.id}"]`);
+        const toEl   = nodesDiv.querySelector(`[data-id="${targetId}"]`);
+        if (!fromEl || !toEl) return;
+        const fr = fromEl.getBoundingClientRect();
+        const tr = toEl.getBoundingClientRect();
+        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1', fr.left + fr.width/2  - cr.left);
+        line.setAttribute('y1', fr.top  + fr.height/2 - cr.top);
+        line.setAttribute('x2', tr.left + tr.width/2  - cr.left);
+        line.setAttribute('y2', tr.top  + tr.height/2 - cr.top);
+        line.setAttribute('stroke','#3a3a6a');
+        line.setAttribute('stroke-width','2');
+        svgEl.appendChild(line);
+      });
+    });
+  });
+}
+
+/* Klick auf leere Canvas-Fläche → neuen Ort an dieser Position */
+function wmCanvasClick(e) {
+  if (e.target !== e.currentTarget && e.target.id !== 'wm-editor-svg') return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = Math.round(((e.clientX - rect.left) / rect.width)  * 100);
+  const y = Math.round(((e.clientY - rect.top)  / rect.height) * 100);
+  const id = 'loc_' + Date.now();
+  editorWorldMap.push({
+    id, name: 'Neuer Ort', type: 'dungeon',
+    x, y, connections: [],
+    unlockConditions: [], actId: editorActId(editorActs[0]),
+    hubFeatures: ['rest','shop','deck','save'],
+    storyLines: [], description: '', bgm: '', battleBgm: '',
+  });
+  selectedWmLocId = id;
+  renderWmCanvas();
+  renderWmDetail(id);
+}
+
+/* Neuen Ort hinzufügen (Button) */
+function addWorldMapLocation() {
+  const id = 'loc_' + Date.now();
+  editorWorldMap.push({
+    id, name: 'Neuer Ort', type: 'dungeon',
+    x: 10 + Math.random() * 80, y: 10 + Math.random() * 80,
+    connections: [], unlockConditions: [],
+    actId: editorActId(editorActs[0]), hubFeatures: ['rest','shop','deck','save'],
+    storyLines: [], description: '', bgm: '', battleBgm: '',
+  });
+  selectedWmLocId = id;
+  renderWmCanvas();
+  renderWmDetail(id);
+}
+
+/* Karte leeren */
+function clearWorldMap() {
+  if (!confirm('Gesamte Weltenkarte löschen?')) return;
+  editorWorldMap = [];
+  selectedWmLocId = null;
+  renderWmCanvas();
+  renderWmDetail(null);
+}
+
+/* ── Detail-Panel ── */
+function renderWmDetail(locId) {
+  const panel = document.getElementById('wm-detail-panel');
+  if (!panel) return;
+
+  if (!locId) {
+    panel.innerHTML = `<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px 0">
+      Wähle einen Ort auf der Karte aus, um ihn zu bearbeiten.
+    </div>`;
+    return;
+  }
+
+  const loc = editorWorldMap.find(l => l.id === locId);
+  if (!loc) { renderWmDetail(null); return; }
+
+  /* Verbindungsliste (alle anderen Orte) */
+  const otherLocs = editorWorldMap.filter(l => l.id !== locId);
+  const connectedIds = new Set(loc.connections || []);
+
+  /* Unlock-Bedingungen */
+  const condTypes = [
+    { v:'locationCompleted', l:'Ort abgeschlossen' },
+    { v:'locationVisited',   l:'Ort besucht' },
+    { v:'cardOwned',         l:'Karte besitzen' },
+    { v:'always',            l:'Immer (kein Lock)' },
+  ];
+
+  /* Story Lines */
+  const storyLines = loc.storyLines || [];
+
+  panel.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <!-- Kopfzeile -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border)">
+        <span style="font-weight:700;color:var(--gold);font-size:12px">✏ ORT BEARBEITEN</span>
+        <button class="btn-danger-sm" onclick="deleteWmLocation('${esc(locId)}')">🗑 Löschen</button>
+      </div>
+
+      <!-- ID (readonly) -->
+      <div class="field-group">
+        <label>ID</label>
+        <input type="text" value="${esc(loc.id)}" readonly style="opacity:.5;cursor:not-allowed">
+      </div>
+
+      <!-- Name -->
+      <div class="field-group">
+        <label>Name</label>
+        <input type="text" id="wm-f-name" value="${esc(loc.name||'')}" oninput="wmUpdate('name',this.value)">
+      </div>
+
+      <!-- Typ -->
+      <div class="field-group">
+        <label>Typ</label>
+        <select id="wm-f-type" onchange="wmUpdate('type',this.value)">
+          <option value="dungeon" ${loc.type==='dungeon'?'selected':''}>⚔ Dungeon (Kämpfe)</option>
+          <option value="hub"     ${loc.type==='hub'    ?'selected':''}>🏕 Lager (Rest / Shop)</option>
+          <option value="story"   ${loc.type==='story'  ?'selected':''}>📜 Geschichte (Dialog)</option>
+        </select>
+      </div>
+
+      <!-- Beschreibung -->
+      <div class="field-group">
+        <label>Beschreibung (Untertitel)</label>
+        <input type="text" value="${esc(loc.description||'')}" oninput="wmUpdate('description',this.value)">
+      </div>
+
+      <!-- Dungeon: Act-ID -->
+      ${loc.type==='dungeon' ? `
+      <div class="field-group">
+        <label>Act (welcher Dungeon geladen wird)</label>
+        <select id="wm-f-actid" onchange="wmUpdate('actId',this.value)">
+          ${editorActs.map(a=>`<option value="${esc(editorActId(a))}" ${loc.actId===editorActId(a)?'selected':''}>${esc(a.actName||a.name||editorActId(a))} (${esc(editorActId(a))})</option>`).join('')}
+        </select>
+      </div>` : ''}
+
+      <!-- Hub: verfügbare Features -->
+      ${loc.type==='hub' ? `
+      <div class="field-group">
+        <label>Hub-Features (Mehrfachauswahl)</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;padding:6px;background:var(--bg);border:1px solid var(--border);border-radius:4px">
+          ${[['rest','💤 Rasten'],['shop','🛒 Shop'],['deck','🃏 Deck-Editor'],['save','💾 Speichern']].map(([v,l])=>`
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px">
+              <input type="checkbox" value="${v}" ${(loc.hubFeatures||[]).includes(v)?'checked':''}
+                onchange="wmUpdateFeature('${v}',this.checked)"> ${l}
+            </label>`).join('')}
+        </div>
+      </div>` : ''}
+
+      <!-- Story: Zeilen-Editor -->
+      ${loc.type==='story' ? `
+      <div class="field-group">
+        <label>Story-Zeilen</label>
+        <div id="wm-story-lines" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px">
+          ${storyLines.map((sl,i)=>`
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:6px;display:flex;flex-direction:column;gap:4px">
+              <div style="display:flex;gap:6px">
+                <input type="text" placeholder="Sprecher" value="${esc(sl.speaker||'')}" style="flex:1"
+                  oninput="wmUpdateStoryLine(${i},'speaker',this.value)">
+                <button class="btn-danger-sm" onclick="wmDeleteStoryLine(${i})">✕</button>
+              </div>
+              <textarea placeholder="Text…" rows="2" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:4px;color:var(--text);font-size:12px;resize:vertical"
+                oninput="wmUpdateStoryLine(${i},'text',this.value)">${esc(sl.text||'')}</textarea>
+            </div>`).join('')}
+        </div>
+        <button class="btn-sm" style="margin-top:6px" onclick="wmAddStoryLine()">+ Zeile hinzufügen</button>
+      </div>` : ''}
+
+      <!-- Verbindungen -->
+      <div class="field-group">
+        <label>Verbindungen (erreichbare Orte)</label>
+        <div style="display:flex;flex-direction:column;gap:4px;padding:6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;max-height:120px;overflow-y:auto">
+          ${otherLocs.length === 0
+            ? '<div style="color:var(--muted);font-size:11px">Noch keine anderen Orte</div>'
+            : otherLocs.map(ol=>`
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px">
+              <input type="checkbox" value="${esc(ol.id)}" ${connectedIds.has(ol.id)?'checked':''}
+                onchange="wmUpdateConnection('${esc(loc.id)}','${esc(ol.id)}',this.checked)">
+              <span>${esc(ol.name||ol.id)}</span>
+              <span style="color:var(--muted);font-size:10px">(${ol.type})</span>
+            </label>`).join('')}
+        </div>
+      </div>
+
+      <!-- Freischalt-Bedingungen -->
+      <div class="field-group">
+        <label>Freischalt-Bedingungen</label>
+        <div id="wm-unlock-conds" style="display:flex;flex-direction:column;gap:6px;max-height:150px;overflow-y:auto;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px">
+          ${(loc.unlockConditions||[]).map((cond,i)=>`
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:6px;display:flex;gap:6px;align-items:center">
+              <select style="flex:1" onchange="wmUpdateCond(${i},'type',this.value)">
+                ${condTypes.map(ct=>`<option value="${ct.v}" ${cond.type===ct.v?'selected':''}>${ct.l}</option>`).join('')}
+              </select>
+              ${cond.type!=='always' ? `
+                <input type="text" placeholder="${cond.type==='cardOwned'?'Karten-ID':'Ort-ID'}"
+                  value="${esc(cond.locationId||cond.cardId||'')}" style="flex:1"
+                  oninput="wmUpdateCond(${i},'${cond.type==='cardOwned'?'cardId':'locationId'}',this.value)">
+              ` : ''}
+              <button class="btn-danger-sm" onclick="wmDeleteCond(${i})">✕</button>
+            </div>`).join('')}
+        </div>
+        <button class="btn-sm" style="margin-top:6px" onclick="wmAddCond()">+ Bedingung</button>
+      </div>
+
+      <!-- Position (numerisch) -->
+      <div class="field-row">
+        <div class="field-group">
+          <label>X-Position (%)</label>
+          <input type="number" min="5" max="95" value="${Math.round(loc.x||50)}" oninput="wmUpdate('x',parseFloat(this.value));renderWmCanvas()">
+        </div>
+        <div class="field-group">
+          <label>Y-Position (%)</label>
+          <input type="number" min="5" max="95" value="${Math.round(loc.y||50)}" oninput="wmUpdate('y',parseFloat(this.value));renderWmCanvas()">
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+
+/* ── Weltenkarten-Update-Helfer ── */
+function wmUpdate(field, value) {
+  const loc = editorWorldMap.find(l => l.id === selectedWmLocId);
+  if (!loc) return;
+  loc[field] = value;
+  if (field === 'type') renderWmDetail(selectedWmLocId);
+  renderWmCanvas();
+}
+
+function wmUpdateFeature(feature, enabled) {
+  const loc = editorWorldMap.find(l => l.id === selectedWmLocId);
+  if (!loc) return;
+  if (!loc.hubFeatures) loc.hubFeatures = [];
+  if (enabled) { if (!loc.hubFeatures.includes(feature)) loc.hubFeatures.push(feature); }
+  else { loc.hubFeatures = loc.hubFeatures.filter(f => f !== feature); }
+}
+
+function wmUpdateConnection(fromId, toId, connected) {
+  const from = editorWorldMap.find(l => l.id === fromId);
+  const to   = editorWorldMap.find(l => l.id === toId);
+  if (!from || !to) return;
+  if (!from.connections) from.connections = [];
+  if (!to.connections)   to.connections   = [];
+  if (connected) {
+    if (!from.connections.includes(toId)) from.connections.push(toId);
+    if (!to.connections.includes(fromId)) to.connections.push(fromId);  // bidirektional
+  } else {
+    from.connections = from.connections.filter(id => id !== toId);
+    to.connections   = to.connections.filter(id => id !== fromId);
+  }
+  renderWmCanvas();
+}
+
+function wmUpdateCond(idx, field, value) {
+  const loc = editorWorldMap.find(l => l.id === selectedWmLocId);
+  if (!loc || !loc.unlockConditions) return;
+  if (loc.unlockConditions[idx]) loc.unlockConditions[idx][field] = value;
+  if (field === 'type') renderWmDetail(selectedWmLocId); // Re-render bei Typ-Wechsel
+}
+
+function wmDeleteCond(idx) {
+  const loc = editorWorldMap.find(l => l.id === selectedWmLocId);
+  if (!loc) return;
+  loc.unlockConditions.splice(idx, 1);
+  renderWmDetail(selectedWmLocId);
+}
+
+function wmAddCond() {
+  const loc = editorWorldMap.find(l => l.id === selectedWmLocId);
+  if (!loc) return;
+  if (!loc.unlockConditions) loc.unlockConditions = [];
+  loc.unlockConditions.push({ type: 'always' });
+  renderWmDetail(selectedWmLocId);
+}
+
+function wmAddStoryLine() {
+  const loc = editorWorldMap.find(l => l.id === selectedWmLocId);
+  if (!loc) return;
+  if (!loc.storyLines) loc.storyLines = [];
+  loc.storyLines.push({ speaker: '', text: '' });
+  renderWmDetail(selectedWmLocId);
+}
+
+function wmDeleteStoryLine(idx) {
+  const loc = editorWorldMap.find(l => l.id === selectedWmLocId);
+  if (!loc) return;
+  loc.storyLines.splice(idx, 1);
+  renderWmDetail(selectedWmLocId);
+}
+
+function wmUpdateStoryLine(idx, field, value) {
+  const loc = editorWorldMap.find(l => l.id === selectedWmLocId);
+  if (!loc || !loc.storyLines || !loc.storyLines[idx]) return;
+  loc.storyLines[idx][field] = value;
+}
+
+function deleteWmLocation(locId) {
+  if (!confirm('Diesen Ort löschen?')) return;
+  editorWorldMap = editorWorldMap.filter(l => l.id !== locId);
+  /* Aus allen Verbindungen entfernen */
+  editorWorldMap.forEach(l => {
+    if (l.connections) l.connections = l.connections.filter(id => id !== locId);
+  });
+  selectedWmLocId = null;
+  renderWmCanvas();
+  renderWmDetail(null);
+}
+
+/* ═══════════════════════════════════════════════════
    SPEICHERN / EXPORT / IMPORT
 ═══════════════════════════════════════════════════ */
 function saveToGame() {
   const regularCards = editorCards.filter(card => card.type !== 'fusion');
   const fusionCards  = editorCards.filter(card => card.type === 'fusion');
+  // Synergien aus aktuellem DD_CUSTOM übernehmen (werden vom Synergie-Tab geschrieben)
+  const synToSave = window.DD_CUSTOM?.synergies || null;
+
   const data = {
-    cards:      regularCards,
+    cards:          regularCards,   // enthält jetzt auch Spielfeld-Karten (type:'field')
     fusionMonsters: fusionCards,
-    enemies:    Object.values(editorEnemies),
-    acts:       editorActs,
-    recipes:    editorRecipes,
-    config:     editorConfig,
-    starterDeck:editorStarterDeck,
+    synergies:      synToSave,
+    enemies:        Object.values(editorEnemies),
+    acts:           editorActs,
+    recipes:        editorRecipes,
+    config:         editorConfig,
+    starterDeck:    editorStarterDeck,
+    worldMap:       editorWorldMap.length > 0 ? editorWorldMap : undefined,
   };
+  window.DD_CUSTOM = data;
   localStorage.setItem('dd_custom', JSON.stringify(data));
   showToast('✓ Gespeichert! Lade das Spiel neu (F5).');
 }
@@ -1168,7 +2788,8 @@ function exportJSON() {
   const fusionCards  = editorCards.filter(card => card.type === 'fusion');
   const data={version:'2.0',timestamp:new Date().toISOString(),
     cards:regularCards,fusionMonsters:fusionCards,enemies:Object.values(editorEnemies),
-    acts:editorActs,recipes:editorRecipes,config:editorConfig,starterDeck:editorStarterDeck};
+    acts:editorActs,recipes:editorRecipes,config:editorConfig,starterDeck:editorStarterDeck,
+    worldMap:editorWorldMap.length>0?editorWorldMap:undefined};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
@@ -1192,10 +2813,11 @@ function importJSON() {
           if(i>=0) editorCards[i]=c; else editorCards.push(c);
         });
         if(data.enemies) data.enemies.forEach(en=>{editorEnemies[en.id]=en;});
-        if(data.acts) editorActs=data.acts;
+        if(data.acts) editorActs=data.acts.map(normalizeEditorAct);
         if(data.recipes) editorRecipes=data.recipes;
         if(data.config) editorConfig=data.config;
         if(data.starterDeck) editorStarterDeck=data.starterDeck;
+        if(data.worldMap) editorWorldMap=data.worldMap.map(normalizeEditorWorldMapLocation);
         renderCardList(); initEnemyTab();
         showToast('Import erfolgreich ✓');
       }catch(err){alert('Import-Fehler: '+err.message);}
@@ -1206,6 +2828,66 @@ function importJSON() {
 }
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ═══════════════════════════════════════════════════
+   SYNERGIE-EDITOR
+═══════════════════════════════════════════════════ */
+
+function initSynergyTab() {
+  const area = document.getElementById('synergy-editor-area');
+  if (!area) return;
+  const rules = (window.DD_CUSTOM?.synergies) || SYNERGY_RULES;
+  const typeLabels = {
+    passive_atk_per_card:    'ATK pro Karte (passiv)',
+    passive_atk_flat:        'ATK pauschal (passiv)',
+    passive_def_flat:        'DEF pauschal (passiv)',
+    on_summon_debuff_enemy:  'Debuff Gegner (bei Beschwörung)',
+    on_summon_buff_self:     'Buff Verbündete (bei Beschwörung)',
+    on_death_damage:         'Schaden bei Tod',
+  };
+  area.innerHTML = rules.map((rule, i) => `
+    <div style="background:var(--surface);border:1px solid ${rule.color||'var(--border)'};border-radius:8px;padding:12px;display:flex;gap:12px;align-items:flex-start">
+      <div style="width:8px;background:${rule.color||'#555'};border-radius:4px;align-self:stretch;flex-shrink:0"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+        <div style="font-weight:700;color:${rule.color||'#ddd'}">${rule.race} — ${typeLabels[rule.type]||rule.type}</div>
+        <div style="font-size:11px;color:var(--muted)">${rule.description}</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div class="field-group" style="flex:0 0 auto">
+            <label style="font-size:10px">Schwelle (ab X Karten)</label>
+            <input type="number" min="1" max="5" value="${rule.threshold}" data-syn-idx="${i}" data-syn-field="threshold" style="width:60px">
+          </div>
+          <div class="field-group" style="flex:0 0 auto">
+            <label style="font-size:10px">Wert (ATK/DEF/LP)</label>
+            <input type="number" min="0" max="5000" value="${rule.value}" data-syn-idx="${i}" data-syn-field="value" style="width:80px">
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function saveSynergies() {
+  const area = document.getElementById('synergy-editor-area');
+  if (!area) return;
+  const rules = JSON.parse(JSON.stringify((window.DD_CUSTOM?.synergies) || SYNERGY_RULES));
+  area.querySelectorAll('input[data-syn-idx]').forEach(inp => {
+    const idx   = Number(inp.dataset.synIdx);
+    const field = inp.dataset.synField;
+    if (rules[idx]) rules[idx][field] = Number(inp.value);
+  });
+  if (!window.DD_CUSTOM) window.DD_CUSTOM = {};
+  window.DD_CUSTOM.synergies = rules;
+  localStorage.setItem('dd_custom', JSON.stringify(window.DD_CUSTOM));
+  showToast('Synergien gespeichert ✓');
+}
+
+function resetSynergies() {
+  if (!window.DD_CUSTOM) return;
+  delete window.DD_CUSTOM.synergies;
+  localStorage.setItem('dd_custom', JSON.stringify(window.DD_CUSTOM));
+  initSynergyTab();
+  showToast('Synergien zurückgesetzt ✓');
+}
 
 /* ═══════════════════════════════════════════════════
    INITIALISIERUNG

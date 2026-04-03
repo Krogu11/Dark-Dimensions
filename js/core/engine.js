@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    core/engine.js — Battle Engine
    ============================================================
    Changelog:
@@ -27,6 +27,7 @@ function engineDrawCard() {
 /* ── Phase-Wechsel ── */
 function nextPhase() {
   if (BATTLE_STATE.gameOver) return;
+  if (isAnimating()) return;
 
   const bs       = BATTLE_STATE;
   const oldPhase = getCurrentPhase();
@@ -41,11 +42,33 @@ function nextPhase() {
 
   const newPhase = getCurrentPhase();
   battleLog(`📌 ${oldPhase} → ${newPhase}`, 'phase');
-  if (newPhase === 'Draw') engineDrawCard();
 
   bs.fusionSelect      = [];
   bs.selectedHandIndex = null;
   bs.attackerIndex     = null;
+
+  if (newPhase === 'Draw') {
+    /* Karte ziehen, dann automatisch in Main Phase weiter */
+    engineDrawCard();
+    animatePhaseAnnounce('DRAW PHASE');
+    renderBattle();
+    setTimeout(() => { if (!BATTLE_STATE.gameOver) nextPhase(); }, 750);
+    return;
+  }
+
+  if (newPhase === 'Main') {
+    animatePhaseAnnounce('MAIN PHASE');
+  } else if (newPhase === 'Battle') {
+    animatePhaseAnnounce('BATTLE PHASE');
+  } else if (newPhase === 'End') {
+    /* Spielfeld-Rundeneffekte (Heal/Burn/Drain) — global für beide Seiten */
+    if (typeof applyFieldCardPerTurnEffects === 'function') applyFieldCardPerTurnEffects();
+    /* End Phase anzeigen, dann automatisch Gegnerzug starten */
+    animatePhaseAnnounce('END PHASE');
+    renderBattle();
+    setTimeout(() => { if (!BATTLE_STATE.gameOver) nextPhase(); }, 850);
+    return;
+  }
 
   renderBattle();
 }
@@ -65,6 +88,9 @@ function handleHandClick(index) {
   }
   if (card.type === 'trap' && phase === 'Main') {
     setTrapFromHand(index); return;
+  }
+  if (card.type === 'field' && phase === 'Main') {
+    playFieldCard(index); return;
   }
 
   if (card.type === 'monster' || card.type === 'fusion') {
@@ -120,7 +146,7 @@ function summonToSlot(slotIndex) {
 
   if (idx === null) return;
   if (phase !== 'Main') { battleLog('⚠ Beschwörung nur in Main Phase', 'warn'); return; }
-  if (bs.hasNormalSummoned) { battleLog('⚠ Bereits eine Beschwörung diese Runde', 'warn'); return; }
+  if (bs.summonCount >= bs.maxPlayerSummons) { battleLog(`⚠ Keine Beschwörungen mehr übrig (${bs.summonCount}/${bs.maxPlayerSummons})`, 'warn'); return; }
   if (bs.playerField[slotIndex] !== null) { battleLog('⚠ Slot belegt', 'warn'); return; }
 
   const card = bs.hand[idx];
@@ -135,10 +161,22 @@ function _showSummonModal(card) {
   const modal   = document.getElementById('summon-modal');
   const nameEl  = document.getElementById('summon-modal-card');
   const statsEl = document.getElementById('summon-modal-stats');
+  const artEl   = document.getElementById('summon-modal-art');
   if (!modal) { _executeSummon(_pendingSummonSlot, 'attack'); return; }
 
   if (nameEl)  nameEl.textContent  = card.name;
   if (statsEl) statsEl.textContent = `ATK ${card.atk}  /  DEF ${card.def}`;
+
+  // Artwork anzeigen wenn vorhanden
+  if (artEl) {
+    if (card.image) {
+      artEl.innerHTML = `<img src="${card.image}" class="summon-modal-art-img" alt="${card.name}">`;
+      artEl.style.display = 'block';
+    } else {
+      artEl.innerHTML = '';
+      artEl.style.display = 'none';
+    }
+  }
 
   modal.style.display = 'flex';
   if (window.gsap) {
@@ -176,13 +214,16 @@ function _executeSummon(slotIndex, mode) {
   bs.hand.splice(idx, 1);
   bs.selectedHandIndex = null;
   bs.fusionSelect      = [];
-  bs.hasNormalSummoned = true;
+  bs.summonCount++;
 
   const raceStr = card.race ? ` [${card.race}]` : '';
   const modeStr = mode === 'defense' ? '🛡 Verteidigung' : '⚔ Angriff';
   battleLog(`✅ ${card.name}${raceStr} beschworen [${modeStr}] ATK ${card.atk} / DEF ${card.def}`, 'summon');
   animateSummon(slotIndex, true);
   applyOnSummonEffect(card, true);
+
+  /* ── Spielfeld-Boni auf neu beschworenes Monster anwenden ── */
+  if (typeof applyFieldCardToNewMonster === 'function') applyFieldCardToNewMonster(card);
 
   /* ── Synergien nach Beschwörung neu berechnen ── */
   applyFieldSynergies(true);
@@ -198,6 +239,19 @@ function tryFusion() {
   const bs  = BATTLE_STATE;
   const sel = bs.fusionSelect;
   if (sel.length < 2) return;
+  if (isAnimating()) return;
+  if (getCurrentPhase() !== 'Main') {
+    battleLog('⚠ Fusion nur in der Main Phase möglich', 'warn');
+    renderBattle();
+    return;
+  }
+  if (bs.summonCount >= bs.maxPlayerSummons) {
+    battleLog(`⚠ Keine Beschwörungen mehr übrig (${bs.summonCount}/${bs.maxPlayerSummons})`, 'warn');
+    bs.fusionSelect = [];
+    bs.selectedHandIndex = null;
+    renderBattle();
+    return;
+  }
 
   const c1 = bs.hand[sel[0]];
   const c2 = bs.hand[sel[1]];
@@ -212,27 +266,32 @@ function tryFusion() {
   }
 
   const fusionCard = cloneCard(getCardById(recipe.result));
+  const savedSel   = [sel[0], sel[1]];
 
-  // Materialien entfernen (höheren Index zuerst)
-  [sel[1], sel[0]].sort((a, b) => b - a).forEach(i => bs.hand.splice(i, 1));
+  // Fusions-Animation — Logik im Callback
+  animateFusionCards(savedSel[0], savedSel[1], () => {
+    // Materialien entfernen (höheren Index zuerst)
+    [...savedSel].sort((a, b) => b - a).forEach(i => bs.hand.splice(i, 1));
 
-  // Slot suchen
-  const slot = bs.playerField.findIndex(c => c === null);
-  if (slot < 0) { battleLog('⚠ Kein freier Slot für Fusion', 'warn'); return; }
+    // Slot suchen
+    const slot = bs.playerField.findIndex(c => c === null);
+    if (slot < 0) { battleLog('⚠ Kein freier Slot für Fusion', 'warn'); return; }
 
-  // Modus-Modal für Fusion
-  bs.selectedHandIndex = null;
-  bs.fusionSelect      = [];
+    // Modus-Modal für Fusion
+    bs.selectedHandIndex = null;
+    bs.fusionSelect      = [];
 
-  // Fusion-Karte temporär in Hand legen für Modal-Flow
-  fusionCard._isFusionPending = true;
-  bs.hand.push(fusionCard);
-  bs.selectedHandIndex = bs.hand.length - 1;
+    // Fusion-Karte temporär in Hand legen für Modal-Flow
+    fusionCard._isFusionPending = true;
+    bs.hand.push(fusionCard);
+    bs.selectedHandIndex = bs.hand.length - 1;
 
-  _pendingSummonSlot = slot;
-  _showSummonModal(fusionCard);
+    _pendingSummonSlot = slot;
+    _showSummonModal(fusionCard);
 
-  battleLog(`⚗ Fusion bereit: ${c1.name} + ${c2.name} → ${fusionCard.name}!`, 'summon');
+    battleLog(`⚗ Fusion bereit: ${c1.name} + ${c2.name} → ${fusionCard.name}!`, 'summon');
+    renderBattle();
+  });
 }
 
 /* ──────────────────────────────────────────────────
@@ -251,14 +310,76 @@ function handlePlayerFieldClick(slotIndex) {
     renderBattle();
   }
   else if (getCurrentPhase() === 'Main') {
-    // Rechtsklick handled toggleCardMode, Linksklick hier wählt Monster
+    // Wenn eine Handkarte für Fusion ausgewählt ist → Feld-Fusion versuchen
+    if (bs.fusionSelect.length === 1) {
+      const hCard = bs.hand[bs.fusionSelect[0]];
+      if (hCard && (hCard.type === 'monster' || hCard.type === 'fusion')) {
+        tryFieldFusion(slotIndex);
+        return;
+      }
+    }
     bs.attackerIndex = null;
   }
+}
+
+/* ──────────────────────────────────────────────────
+   FELD-FUSION (Spieler: Feldmonster + Handkarte)
+────────────────────────────────────────────────── */
+function tryFieldFusion(fieldSlot) {
+  const bs = BATTLE_STATE;
+  if (bs.summonCount >= bs.maxPlayerSummons) {
+    battleLog(`⚠ Keine Beschwörungen mehr übrig (${bs.summonCount}/${bs.maxPlayerSummons})`, 'warn');
+    bs.fusionSelect = [];
+    bs.selectedHandIndex = null;
+    renderBattle();
+    return;
+  }
+
+  const handIdx  = bs.fusionSelect[0];
+  const handCard = bs.hand[handIdx];
+  const fieldCard = bs.playerField[fieldSlot];
+
+  if (!handCard || !fieldCard) {
+    bs.fusionSelect = [];
+    bs.selectedHandIndex = null;
+    renderBattle();
+    return;
+  }
+
+  const recipe = getFusionResult(handCard.id, fieldCard.id);
+  if (!recipe) {
+    battleLog(`✗ Keine Fusion möglich: ${handCard.name} + ${fieldCard.name}`, 'warn');
+    bs.fusionSelect = [];
+    bs.selectedHandIndex = null;
+    renderBattle();
+    return;
+  }
+
+  const fusionCard = cloneCard(getCardById(recipe.result));
+
+  // Materialien entfernen
+  bs.hand.splice(handIdx, 1);
+  bs.playerField[fieldSlot] = null;
+
+  bs.selectedHandIndex = null;
+  bs.fusionSelect = [];
+
+  // Fusion-Karte temporär in Hand für Modal-Flow (nutzt denselben Slot)
+  fusionCard._isFusionPending = true;
+  bs.hand.push(fusionCard);
+  bs.selectedHandIndex = bs.hand.length - 1;
+
+  _pendingSummonSlot = fieldSlot;
+  _showSummonModal(fusionCard);
+
+  battleLog(`⚗ Feld-Fusion: ${fieldCard.name} + ${handCard.name} → ${fusionCard.name}!`, 'summon');
+  renderBattle();
 }
 
 function handleEnemyFieldClick(targetSlot) {
   const bs = BATTLE_STATE;
   if (getCurrentPhase() !== 'Battle') return;
+  if (isAnimating()) return;
   if (bs.attackerIndex === null) { battleLog('⚠ Wähle erst einen Angreifer', 'warn'); return; }
 
   if (checkEnemyTraps(bs.attackerIndex)) return;
@@ -267,11 +388,16 @@ function handleEnemyFieldClick(targetSlot) {
   if (!enemyHasMonsters) { executeDirectAttack(); return; }
   if (!bs.enemyField[targetSlot]) return;
 
-  resolveCombat(bs.attackerIndex, targetSlot, false);
+  const savedAtk = bs.attackerIndex;
+  const savedDef = targetSlot;
+  animateAttackLunge('player-field', savedAtk, 'enemy-field', savedDef, () => {
+    resolveCombat(savedAtk, savedDef, false);
+  });
 }
 
 function executeDirectAttack() {
   const bs = BATTLE_STATE;
+  if (isAnimating()) return;
   if (bs.attackerIndex === null) return;
   if (bs.enemyField.some(Boolean)) { battleLog('⚠ Direktangriff nur wenn Gegnerfeld leer', 'warn'); return; }
 
@@ -279,15 +405,18 @@ function executeDirectAttack() {
 
   const a = bs.playerField[bs.attackerIndex];
   if (!a) return;
-  bs.enemyLP -= a.atk;
-  _trackDamage(a.atk);
-  battleLog(`💥 Direktangriff! ${a.name} → ${a.atk} Schaden`, 'damage');
-  animateDamageNumber('enemy', a.atk);
-  bs.hasAttacked[bs.attackerIndex] = true;
-  bs.attackerIndex = null;
 
-  checkWinCondition();
-  renderBattle();
+  const savedAtk = bs.attackerIndex;
+  animateDirectAttackLunge('player-field', savedAtk, () => {
+    bs.enemyLP -= a.atk;
+    _trackDamage(a.atk);
+    battleLog(`💥 Direktangriff! ${a.name} → ${a.atk} Schaden`, 'damage');
+    animateDamageNumber('enemy', a.atk);
+    bs.hasAttacked[savedAtk] = true;
+    bs.attackerIndex = null;
+    checkWinCondition();
+    renderBattle();
+  });
 }
 
 /* ──────────────────────────────────────────────────
@@ -411,9 +540,6 @@ function checkWinCondition() {
     bs.gameOver = true;
     battleLog('🏆 SIEG! Gegner besiegt!', 'summon');
     RUN_STATE.playerHP = Math.max(1, Math.min(bs.playerLP, RUN_STATE.maxHP));
-    const goldGain = randomBetween(bs.enemy.gold[0], bs.enemy.gold[1]);
-    RUN_STATE.gold += goldGain;
-    battleLog(`💰 +${goldGain} Gold`, 'buff');
     // Kampf-Statistiken für Debug-Editor speichern
     try {
       const rs = bs.rankingStats;
@@ -428,10 +554,67 @@ function checkWinCondition() {
         'Spells/Fallen':       rs.spellsTrapsPlayed,
       }));
     } catch(e) {}
-    setTimeout(() => { completeNode(RUN_STATE.currentNodeId); showRewardScreen(); }, 1200);
+    /* ── Gegner als besiegt markieren (für Freies Duell Roster) ── */
+    if (bs.enemy && bs.enemy.id && typeof recordEnemyDefeated === 'function') {
+      recordEnemyDefeated(bs.enemy.id);
+    }
+    /* ── Freies Duell: Sieg aufzeichnen ── */
+    if (RUN_STATE._isFreeDuel && bs.enemy && bs.enemy.id
+        && typeof recordFreeDuelResult === 'function') {
+      recordFreeDuelResult(bs.enemy.id, true);
+    }
+
+    /* ── Boss-Sieg: Fortschritt committen & speichern ── */
+    const currentAct = (typeof getRunActData === 'function')
+      ? getRunActData()
+      : (RUN_STATE.currentActId ? getActData(RUN_STATE.currentActId) : getActData(RUN_STATE.currentActIndex));
+    const currentNode = RUN_STATE.currentNodeId
+      ? ((currentAct || { nodes: [] }).nodes.find(n => n.id === RUN_STATE.currentNodeId))
+      : null;
+    const isBoss = currentNode && currentNode.type === 'boss';
+    if (isBoss && typeof onBossDefeated === 'function') {
+      onBossDefeated();
+    }
+
+    /* ── Freies Duell: Slot-Änderungen sofort speichern (auch nicht-Boss) ── */
+    if (RUN_STATE._isFreeDuel && SAVE_STATE && SAVE_STATE.slot) {
+      if (typeof saveCurrentSlotWithFeedback === 'function') saveCurrentSlotWithFeedback('Spiel gespeichert');
+      else if (typeof saveCurrentSlot === 'function') saveCurrentSlot();
+    }
+
+    setTimeout(() => {
+      if (!RUN_STATE._freeDuelReturn) {
+        completeNode(RUN_STATE.currentNodeId);
+      }
+      /* Victory-Hook (letzter Boss) */
+      if (typeof onVictory === 'function' && isBoss && currentNode && Array.isArray(currentNode.next) && currentNode.next.includes('victory')
+          && !RUN_STATE._freeDuelReturn) {
+        onVictory();
+      }
+      showRewardScreen();
+    }, 1200);
   } else if (bs.playerLP <= 0) {
     bs.gameOver = true;
     battleLog('💀 NIEDERLAGE!', 'damage');
+    /* ── Freies Duell: Niederlage aufzeichnen (kein Permadeath) ── */
+    if (RUN_STATE._isFreeDuel && bs.enemy && bs.enemy.id
+        && typeof recordFreeDuelResult === 'function') {
+      recordFreeDuelResult(bs.enemy.id, false);
+    }
+    /* Im Freien Duell → zurück zum Roster statt Game-Over */
+    if (RUN_STATE._isFreeDuel) {
+      RUN_STATE._freeDuelReturn = false;
+      RUN_STATE._isFreeDuel     = false;
+      setTimeout(() => {
+        if (typeof renderFreeDuelScreen === 'function') renderFreeDuelScreen();
+        showScreen('freeduel');
+      }, 1200);
+      return;
+    }
+    /* Kampagne: Permadeath: Run verwerfen */
+    if (typeof discardRun === 'function') discardRun();
+    if (typeof restoreLastSavedProgressState === 'function') restoreLastSavedProgressState();
+    else if (typeof reloadCurrentSlotFromDisk === 'function') reloadCurrentSlotFromDisk();
     setTimeout(() => showScreen('gameover'), 1200);
   }
 }

@@ -4,7 +4,7 @@
    ============================================================ */
 
 /* ── Konstanten ── */
-const CARD_TYPE = { MONSTER:'monster', SPELL:'spell', TRAP:'trap', FUSION:'fusion' };
+const CARD_TYPE = { MONSTER:'monster', SPELL:'spell', TRAP:'trap', FUSION:'fusion', FIELD:'field' };
 const RARITY    = { COMMON:'common', UNCOMMON:'uncommon', RARE:'rare', EPIC:'epic', LEGENDARY:'legendary' };
 
 /* ── Rassen-Konstanten ── */
@@ -158,9 +158,65 @@ const FUSION_MONSTERS = [
 ];
 
 /* ══════════════════════════════════════════════════
+   FIELD CARDS — Spielfeld-Karten
+   Typ: 'field' — Globale Karten ohne Besitzer.
+   fieldEffects: Persistente Effekte die für BEIDE Seiten gelten.
+     trigger:'passive'    → Stat-Bonus/Malus, gilt solange Feld aktiv
+     trigger:'each_turn'  → LP-Effekt, wird jede Runde angewendet
+   image: Wird als Karten-Artwork UND Kampf-Hintergrund verwendet.
+══════════════════════════════════════════════════ */
+const FIELD_CARDS = [
+
+  { id:'feld_koboldwald', name:'Koboldwald',       type:'field', rarity:'rare',  atk:0, def:0, race:'', image:null,
+    fieldEffects:[{type:'statBoost', target:'all',  stat:'atk', amount:250, trigger:'passive'}],
+    flavor:'Die Horde erwacht im Schutz des dunklen Waldes.' },
+
+  { id:'feld_vulkan',     name:'Vulkankrater',     type:'field', rarity:'epic',  atk:0, def:0, race:'', image:null,
+    fieldEffects:[{type:'burn',      target:'both',              amount:400, trigger:'each_turn'}],
+    flavor:'Brodelnde Lava verschluckt alles – Feuer ist Herr hier.' },
+
+  { id:'feld_heilig',     name:'Heiliger Boden',   type:'field', rarity:'rare',  atk:0, def:0, race:'', image:null,
+    fieldEffects:[{type:'heal',      target:'both',              amount:600, trigger:'each_turn'}],
+    flavor:'Altes Licht heilt die Gerechten und verdammt die Bösen.' },
+
+  { id:'feld_schatten',   name:'Schattenvoid',     type:'field', rarity:'epic',  atk:0, def:0, race:'', image:null,
+    fieldEffects:[{type:'drain',     target:'both',              amount:500, trigger:'each_turn'}],
+    flavor:'Die Leere verschluckt das Licht — nur die Dunkelheit herrscht.' },
+
+  { id:'feld_toten',      name:'Totensteppe',      type:'field', rarity:'legendary', atk:0, def:0, race:'', image:null,
+    fieldEffects:[
+      {type:'statBoost', target:'all', stat:'atk', amount:400, trigger:'passive'},
+      {type:'debuff',    target:'all', stat:'def', amount:300, trigger:'passive'},
+    ],
+    flavor:'Zwischen Leben und Tod — hier regieren die Untoten.' },
+
+  { id:'feld_drache',     name:'Drachengipfel',    type:'field', rarity:'legendary', atk:0, def:0, race:'', image:null,
+    fieldEffects:[
+      {type:'statBoost', target:'all', stat:'atk', amount:500, trigger:'passive'},
+      {type:'burn',      target:'both',             amount:500, trigger:'each_turn'},
+    ],
+    flavor:'Hier thront die älteste Macht — Drachen werden zu Göttern.' },
+
+  { id:'feld_maschine',   name:'Maschinenhölle',   type:'field', rarity:'rare',  atk:0, def:0, race:'', image:null,
+    fieldEffects:[{type:'statBoost', target:'all',  stat:'def', amount:400, trigger:'passive'}],
+    flavor:'Stahl, Öl und Blut — hier regiert die ewige Maschine.' },
+
+  { id:'feld_bestie',     name:'Wilder Jägerwald', type:'field', rarity:'rare',  atk:0, def:0, race:'', image:null,
+    fieldEffects:[{type:'statBoost', target:'all',  stat:'atk', amount:350, trigger:'passive'}],
+    flavor:'Die uralten Bäume kennen nur das Gesetz des Stärkeren.' },
+
+  { id:'feld_chaos',      name:'Chaoszone',        type:'field', rarity:'legendary', atk:0, def:0, race:'', image:null,
+    fieldEffects:[
+      {type:'statBoost', target:'all', stat:'atk', amount:300, trigger:'passive'},
+      {type:'burn',      target:'both',             amount:300, trigger:'each_turn'},
+    ],
+    flavor:'Hier gelten keine Regeln. Alles ist möglich.' },
+];
+
+/* ══════════════════════════════════════════════════
    ALLE KARTEN ZUSAMMENGEFASST
 ══════════════════════════════════════════════════ */
-const ALL_CARDS = [...MONSTER_CARDS, ...SPELL_CARDS, ...TRAP_CARDS];
+const ALL_CARDS = [...MONSTER_CARDS, ...SPELL_CARDS, ...TRAP_CARDS, ...FIELD_CARDS];
 
 /* ══════════════════════════════════════════════════
    FUSIONSREZEPTE & EVOLUTION-KETTEN

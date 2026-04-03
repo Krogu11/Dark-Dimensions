@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
@@ -9,19 +9,168 @@
 <body>
 
 <!-- ════════════════════════════════════════════════
-     SCREEN: TITLE
+     SCREEN: TITLE (Save-Slot-Auswahl)
 ════════════════════════════════════════════════ -->
-<div id="screen-title" class="screen">
+<div id="screen-title" class="screen screen-title-bg">
   <div class="title-orbs">
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
   </div>
   <div class="title-logo">DARK DIMENSIONS</div>
-  <div class="title-sub">ROGUELIKE CARD GAME</div>
-  <div class="title-buttons">
-    <button id="btn-new-run">⚔ Neuen Run starten</button>
-    <button id="btn-how-to-play" onclick="alert('Wähle Nodes auf der Karte → Kämpfe gegen Gegner → Baue dein Deck aus.\n\nKampf:\n• Draw Phase: Karte ziehen\n• Main Phase: Karte beschwören, Spells aktivieren, Fallen setzen\n• Battle Phase: Angreifer wählen, Ziel klicken\n• End Phase: Gegner zieht\n\nFusion: Zwei Monster in der Hand auswählen → beide leuchten → Fusion-Button')">❓ Anleitung</button>
+  <div class="title-sub">Das Böse wartet nicht!</div>
+
+  <div class="title-save-section">
+    <div class="title-save-label">— SPIELSTAND WÄHLEN —</div>
+    <div id="title-slots" class="title-slots"></div>
+  </div>
+
+  <button class="title-howto-btn" onclick="alert('Wähle einen Spielstand → Kampagne starten → Kämpfe auf der Karte.\n\nKampf:\n• Draw Phase: Karte ziehen (auto)\n• Main Phase: Karte beschwören / Spells / Fallen\n• Battle Phase: Angreifer wählen, Ziel klicken\n• End Phase: Gegner ist dran (auto)\n\nFusion: 2 Monster in Hand auswählen → Fusion-Button\nFlucht: -15% Max-HP, Run geht weiter')">❓ Anleitung</button>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     SCREEN: HAUPTMENÜ
+════════════════════════════════════════════════ -->
+<div id="screen-mainmenu" class="screen screen-mainmenu">
+  <div class="title-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <div class="mm-logo">DARK DIMENSIONS</div>
+
+  <div id="mainmenu-slot-info" class="mm-slot-info"></div>
+
+  <div class="mm-buttons">
+    <button id="btn-mainmenu-campaign" class="mm-btn mm-btn-primary">⚔ Neuer Run</button>
+    <button id="btn-mainmenu-freeduel" class="mm-btn">🎮 Freies Duell</button>
+    <button id="btn-mainmenu-shop"     class="mm-btn mm-btn-shop">🏪 Shop</button>
+    <button id="btn-mainmenu-deckeditor" class="mm-btn">📖 Kartenbuch</button>
+    <button id="btn-mainmenu-back" class="mm-btn mm-btn-back">← Spielstand wählen</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     SCREEN: FREIES DUELL
+════════════════════════════════════════════════ -->
+<div id="screen-freeduel" class="screen screen-freeduel">
+  <div class="freeduel-header">
+    <div class="freeduel-title">⚔ Freies Duell</div>
+    <div class="freeduel-sub">0 / 0 Gegner freigeschaltet · Besiege sie erneut für ihre Karten</div>
+  </div>
+  <div id="freeduel-acts" class="freeduel-roster"></div>
+  <button id="btn-freeduel-back" class="btn-info" style="margin-top:24px">← Zurück zum Menü</button>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     MODAL: DROP-CHANCEN
+════════════════════════════════════════════════ -->
+<div id="drop-chance-modal" class="drop-modal-overlay" style="display:none" onclick="closeDropChanceModal(event)">
+  <div class="drop-modal-box" onclick="event.stopPropagation()">
+    <div class="drop-modal-header">
+      <div id="drop-modal-enemy-portrait" class="drop-modal-portrait"></div>
+      <div class="drop-modal-title-block">
+        <div id="drop-modal-enemy-name" class="drop-modal-name"></div>
+        <div id="drop-modal-enemy-title" class="drop-modal-sub"></div>
+      </div>
+      <button class="drop-modal-close" onclick="closeDropChanceModal()">✕</button>
+    </div>
+    <div class="drop-modal-info">📊 Drop-Chancen nach Rang — je höher dein Rang, desto bessere Karten</div>
+    <div id="drop-modal-content" class="drop-modal-content"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     SCREEN: WELTENKARTE
+════════════════════════════════════════════════ -->
+<div id="screen-worldmap" class="screen screen-worldmap">
+  <!-- Wird dynamisch von worldmap.js befüllt -->
+</div>
+
+<!-- ════════════════════════════════════════════════
+     SCREEN: HUB (Lager / Rastplatz)
+════════════════════════════════════════════════ -->
+<div id="screen-hub" class="screen screen-hub">
+  <!-- Wird dynamisch von worldmap.js befüllt -->
+</div>
+
+<!-- ════════════════════════════════════════════════
+     SCREEN: STORY (Dialog / Ereignis)
+════════════════════════════════════════════════ -->
+<div id="screen-story" class="screen screen-story">
+  <!-- Wird dynamisch von worldmap.js befüllt -->
+</div>
+
+<!-- ════════════════════════════════════════════════
+     SCREEN: DECK-EDITOR
+════════════════════════════════════════════════ -->
+<div id="screen-deckeditor" class="screen screen-deckeditor">
+
+  <!-- Top-Bar -->
+  <div class="de-header">
+    <div class="de-title">🃏 Deck bearbeiten</div>
+    <div class="de-counter">
+      <span id="de-count" class="de-count-val">0</span>
+      <span class="de-count-sep"> / 20 Karten</span>
+      <span id="de-count-status" class="de-count-status">↑</span>
+    </div>
+    <div class="de-count-bar-wrap"><div id="de-count-bar" class="de-count-bar"></div></div>
+    <div id="de-flash" class="de-flash"></div>
+    <div class="de-header-actions">
+      <button id="btn-de-save" class="btn-de-save" disabled>💾 Deck speichern</button>
+      <button id="btn-de-reset" class="btn-de-reset">↩ Zurücksetzen</button>
+      <button id="btn-deckeditor-back" class="btn-info">← Zurück</button>
+    </div>
+  </div>
+
+  <!-- Filter & Sort -->
+  <div class="de-filters">
+    <div class="de-filter-group">
+      <button class="de-filter active" data-filter="all">Alle</button>
+      <button class="de-filter" data-filter="monster">⚔ Monster</button>
+      <button class="de-filter" data-filter="spell">✨ Zauber</button>
+      <button class="de-filter" data-filter="trap">🕸 Falle</button>
+      <button class="de-filter" data-filter="fusion">⚗ Fusion</button>
+    </div>
+    <div class="de-sort-group">
+      <span class="de-sort-label">Sortieren:</span>
+      <button class="de-sort active" data-sort="rarity">Seltenheit</button>
+      <button class="de-sort" data-sort="atk">ATK</button>
+      <button class="de-sort" data-sort="name">Name</button>
+    </div>
+  </div>
+
+  <!-- Haupt-Layout -->
+  <div class="de-layout">
+
+    <!-- Links: Kartenpool -->
+    <div class="de-pool-panel">
+      <div class="de-panel-label">📦 Verfügbare Karten <span class="de-pool-hint">(Klick = hinzufügen)</span></div>
+      <div id="de-pool" class="de-pool"></div>
+    </div>
+
+    <!-- Mitte: Preview -->
+    <div class="de-preview-panel">
+      <div class="de-panel-label">🔍 Karten-Info</div>
+      <div id="de-preview" class="de-preview">
+        <div style="color:#333;font-size:12px;padding:12px">Hover über eine Karte</div>
+      </div>
+      <div class="de-legend">
+        <div class="de-legend-title">Kartenanzahl</div>
+        <div class="de-legend-row"><span style="color:var(--clr-orange)">↑</span> Unter 15 (zu wenig)</div>
+        <div class="de-legend-row"><span style="color:var(--clr-green)">✓</span> 15–20 (gültig)</div>
+        <div class="de-legend-row"><span style="color:var(--clr-red)">⚠</span> Über 20 (zu viele)</div>
+        <div class="de-legend-title" style="margin-top:8px">Badge X/Y</div>
+        <div class="de-legend-row">X = im Deck, Y = verfügbar</div>
+      </div>
+    </div>
+
+    <!-- Rechts: Aktuelles Deck -->
+    <div class="de-deck-panel">
+      <div class="de-panel-label">⚔ Aktives Deck <span class="de-pool-hint">(− = entfernen)</span></div>
+      <div id="de-deck-list" class="de-deck-list"></div>
+    </div>
+
   </div>
 </div>
 
@@ -40,7 +189,7 @@
         <div id="run-hp-bar" style="width:100%"></div>
       </div>
     </div>
-    <div class="map-header-stat">💰 <span class="stat-val" id="run-gold">50</span> Gold</div>
+    <div class="map-header-stat">✦ <span class="stat-val" id="run-ds">0</span> DS</div>
     <div class="map-act-name" id="run-act-name">Akt I — Der Dunkle Wald</div>
     <div class="map-header-stat">🃏 <span class="stat-val" id="run-deck-count">15</span> Karten</div>
   </div>
@@ -51,6 +200,7 @@
   <!-- Footer -->
   <div class="map-footer">
     <button id="btn-map-deck" class="btn-info">📖 Deck ansehen</button>
+    <button id="btn-pause-map" class="btn-danger" style="margin-left:auto">⏸ Pause</button>
   </div>
 </div>
 
@@ -59,59 +209,65 @@
 ════════════════════════════════════════════════ -->
 <div id="screen-battle" class="screen" style="flex-direction:column">
 
-  <!-- HUD: LP & Phase -->
+  <!-- ── NEUER HUD: Gegner links · Phase Mitte · Spieler rechts ── -->
   <div class="battle-hud">
-    <!-- Spieler LP -->
-    <div class="lp-box" id="player-lp-box">
-      <div class="lp-label">Spieler LP</div>
-      <div class="lp-value" id="player-lp">4000</div>
-      <div class="lp-bar-track"><div class="lp-bar" id="player-lp-bar" style="width:100%"></div></div>
+
+    <!-- Gegner-Seite (links) -->
+    <div class="hud-side hud-enemy-side" id="enemy-lp-box">
+      <div class="hud-portrait" id="enemy-portrait">👹</div>
+      <div class="hud-info">
+        <div class="hud-enemy-name" id="enemy-name">Gegner</div>
+        <div class="hud-enemy-title" id="enemy-title">—</div>
+        <div class="hud-lp-row">
+          <div class="lp-bar-track hud-lp-track"><div class="lp-bar" id="enemy-lp-bar" style="width:100%"></div></div>
+          <span class="hud-lp-val hud-lp-enemy" id="enemy-lp">3000</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Phase & Runde -->
+    <!-- Mitte: Phase & Runde -->
     <div class="hud-center">
       <div class="phase-badge" id="phase-label">Draw</div>
       <div class="turn-info">Runde <span id="turn-label">1</span></div>
-      <div class="turn-info">Deck: <span id="deck-count">—</span> | Friedhof: <span id="grave-count">0</span></div>
+      <div class="hud-deck-info">
+        🃏 <span id="deck-count">—</span> &nbsp;·&nbsp; ⚰ <span id="grave-count">0</span>
+      </div>
+      <div id="summon-count" class="summon-count-ok">⚡ 2/2</div>
     </div>
 
-    <!-- Gegner LP -->
-    <div class="lp-box" style="align-items:flex-end" id="enemy-lp-box">
-      <div class="lp-label">Gegner LP</div>
-      <div class="lp-value" id="enemy-lp">3000</div>
-      <div class="lp-bar-track"><div class="lp-bar" id="enemy-lp-bar" style="width:100%"></div></div>
+    <!-- Spieler-Seite (rechts) -->
+    <div class="hud-side hud-player-side" id="player-lp-box">
+      <div class="hud-info hud-info-right">
+        <div class="hud-player-name">SPIELER</div>
+        <div class="hud-lp-row hud-lp-row-right">
+          <span class="hud-lp-val hud-lp-player" id="player-lp">4000</span>
+          <div class="lp-bar-track hud-lp-track"><div class="lp-bar" id="player-lp-bar" style="width:100%"></div></div>
+        </div>
+      </div>
+      <div class="hud-player-avatar">🧙</div>
+      <button id="btn-pause-battle" class="btn-pause-hud" title="Pause (ESC)">⏸</button>
     </div>
+
   </div>
 
-  <!-- Gegner Info -->
-  <div class="enemy-panel">
-    <div class="enemy-portrait" id="enemy-portrait">👹</div>
-    <div class="enemy-info">
-      <div class="enemy-name"  id="enemy-name">Gegner</div>
-      <div class="enemy-title" id="enemy-title">—</div>
-    </div>
-    <div id="enemy-trap-count" style="margin-left:auto;font-size:13px;font-weight:700;color:#ff4444"></div>
-  </div>
-
-  <!-- Board + Seitenpanel (Preview & Log links, Aktionen rechts) -->
-  <div style="display:flex;flex:1;overflow:hidden;gap:8px;padding:4px">
+  <!-- ── BOARD: Preview+Log links · Spielfeld Mitte · Buttons rechts ── -->
+  <div class="battle-body">
 
     <!-- Linke Seite: Preview + Synergien + Log -->
-    <div style="display:flex;flex-direction:column;gap:8px;width:188px;flex-shrink:0">
+    <div class="battle-sidebar-left">
       <div id="preview-panel"><div class="preview-empty">Hover über eine Karte</div></div>
-      <!-- Synergie-Panel -->
-      <div id="synergy-panel-wrapper" style="background:#0d0d1a;border:1px solid #2a2a4a;border-radius:6px;padding:6px">
-        <div style="font-size:10px;color:#5a5a9a;letter-spacing:1px;margin-bottom:4px">⚗ SYNERGIEN</div>
-        <div id="synergy-panel"><div style="color:#555;font-size:11px">Keine aktiv</div></div>
+      <div class="synergy-panel-box">
+        <div class="synergy-panel-label">⚗ SYNERGIEN</div>
+        <div id="synergy-panel"><div class="synergy-empty">Keine aktiv</div></div>
       </div>
-      <div id="battle-log"></div>
+      <div id="battle-log" class="battle-log"></div>
     </div>
 
     <!-- Mitte: Spielfeld -->
-    <div style="flex:1;display:flex;flex-direction:column;gap:4px;overflow:hidden">
+    <div class="battle-field-col" id="battle-field-col">
 
-      <!-- Gegnerfeld (oben) -->
-      <div class="field-label">— Gegnerfeld —</div>
+      <!-- Gegnerfeld -->
+      <div class="field-label field-label-enemy">GEGNERFELD</div>
       <div class="field" id="enemy-field">
         <div class="slot"></div><div class="slot"></div><div class="slot"></div>
         <div class="slot"></div><div class="slot"></div>
@@ -122,20 +278,24 @@
         <div class="st-slot"></div><div class="st-slot"></div><div class="st-slot"></div>
       </div>
 
-      <!-- Trennlinie -->
-      <div style="border-top:1px solid #2a2a55;margin:2px 0"></div>
+      <!-- Midfield-Divider -->
+      <div class="midfield-divider">
+        <div class="midfield-line"></div>
+        <div class="midfield-label">⚔ VS ⚔</div>
+        <div class="midfield-line"></div>
+      </div>
 
       <!-- Spieler Spell/Trap Zone -->
       <div class="st-zone" id="player-st">
         <div class="st-slot"></div><div class="st-slot"></div><div class="st-slot"></div>
       </div>
 
-      <!-- Spielerfeld (unten) -->
+      <!-- Spielerfeld -->
       <div class="field" id="player-field">
         <div class="slot"></div><div class="slot"></div><div class="slot"></div>
         <div class="slot"></div><div class="slot"></div>
       </div>
-      <div class="field-label">— Spielerfeld —</div>
+      <div class="field-label field-label-player">SPIELERFELD</div>
 
       <!-- Hand -->
       <div class="hand-row" id="hand-zone"></div>
@@ -143,12 +303,18 @@
     </div>
 
     <!-- Rechte Seite: Aktions-Buttons -->
-    <div style="display:flex;flex-direction:column;gap:8px;width:140px;flex-shrink:0;padding-top:4px">
+    <div class="battle-sidebar-right">
+
+      <!-- Spielfeld-Karten-Anzeige (geteilter Slot) -->
+      <div class="field-indicator" id="field-indicator">
+        <div class="fi-label">🗺 AKTIVES SPIELFELD</div>
+        <div class="fi-card-thumb" id="fi-active-card">—</div>
+      </div>
+
       <button id="btn-next-phase"    class="btn-phase">Nächste Phase ▶</button>
       <button id="btn-direct-attack" class="btn-danger" style="display:none">Direktangriff 💥</button>
       <button id="btn-fusion"        class="btn-success" style="display:none">⚗ Fusion!</button>
       <button id="btn-view-deck"     class="btn-info">📖 Deck</button>
-      <button id="btn-flee"          class="btn-danger" style="margin-top:auto;font-size:11px">🏃 Fliehen<br><small>(-15% HP)</small></button>
     </div>
 
   </div>
@@ -161,14 +327,13 @@
 </div>
 
 <!-- ════════════════════════════════════════════════
-     SCREEN: REWARD (Ranking + Drop-Karte)
+     SCREEN: REWARD (Sieg + Drop-Karte)
 ════════════════════════════════════════════════ -->
 <div id="screen-reward" class="screen">
-  <!-- Rang-Anzeige -->
-  <div class="reward-rank-display" id="reward-rank-display">
-    <div class="rank-letter" id="reward-rank-letter">?</div>
-    <div class="rank-type-badge" id="reward-rank-type">—</div>
-    <div class="rank-score-label" id="reward-rank-score">Score: —</div>
+  <!-- Sieg-Header -->
+  <div class="reward-victory-header">
+    <div class="reward-victory-icon" id="reward-victory-icon">🏆</div>
+    <div class="reward-victory-title">SIEG</div>
   </div>
   <!-- Drop-Karten-Bereich -->
   <div class="reward-sub" id="reward-sub-text">DEIN DROP</div>
@@ -182,11 +347,10 @@
 <div id="screen-shop" class="screen">
   <div class="shop-header">
     <div class="shop-title">🏪 Shop</div>
-    <div class="shop-gold-display">💰 <span id="shop-gold">0</span> Gold</div>
+    <div class="shop-ds-display">✦ <span id="shop-ds">0</span> DS</div>
     <button id="btn-leave-shop" class="btn-info">Weiter →</button>
   </div>
   <div id="shop-cards"></div>
-  <div id="shop-remove-zone"></div>
 </div>
 
 <!-- ════════════════════════════════════════════════
@@ -203,9 +367,9 @@
       <span class="rest-btn-icon">💚</span>
       Ausruhen<br><small>+<span id="rest-heal-amount">1200</span> HP</small>
     </button>
-    <button id="btn-rest-remove" class="btn-rest">
-      <span class="rest-btn-icon">🗑</span>
-      Deck bereinigen<br><small>1 Karte entfernen (gratis)</small>
+    <button id="btn-rest-skip" class="btn-rest btn-rest-skip">
+      <span class="rest-btn-icon">➡</span>
+      Weiterziehen<br><small>Kein Heileffekt</small>
     </button>
   </div>
 </div>
@@ -217,7 +381,8 @@
   <div class="over-icon">💀</div>
   <div class="over-title gameover-title">NIEDERLAGE</div>
   <div class="over-sub">Die Dunkelheit hat dich verschluckt.</div>
-  <button id="btn-gameover-restart" style="margin-top:30px;padding:12px 30px;font-size:1rem">↩ Neu starten</button>
+  <div style="color:#666;font-size:13px;margin-top:8px">Verdiente Karten aus diesem Run sind verloren.</div>
+  <button id="btn-gameover-restart" style="margin-top:30px;padding:12px 30px;font-size:1rem">↩ Zum Titel</button>
 </div>
 
 <!-- ════════════════════════════════════════════════
@@ -227,7 +392,8 @@
   <div class="over-icon">🏆</div>
   <div class="over-title victory-title">SIEG!</div>
   <div class="over-sub">Du hast die Dunkle Dimension besiegt.</div>
-  <button id="btn-victory-restart" style="margin-top:30px;padding:12px 30px;font-size:1rem">🔄 Neuer Run</button>
+  <div style="color:#aaa;font-size:13px;margin-top:8px">Alle Karten dieses Runs wurden gespeichert. DS bleiben immer erhalten.</div>
+  <button id="btn-victory-restart" style="margin-top:30px;padding:12px 30px;font-size:1rem">🏠 Zurück zum Menü</button>
 </div>
 
 <!-- ════════════════════════════════════════════════
@@ -243,21 +409,12 @@
 </div>
 
 <!-- ════════════════════════════════════════════════
-     OVERLAY: REMOVE CARD (Lager)
-════════════════════════════════════════════════ -->
-<div id="remove-overlay" class="overlay" style="gap:16px">
-  <div class="overlay-title">🗑 Karte entfernen</div>
-  <div style="color:#888;font-size:13px">Wähle eine Karte, die dauerhaft aus deinem Deck entfernt wird.</div>
-  <div id="remove-overlay-list" style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:500px"></div>
-  <button id="btn-close-remove" class="btn-info">Abbrechen</button>
-</div>
-
-<!-- ════════════════════════════════════════════════
      OVERLAY: BESCHWÖRUNGS-MODUS-MODAL
 ════════════════════════════════════════════════ -->
 <div id="summon-modal" style="display:none">
   <div class="summon-modal-box">
     <div class="summon-modal-title">⚔ Monster beschwören</div>
+    <div id="summon-modal-art" class="summon-modal-art"></div>
     <div class="summon-modal-card" id="summon-modal-card">—</div>
     <div class="summon-modal-stats" id="summon-modal-stats">ATK — / DEF —</div>
     <div class="summon-modal-buttons">
@@ -265,6 +422,17 @@
       <button class="btn-summon-def" onclick="confirmSummon('defense')">🛡 Verteidigungsmodus</button>
     </div>
     <button class="btn-summon-cancel" onclick="cancelSummon()">✕ Abbrechen</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     OVERLAY: PAUSE-MENÜ
+════════════════════════════════════════════════ -->
+<div id="overlay-pause" class="modal-overlay" style="display:none">
+  <div class="modal-box pause-modal">
+    <div class="pause-title">⏸ PAUSE</div>
+    <button id="btn-pause-resume"  class="btn-success pause-btn">▶ Fortsetzen</button>
+    <button id="btn-pause-abandon" class="btn-danger  pause-btn">💀 Aufgeben</button>
   </div>
 </div>
 
@@ -287,18 +455,25 @@
 
 <!-- 2. Core (benötigt: data) -->
 <script src="js/core/state.js"></script>
+<script src="js/core/actgenerator.js"></script>
+<script src="js/core/savesystem.js"></script>
+<script src="js/core/audio.js"></script>
 <script src="js/core/synergies.js"></script>
+<script src="js/core/fieldcards.js"></script>
 <script src="js/core/effects.js"></script>
 <script src="js/core/ranking.js"></script>
 <script src="js/core/drops.js"></script>
 <script src="js/core/engine.js"></script>
 <script src="js/core/ai.js"></script>
+<script src="js/core/runtime-overrides.js"></script>
 
 <!-- 3. UI (benötigt: data + core) -->
 <script src="js/ui/screens.js"></script>
 <script src="js/ui/battle.js"></script>
 <script src="js/ui/map.js"></script>
 <script src="js/ui/reward.js"></script>
+<script src="js/ui/titlescreen.js"></script>
+<script src="js/ui/worldmap.js"></script>
 
 <!-- 4. Einstiegspunkt -->
 <script src="js/main.js"></script>
