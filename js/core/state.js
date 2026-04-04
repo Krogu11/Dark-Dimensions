@@ -214,6 +214,14 @@ function initBattleState(enemy) {
   const startHandSize = (window.DD_CUSTOM && window.DD_CUSTOM.config && window.DD_CUSTOM.config['cfg-maxhand'])
     ? Math.min(Number(window.DD_CUSTOM.config['cfg-maxhand']), 7) : 5;
   for (let i = 0; i < startHandSize; i++) engineDrawCard();
+
+  if (typeof emit === 'function') {
+    emit('battle:initialized', {
+      enemyId: enemy?.id || null,
+      handSize: BATTLE_STATE.hand.length,
+      deckSize: BATTLE_STATE.playerDeck.length,
+    });
+  }
 }
 
 /** Platziert Gegner-Startmonster auf dem Feld (mit fieldBonus auf ATK/DEF). */
@@ -285,4 +293,11 @@ function resetRoundFlags() {
   BATTLE_STATE.attackerIndex     = null;
   BATTLE_STATE.fusionSelect      = [];
   BATTLE_STATE.rankingStats.turnsElapsed++;
+
+  if (typeof emit === 'function') {
+    emit('battle:round-reset', {
+      turn: BATTLE_STATE.turn,
+      summonCount: BATTLE_STATE.summonCount,
+    });
+  }
 }

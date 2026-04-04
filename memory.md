@@ -89,3 +89,4 @@
 - 2026-04-04 – Version 1.0 erstellt – Projektstand wurde als `Version 1.0` markiert.
 - 2026-04-04 – Projekt-Gedächtnis als `memory.md` eingeführt – Zentrale, dauerhafte Dokumentation für Design-, Technik- und Fortschrittswissen geschaffen.
 - 2026-04-04 – `memory.md` als Single Source of Truth festgelegt – Neue Entscheidungen sollen hier dokumentiert und veraltete Punkte überschrieben statt angehäuft werden.
+> Active repo memory now lives in `memories.md`. Keep this file for legacy context, but update `memories.md` first when project rules or structure change.

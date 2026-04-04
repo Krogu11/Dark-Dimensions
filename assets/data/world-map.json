@@ -1,0 +1,321 @@
+﻿{
+    "worldMap":  [
+                     {
+                         "id":  "loc_1775231331878",
+                         "type":  "story",
+                         "x":  10,
+                         "y":  10,
+                         "connections":  [
+                                             "loc_1775250693168"
+                                         ],
+                         "unlockConditions":  [
+
+                                              ],
+                         "hubFeatures":  [
+                                             "rest",
+                                             "shop",
+                                             "deck",
+                                             "save"
+                                         ],
+                         "storyLines":  [
+                                            {
+                                                "speakerKey":  "story.loc_1775231331878.0.speaker",
+                                                "textKey":  "story.loc_1775231331878.0.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775231331878.1.speaker",
+                                                "textKey":  "story.loc_1775231331878.1.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775231331878.2.speaker",
+                                                "textKey":  "story.loc_1775231331878.2.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775231331878.3.speaker",
+                                                "textKey":  "story.loc_1775231331878.3.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775231331878.4.speaker",
+                                                "textKey":  "story.loc_1775231331878.4.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775231331878.5.speaker",
+                                                "textKey":  "story.loc_1775231331878.5.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775231331878.6.speaker",
+                                                "textKey":  "story.loc_1775231331878.6.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775231331878.7.speaker",
+                                                "textKey":  "story.loc_1775231331878.7.text"
+                                            }
+                                        ],
+                         "actId":  "act_0",
+                         "bgm":  "",
+                         "battleBgm":  "",
+                         "nameKey":  "world.loc_1775231331878.name",
+                         "descriptionKey":  "world.loc_1775231331878.description"
+                     },
+                     {
+                         "id":  "loc_1775231361823",
+                         "type":  "dungeon",
+                         "x":  30,
+                         "y":  30,
+                         "connections":  [
+                                             "loc_1775250693168",
+                                             "loc_1775232277913"
+                                         ],
+                         "unlockConditions":  [
+
+                                              ],
+                         "hubFeatures":  [
+                                             "rest",
+                                             "shop",
+                                             "deck",
+                                             "save"
+                                         ],
+                         "storyLines":  [
+
+                                        ],
+                         "actId":  "act_0",
+                         "bgm":  "audio/cursed-data-duel.mp3",
+                         "battleBgm":  "audio/cursed-data-duel.mp3",
+                         "nameKey":  "world.loc_1775231361823.name",
+                         "descriptionKey":  "world.loc_1775231361823.description"
+                     },
+                     {
+                         "id":  "loc_1775232277913",
+                         "type":  "hub",
+                         "x":  30,
+                         "y":  50,
+                         "connections":  [
+                                             "loc_1775232402455",
+                                             "loc_1775231361823"
+                                         ],
+                         "unlockConditions":  [
+
+                                              ],
+                         "hubFeatures":  [
+                                             "rest",
+                                             "deck",
+                                             "save"
+                                         ],
+                         "storyLines":  [
+
+                                        ],
+                         "actId":  "act_0",
+                         "bgm":  "audio/cursed-data-duel.mp3",
+                         "battleBgm":  "",
+                         "nameKey":  "world.loc_1775232277913.name",
+                         "descriptionKey":  "world.loc_1775232277913.description"
+                     },
+                     {
+                         "id":  "loc_1775232402455",
+                         "type":  "dungeon",
+                         "x":  44.96233327851951,
+                         "y":  45,
+                         "connections":  [
+                                             "loc_1775232277913",
+                                             "loc_1775232499746",
+                                             "loc_1775232533674"
+                                         ],
+                         "unlockConditions":  [
+
+                                              ],
+                         "hubFeatures":  [
+                                             "rest",
+                                             "shop",
+                                             "deck",
+                                             "save"
+                                         ],
+                         "storyLines":  [
+
+                                        ],
+                         "actId":  "act_1",
+                         "bgm":  "audio/cursed-data-duel.mp3",
+                         "battleBgm":  "audio/cursed-data-duel.mp3",
+                         "nameKey":  "world.loc_1775232402455.name",
+                         "descriptionKey":  "world.loc_1775232402455.description"
+                     },
+                     {
+                         "id":  "loc_1775232499746",
+                         "type":  "dungeon",
+                         "x":  65,
+                         "y":  30,
+                         "connections":  [
+                                             "loc_1775232402455"
+                                         ],
+                         "unlockConditions":  [
+                                                  {
+                                                      "type":  "locationVisited",
+                                                      "locationId":  "loc_1775232533674"
+                                                  }
+                                              ],
+                         "hubFeatures":  [
+                                             "rest",
+                                             "shop",
+                                             "deck",
+                                             "save"
+                                         ],
+                         "storyLines":  [
+
+                                        ],
+                         "actId":  "act_2",
+                         "bgm":  "audio/cursed-data-duel.mp3",
+                         "battleBgm":  "audio/cursed-data-duel.mp3",
+                         "nameKey":  "world.loc_1775232499746.name",
+                         "descriptionKey":  "world.loc_1775232499746.description"
+                     },
+                     {
+                         "id":  "loc_1775232533674",
+                         "type":  "hub",
+                         "x":  65,
+                         "y":  52.97766619411539,
+                         "connections":  [
+                                             "loc_1775232402455"
+                                         ],
+                         "unlockConditions":  [
+
+                                              ],
+                         "hubFeatures":  [
+                                             "rest",
+                                             "shop",
+                                             "deck",
+                                             "save"
+                                         ],
+                         "storyLines":  [
+
+                                        ],
+                         "actId":  "act_0",
+                         "bgm":  "audio/cursed-data-duel.mp3",
+                         "battleBgm":  "",
+                         "nameKey":  "world.loc_1775232533674.name",
+                         "descriptionKey":  "world.loc_1775232533674.description"
+                     },
+                     {
+                         "id":  "loc_1775250693168",
+                         "type":  "story",
+                         "x":  10,
+                         "y":  30,
+                         "connections":  [
+                                             "loc_1775231331878",
+                                             "loc_1775231361823",
+                                             "loc_1775268650512"
+                                         ],
+                         "unlockConditions":  [
+
+                                              ],
+                         "actId":  "act_0",
+                         "hubFeatures":  [
+                                             "rest",
+                                             "shop",
+                                             "deck",
+                                             "save"
+                                         ],
+                         "storyLines":  [
+                                            {
+                                                "speakerKey":  "story.loc_1775250693168.0.speaker",
+                                                "textKey":  "story.loc_1775250693168.0.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775250693168.1.speaker",
+                                                "textKey":  "story.loc_1775250693168.1.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775250693168.2.speaker",
+                                                "textKey":  "story.loc_1775250693168.2.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775250693168.3.speaker",
+                                                "textKey":  "story.loc_1775250693168.3.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775250693168.4.speaker",
+                                                "textKey":  "story.loc_1775250693168.4.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775250693168.5.speaker",
+                                                "textKey":  "story.loc_1775250693168.5.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775250693168.6.speaker",
+                                                "textKey":  "story.loc_1775250693168.6.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775250693168.7.speaker",
+                                                "textKey":  "story.loc_1775250693168.7.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775250693168.8.speaker",
+                                                "textKey":  "story.loc_1775250693168.8.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775250693168.9.speaker",
+                                                "textKey":  "story.loc_1775250693168.9.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775250693168.10.speaker",
+                                                "textKey":  "story.loc_1775250693168.10.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775250693168.11.speaker",
+                                                "textKey":  "story.loc_1775250693168.11.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775250693168.12.speaker",
+                                                "textKey":  "story.loc_1775250693168.12.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775250693168.13.speaker",
+                                                "textKey":  "story.loc_1775250693168.13.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775250693168.14.speaker",
+                                                "textKey":  "story.loc_1775250693168.14.text"
+                                            }
+                                        ],
+                         "bgm":  "",
+                         "battleBgm":  "",
+                         "nameKey":  "world.loc_1775250693168.name",
+                         "descriptionKey":  "world.loc_1775250693168.description"
+                     },
+                     {
+                         "id":  "loc_1775268650512",
+                         "type":  "story",
+                         "x":  30,
+                         "y":  10,
+                         "connections":  [
+                                             "loc_1775250693168"
+                                         ],
+                         "unlockConditions":  [
+
+                                              ],
+                         "actId":  "act_0",
+                         "hubFeatures":  [
+                                             "rest",
+                                             "shop",
+                                             "deck",
+                                             "save"
+                                         ],
+                         "storyLines":  [
+                                            {
+                                                "speakerKey":  "story.loc_1775268650512.0.speaker",
+                                                "textKey":  "story.loc_1775268650512.0.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775268650512.1.speaker",
+                                                "textKey":  "story.loc_1775268650512.1.text"
+                                            },
+                                            {
+                                                "speakerKey":  "story.loc_1775268650512.2.speaker",
+                                                "textKey":  "story.loc_1775268650512.2.text"
+                                            }
+                                        ],
+                         "bgm":  "",
+                         "battleBgm":  "",
+                         "nameKey":  "world.loc_1775268650512.name",
+                         "descriptionKey":  "world.loc_1775268650512.description"
+                     }
+                 ]
+}

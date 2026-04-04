@@ -1,0 +1,159 @@
+﻿{
+    "effects":  {
+                    "legacyAliases":  {
+                                          "destroy1":  {
+                                                           "type":  "destroy1"
+                                                       },
+                                          "burn400":  {
+                                                          "type":  "burn",
+                                                          "amount":  400
+                                                      },
+                                          "drain500":  {
+                                                           "type":  "drain",
+                                                           "amount":  500
+                                                       },
+                                          "raceBuffATK300":  {
+                                                                 "type":  "raceBuffATK",
+                                                                 "amount":  300
+                                                             },
+                                          "raceBuffATK150":  {
+                                                                 "type":  "raceBuffATK",
+                                                                 "amount":  150
+                                                             },
+                                          "burn600":  {
+                                                          "type":  "burn",
+                                                          "amount":  600
+                                                      },
+                                          "drain1000":  {
+                                                            "type":  "drain",
+                                                            "amount":  1000
+                                                        },
+                                          "draw1":  {
+                                                        "count":  1,
+                                                        "type":  "draw"
+                                                    },
+                                          "stealField":  {
+                                                             "type":  "stealField"
+                                                         },
+                                          "drain500Trap":  {
+                                                               "type":  "drain",
+                                                               "amount":  500
+                                                           },
+                                          "draw2":  {
+                                                        "count":  2,
+                                                        "type":  "draw"
+                                                    },
+                                          "shield300":  {
+                                                            "type":  "shield",
+                                                            "amount":  300
+                                                        },
+                                          "negateEffect":  {
+                                                               "type":  "negate"
+                                                           },
+                                          "buffAllAtk300":  {
+                                                                "type":  "buffAll",
+                                                                "amount":  300
+                                                            },
+                                          "destroyAllAtk":  {
+                                                                "type":  "destroyAllAtk"
+                                                            },
+                                          "massRevive":  {
+                                                             "type":  "massRevive"
+                                                         },
+                                          "burn1600":  {
+                                                           "type":  "burn",
+                                                           "amount":  1600
+                                                       },
+                                          "destroyAllSpell":  {
+                                                                  "type":  "destroyAll"
+                                                              },
+                                          "stealHand":  {
+                                                            "type":  "stealHand"
+                                                        },
+                                          "buff400":  {
+                                                          "type":  "buff",
+                                                          "amount":  400
+                                                      },
+                                          "revive":  {
+                                                         "type":  "revive"
+                                                     },
+                                          "destroyAll":  {
+                                                             "type":  "destroyAll"
+                                                         },
+                                          "negate":  {
+                                                         "type":  "negate"
+                                                     },
+                                          "heal500":  {
+                                                          "type":  "heal",
+                                                          "amount":  500
+                                                      },
+                                          "weakenAll300":  {
+                                                               "type":  "weakenAll",
+                                                               "amount":  300
+                                                           },
+                                          "burn1200":  {
+                                                           "type":  "burn",
+                                                           "amount":  1200
+                                                       },
+                                          "healBuff":  {
+                                                           "type":  "healBuff"
+                                                       },
+                                          "heal1500":  {
+                                                           "type":  "heal",
+                                                           "amount":  1500
+                                                       },
+                                          "graveReviveSpell":  {
+                                                                   "type":  "reviveBest"
+                                                               },
+                                          "weaken500":  {
+                                                            "type":  "weakenOne",
+                                                            "amount":  500
+                                                        },
+                                          "weaken200":  {
+                                                            "type":  "weakenOne",
+                                                            "amount":  200
+                                                        },
+                                          "heal800":  {
+                                                          "type":  "heal",
+                                                          "amount":  800
+                                                      },
+                                          "heal1000":  {
+                                                           "type":  "heal",
+                                                           "amount":  1000
+                                                       },
+                                          "destroyAttacker":  {
+                                                                  "type":  "destroyAttacker"
+                                                              },
+                                          "graveRevive":  {
+                                                              "type":  "revive"
+                                                          },
+                                          "buffAllAtk400":  {
+                                                                "type":  "buffAll",
+                                                                "amount":  400
+                                                            },
+                                          "weaken800":  {
+                                                            "type":  "weakenOne",
+                                                            "amount":  800
+                                                        },
+                                          "buff300":  {
+                                                          "type":  "buff",
+                                                          "amount":  300
+                                                      },
+                                          "buffAllAtk500":  {
+                                                                "type":  "buffAll",
+                                                                "amount":  500
+                                                            },
+                                          "burn800":  {
+                                                          "type":  "burn",
+                                                          "amount":  800
+                                                      },
+                                          "burn300":  {
+                                                          "type":  "burn",
+                                                          "amount":  300
+                                                      },
+                                          "taunt":  {
+                                                        "type":  "taunt"
+                                                    }
+                                      }
+                }
+}

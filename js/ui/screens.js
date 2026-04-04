@@ -11,6 +11,9 @@ function showScreen(name) {
     if (el) el.classList.toggle('active', s === name);
   });
 
+  if (typeof gameState !== 'undefined') gameState.currentScene = name;
+  if (typeof emit === 'function') emit('scene:changed', { scene: name });
+
   // GSAP: Einblenden
   const active = document.getElementById(`screen-${name}`);
   if (active && window.gsap) {
