@@ -1,5 +1,4 @@
-(function(){
-  window.DD_EMBEDDED_LOCALES = {
+window.DD_EMBEDDED_LOCALES = {
   "de": {
     "ui": {
       "ui.title.logo": "DARK DIMENSIONS",
@@ -80,6 +79,8 @@
       "ui.title.confirmDelete": "Slot {slot} wirklich loeschen? Alle Daten gehen verloren.",
       "ui.mainmenu.campaign": "⚔ Kampagne",
       "ui.mainmenu.saveSlot": "Spielstand {slot}",
+      "ui.mainmenu.dimensionsSeelen": "{count} Dimensionsseelen",
+      "ui.mainmenu.unknownLocation": "Unbekannter Ort",
       "ui.mainmenu.cardCount": "🃏 {count} Karten",
       "ui.mainmenu.lastPlayed": "Zuletzt gespielt: {date}",
       "ui.freeduel.progress": "{unlocked} / {total} Gegner freigeschaltet · Besiege sie erneut fuer ihre Karten",
@@ -879,6 +880,8 @@
       "ui.title.confirmDelete": "Delete slot {slot}? All data will be lost.",
       "ui.mainmenu.campaign": "⚔ Campaign",
       "ui.mainmenu.saveSlot": "Save Slot {slot}",
+      "ui.mainmenu.dimensionsSeelen": "{count} Dimension Souls",
+      "ui.mainmenu.unknownLocation": "Unknown Location",
       "ui.mainmenu.cardCount": "🃏 {count} cards",
       "ui.mainmenu.lastPlayed": "Last played: {date}",
       "ui.freeduel.progress": "{unlocked} / {total} enemies unlocked · Defeat them again for their cards",
@@ -1583,4 +1586,3 @@
     }
   }
 };
-})();

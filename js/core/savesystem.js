@@ -42,6 +42,36 @@ function _emptySlot(id) {
   };
 }
 
+function _saveUi(key, vars, fallbackValue) {
+  if (typeof t === 'function') return t(key, vars, { fallbackValue });
+  return fallbackValue ?? key;
+}
+
+function _getSlotLocationName(slotData) {
+  const locationId = slotData?.worldProgress?.currentLocationId || null;
+  if (!locationId) return _saveUi('ui.mainmenu.unknownLocation', null, 'Unknown location');
+
+  const worldMap = typeof _getWorldMapData === 'function'
+    ? (_getWorldMapData() || [])
+    : ((window.DD_CUSTOM && Array.isArray(window.DD_CUSTOM.worldMap)) ? window.DD_CUSTOM.worldMap : []);
+
+  const currentLocation = worldMap.find(loc => loc && loc.id === locationId);
+  if (currentLocation) {
+    if (currentLocation.nameKey) return _saveUi(currentLocation.nameKey, null, currentLocation.name || locationId);
+    return currentLocation.name || _saveUi(`world.${locationId}.name`, null, locationId);
+  }
+
+  return _saveUi(`world.${locationId}.name`, null, locationId);
+}
+
+function getSlotSummary(slotData) {
+  if (!slotData) return { line1: 'â€” Leer â€”', line2: '' };
+  return {
+    line1: _getSlotLocationName(slotData),
+    line2: _saveUi('ui.mainmenu.dimensionsSeelen', { count: slotData.ds || 0 }, `${slotData.ds || 0} Dimensionsseelen`),
+  };
+}
+
 /** Stellt sicher dass ein Slot alle Felder hat (Migration älterer Saves). */
 function _migrateSlot(slot) {
   if (!slot) return slot;
@@ -590,7 +620,7 @@ function getSlotSummary(slotData) {
   const maxAct   = Math.min(Math.max(...slotData.unlockedActs), 3);
   const hasRun   = !!slotData.activeRun;
   return {
-    line1: `${actNames[maxAct]} - ${slotData.ds || 0} DS`,
-    line2: `${slotData.cardCollection.length} Karten${hasRun ? ' - Aktiver Run' : ''}`,
+    line1: _getSlotLocationName(slotData),
+    line2: _saveUi('ui.mainmenu.dimensionsSeelen', { count: slotData.ds || 0 }, `${slotData.ds || 0} Dimensionsseelen`),
   };
 }

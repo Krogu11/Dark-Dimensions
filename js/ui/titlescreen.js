@@ -148,14 +148,17 @@ function renderMainMenu() {
   /* Slot-Info Panel */
   const infoEl = document.getElementById('mainmenu-slot-info');
   if (infoEl) {
-    const actNames = [_actLabel(0), _actLabel(1), _actLabel(2)];
-    const maxAct = Math.min(Math.max(...(slot.unlockedActs || [0])), 2);
+    const summary = typeof getSlotSummary === 'function'
+      ? getSlotSummary(slot)
+      : {
+          line1: _ui('ui.mainmenu.unknownLocation', null, 'Unknown location'),
+          line2: _ui('ui.mainmenu.dimensionsSeelen', { count: slot.ds || 0 }, `${slot.ds || 0} Dimensionsseelen`),
+        };
     infoEl.innerHTML = `
       <div class="mm-slot-title">${_ui('ui.mainmenu.saveSlot', { slot: slot.slotId }, `Save Slot ${slot.slotId}`)}</div>
       <div class="mm-slot-stats">
-        <span>✦ ${slot.ds || 0} DS</span>
-        <span>${_ui('ui.mainmenu.cardCount', { count: slot.cardCollection.length }, `🃏 ${slot.cardCollection.length} cards`)}</span>
-        <span>📍 ${actNames[maxAct]}</span>
+        <span>📍 ${summary.line1}</span>
+        <span>✦ ${summary.line2}</span>
       </div>
       <div class="mm-save-date">${_ui('ui.mainmenu.lastPlayed', { date: formatSaveDate(slot.timestamp) }, `Last played: ${formatSaveDate(slot.timestamp)}`)}</div>
     `;

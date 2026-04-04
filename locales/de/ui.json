@@ -77,6 +77,8 @@
   "ui.title.confirmDelete": "Slot {slot} wirklich loeschen? Alle Daten gehen verloren.",
   "ui.mainmenu.campaign": "⚔ Kampagne",
   "ui.mainmenu.saveSlot": "Spielstand {slot}",
+  "ui.mainmenu.dimensionsSeelen": "{count} Dimensionsseelen",
+  "ui.mainmenu.unknownLocation": "Unbekannter Ort",
   "ui.mainmenu.cardCount": "🃏 {count} Karten",
   "ui.mainmenu.lastPlayed": "Zuletzt gespielt: {date}",
   "ui.freeduel.progress": "{unlocked} / {total} Gegner freigeschaltet · Besiege sie erneut fuer ihre Karten",

@@ -85,6 +85,8 @@
   "ui.title.confirmDelete": "Delete slot {slot}? All data will be lost.",
   "ui.mainmenu.campaign": "⚔ Campaign",
   "ui.mainmenu.saveSlot": "Save Slot {slot}",
+  "ui.mainmenu.dimensionsSeelen": "{count} Dimension Souls",
+  "ui.mainmenu.unknownLocation": "Unknown Location",
   "ui.mainmenu.cardCount": "🃏 {count} cards",
   "ui.mainmenu.lastPlayed": "Last played: {date}",
   "ui.freeduel.progress": "{unlocked} / {total} enemies unlocked · Defeat them again for their cards",

@@ -20,6 +20,7 @@
 - Es gibt 3 Kern-Akte: Akt I `Der Dunkle Wald`, Akt II `Die Verfluchten Ruinen`, Akt III `Die Dunkle Dimension`.
 - Gegner und Drops werden über besiegte Kämpfe freigeschaltet; Bosse schalten den nächsten Akt frei.
 - Save-Slots speichern: DS, Kartensammlung, Base-Deck, freigeschaltete Akte, besiegte Gegner, Free-Duel-Record, World-Progress.
+- Save-Slot-Zusammenfassungen im Titel- und Hauptmenü zeigen bewusst nur den aktuellen Ortsnamen und ausgeschriebene `Dimensionsseelen`.
 - Kampagnen-Runs haben Permadeath: Bei Niederlage gehen ungecommitete Run-Karten verloren, DS bleiben.
 
 ### 2.4 Kampfsystem
@@ -72,6 +73,7 @@
 - Fusionen, Rassen und Effekte sind Hauptidentität des Spiels und dürfen nicht zu Nebensystemen degradiert werden.
 - Worldmap ist strikt datengetrieben: keine Hardcode-Fallback-Acts, keine stillen Defaults für fehlende Kampagnen-Daten.
 - Save-Slots und Permadeath sind Kern des Spannungsbogens; DS bleiben bewusst permanent.
+- Lokalisierte Anzeige darf niemals Gameplay-Logik brechen; Rassen und Synergien mÃ¼ssen intern immer auf sprachunabhÃ¤ngigen IDs basieren.
 
 ## 10. Offene ToDos
 - `DD_CUSTOM`-Inhalte aus localStorage in versionierte Repo-Daten überführen oder exportierte JSON-Datei mitliefern, damit das Projekt ohne lokalen Editor-Zustand vollständig startbar ist.

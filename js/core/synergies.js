@@ -125,15 +125,34 @@ const SYNERGY_RULES = [
   });
 })();
 
+function _normalizedRace(value) {
+  return typeof normalizeRaceId === 'function' ? normalizeRaceId(value) : value;
+}
+
+function _cardRace(card) {
+  if (!card) return null;
+  const normalized = _normalizedRace(card.race);
+  if (normalized && card.race !== normalized) card.race = normalized;
+  return normalized;
+}
+
+function _normalizedRule(rule) {
+  if (!rule) return rule;
+  const normalizedRace = _normalizedRace(rule.race);
+  if (rule.race === normalizedRace) return rule;
+  return { ...rule, race: normalizedRace };
+}
+
 /* ── Getter ── */
 function getSynergyRules() {
-  if (window.DD_CUSTOM && window.DD_CUSTOM.synergies) return window.DD_CUSTOM.synergies;
+  if (window.DD_CUSTOM && Array.isArray(window.DD_CUSTOM.synergies)) return window.DD_CUSTOM.synergies.map(_normalizedRule);
   return SYNERGY_RULES;
 }
 
 /* ── Hilfsfunktion: Rassen auf dem Feld zählen ── */
 function _countRace(field, race) {
-  return field.filter(c => c && c.race === race).length;
+  const normalizedRace = _normalizedRace(race);
+  return field.filter(c => _cardRace(c) === normalizedRace).length;
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -161,7 +180,7 @@ function applyFieldSynergies(isPlayer) {
     if (count < rule.threshold) return;
 
     field.forEach(card => {
-      if (!card || card.race !== rule.race) return;
+      if (!card || _cardRace(card) !== rule.race) return;
 
       let bonusATK = 0;
       let bonusDEF = 0;
@@ -196,14 +215,15 @@ function applyFieldSynergies(isPlayer) {
    Aktuell: Schattenwesen-Debuff auf Feinde.
 ───────────────────────────────────────────────────────── */
 function checkOnSummonSynergies(card, isPlayer) {
-  if (!card || !card.race) return;
+  const cardRace = _cardRace(card);
+  if (!card || !cardRace) return;
   const bs    = BATTLE_STATE;
   const field = isPlayer ? bs.playerField : bs.enemyField;
   const enemyField = isPlayer ? bs.enemyField : bs.playerField;
   const rules = getSynergyRules();
 
   rules.forEach(rule => {
-    if (rule.race !== card.race) return;
+    if (rule.race !== cardRace) return;
     if (rule.type !== 'on_summon_debuff_enemies') return;
     const count = _countRace(field, rule.race);
     if (count < rule.threshold) return;
@@ -226,7 +246,8 @@ function checkOnSummonSynergies(card, isPlayer) {
    Aktuell: Untoten-Revival wenn 3+ Untote auf Feld waren.
 ───────────────────────────────────────────────────────── */
 function checkOnDeathSynergies(dyingCard, isPlayer) {
-  if (!dyingCard || !dyingCard.race) return;
+  const dyingRace = _cardRace(dyingCard);
+  if (!dyingCard || !dyingRace) return;
   const bs    = BATTLE_STATE;
   /* Feld VOR dem Tod (Karte noch im alten Slot oder bereits null — check grave) */
   const field = isPlayer ? bs.playerField : bs.enemyField;
@@ -234,7 +255,7 @@ function checkOnDeathSynergies(dyingCard, isPlayer) {
   const rules = getSynergyRules();
 
   rules.forEach(rule => {
-    if (rule.race !== dyingCard.race) return;
+    if (rule.race !== dyingRace) return;
     if (rule.type !== 'on_death_revive') return;
 
     /* Zähle lebendige Gleichrassige NACH dem Tod */
@@ -242,7 +263,7 @@ function checkOnDeathSynergies(dyingCard, isPlayer) {
     if (aliveCount < (rule.threshold - 1)) return; /* war threshold vor dem Tod */
 
     /* Revival: schwächstes Monster aus Friedhof */
-    const monsters = grave.filter(c => c.type === 'monster' && c.race === rule.race);
+    const monsters = grave.filter(c => c.type === 'monster' && _cardRace(c) === rule.race);
     if (!monsters.length) return;
     const weakest = monsters.reduce((a, b) => a.atk <= b.atk ? a : b);
     const slot    = field.findIndex(c => c === null);
