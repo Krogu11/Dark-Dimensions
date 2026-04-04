@@ -61,10 +61,12 @@
       xhr.open('GET', `${path}?v=1`, false);
       xhr.send(null);
       const ok = (xhr.status >= 200 && xhr.status < 300) || (xhr.status === 0 && xhr.responseText);
-      if (!ok || !xhr.responseText) return {};
+      if (!ok || !xhr.responseText) {
+        return window.DD_EMBEDDED_LOCALES?.[language]?.[namespace] || {};
+      }
       return JSON.parse(xhr.responseText);
     } catch (_error) {
-      return {};
+      return window.DD_EMBEDDED_LOCALES?.[language]?.[namespace] || {};
     }
   }
 
@@ -295,15 +297,18 @@
     if (!scope || !scope.querySelectorAll) return;
     scope.querySelectorAll('[data-i18n]').forEach(node => {
       const key = node.getAttribute('data-i18n');
-      node.innerHTML = t(key);
+      const translated = t(key);
+      if (translated !== key) node.innerHTML = translated;
     });
     scope.querySelectorAll('[data-i18n-placeholder]').forEach(node => {
       const key = node.getAttribute('data-i18n-placeholder');
-      node.setAttribute('placeholder', t(key));
+      const translated = t(key);
+      if (translated !== key) node.setAttribute('placeholder', translated);
     });
     scope.querySelectorAll('[data-i18n-title]').forEach(node => {
       const key = node.getAttribute('data-i18n-title');
-      node.setAttribute('title', t(key));
+      const translated = t(key);
+      if (translated !== key) node.setAttribute('title', translated);
     });
   }
 
