@@ -442,7 +442,8 @@
 <!-- Runtime-Konfiguration: localStorage-Overrides + versionierte JSON-Fallbacks -->
 <script>
   (function bootRuntimeConfig() {
-    const RUNTIME_CONFIG_PATH = 'assets/data/runtime-config.json';
+    const RUNTIME_CONFIG_BASE_PATH = 'assets/data/runtime-config.json';
+    const RUNTIME_CONFIG_PATH = `${RUNTIME_CONFIG_BASE_PATH}?v=${Date.now()}`;
     const FALLBACK_PLAYLISTS = {
       'cfg-music-menu': ['assets/audio/shadow-sigil-–-title-screen-theme.mp3'],
       'cfg-music-campaign': ['assets/audio/cursed-data-duel.mp3'],
@@ -567,6 +568,7 @@
 
     window.__DD_RUNTIME_BOOT = {
       runtimeConfigPath: RUNTIME_CONFIG_PATH,
+      runtimeConfigBasePath: RUNTIME_CONFIG_BASE_PATH,
       runtimeConfigLoaded: !!fileConfig.loaded,
       runtimeConfigError: fileConfig.error,
       hasLocalOverrides: !!(localOverrides && Object.keys(localOverrides).length > 0),
