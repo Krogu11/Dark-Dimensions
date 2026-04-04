@@ -53,7 +53,8 @@ function _resolveEffects(card) {
  * Übersetzt einen alten Effekt-String in ein Effekt-Objekt.
  */
 function _legacyStringToEffect(str) {
-  const map = {
+  const configuredAliases = window.DD_EFFECTS_CONFIG?.legacyAliases;
+  const map = configuredAliases && typeof configuredAliases === 'object' ? configuredAliases : {
     heal500:         { type:'heal',      amount:500  },
     heal800:         { type:'heal',      amount:800  },
     heal1000:        { type:'heal',      amount:1000 },
@@ -453,6 +454,14 @@ function _applyOneEffect(eff, card, isPlayer) {
     default:
       // Unbekannter Effekt — ignorieren
       break;
+  }
+
+  if (typeof emit === 'function') {
+    emit('effect:applied', {
+      effectType: eff.type,
+      cardId: card?.id || null,
+      isPlayer,
+    });
   }
 }
 

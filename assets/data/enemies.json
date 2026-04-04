@@ -1,0 +1,1890 @@
+﻿{
+    "enemies":  [
+                    {
+                        "id":  "goblin_chief",
+                        "portrait":  "data:image/jpeg;base64,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",
+                        "theme":  "kobold",
+                        "hp":  4000,
+                        "gold":  [
+                                     10,
+                                     15
+                                 ],
+                        "behavior":  "boss_aggro",
+                        "difficulty":  1,
+                        "fieldBonus":  0,
+                        "maxSummons":  3,
+                        "multiAttack":  false,
+                        "startField":  [
+                                           "kobold_speertraeger",
+                                           "kobold_hauptmann",
+                                           "kobold_schuetze"
+                                       ],
+                        "startTraps":  [
+                                           "sacredwall"
+                                       ],
+                        "startHandCount":  5,
+                        "deckIds":  [
+                                        "kobold_hauptmann",
+                                        "kobold_hauptmann",
+                                        "kobold_hauptmann",
+                                        "kobold_schuetze",
+                                        "kobold_schuetze",
+                                        "kobold_schuetze",
+                                        "kobold_speertraeger",
+                                        "kobold_speertraeger",
+                                        "kobold_speertraeger",
+                                        "kobold_jaeger",
+                                        "kobold_jaeger",
+                                        "wolf",
+                                        "wolf",
+                                        "wolf",
+                                        "counterstrike"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "kobold_hauptmann",
+                                                            "weight":  2
+                                                        },
+                                                        {
+                                                            "cardId":  "wolf",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "goblin_wolfreiter",
+                                                            "weight":  1
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_speertraeger",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_krieger",
+                                                            "weight":  4
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+
+                                                    ],
+                                          "B_POW":  [
+
+                                                    ],
+                                          "C_POW":  [
+
+                                                    ],
+                                          "D_POW":  [
+
+                                                    ],
+                                          "TEC":  [
+
+                                                  ],
+                                          "drops":  [
+                                                        {
+                                                            "cardId":  "kobold_hauptmann",
+                                                            "weight":  2
+                                                        },
+                                                        {
+                                                            "cardId":  "wolf",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "goblin_wolfreiter",
+                                                            "weight":  1
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_speertraeger",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_krieger",
+                                                            "weight":  4
+                                                        }
+                                                    ]
+                                      },
+                        "startFieldCard":  "feld_koboldwald",
+                        "nameKey":  "enemy.goblin_chief.name",
+                        "titleKey":  "enemy.goblin_chief.title"
+                    },
+                    {
+                        "id":  "skeleton_mage",
+                        "portrait":  "ðŸ’€",
+                        "theme":  "undead",
+                        "hp":  4500,
+                        "gold":  [
+                                     20,
+                                     35
+                                 ],
+                        "behavior":  "control",
+                        "difficulty":  1,
+                        "fieldBonus":  100,
+                        "maxSummons":  2,
+                        "multiAttack":  false,
+                        "startField":  [
+                                           "skelett",
+                                           "zombie",
+                                           "knochenwachter"
+                                       ],
+                        "startTraps":  [
+                                           "sacredwall",
+                                           "counterstrike"
+                                       ],
+                        "startHandCount":  5,
+                        "deckIds":  [
+                                        "skelett",
+                                        "skelett",
+                                        "skelett",
+                                        "zombie",
+                                        "zombie",
+                                        "zombie",
+                                        "knochenwachter",
+                                        "knochenwachter",
+                                        "lich",
+                                        "heallight",
+                                        "heallight",
+                                        "darkinsight",
+                                        "soulsteal",
+                                        "sacredwall",
+                                        "sacredwall",
+                                        "counterstrike",
+                                        "counterstrike",
+                                        "ragequit"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "lich",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "knochenwachter",
+                                                            "weight":  8
+                                                        },
+                                                        {
+                                                            "cardId":  "todesritter",
+                                                            "weight":  2
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+                                                        {
+                                                            "cardId":  "knochenwachter",
+                                                            "weight":  15
+                                                        },
+                                                        {
+                                                            "cardId":  "lich",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "zombie",
+                                                            "weight":  15
+                                                        }
+                                                    ],
+                                          "B_POW":  [
+                                                        {
+                                                            "cardId":  "zombie",
+                                                            "weight":  25
+                                                        },
+                                                        {
+                                                            "cardId":  "skelett",
+                                                            "weight":  20
+                                                        },
+                                                        {
+                                                            "cardId":  "soulsteal",
+                                                            "weight":  10
+                                                        }
+                                                    ],
+                                          "C_POW":  [
+                                                        {
+                                                            "cardId":  "skelett",
+                                                            "weight":  35
+                                                        },
+                                                        {
+                                                            "cardId":  "heallight",
+                                                            "weight":  20
+                                                        },
+                                                        {
+                                                            "cardId":  "darkinsight",
+                                                            "weight":  15
+                                                        }
+                                                    ],
+                                          "D_POW":  [
+                                                        {
+                                                            "cardId":  "skelett",
+                                                            "weight":  50
+                                                        },
+                                                        {
+                                                            "cardId":  "zombie",
+                                                            "weight":  30
+                                                        }
+                                                    ],
+                                          "TEC":  [
+                                                      {
+                                                          "cardId":  "ragequit",
+                                                          "weight":  15
+                                                      },
+                                                      {
+                                                          "cardId":  "counterstrike",
+                                                          "weight":  15
+                                                      },
+                                                      {
+                                                          "cardId":  "soulsteal",
+                                                          "weight":  12
+                                                      }
+                                                  ]
+                                      },
+                        "nameKey":  "enemy.skeleton_mage.name",
+                        "titleKey":  "enemy.skeleton_mage.title"
+                    },
+                    {
+                        "id":  "orc_warlord",
+                        "portrait":  "âš”ï¸",
+                        "theme":  "orc",
+                        "hp":  5000,
+                        "gold":  [
+                                     30,
+                                     50
+                                 ],
+                        "behavior":  "aggressive",
+                        "difficulty":  2,
+                        "fieldBonus":  200,
+                        "maxSummons":  2,
+                        "multiAttack":  false,
+                        "startField":  [
+                                           "orc",
+                                           "orc",
+                                           "ork_berserker"
+                                       ],
+                        "startTraps":  [
+                                           "mirrorforce"
+                                       ],
+                        "startHandCount":  5,
+                        "deckIds":  [
+                                        "ork_rekrut",
+                                        "ork_rekrut",
+                                        "orc",
+                                        "orc",
+                                        "orc",
+                                        "ork_berserker",
+                                        "ork_berserker",
+                                        "ork_schamane",
+                                        "warcry",
+                                        "warcry",
+                                        "fireball",
+                                        "lightning",
+                                        "counterstrike",
+                                        "mirrorforce",
+                                        "ragequit"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "ork_berserker",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "ork_schamane",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "orc",
+                                                            "weight":  10
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+                                                        {
+                                                            "cardId":  "orc",
+                                                            "weight":  15
+                                                        },
+                                                        {
+                                                            "cardId":  "ork_berserker",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "warcry",
+                                                            "weight":  8
+                                                        }
+                                                    ],
+                                          "B_POW":  [
+                                                        {
+                                                            "cardId":  "orc",
+                                                            "weight":  25
+                                                        },
+                                                        {
+                                                            "cardId":  "ork_rekrut",
+                                                            "weight":  20
+                                                        },
+                                                        {
+                                                            "cardId":  "warcry",
+                                                            "weight":  10
+                                                        }
+                                                    ],
+                                          "C_POW":  [
+                                                        {
+                                                            "cardId":  "ork_rekrut",
+                                                            "weight":  30
+                                                        },
+                                                        {
+                                                            "cardId":  "fireball",
+                                                            "weight":  20
+                                                        },
+                                                        {
+                                                            "cardId":  "lightning",
+                                                            "weight":  10
+                                                        }
+                                                    ],
+                                          "D_POW":  [
+                                                        {
+                                                            "cardId":  "ork_rekrut",
+                                                            "weight":  50
+                                                        },
+                                                        {
+                                                            "cardId":  "fireball",
+                                                            "weight":  30
+                                                        }
+                                                    ],
+                                          "TEC":  [
+                                                      {
+                                                          "cardId":  "mirrorforce",
+                                                          "weight":  12
+                                                      },
+                                                      {
+                                                          "cardId":  "warcry",
+                                                          "weight":  20
+                                                      },
+                                                      {
+                                                          "cardId":  "ork_schamane",
+                                                          "weight":  10
+                                                      }
+                                                  ]
+                                      },
+                        "nameKey":  "enemy.orc_warlord.name",
+                        "titleKey":  "enemy.orc_warlord.title"
+                    },
+                    {
+                        "id":  "forest_demon",
+                        "portrait":  "ðŸŒ‘",
+                        "theme":  "demon",
+                        "hp":  6500,
+                        "gold":  [
+                                     60,
+                                     80
+                                 ],
+                        "behavior":  "boss_balanced",
+                        "difficulty":  3,
+                        "fieldBonus":  250,
+                        "maxSummons":  2,
+                        "multiAttack":  true,
+                        "startField":  [
+                                           "feuerdaemon",
+                                           "dunkelherr",
+                                           "kleiner_daemon"
+                                       ],
+                        "startTraps":  [
+                                           "mirrorforce",
+                                           "counterstrike"
+                                       ],
+                        "startHandCount":  6,
+                        "deckIds":  [
+                                        "kleiner_daemon",
+                                        "kleiner_daemon",
+                                        "daemon_lakai",
+                                        "daemon_lakai",
+                                        "feuerdaemon",
+                                        "feuerdaemon",
+                                        "dunkelherr",
+                                        "cursed_knight",
+                                        "orc",
+                                        "ork_berserker",
+                                        "warcry",
+                                        "fireball",
+                                        "lightning",
+                                        "soulsteal",
+                                        "counterstrike",
+                                        "counterstrike",
+                                        "mirrorforce",
+                                        "mirrorforce",
+                                        "ragequit"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "dunkelherr",
+                                                            "weight":  3
+                                                        },
+                                                        {
+                                                            "cardId":  "cursed_knight",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "feuerdaemon",
+                                                            "weight":  8
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+                                                        {
+                                                            "cardId":  "feuerdaemon",
+                                                            "weight":  12
+                                                        },
+                                                        {
+                                                            "cardId":  "cursed_knight",
+                                                            "weight":  8
+                                                        },
+                                                        {
+                                                            "cardId":  "daemon_lakai",
+                                                            "weight":  10
+                                                        }
+                                                    ],
+                                          "B_POW":  [
+                                                        {
+                                                            "cardId":  "daemon_lakai",
+                                                            "weight":  20
+                                                        },
+                                                        {
+                                                            "cardId":  "feuerdaemon",
+                                                            "weight":  15
+                                                        },
+                                                        {
+                                                            "cardId":  "soulsteal",
+                                                            "weight":  10
+                                                        }
+                                                    ],
+                                          "C_POW":  [
+                                                        {
+                                                            "cardId":  "kleiner_daemon",
+                                                            "weight":  25
+                                                        },
+                                                        {
+                                                            "cardId":  "fireball",
+                                                            "weight":  20
+                                                        },
+                                                        {
+                                                            "cardId":  "lightning",
+                                                            "weight":  10
+                                                        }
+                                                    ],
+                                          "D_POW":  [
+                                                        {
+                                                            "cardId":  "kleiner_daemon",
+                                                            "weight":  40
+                                                        },
+                                                        {
+                                                            "cardId":  "fireball",
+                                                            "weight":  30
+                                                        }
+                                                    ],
+                                          "TEC":  [
+                                                      {
+                                                          "cardId":  "mirrorforce",
+                                                          "weight":  12
+                                                      },
+                                                      {
+                                                          "cardId":  "soulsteal",
+                                                          "weight":  15
+                                                      },
+                                                      {
+                                                          "cardId":  "dunkelherr",
+                                                          "weight":  5
+                                                      }
+                                                  ]
+                                      },
+                        "nameKey":  "enemy.forest_demon.name",
+                        "titleKey":  "enemy.forest_demon.title"
+                    },
+                    {
+                        "id":  "shadow_knight",
+                        "portrait":  "ðŸ—¡ï¸",
+                        "theme":  "shadow",
+                        "hp":  5200,
+                        "gold":  [
+                                     25,
+                                     40
+                                 ],
+                        "behavior":  "aggressive",
+                        "difficulty":  2,
+                        "fieldBonus":  250,
+                        "maxSummons":  2,
+                        "multiAttack":  false,
+                        "startField":  [
+                                           "schattenklinge",
+                                           "assassin",
+                                           "schattenschleicher"
+                                       ],
+                        "startTraps":  [
+                                           "counterstrike",
+                                           "ragequit"
+                                       ],
+                        "startHandCount":  5,
+                        "deckIds":  [
+                                        "schattenschleicher",
+                                        "schattenschleicher",
+                                        "schattenklinge",
+                                        "schattenklinge",
+                                        "witch",
+                                        "witch",
+                                        "assassin",
+                                        "assassin",
+                                        "soldier",
+                                        "orc",
+                                        "lightning",
+                                        "soulsteal",
+                                        "soulsteal",
+                                        "gedankenraub",
+                                        "counterstrike",
+                                        "counterstrike",
+                                        "ragequit",
+                                        "ragequit"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "assassin",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "schattenklinge",
+                                                            "weight":  8
+                                                        },
+                                                        {
+                                                            "cardId":  "gedankenraub",
+                                                            "weight":  2
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+                                                        {
+                                                            "cardId":  "schattenklinge",
+                                                            "weight":  15
+                                                        },
+                                                        {
+                                                            "cardId":  "assassin",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "witch",
+                                                            "weight":  12
+                                                        }
+                                                    ],
+                                          "B_POW":  [
+                                                        {
+                                                            "cardId":  "witch",
+                                                            "weight":  20
+                                                        },
+                                                        {
+                                                            "cardId":  "schattenschleicher",
+                                                            "weight":  15
+                                                        },
+                                                        {
+                                                            "cardId":  "soulsteal",
+                                                            "weight":  10
+                                                        }
+                                                    ],
+                                          "C_POW":  [
+                                                        {
+                                                            "cardId":  "schattenschleicher",
+                                                            "weight":  30
+                                                        },
+                                                        {
+                                                            "cardId":  "soulsteal",
+                                                            "weight":  20
+                                                        },
+                                                        {
+                                                            "cardId":  "lightning",
+                                                            "weight":  15
+                                                        }
+                                                    ],
+                                          "D_POW":  [
+                                                        {
+                                                            "cardId":  "schattenschleicher",
+                                                            "weight":  40
+                                                        },
+                                                        {
+                                                            "cardId":  "soldier",
+                                                            "weight":  30
+                                                        }
+                                                    ],
+                                          "TEC":  [
+                                                      {
+                                                          "cardId":  "ragequit",
+                                                          "weight":  15
+                                                      },
+                                                      {
+                                                          "cardId":  "gedankenraub",
+                                                          "weight":  8
+                                                      },
+                                                      {
+                                                          "cardId":  "soulsteal",
+                                                          "weight":  15
+                                                      }
+                                                  ]
+                                      },
+                        "nameKey":  "enemy.shadow_knight.name",
+                        "titleKey":  "enemy.shadow_knight.title"
+                    },
+                    {
+                        "id":  "dark_priest",
+                        "portrait":  "ðŸ§¿",
+                        "theme":  "undead",
+                        "hp":  5800,
+                        "gold":  [
+                                     30,
+                                     45
+                                 ],
+                        "behavior":  "control",
+                        "difficulty":  3,
+                        "fieldBonus":  200,
+                        "maxSummons":  2,
+                        "multiAttack":  false,
+                        "startField":  [
+                                           "todesritter",
+                                           "lich",
+                                           "knochenwachter"
+                                       ],
+                        "startTraps":  [
+                                           "mirrorforce",
+                                           "sacredwall",
+                                           "ragequit"
+                                       ],
+                        "startHandCount":  6,
+                        "deckIds":  [
+                                        "skelett",
+                                        "zombie",
+                                        "zombie",
+                                        "knochenwachter",
+                                        "knochenwachter",
+                                        "todesritter",
+                                        "todesritter",
+                                        "lich",
+                                        "lich",
+                                        "necro",
+                                        "necro",
+                                        "heallight",
+                                        "heallight",
+                                        "darkinsight",
+                                        "soulsteal",
+                                        "soulsteal",
+                                        "ruf_der_toten",
+                                        "sacredwall",
+                                        "sacredwall",
+                                        "mirrorforce",
+                                        "mirrorforce",
+                                        "ragequit",
+                                        "counterstrike"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "todesritter",
+                                                            "weight":  4
+                                                        },
+                                                        {
+                                                            "cardId":  "lich",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "necro",
+                                                            "weight":  6
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+                                                        {
+                                                            "cardId":  "necro",
+                                                            "weight":  12
+                                                        },
+                                                        {
+                                                            "cardId":  "todesritter",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "lich",
+                                                            "weight":  8
+                                                        }
+                                                    ],
+                                          "B_POW":  [
+                                                        {
+                                                            "cardId":  "lich",
+                                                            "weight":  20
+                                                        },
+                                                        {
+                                                            "cardId":  "knochenwachter",
+                                                            "weight":  15
+                                                        },
+                                                        {
+                                                            "cardId":  "ruf_der_toten",
+                                                            "weight":  8
+                                                        }
+                                                    ],
+                                          "C_POW":  [
+                                                        {
+                                                            "cardId":  "knochenwachter",
+                                                            "weight":  25
+                                                        },
+                                                        {
+                                                            "cardId":  "zombie",
+                                                            "weight":  20
+                                                        },
+                                                        {
+                                                            "cardId":  "soulsteal",
+                                                            "weight":  12
+                                                        }
+                                                    ],
+                                          "D_POW":  [
+                                                        {
+                                                            "cardId":  "zombie",
+                                                            "weight":  40
+                                                        },
+                                                        {
+                                                            "cardId":  "skelett",
+                                                            "weight":  30
+                                                        }
+                                                    ],
+                                          "TEC":  [
+                                                      {
+                                                          "cardId":  "mirrorforce",
+                                                          "weight":  10
+                                                      },
+                                                      {
+                                                          "cardId":  "ruf_der_toten",
+                                                          "weight":  12
+                                                      },
+                                                      {
+                                                          "cardId":  "soulsteal",
+                                                          "weight":  15
+                                                      }
+                                                  ]
+                                      },
+                        "nameKey":  "enemy.dark_priest.name",
+                        "titleKey":  "enemy.dark_priest.title"
+                    },
+                    {
+                        "id":  "iron_golem_guard",
+                        "portrait":  "ðŸ¤–",
+                        "theme":  "machine",
+                        "hp":  7500,
+                        "gold":  [
+                                     50,
+                                     70
+                                 ],
+                        "behavior":  "tank",
+                        "difficulty":  3,
+                        "fieldBonus":  400,
+                        "maxSummons":  2,
+                        "multiAttack":  false,
+                        "startField":  [
+                                           "belagerungsgolem",
+                                           "golem",
+                                           "eisenwachter"
+                                       ],
+                        "startTraps":  [
+                                           "mirrorforce",
+                                           "mirrorforce",
+                                           "counterstrike"
+                                       ],
+                        "startHandCount":  5,
+                        "deckIds":  [
+                                        "eisenwachter",
+                                        "eisenwachter",
+                                        "kampfkanone",
+                                        "kampfkanone",
+                                        "golem",
+                                        "golem",
+                                        "belagerungsgolem",
+                                        "belagerungsgolem",
+                                        "knight",
+                                        "shieldguard",
+                                        "warcry",
+                                        "warcry",
+                                        "lightning",
+                                        "annihilate",
+                                        "mirrorforce",
+                                        "mirrorforce",
+                                        "mirrorforce",
+                                        "ragequit",
+                                        "ragequit",
+                                        "counterstrike",
+                                        "counterstrike"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "belagerungsgolem",
+                                                            "weight":  3
+                                                        },
+                                                        {
+                                                            "cardId":  "golem",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "kampfkanone",
+                                                            "weight":  8
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+                                                        {
+                                                            "cardId":  "golem",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "belagerungsgolem",
+                                                            "weight":  7
+                                                        },
+                                                        {
+                                                            "cardId":  "kampfkanone",
+                                                            "weight":  12
+                                                        }
+                                                    ],
+                                          "B_POW":  [
+                                                        {
+                                                            "cardId":  "kampfkanone",
+                                                            "weight":  20
+                                                        },
+                                                        {
+                                                            "cardId":  "golem",
+                                                            "weight":  15
+                                                        },
+                                                        {
+                                                            "cardId":  "annihilate",
+                                                            "weight":  8
+                                                        }
+                                                    ],
+                                          "C_POW":  [
+                                                        {
+                                                            "cardId":  "eisenwachter",
+                                                            "weight":  25
+                                                        },
+                                                        {
+                                                            "cardId":  "warcry",
+                                                            "weight":  20
+                                                        },
+                                                        {
+                                                            "cardId":  "lightning",
+                                                            "weight":  12
+                                                        }
+                                                    ],
+                                          "D_POW":  [
+                                                        {
+                                                            "cardId":  "eisenwachter",
+                                                            "weight":  40
+                                                        },
+                                                        {
+                                                            "cardId":  "warcry",
+                                                            "weight":  30
+                                                        }
+                                                    ],
+                                          "TEC":  [
+                                                      {
+                                                          "cardId":  "mirrorforce",
+                                                          "weight":  12
+                                                      },
+                                                      {
+                                                          "cardId":  "annihilate",
+                                                          "weight":  8
+                                                      },
+                                                      {
+                                                          "cardId":  "golem",
+                                                          "weight":  6
+                                                      }
+                                                  ]
+                                      },
+                        "nameKey":  "enemy.iron_golem_guard.name",
+                        "titleKey":  "enemy.iron_golem_guard.title"
+                    },
+                    {
+                        "id":  "chaos_lord",
+                        "portrait":  "ðŸŒ€",
+                        "theme":  "demon",
+                        "hp":  9000,
+                        "gold":  [
+                                     80,
+                                     110
+                                 ],
+                        "behavior":  "boss_aggro",
+                        "difficulty":  4,
+                        "fieldBonus":  350,
+                        "maxSummons":  3,
+                        "multiAttack":  true,
+                        "startField":  [
+                                           "dunkelherr",
+                                           "cursed_knight",
+                                           "schattenlord"
+                                       ],
+                        "startTraps":  [
+                                           "mirrorforce",
+                                           "counterstrike",
+                                           "ragequit"
+                                       ],
+                        "startHandCount":  7,
+                        "deckIds":  [
+                                        "kleiner_daemon",
+                                        "daemon_lakai",
+                                        "feuerdaemon",
+                                        "feuerdaemon",
+                                        "dunkelherr",
+                                        "dunkelherr",
+                                        "cursed_knight",
+                                        "cursed_knight",
+                                        "schattenlord",
+                                        "assassin",
+                                        "schattenklinge",
+                                        "lightning",
+                                        "lightning",
+                                        "annihilate",
+                                        "annihilate",
+                                        "soulsteal",
+                                        "soulsteal",
+                                        "gedankenraub",
+                                        "warcry",
+                                        "mirrorforce",
+                                        "mirrorforce",
+                                        "mirrorforce",
+                                        "counterstrike",
+                                        "counterstrike",
+                                        "ragequit",
+                                        "ragequit"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "schattenlord",
+                                                            "weight":  3
+                                                        },
+                                                        {
+                                                            "cardId":  "dunkelherr",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "cursed_knight",
+                                                            "weight":  6
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+                                                        {
+                                                            "cardId":  "dunkelherr",
+                                                            "weight":  8
+                                                        },
+                                                        {
+                                                            "cardId":  "schattenlord",
+                                                            "weight":  6
+                                                        },
+                                                        {
+                                                            "cardId":  "feuerdaemon",
+                                                            "weight":  10
+                                                        }
+                                                    ],
+                                          "B_POW":  [
+                                                        {
+                                                            "cardId":  "feuerdaemon",
+                                                            "weight":  15
+                                                        },
+                                                        {
+                                                            "cardId":  "annihilate",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "soulsteal",
+                                                            "weight":  12
+                                                        }
+                                                    ],
+                                          "C_POW":  [
+                                                        {
+                                                            "cardId":  "cursed_knight",
+                                                            "weight":  20
+                                                        },
+                                                        {
+                                                            "cardId":  "lightning",
+                                                            "weight":  18
+                                                        },
+                                                        {
+                                                            "cardId":  "soulsteal",
+                                                            "weight":  15
+                                                        }
+                                                    ],
+                                          "D_POW":  [
+                                                        {
+                                                            "cardId":  "lightning",
+                                                            "weight":  35
+                                                        },
+                                                        {
+                                                            "cardId":  "warcry",
+                                                            "weight":  25
+                                                        }
+                                                    ],
+                                          "TEC":  [
+                                                      {
+                                                          "cardId":  "mirrorforce",
+                                                          "weight":  10
+                                                      },
+                                                      {
+                                                          "cardId":  "gedankenraub",
+                                                          "weight":  8
+                                                      },
+                                                      {
+                                                          "cardId":  "annihilate",
+                                                          "weight":  10
+                                                      }
+                                                  ]
+                                      },
+                        "nameKey":  "enemy.chaos_lord.name",
+                        "titleKey":  "enemy.chaos_lord.title"
+                    },
+                    {
+                        "id":  "void_reaper",
+                        "portrait":  "ðŸ‰",
+                        "theme":  "dragon",
+                        "hp":  7000,
+                        "gold":  [
+                                     45,
+                                     65
+                                 ],
+                        "behavior":  "boss_aggro",
+                        "difficulty":  4,
+                        "fieldBonus":  400,
+                        "maxSummons":  2,
+                        "multiAttack":  true,
+                        "startField":  [
+                                           "shadowdrake",
+                                           "dragon",
+                                           "eisdrache"
+                                       ],
+                        "startTraps":  [
+                                           "mirrorforce",
+                                           "mirrorforce",
+                                           "counterstrike"
+                                       ],
+                        "startHandCount":  6,
+                        "deckIds":  [
+                                        "drachen_hatchling",
+                                        "drachen_hatchling",
+                                        "eisdrache",
+                                        "eisdrache",
+                                        "shadowdrake",
+                                        "shadowdrake",
+                                        "dragon",
+                                        "dragon",
+                                        "dunkelherr",
+                                        "ork_berserker",
+                                        "lightning",
+                                        "lightning",
+                                        "annihilate",
+                                        "warcry",
+                                        "warcry",
+                                        "soulsteal",
+                                        "mirrorforce",
+                                        "mirrorforce",
+                                        "counterstrike",
+                                        "counterstrike",
+                                        "ragequit",
+                                        "ragequit"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "dragon",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "eisdrache",
+                                                            "weight":  6
+                                                        },
+                                                        {
+                                                            "cardId":  "shadowdrake",
+                                                            "weight":  8
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+                                                        {
+                                                            "cardId":  "shadowdrake",
+                                                            "weight":  12
+                                                        },
+                                                        {
+                                                            "cardId":  "dragon",
+                                                            "weight":  8
+                                                        },
+                                                        {
+                                                            "cardId":  "eisdrache",
+                                                            "weight":  10
+                                                        }
+                                                    ],
+                                          "B_POW":  [
+                                                        {
+                                                            "cardId":  "eisdrache",
+                                                            "weight":  15
+                                                        },
+                                                        {
+                                                            "cardId":  "dunkelherr",
+                                                            "weight":  12
+                                                        },
+                                                        {
+                                                            "cardId":  "annihilate",
+                                                            "weight":  8
+                                                        }
+                                                    ],
+                                          "C_POW":  [
+                                                        {
+                                                            "cardId":  "drachen_hatchling",
+                                                            "weight":  25
+                                                        },
+                                                        {
+                                                            "cardId":  "lightning",
+                                                            "weight":  18
+                                                        },
+                                                        {
+                                                            "cardId":  "soulsteal",
+                                                            "weight":  12
+                                                        }
+                                                    ],
+                                          "D_POW":  [
+                                                        {
+                                                            "cardId":  "drachen_hatchling",
+                                                            "weight":  40
+                                                        },
+                                                        {
+                                                            "cardId":  "lightning",
+                                                            "weight":  30
+                                                        }
+                                                    ],
+                                          "TEC":  [
+                                                      {
+                                                          "cardId":  "mirrorforce",
+                                                          "weight":  10
+                                                      },
+                                                      {
+                                                          "cardId":  "annihilate",
+                                                          "weight":  8
+                                                      },
+                                                      {
+                                                          "cardId":  "dragon",
+                                                          "weight":  5
+                                                      }
+                                                  ]
+                                      },
+                        "nameKey":  "enemy.void_reaper.name",
+                        "titleKey":  "enemy.void_reaper.title"
+                    },
+                    {
+                        "id":  "soul_devourer",
+                        "portrait":  "ðŸ’ ",
+                        "theme":  "elemental",
+                        "hp":  9500,
+                        "gold":  [
+                                     70,
+                                     100
+                                 ],
+                        "behavior":  "final_boss",
+                        "difficulty":  5,
+                        "fieldBonus":  500,
+                        "maxSummons":  3,
+                        "multiAttack":  true,
+                        "startField":  [
+                                           "thundergod",
+                                           "chaos_elementar",
+                                           "sturm_elementar"
+                                       ],
+                        "startTraps":  [
+                                           "mirrorforce",
+                                           "mirrorforce",
+                                           "ragequit"
+                                       ],
+                        "startHandCount":  7,
+                        "deckIds":  [
+                                        "feuer_geist",
+                                        "feuer_geist",
+                                        "eis_geist",
+                                        "eis_geist",
+                                        "sturm_elementar",
+                                        "sturm_elementar",
+                                        "phoenix",
+                                        "chaos_elementar",
+                                        "chaos_elementar",
+                                        "thundergod",
+                                        "thundergod",
+                                        "hoellenfeuer",
+                                        "hoellenfeuer",
+                                        "annihilate",
+                                        "annihilate",
+                                        "lightning",
+                                        "soulsteal",
+                                        "soulsteal",
+                                        "warcry",
+                                        "mirrorforce",
+                                        "mirrorforce",
+                                        "mirrorforce",
+                                        "counterstrike",
+                                        "counterstrike",
+                                        "ragequit",
+                                        "ragequit"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "thundergod",
+                                                            "weight":  3
+                                                        },
+                                                        {
+                                                            "cardId":  "chaos_elementar",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "phoenix",
+                                                            "weight":  5
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+                                                        {
+                                                            "cardId":  "chaos_elementar",
+                                                            "weight":  8
+                                                        },
+                                                        {
+                                                            "cardId":  "thundergod",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "sturm_elementar",
+                                                            "weight":  10
+                                                        }
+                                                    ],
+                                          "B_POW":  [
+                                                        {
+                                                            "cardId":  "sturm_elementar",
+                                                            "weight":  15
+                                                        },
+                                                        {
+                                                            "cardId":  "phoenix",
+                                                            "weight":  8
+                                                        },
+                                                        {
+                                                            "cardId":  "hoellenfeuer",
+                                                            "weight":  8
+                                                        }
+                                                    ],
+                                          "C_POW":  [
+                                                        {
+                                                            "cardId":  "feuer_geist",
+                                                            "weight":  25
+                                                        },
+                                                        {
+                                                            "cardId":  "annihilate",
+                                                            "weight":  15
+                                                        },
+                                                        {
+                                                            "cardId":  "lightning",
+                                                            "weight":  12
+                                                        }
+                                                    ],
+                                          "D_POW":  [
+                                                        {
+                                                            "cardId":  "feuer_geist",
+                                                            "weight":  40
+                                                        },
+                                                        {
+                                                            "cardId":  "eis_geist",
+                                                            "weight":  30
+                                                        }
+                                                    ],
+                                          "TEC":  [
+                                                      {
+                                                          "cardId":  "mirrorforce",
+                                                          "weight":  8
+                                                      },
+                                                      {
+                                                          "cardId":  "phoenix",
+                                                          "weight":  6
+                                                      },
+                                                      {
+                                                          "cardId":  "hoellenfeuer",
+                                                          "weight":  8
+                                                      }
+                                                  ]
+                                      },
+                        "nameKey":  "enemy.soul_devourer.name",
+                        "titleKey":  "enemy.soul_devourer.title"
+                    },
+                    {
+                        "id":  "dark_dimension_god",
+                        "portrait":  "ðŸ‘ï¸",
+                        "theme":  "mixed",
+                        "hp":  14000,
+                        "gold":  [
+                                     150,
+                                     200
+                                 ],
+                        "behavior":  "final_boss",
+                        "difficulty":  6,
+                        "fieldBonus":  700,
+                        "maxSummons":  3,
+                        "multiAttack":  true,
+                        "startField":  [
+                                           "thundergod",
+                                           "dragon",
+                                           "dunkelherr",
+                                           "shadowdrake",
+                                           "chaos_elementar"
+                                       ],
+                        "startTraps":  [
+                                           "mirrorforce",
+                                           "counterstrike",
+                                           "ragequit"
+                                       ],
+                        "startHandCount":  7,
+                        "deckIds":  [
+                                        "dragon",
+                                        "dragon",
+                                        "shadowdrake",
+                                        "shadowdrake",
+                                        "eisdrache",
+                                        "dunkelherr",
+                                        "dunkelherr",
+                                        "cursed_knight",
+                                        "cursed_knight",
+                                        "thundergod",
+                                        "thundergod",
+                                        "chaos_elementar",
+                                        "chaos_elementar",
+                                        "phoenix",
+                                        "phoenix",
+                                        "todesritter",
+                                        "lich",
+                                        "lich",
+                                        "necro",
+                                        "hoellenfeuer",
+                                        "hoellenfeuer",
+                                        "annihilate",
+                                        "annihilate",
+                                        "annihilate",
+                                        "lightning",
+                                        "lightning",
+                                        "soulsteal",
+                                        "soulsteal",
+                                        "warcry",
+                                        "gedankenraub",
+                                        "mirrorforce",
+                                        "mirrorforce",
+                                        "mirrorforce",
+                                        "counterstrike",
+                                        "counterstrike",
+                                        "ragequit",
+                                        "ragequit",
+                                        "seelenfalle"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "thundergod",
+                                                            "weight":  3
+                                                        },
+                                                        {
+                                                            "cardId":  "chaos_elementar",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "dragon",
+                                                            "weight":  8
+                                                        },
+                                                        {
+                                                            "cardId":  "dunkelherr",
+                                                            "weight":  6
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+                                                        {
+                                                            "cardId":  "dragon",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "thundergod",
+                                                            "weight":  6
+                                                        },
+                                                        {
+                                                            "cardId":  "chaos_elementar",
+                                                            "weight":  8
+                                                        }
+                                                    ],
+                                          "B_POW":  [
+                                                        {
+                                                            "cardId":  "shadowdrake",
+                                                            "weight":  15
+                                                        },
+                                                        {
+                                                            "cardId":  "cursed_knight",
+                                                            "weight":  12
+                                                        },
+                                                        {
+                                                            "cardId":  "hoellenfeuer",
+                                                            "weight":  10
+                                                        }
+                                                    ],
+                                          "C_POW":  [
+                                                        {
+                                                            "cardId":  "eisdrache",
+                                                            "weight":  20
+                                                        },
+                                                        {
+                                                            "cardId":  "lightning",
+                                                            "weight":  18
+                                                        },
+                                                        {
+                                                            "cardId":  "soulsteal",
+                                                            "weight":  15
+                                                        }
+                                                    ],
+                                          "D_POW":  [
+                                                        {
+                                                            "cardId":  "drachen_hatchling",
+                                                            "weight":  30
+                                                        },
+                                                        {
+                                                            "cardId":  "annihilate",
+                                                            "weight":  25
+                                                        },
+                                                        {
+                                                            "cardId":  "lightning",
+                                                            "weight":  20
+                                                        }
+                                                    ],
+                                          "TEC":  [
+                                                      {
+                                                          "cardId":  "mirrorforce",
+                                                          "weight":  8
+                                                      },
+                                                      {
+                                                          "cardId":  "phoenix",
+                                                          "weight":  5
+                                                      },
+                                                      {
+                                                          "cardId":  "gedankenraub",
+                                                          "weight":  8
+                                                      },
+                                                      {
+                                                          "cardId":  "thundergod",
+                                                          "weight":  1
+                                                      }
+                                                  ]
+                                      },
+                        "nameKey":  "enemy.dark_dimension_god.name",
+                        "titleKey":  "enemy.dark_dimension_god.title"
+                    },
+                    {
+                        "id":  "goblin_gang",
+                        "portrait":  "data:image/jpeg;base64,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",
+                        "hp":  1000,
+                        "gold":  [
+                                     5,
+                                     10
+                                 ],
+                        "behavior":  "boss_aggro",
+                        "difficulty":  1,
+                        "fieldBonus":  0,
+                        "maxSummons":  2,
+                        "multiAttack":  false,
+                        "startField":  [
+                                           "kobold_winzling",
+                                           "kobold_waldkobold",
+                                           "kobold_speertraeger"
+                                       ],
+                        "startTraps":  [
+                                           "sacredwall"
+                                       ],
+                        "startHandCount":  4,
+                        "deckIds":  [
+                                        "kobold_jaeger",
+                                        "kobold_winzling",
+                                        "kobold_winzling",
+                                        "kobold_speertraeger",
+                                        "kobold_speertraeger",
+                                        "kobold_speertraeger",
+                                        "kobold_winzling",
+                                        "kobold_waldkobold",
+                                        "kobold_waldkobold",
+                                        "kobold_jaeger",
+                                        "wolf",
+                                        "kobold_schuetze",
+                                        "welpe",
+                                        "welpe"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "kobold_jaeger",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_waldkobold",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_speertraeger",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "welpe",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_krieger",
+                                                            "weight":  2
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+
+                                                    ],
+                                          "B_POW":  [
+
+                                                    ],
+                                          "C_POW":  [
+
+                                                    ],
+                                          "D_POW":  [
+
+                                                    ],
+                                          "TEC":  [
+
+                                                  ]
+                                      },
+                        "startFieldCard":  "feld_koboldwald",
+                        "nameKey":  "enemy.goblin_gang.name",
+                        "titleKey":  "enemy.goblin_gang.title"
+                    },
+                    {
+                        "id":  "kobold_kÃ¶nig",
+                        "portrait":  "data:image/jpeg;base64,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",
+                        "hp":  4000,
+                        "gold":  [
+                                     40,
+                                     50
+                                 ],
+                        "behavior":  "boss_aggro",
+                        "difficulty":  2,
+                        "fieldBonus":  0,
+                        "maxSummons":  3,
+                        "multiAttack":  false,
+                        "startField":  [
+                                           "kobold_koenig",
+                                           "kobold_hauptmann",
+                                           "kobold_hauptmann"
+                                       ],
+                        "startTraps":  [
+                                           "ragequit"
+                                       ],
+                        "startHandCount":  3,
+                        "deckIds":  [
+                                        "kobold_koenig",
+                                        "kobold_hauptmann",
+                                        "kobold_hauptmann",
+                                        "kobold_hauptmann",
+                                        "goblin_wolfreiter",
+                                        "goblin_wolfreiter",
+                                        "goblin_wolfreiter",
+                                        "wolf",
+                                        "wolf",
+                                        "kobold_schuetze",
+                                        "kobold_schuetze",
+                                        "ragequit",
+                                        "ragequit",
+                                        "heallight",
+                                        "kobold_krieger",
+                                        "kobold_krieger",
+                                        "kobold_krieger",
+                                        "kobold_speertraeger",
+                                        "kobold_speertraeger",
+                                        "alphawolf",
+                                        "albinowolf",
+                                        "fireball",
+                                        "counterstrike"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "knight",
+                                                            "weight":  10
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+                                                        {
+                                                            "cardId":  "soldier",
+                                                            "weight":  20
+                                                        }
+                                                    ],
+                                          "B_POW":  [
+                                                        {
+                                                            "cardId":  "goblin",
+                                                            "weight":  30
+                                                        }
+                                                    ],
+                                          "C_POW":  [
+                                                        {
+                                                            "cardId":  "goblin",
+                                                            "weight":  40
+                                                        }
+                                                    ],
+                                          "D_POW":  [
+                                                        {
+                                                            "cardId":  "goblin",
+                                                            "weight":  50
+                                                        }
+                                                    ],
+                                          "TEC":  [
+                                                      {
+                                                          "cardId":  "fireball",
+                                                          "weight":  20
+                                                      }
+                                                  ],
+                                          "drops":  [
+                                                        {
+                                                            "cardId":  "kobold_koenig",
+                                                            "weight":  1
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_hauptmann",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_krieger",
+                                                            "weight":  15
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_schuetze",
+                                                            "weight":  15
+                                                        }
+                                                    ]
+                                      },
+                        "startFieldCard":  "feld_koboldwald",
+                        "nameKey":  "enemy.kobold_kÃ¶nig.name",
+                        "titleKey":  "enemy.kobold_kÃ¶nig.title"
+                    },
+                    {
+                        "id":  "kobold_reiter",
+                        "portrait":  "data:image/jpeg;base64,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",
+                        "hp":  3000,
+                        "gold":  [
+                                     20,
+                                     40
+                                 ],
+                        "behavior":  "boss_aggro",
+                        "difficulty":  1,
+                        "fieldBonus":  0,
+                        "maxSummons":  2,
+                        "multiAttack":  false,
+                        "startField":  [
+                                           "wolf",
+                                           "goblin_wolfreiter",
+                                           "wolf"
+                                       ],
+                        "startTraps":  [
+                                           "ragequit"
+                                       ],
+                        "startHandCount":  3,
+                        "deckIds":  [
+                                        "kobold_jaeger",
+                                        "kobold_jaeger",
+                                        "kobold_jaeger",
+                                        "goblin_wolfreiter",
+                                        "goblin_wolfreiter",
+                                        "kobold_waldkobold",
+                                        "kobold_waldkobold",
+                                        "kobold_waldkobold",
+                                        "kobold_speertraeger",
+                                        "kobold_schuetze",
+                                        "welpe",
+                                        "welpe",
+                                        "welpe",
+                                        "wolf",
+                                        "wolf"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "wolf",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "goblin_wolfreiter",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_jaeger",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_schuetze",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_waldkobold",
+                                                            "weight":  15
+                                                        },
+                                                        {
+                                                            "cardId":  "welpe",
+                                                            "weight":  15
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+
+                                                    ],
+                                          "B_POW":  [
+
+                                                    ],
+                                          "C_POW":  [
+
+                                                    ],
+                                          "D_POW":  [
+
+                                                    ],
+                                          "TEC":  [
+
+                                                  ]
+                                      },
+                        "startFieldCard":  "feld_koboldwald",
+                        "nameKey":  "enemy.kobold_reiter.name",
+                        "titleKey":  "enemy.kobold_reiter.title"
+                    },
+                    {
+                        "id":  "kobold_waldlaeufer",
+                        "portrait":  "data:image/jpeg;base64,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",
+                        "hp":  1500,
+                        "gold":  [
+                                     5,
+                                     10
+                                 ],
+                        "behavior":  "boss_aggro",
+                        "difficulty":  1,
+                        "fieldBonus":  0,
+                        "maxSummons":  2,
+                        "multiAttack":  false,
+                        "startField":  [
+                                           "kobold_jaeger",
+                                           "kobold_schuetze",
+                                           "kobold_jaeger"
+                                       ],
+                        "startTraps":  [
+
+                                       ],
+                        "startHandCount":  3,
+                        "deckIds":  [
+                                        "wolf",
+                                        "wolf",
+                                        "wolf",
+                                        "kobold_jaeger",
+                                        "kobold_jaeger",
+                                        "kobold_jaeger",
+                                        "kobold_schuetze",
+                                        "kobold_waldkobold",
+                                        "kobold_waldkobold",
+                                        "kobold_waldkobold",
+                                        "goblin_schamane",
+                                        "goblin_schamane",
+                                        "welpe",
+                                        "welpe",
+                                        "welpe",
+                                        "counterstrike"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "kobold_jaeger",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_schuetze",
+                                                            "weight":  2
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_waldkobold",
+                                                            "weight":  5
+                                                        },
+                                                        {
+                                                            "cardId":  "kobold_speertraeger",
+                                                            "weight":  10
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+
+                                                    ],
+                                          "B_POW":  [
+
+                                                    ],
+                                          "C_POW":  [
+
+                                                    ],
+                                          "D_POW":  [
+
+                                                    ],
+                                          "TEC":  [
+
+                                                  ]
+                                      },
+                        "startFieldCard":  "feld_koboldwald",
+                        "nameKey":  "enemy.kobold_waldlaeufer.name",
+                        "titleKey":  "enemy.kobold_waldlaeufer.title"
+                    },
+                    {
+                        "id":  "Wolfsrudel",
+                        "portrait":  "data:image/jpeg;base64,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",
+                        "hp":  3000,
+                        "gold":  [
+                                     20,
+                                     40
+                                 ],
+                        "behavior":  "boss_aggro",
+                        "difficulty":  1,
+                        "fieldBonus":  0,
+                        "maxSummons":  2,
+                        "multiAttack":  false,
+                        "startField":  [
+                                           "wolf",
+                                           "alphawolf",
+                                           "welpe"
+                                       ],
+                        "startTraps":  [
+
+                                       ],
+                        "startHandCount":  3,
+                        "deckIds":  [
+                                        "wolf",
+                                        "wolf",
+                                        "wolf",
+                                        "alphawolf",
+                                        "alphawolf",
+                                        "alphawolf",
+                                        "welpe",
+                                        "welpe",
+                                        "welpe",
+                                        "albinowolf"
+                                    ],
+                        "dropTable":  {
+                                          "S_POW":  [
+                                                        {
+                                                            "cardId":  "welpe",
+                                                            "weight":  12
+                                                        },
+                                                        {
+                                                            "cardId":  "wolf",
+                                                            "weight":  10
+                                                        },
+                                                        {
+                                                            "cardId":  "alphawolf",
+                                                            "weight":  3
+                                                        },
+                                                        {
+                                                            "cardId":  "albinowolf",
+                                                            "weight":  1
+                                                        }
+                                                    ],
+                                          "A_POW":  [
+
+                                                    ],
+                                          "B_POW":  [
+
+                                                    ],
+                                          "C_POW":  [
+
+                                                    ],
+                                          "D_POW":  [
+
+                                                    ],
+                                          "TEC":  [
+
+                                                  ]
+                                      },
+                        "startFieldCard":  "feld_koboldwald",
+                        "nameKey":  "enemy.Wolfsrudel.name",
+                        "titleKey":  "enemy.Wolfsrudel.title"
+                    }
+                ]
+}

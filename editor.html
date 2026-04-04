@@ -481,6 +481,16 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 <div id="toast" data-i18n="ui.common.saved">Saved ✓</div>
 
 <!-- Game data files -->
+<script>
+window.DD_RUNTIME_OPTIONS = {
+  page: 'editor',
+  runtimeConfigBasePath: 'assets/data/runtime-config.json',
+  dataBasePath: 'assets/data',
+  cacheBust: true,
+  allowLocalOverrides: true,
+};
+</script>
+<script src="js/utils/runtime-data-loader.js"></script>
 <script src="js/core/embedded-locales.js"></script>
 <script src="js/core/i18n.js"></script>
 <script src="js/data/cards.js"></script>
@@ -489,6 +499,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 <script src="js/core/ranking.js"></script>
 <script src="js/core/drops.js"></script>
 <script src="js/core/actgenerator.js"></script>
+<script src="js/editor/data-manager.js"></script>
 
 <script>
 /* ═══════════════════════════════════════════════════
@@ -2897,7 +2908,7 @@ function exportJSON() {
 }
 
 function _cloneJson(value) {
-  return JSON.parse(JSON.stringify(value));
+  return window.DDEditorDataManager.cloneJson(value);
 }
 
 function _ensureLocaleBucket(locales, language, namespace) {
@@ -2984,49 +2995,45 @@ function _sanitizeWorldMapForI18n(worldMap) {
 }
 
 function buildEditorDataPayload() {
-  const regularCards = editorCards.filter(card => card.type !== 'fusion');
-  const fusionCards  = editorCards.filter(card => card.type === 'fusion');
-  const synToSave = window.DD_CUSTOM?.synergies || null;
-  const locales = _collectEditorLocales();
-
-  return {
-    cards:          regularCards.map(_sanitizeCardForI18n),
-    fusionMonsters: fusionCards.map(_sanitizeCardForI18n),
-    synergies:      synToSave,
-    enemies:        Object.values(editorEnemies).map(_sanitizeEnemyForI18n),
-    acts:           editorActs,
-    recipes:        editorRecipes,
-    config:         editorConfig,
-    starterDeck:    editorStarterDeck,
-    worldMap:       editorWorldMap.length > 0 ? _sanitizeWorldMapForI18n(editorWorldMap) : undefined,
-    locales,
-  };
+  return window.DDEditorDataManager.buildEditorDataPayload({
+    editorCards,
+    editorEnemies,
+    editorActs,
+    editorRecipes,
+    editorConfig,
+    editorStarterDeck,
+    editorWorldMap,
+    ddCustom: window.DD_CUSTOM,
+    normalizeRaceId: typeof normalizeRaceId === 'function' ? normalizeRaceId : null,
+  });
 }
 
 function buildEditorExportPayload() {
-  return {
-    version: '2.0',
-    timestamp: new Date().toISOString(),
-    ...buildEditorDataPayload(),
-  };
+  return window.DDEditorDataManager.buildEditorExportPayload({
+    editorCards,
+    editorEnemies,
+    editorActs,
+    editorRecipes,
+    editorConfig,
+    editorStarterDeck,
+    editorWorldMap,
+    ddCustom: window.DD_CUSTOM,
+    normalizeRaceId: typeof normalizeRaceId === 'function' ? normalizeRaceId : null,
+  });
 }
 
 function buildRuntimeConfigPayload() {
-  const data = buildEditorDataPayload();
-  return {
-    version: 'runtime-config-v2',
-    generatedFrom: 'editor-export',
-    generatedAt: new Date().toISOString(),
-    cards: data.cards || [],
-    fusionMonsters: data.fusionMonsters || [],
-    enemies: Array.isArray(data.enemies) ? data.enemies : [],
-    synergies: data.synergies || null,
-    acts: Array.isArray(data.acts) ? data.acts : [],
-    config: data.config || {},
-    starterDeck: Array.isArray(data.starterDeck) ? data.starterDeck : [],
-    worldMap: Array.isArray(data.worldMap) ? data.worldMap : [],
-    recipes: Array.isArray(data.recipes) ? data.recipes : [],
-  };
+  return window.DDEditorDataManager.buildRuntimeConfigPayload({
+    editorCards,
+    editorEnemies,
+    editorActs,
+    editorRecipes,
+    editorConfig,
+    editorStarterDeck,
+    editorWorldMap,
+    ddCustom: window.DD_CUSTOM,
+    normalizeRaceId: typeof normalizeRaceId === 'function' ? normalizeRaceId : null,
+  });
 }
 
 function downloadJSONFile(data, filename) {
