@@ -75,7 +75,34 @@
     return SUPPORTED_LANGUAGES.includes(short) ? short : DEFAULT_LANGUAGE;
   }
 
+  function resolveSystemLanguage() {
+    if (typeof navigator !== 'undefined' && navigator.language) {
+      const navLang = normalizeLanguage(navigator.language);
+      if (SUPPORTED_LANGUAGES.includes(navLang)) return navLang;
+    }
+    return FALLBACK_LANGUAGE;
+  }
+
+  function normalizeLanguageMode(value) {
+    const raw = String(value || '').trim().toLowerCase();
+    if (raw === 'system') return 'system';
+    return SUPPORTED_LANGUAGES.includes(raw) ? raw : '';
+  }
+
+  function getStoredLanguageMode() {
+    if (typeof window === 'undefined') return '';
+    try {
+      return normalizeLanguageMode(localStorage.getItem('dd_language_mode'));
+    } catch (_error) {
+      return '';
+    }
+  }
+
   function getInitialLanguage() {
+    const mode = getStoredLanguageMode();
+    if (mode === 'system') return resolveSystemLanguage();
+    if (mode) return normalizeLanguage(mode);
+
     if (typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem('dd_language');
@@ -83,13 +110,10 @@
       } catch (_error) {}
     }
     const ddCustom = getDDCustom();
-    const cfgLang = ddCustom?.config?.['cfg-language'];
+    const cfgLang = normalizeLanguageMode(ddCustom?.config?.['cfg-language']);
+    if (cfgLang === 'system') return resolveSystemLanguage();
     if (cfgLang) return normalizeLanguage(cfgLang);
-    if (typeof navigator !== 'undefined' && navigator.language) {
-      const navLang = normalizeLanguage(navigator.language);
-      if (SUPPORTED_LANGUAGES.includes(navLang)) return navLang;
-    }
-    return DEFAULT_LANGUAGE;
+    return resolveSystemLanguage();
   }
 
   const translations = {};
@@ -284,12 +308,21 @@
   }
 
   function setLanguage(language) {
-    currentLanguage = normalizeLanguage(language);
-    try { localStorage.setItem('dd_language', currentLanguage); } catch (_error) {}
+    const mode = normalizeLanguageMode(language);
+    currentLanguage = mode === 'system'
+      ? resolveSystemLanguage()
+      : normalizeLanguage(mode || language);
+    try {
+      if (mode) localStorage.setItem('dd_language_mode', mode);
+      else localStorage.removeItem('dd_language_mode');
+      localStorage.setItem('dd_language', currentLanguage);
+    } catch (_error) {}
     refreshLocalizedData();
     if (typeof document !== 'undefined') applyI18nToDocument(document);
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('dd-language-changed', { detail: { language: currentLanguage } }));
+      window.dispatchEvent(new CustomEvent('dd-language-changed', {
+        detail: { language: currentLanguage, mode: mode || currentLanguage },
+      }));
     }
     return currentLanguage;
   }
@@ -309,6 +342,7 @@
     normalizeRaceId,
     translateRaceId,
     get currentLanguage() { return currentLanguage; },
+    get languageMode() { return getStoredLanguageMode() || currentLanguage; },
     get fallbackLanguage() { return FALLBACK_LANGUAGE; },
   };
 

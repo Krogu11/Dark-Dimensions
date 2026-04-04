@@ -2,6 +2,10 @@
    ui/battle.js — Battle-Screen Rendering & Interaktion
    ============================================================ */
 
+function _battleUi(key, vars, fallbackValue) {
+  return t(key, vars, { fallbackValue });
+}
+
 /* ── Haupt-Render ── */
 function renderBattle() {
   const bs = BATTLE_STATE;
@@ -26,7 +30,10 @@ function renderBattle() {
   const summonEl = document.getElementById('summon-count');
   if (summonEl) {
     const remaining = bs.maxPlayerSummons - bs.summonCount;
-    summonEl.textContent = `⚡ ${remaining}/${bs.maxPlayerSummons}`;
+    summonEl.textContent = _battleUi('ui.battle.summonsRemaining', {
+      remaining,
+      max: bs.maxPlayerSummons,
+    }, `⚡ ${remaining}/${bs.maxPlayerSummons}`);
     summonEl.className   = remaining > 0 ? 'summon-count-ok' : 'summon-count-empty';
   }
   document.getElementById('enemy-name').textContent  = bs.enemy.name;
@@ -56,8 +63,8 @@ function renderBattle() {
   if (btnNext) {
     const autoPhase = curPhase === 'Draw' || curPhase === 'End';
     btnNext.style.display = autoPhase ? 'none' : '';
-    if (curPhase === 'Main')    btnNext.textContent = '⚔ Battle Phase';
-    if (curPhase === 'Battle')  btnNext.textContent = '🏳 Battle beenden';
+    if (curPhase === 'Main')    btnNext.textContent = _battleUi('ui.battle.toBattlePhase', null, '⚔ Battle Phase');
+    if (curPhase === 'Battle')  btnNext.textContent = _battleUi('ui.battle.endBattlePhase', null, '🏳 End Battle');
   }
 
   // Direktangriff Button
@@ -147,7 +154,7 @@ function renderSynergyPanel() {
 
   const active = getActiveSynergies(true); // nur Spieler-Synergien anzeigen
   if (active.length === 0) {
-    panel.innerHTML = '<div style="color:#555;font-size:11px;padding:4px">Keine Synergien aktiv</div>';
+    panel.innerHTML = `<div style="color:#555;font-size:11px;padding:4px">${_battleUi('ui.battle.noSynergies', null, 'No active synergies')}</div>`;
     return;
   }
 
@@ -155,7 +162,7 @@ function renderSynergyPanel() {
     <div class="synergy-entry" style="border-left:2px solid ${rule.color || '#aaa'}">
       <span style="color:${rule.color || '#aaa'}">${translateRaceId(rule.race)}</span>
       <span style="color:#ddd">${rule.description.split(':')[1]?.trim() || ''}</span>
-      <span style="color:#888">(${count}× auf Feld)</span>
+      <span style="color:#888">${_battleUi('ui.battle.onFieldCount', { count }, `(${count}× on field)`)}</span>
     </div>
   `).join('');
 }
@@ -208,7 +215,7 @@ function renderSTZone(containerId, stZone) {
       const el = document.createElement('div');
       el.className = `st-card ${card.type}`;
       if (card.hidden) {
-        el.innerHTML = `<span class="st-icon">🔽</span><span class="st-name">Falle</span>`;
+        el.innerHTML = `<span class="st-icon">🔽</span><span class="st-name">${_battleUi('ui.card.trap', null, 'Trap')}</span>`;
       } else {
         el.innerHTML = `<span class="st-icon">${card.type === 'spell' ? '✨' : '⚡'}</span><span class="st-name">${card.name}</span>`;
         el.addEventListener('mouseover', () => updatePreview(card));
@@ -232,8 +239,8 @@ function renderEnemySTZone(containerId, stZone) {
       const el = document.createElement('div');
       // Gegner-Fallen immer als unbekannte Bedrohung zeigen (rot)
       el.className = 'st-card trap enemy-trap';
-      el.innerHTML = `<span class="st-icon">❓</span><span class="st-name" style="color:#ff6666">Falle!</span>`;
-      el.title = 'Gegner-Falle — aktiviert bei deinem Angriff!';
+      el.innerHTML = `<span class="st-icon">❓</span><span class="st-name" style="color:#ff6666">${_battleUi('ui.battle.enemyTrap', null, 'Trap!')}</span>`;
+      el.title = _battleUi('ui.battle.enemyTrapTitle', null, 'Enemy trap — it triggers when you attack!');
       slot.appendChild(el);
     }
     container.appendChild(slot);
@@ -285,9 +292,9 @@ function createCardEl(card, inHand = false) {
         <span class="atk">⚔ ${card.atk}</span>
         <span class="def">🛡 ${card.def}</span>
       </div>
-      ${card.race ? `<div class="card-race">${card.race}</div>` : ''}
+      ${card.race ? `<div class="card-race">${translateRaceId(card.race)}</div>` : ''}
     ` : card.type === 'field' ? `
-      <div class="card-spell-type card-field-type">🗺 Spielfeld</div>
+      <div class="card-spell-type card-field-type">${_battleUi('ui.card.field', null, '🗺 Field')}</div>
       ${card.flavor ? `<div class="card-flavor">${card.flavor}</div>` : ''}
     ` : `
       <div class="card-spell-type">${card.type === 'spell' ? t('ui.card.spell') : t('ui.card.trap')}</div>
@@ -306,16 +313,16 @@ function updatePreview(card) {
   if (!panel) return;
 
   if (!card || card.hidden) {
-    panel.innerHTML = `<div class="preview-empty">Hover über eine Karte</div>`;
+    panel.innerHTML = `<div class="preview-empty">${_battleUi('ui.common.hoverCard', null, 'Hover over a card')}</div>`;
     return;
   }
 
   const typeLabel   = t(`ui.type.${card.type}`, null, { fallbackValue: card.type || '' });
-  const rarityLabel = { common:'Gewöhnlich', uncommon:'Ungewöhnlich', rare:'Selten', epic:'Episch', legendary:'Legendär' }[card.rarity] || '';
+  const rarityLabel = t(`ui.rarity.${card.rarity}`, null, { fallbackValue: card.rarity || '' });
   const typeIcon    = { monster:'🐉', spell:'✨', trap:'⚡', fusion:'⚗', field:'🗺' }[card.type] || '?';
 
-  const shieldInfo  = card._shield ? `<div>🛡 Rüstung: <b>${card._shield}</b></div>` : '';
-  const synInfo     = card._synergyATK ? `<div style="color:#7aff7a">⬆ Synergie: +${card._synergyATK} ATK</div>` : '';
+  const shieldInfo  = card._shield ? `<div>${_battleUi('ui.preview.armor', { value: card._shield }, `🛡 Armor: ${card._shield}`)}</div>` : '';
+  const synInfo     = card._synergyATK ? `<div style="color:#7aff7a">${_battleUi('ui.preview.synergyAtk', { value: card._synergyATK }, `⬆ Synergy: +${card._synergyATK} ATK`)}</div>` : '';
 
   panel.innerHTML = `
     ${card.image ? `
@@ -331,7 +338,7 @@ function updatePreview(card) {
         <span class="preview-name">${card.name}</span>
       </div>
     `}
-    <div class="preview-meta">${typeLabel} · ${rarityLabel}${card.race ? ` · <span style="color:#afd4ff">${card.race}</span>` : ''}</div>
+    <div class="preview-meta">${typeLabel} · ${rarityLabel}${card.race ? ` · <span style="color:#afd4ff">${translateRaceId(card.race)}</span>` : ''}</div>
     ${(card.type === 'monster' || card.type === 'fusion') ? `
       <div class="preview-stats">
         <div>⚔ ATK: <b>${card.atk}</b></div>
@@ -341,10 +348,10 @@ function updatePreview(card) {
     ` : ''}
     ${card.type === 'field' ? `
       <div class="preview-effect preview-field-effects">
-        🗺 <b>Spielfeld-Effekte:</b><br>
+        🗺 <b>${_battleUi('ui.card.fieldEffects', null, 'Field effects')}:</b><br>
         ${typeof getFieldCardDescription === 'function' ? getFieldCardDescription(card).split(' • ').join('<br>') : ''}
       </div>
-    ` : (card.effects?.length > 0 || card.effect) ? `<div class="preview-effect">${t('ui.card.effect')}: ${getEffectDescription(card.effects || card.effect, card)}</div>` : '<div class="preview-effect">Kein Effekt</div>'}
+    ` : (card.effects?.length > 0 || card.effect) ? `<div class="preview-effect">${t('ui.card.effect')}: ${getEffectDescription(card.effects || card.effect, card)}</div>` : `<div class="preview-effect">${_battleUi('ui.card.noEffect', null, 'No effect')}</div>`}
     <div class="preview-flavor">"${card.flavor || ''}"</div>
   `;
 }
@@ -371,7 +378,16 @@ function toggleCardMode(slotIndex) {
   const card = BATTLE_STATE.playerField[slotIndex];
   if (!card || getCurrentPhase() !== 'Main') return;
   card.mode = card.mode === 'defense' ? 'attack' : 'defense';
-  battleLog(`🔄 ${card.name}: ${card.mode === 'defense' ? 'Verteidigung' : 'Angriff'}smodus`, '');
+  battleLog(_battleUi(
+    'ui.battle.modeChanged',
+    {
+      card: card.name,
+      mode: card.mode === 'defense'
+        ? _battleUi('ui.card.defenseMode', null, 'Defense Mode')
+        : _battleUi('ui.card.attackMode', null, 'Attack Mode'),
+    },
+    `${card.name}: ${card.mode}`
+  ), '');
   renderBattle();
 }
 

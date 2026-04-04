@@ -191,25 +191,27 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 <body>
 
 <header>
-  <div><div class="logo">DARK DIMENSIONS</div><div class="sub">DEVELOPER EDITOR v2.0</div></div>
+  <div><div class="logo">DARK DIMENSIONS</div><div class="sub" id="editor-subtitle">DEVELOPER EDITOR v2.0</div></div>
   <div class="spacer"></div>
-  <button class="hdr-btn" onclick="importJSON()">📂 Import</button>
-  <button class="hdr-btn" onclick="exportJSON()">💾 Export</button>
-  <button class="hdr-btn" onclick="exportRuntimeConfig()">🌐 Runtime-Export</button>
-  <button class="hdr-btn primary" onclick="saveToGame()">✓ Im Spiel speichern</button>
-  <button class="hdr-btn" onclick="window.open('index.html','_blank')">🎮 Spiel öffnen</button>
+  <div id="editor-language-controls" style="display:flex;align-items:center;gap:8px;margin-right:8px"></div>
+  <button class="hdr-btn" id="btn-editor-import" onclick="importJSON()">📂 Import</button>
+  <button class="hdr-btn" id="btn-editor-export" onclick="exportJSON()">💾 Export</button>
+  <button class="hdr-btn" id="btn-editor-export-runtime" onclick="exportRuntimeConfig()">🌐 Runtime-Export</button>
+  <button class="hdr-btn" id="btn-editor-export-en" onclick="exportTranslationTemplate('en')">🌍 EN Template</button>
+  <button class="hdr-btn primary" id="btn-editor-save" onclick="saveToGame()">✓ Im Spiel speichern</button>
+  <button class="hdr-btn" id="btn-editor-open-game" onclick="window.open('index.html','_blank')">🎮 Spiel öffnen</button>
 </header>
 
 <div class="tabs">
-  <button class="tab-btn active"  onclick="switchTab('cards')">🃏 Karten</button>
-  <button class="tab-btn"         onclick="switchTab('enemies')">👹 Gegner</button>
-  <button class="tab-btn"         onclick="switchTab('drops')">🎲 Drop-Tabellen</button>
-  <button class="tab-btn"         onclick="switchTab('acts')">🗺 Akte</button>
-  <button class="tab-btn"         onclick="switchTab('fusions')">⚗ Fusionen</button>
-  <button class="tab-btn"         onclick="switchTab('config')">⚙ Konfiguration</button>
-  <button class="tab-btn"         onclick="switchTab('synergies')">⚗ Synergien</button>
-  <button class="tab-btn"         onclick="switchTab('worldmap')">🌍 Weltenkarte</button>
-  <button class="tab-btn"         onclick="switchTab('debug')">🔧 Debug</button>
+  <button class="tab-btn active" data-editor-tab="cards" onclick="switchTab('cards')">🃏 Karten</button>
+  <button class="tab-btn" data-editor-tab="enemies" onclick="switchTab('enemies')">👹 Gegner</button>
+  <button class="tab-btn" data-editor-tab="drops" onclick="switchTab('drops')">🎲 Drop-Tabellen</button>
+  <button class="tab-btn" data-editor-tab="acts" onclick="switchTab('acts')">🗺 Akte</button>
+  <button class="tab-btn" data-editor-tab="fusions" onclick="switchTab('fusions')">⚗ Fusionen</button>
+  <button class="tab-btn" data-editor-tab="config" onclick="switchTab('config')">⚙ Konfiguration</button>
+  <button class="tab-btn" data-editor-tab="synergies" onclick="switchTab('synergies')">⚗ Synergien</button>
+  <button class="tab-btn" data-editor-tab="worldmap" onclick="switchTab('worldmap')">🌍 Weltenkarte</button>
+  <button class="tab-btn" data-editor-tab="debug" onclick="switchTab('debug')">🔧 Debug</button>
 </div>
 
 <!-- ══════════ TAB: KARTEN ══════════ -->
@@ -557,6 +559,82 @@ let selectedCardId  = null;
 let selectedEnemyId = null;
 let selectedWmLocId = null;   // aktuell ausgewählter Weltenkarten-Ort
 
+function _et(key, vars, fallbackValue) {
+  return t(key, vars, { fallbackValue });
+}
+
+function _editorTypeLabel(type) {
+  return _et(`ui.type.${type}`, null, type || '');
+}
+
+function _editorRarityLabel(rarity) {
+  return _et(`ui.rarity.${rarity}`, null, rarity || '');
+}
+
+function _editorPreviewLanguageMode() {
+  try {
+    return localStorage.getItem('dd_editor_preview_language') || window.I18N?.languageMode || 'system';
+  } catch (_error) {
+    return window.I18N?.languageMode || 'system';
+  }
+}
+
+function renderEditorLanguageControls() {
+  const host = document.getElementById('editor-language-controls');
+  if (!host) return;
+  host.innerHTML = `
+    <label for="editor-language-select" style="font-size:11px;color:var(--muted);letter-spacing:1px">${_et('ui.editor.previewLanguage', null, 'Preview language')}</label>
+    <select id="editor-language-select" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px">
+      <option value="system">${_et('ui.language.system', null, 'System')}</option>
+      <option value="en">${_et('ui.language.en', null, 'English')}</option>
+      <option value="de">${_et('ui.language.de', null, 'Deutsch')}</option>
+    </select>
+  `;
+  const select = document.getElementById('editor-language-select');
+  if (!select) return;
+  select.value = _editorPreviewLanguageMode();
+  select.onchange = () => {
+    try { localStorage.setItem('dd_editor_preview_language', select.value); } catch (_error) {}
+    setDDLanguage(select.value);
+  };
+}
+
+function renderEditorChrome() {
+  const subtitle = document.getElementById('editor-subtitle');
+  if (subtitle) subtitle.textContent = _et('ui.editor.subtitle', null, 'DEVELOPER EDITOR v2.0');
+
+  const buttonMap = {
+    'btn-editor-import': 'ui.editor.import',
+    'btn-editor-export': 'ui.editor.export',
+    'btn-editor-export-runtime': 'ui.editor.runtimeExport',
+    'btn-editor-export-en': 'ui.editor.exportEnTemplate',
+    'btn-editor-save': 'ui.editor.saveToGame',
+    'btn-editor-open-game': 'ui.editor.openGame',
+  };
+  Object.keys(buttonMap).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = _et(buttonMap[id], null, el.textContent);
+  });
+
+  const tabKeys = {
+    cards: 'ui.editor.tabs.cards',
+    enemies: 'ui.editor.tabs.enemies',
+    drops: 'ui.editor.tabs.drops',
+    acts: 'ui.editor.tabs.acts',
+    fusions: 'ui.editor.tabs.fusions',
+    config: 'ui.editor.tabs.config',
+    synergies: 'ui.editor.tabs.synergies',
+    worldmap: 'ui.editor.tabs.worldmap',
+    debug: 'ui.editor.tabs.debug',
+  };
+  document.querySelectorAll('[data-editor-tab]').forEach(btn => {
+    const key = tabKeys[btn.dataset.editorTab];
+    if (key) btn.textContent = _et(key, null, btn.textContent);
+  });
+
+  renderEditorLanguageControls();
+}
+
 /* ═══════════════════════════════════════════════════
    NEUES EFFEKTSYSTEM v4.0 — Modularer Multi-Effekt-Builder
 ═══════════════════════════════════════════════════ */
@@ -814,14 +892,14 @@ function addEffectEntry() {
   const typeEl  = document.getElementById('eff-type-select');
   const paramEl = document.getElementById('eff-param-input');
   const cidEl   = document.getElementById('eff-cardid-input');
-  if (!typeEl || !typeEl.value) { showToast('Bitte Effekttyp wählen'); return; }
+  if (!typeEl || !typeEl.value) { showToast(_et('ui.editor.effects.chooseType', null, 'Choose an effect type')); return; }
 
   const meta = getEffectMeta(typeEl.value);
   const entry = { type: typeEl.value };
 
-  if (meta?.param === 'amount')  { const v = parseInt(paramEl?.value || 0); if (!v) { showToast('Wert eingeben'); return; } entry.amount = v; }
+  if (meta?.param === 'amount')  { const v = parseInt(paramEl?.value || 0); if (!v) { showToast(_et('ui.editor.effects.enterValue', null, 'Enter a value')); return; } entry.amount = v; }
   if (meta?.param === 'count')   { const v = parseInt(paramEl?.value || 1); entry.count  = Math.max(1, v); }
-  if (meta?.param === 'cardId')  { const v = (cidEl?.value || '').trim(); if (!v) { showToast('Karten-ID eingeben'); return; } entry.cardId = v; }
+  if (meta?.param === 'cardId')  { const v = (cidEl?.value || '').trim(); if (!v) { showToast(_et('ui.editor.effects.enterCardId', null, 'Enter a card ID')); return; } entry.cardId = v; }
 
   _editingEffects.push(entry);
   const cardType = (document.getElementById('cf-type') || {}).value || 'monster';
@@ -857,7 +935,7 @@ function switchTab(name) {
   if (name==='worldmap')   initWorldMapEditor();
 }
 
-function showToast(msg='Gespeichert ✓') {
+function showToast(msg = _et('ui.common.saved', null, 'Saved ✓')) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('visible');
   setTimeout(()=>t.classList.remove('visible'), 2400);
@@ -1058,7 +1136,7 @@ function uploadCardArt(input) {
       if(thumb) thumb.innerHTML = `<img src="${_editingCardArt}">`;
       updatePreview();
       const kb = Math.round(_editingCardArt.length * 0.75 / 1024);
-      showToast(`Artwork hochgeladen ✓ (~${kb} KB)`);
+      showToast(_et('ui.editor.cards.artUploaded', { size: kb }, `Artwork uploaded ✓ (~${kb} KB)`));
     };
     img.src = e.target.result;
   };
@@ -1102,7 +1180,7 @@ function updatePreview() {
 function saveCard() {
   const id = document.getElementById('cf-id').value.trim();
   const name = document.getElementById('cf-name').value.trim();
-  if(!id||!name){alert('ID und Name sind Pflicht.'); return;}
+  if(!id||!name){alert(_et('ui.editor.cards.requiredIdName', null, 'ID and name are required.')); return;}
   const type = document.getElementById('cf-type').value;
   const race = document.getElementById('cf-race')?.value||'';
   const isMonster = type==='monster'||type==='fusion';
@@ -1126,21 +1204,21 @@ function saveCard() {
   if(idx>=0) editorCards[idx]=card; else editorCards.push(card);
   selectedCardId=id;
   renderCardList(document.getElementById('card-search').value);
-  showToast('Karte gespeichert ✓');
+  showToast(_et('ui.editor.cards.saved', null, 'Card saved ✓'));
 }
 
 function newCard() {
   selectedCardId=null;
   _editingEffects=[];
-  renderCardForm({id:'neue_karte_'+Date.now(),name:'Neue Karte',type:'monster',rarity:'common',atk:1000,def:800,race:'',effects:[],effect:null,flavor:''});
+  renderCardForm({id:'new_card_'+Date.now(),name:_et('ui.editor.cards.newCardName', null, 'New Card'),type:'monster',rarity:'common',atk:1000,def:800,race:'',effects:[],effect:null,flavor:''});
 }
 
 function deleteCard() {
   if(!selectedCardId) return;
-  if(!confirm(`Karte "${selectedCardId}" löschen?`)) return;
+  if(!confirm(_et('ui.editor.cards.confirmDelete', { id: selectedCardId }, `Delete card "${selectedCardId}"?`))) return;
   editorCards = editorCards.filter(c=>c.id!==selectedCardId);
   selectedCardId=null;
-  document.getElementById('card-form-col').innerHTML='<div style="color:var(--muted);padding:40px;text-align:center">← Karte auswählen</div>';
+  document.getElementById('card-form-col').innerHTML=`<div style="color:var(--muted);padding:40px;text-align:center">${_et('ui.editor.cards.selectCard', null, '← Select a card')}</div>`;
   renderCardList();
 }
 
@@ -1312,7 +1390,7 @@ function addFieldCard() {
   const enemy = editorEnemies[selectedEnemyId];
   if(!enemy) return;
   if(!enemy.startField) enemy.startField=[];
-  if(enemy.startField.length>=5){showToast('Max. 5 Monster auf dem Startfeld');return;}
+  if(enemy.startField.length>=5){showToast(_et('ui.editor.enemies.maxStartField', null, 'Max. 5 monsters on the starting field'));return;}
   const sel = document.getElementById('ef-field-select');
   if(!sel||!sel.value) return;
   enemy.startField.push(sel.value);
@@ -1337,7 +1415,7 @@ function addTrapCard() {
   const enemy = editorEnemies[selectedEnemyId];
   if(!enemy) return;
   if(!enemy.startTraps) enemy.startTraps=[];
-  if(enemy.startTraps.length>=3){showToast('Max. 3 Fallen in der Startzone');return;}
+  if(enemy.startTraps.length>=3){showToast(_et('ui.editor.enemies.maxStartTraps', null, 'Max. 3 traps in the starting zone'));return;}
   const sel = document.getElementById('ef-trap-select');
   if(!sel||!sel.value) return;
   enemy.startTraps.push(sel.value);
@@ -1388,7 +1466,7 @@ function uploadPortrait(input) {
       const box = document.getElementById('portrait-preview-box');
       if(box) box.innerHTML = `<img src="${b64}" style="width:60px;height:60px;object-fit:cover;border-radius:50%">`;
       document.getElementById('ef-portrait').value = '';
-      showToast('Portrait hochgeladen ✓');
+      showToast(_et('ui.editor.enemies.portraitUploaded', null, 'Portrait uploaded ✓'));
     };
     img.src = e.target.result;
   };
@@ -1444,12 +1522,12 @@ function saveEnemy() {
     selectedEnemyId=enemy.id;
   }
   initEnemyTab();
-  showToast('Gegner gespeichert ✓');
+  showToast(_et('ui.editor.enemies.saved', null, 'Enemy saved ✓'));
 }
 
 function newEnemy() {
-  const id='neuer_gegner_'+Date.now();
-  editorEnemies[id]={id,name:'Neuer Gegner',title:'—',portrait:'👾',
+  const id='new_enemy_'+Date.now();
+  editorEnemies[id]={id,name:_et('ui.editor.enemies.newEnemyName', null, 'New Enemy'),title:'—',portrait:'👾',
   hp:3000,behavior:'aggressive',difficulty:2,fieldBonus:0,
     maxSummons:1,multiAttack:false,startField:[],startTraps:[],startHandCount:3,
     deckIds:['goblin','goblin','soldier','soldier','fireball'],
@@ -1461,10 +1539,10 @@ function newEnemy() {
 
 function deleteEnemy() {
   if(!selectedEnemyId) return;
-  if(!confirm(`Gegner "${selectedEnemyId}" löschen?`)) return;
+  if(!confirm(_et('ui.editor.enemies.confirmDelete', { id: selectedEnemyId }, `Delete enemy "${selectedEnemyId}"?`))) return;
   delete editorEnemies[selectedEnemyId];
   selectedEnemyId=null;
-  document.getElementById('enemy-form-col').innerHTML='<div style="color:var(--muted);padding:40px;text-align:center">← Gegner auswählen</div>';
+  document.getElementById('enemy-form-col').innerHTML=`<div style="color:var(--muted);padding:40px;text-align:center">${_et('ui.editor.enemies.selectEnemy', null, '← Select an enemy')}</div>`;
   initEnemyTab();
 }
 
@@ -2016,7 +2094,7 @@ function saveActs() {
   if (warnings.length > 0) {
     const msg = warnings.join('\n');
     console.warn('[DD Editor] Act-Validierung:\n' + msg);
-    showToast('⚠ Acts gespeichert — Validierungshinweise (Details in Konsole)', 'warn');
+    showToast(_et('ui.editor.acts.validationWarnings', null, '⚠ Acts saved — validation notes in console'), 'warn');
     /* Visueller Hinweis unter dem Speichern-Button */
     let box = document.getElementById('act-validation-warnings');
     if (!box) {
@@ -2031,7 +2109,7 @@ function saveActs() {
     /* Validierungs-Box entfernen wenn alles ok */
     const box = document.getElementById('act-validation-warnings');
     if (box) box.remove();
-    showToast('Acts konfiguriert ✓ — "Im Spiel speichern" zum Aktivieren');
+    showToast(_et('ui.editor.acts.saved', null, 'Acts configured ✓ — use "Save To Game" to activate'));
   }
 }
 
@@ -2126,10 +2204,10 @@ function addRecipe() {
   const mat1   = mat1Sel ? mat1Sel.value : '';
   const mat2   = mat2Sel ? mat2Sel.value : '';
   const result = resultSel ? resultSel.value : '';
-  if(!mat1||!mat2||!result){alert('Alle Felder ausfüllen.'); return;}
+  if(!mat1||!mat2||!result){alert(_et('ui.editor.fusions.fillAllFields', null, 'Fill in all fields.')); return;}
   editorRecipes.push({mat1,mat2,result});
   renderFusionEditor();
-  showToast('Rezept hinzugefügt ✓');
+  showToast(_et('ui.editor.fusions.recipeAdded', null, 'Recipe added ✓'));
 }
 
 function removeRecipe(i) {
@@ -2137,7 +2215,7 @@ function removeRecipe(i) {
   renderFusionEditor();
 }
 
-function saveFusions() { showToast('Fusionen gespeichert — nutze "Im Spiel speichern".'); }
+function saveFusions() { showToast(_et('ui.editor.fusions.saved', null, 'Fusions saved — use "Save To Game".')); }
 
 /* ═══════════════════════════════════════════════════
    ████  KONFIGURATION-TAB  ████
@@ -2292,7 +2370,7 @@ function saveConfig() {
   editorConfig['cfg-music-story']     = _getPlaylistEditorValue('cfg-music-story');
   // Roster-Reihenfolge speichern
   editorConfig['cfg-roster-order'] = [..._rosterOrder];
-  showToast('Konfiguration gespeichert ✓');
+  showToast(_et('ui.editor.config.saved', null, 'Configuration saved ✓'));
 }
 
 /* ═══════════════════════════════════════════════════
@@ -2509,7 +2587,7 @@ function addWorldMapLocation() {
 
 /* Karte leeren */
 function clearWorldMap() {
-  if (!confirm('Gesamte Weltenkarte löschen?')) return;
+  if (!confirm(_et('ui.editor.worldmap.confirmClear', null, 'Clear the entire world map?'))) return;
   editorWorldMap = [];
   selectedWmLocId = null;
   renderWmCanvas();
@@ -2753,7 +2831,7 @@ function wmUpdateStoryLine(idx, field, value) {
 }
 
 function deleteWmLocation(locId) {
-  if (!confirm('Diesen Ort löschen?')) return;
+  if (!confirm(_et('ui.editor.worldmap.confirmDeleteLocation', null, 'Delete this location?'))) return;
   editorWorldMap = editorWorldMap.filter(l => l.id !== locId);
   /* Aus allen Verbindungen entfernen */
   editorWorldMap.forEach(l => {
@@ -2771,13 +2849,13 @@ function saveToGame() {
   const data = buildEditorDataPayload();
   window.DD_CUSTOM = data;
   localStorage.setItem('dd_custom', JSON.stringify(data));
-  showToast('✓ Gespeichert! Lade das Spiel neu (F5).');
+  showToast(_et('ui.editor.savedReload', null, '✓ Saved! Reload the game (F5).'));
 }
 
 function exportJSON() {
   const data = buildEditorExportPayload();
   downloadJSONFile(data, `dd_data_${Date.now()}.json`);
-  showToast('Export gestartet ✓');
+  showToast(_et('ui.editor.exportStarted', null, 'Export started ✓'));
 }
 
 function _cloneJson(value) {
@@ -2926,7 +3004,31 @@ function exportRuntimeConfig() {
   if (typeof saveConfig === 'function') saveConfig();
   const runtimeData = buildRuntimeConfigPayload();
   downloadJSONFile(runtimeData, 'runtime-config.json');
-  showToast('Runtime-Export erstellt ✓ Datei als assets/data/runtime-config.json ablegen');
+  showToast(_et('ui.editor.runtimeExportDone', null, 'Runtime export created ✓ Place the file at assets/data/runtime-config.json'));
+}
+
+function buildTranslationTemplate(language) {
+  const source = _collectEditorLocales();
+  const target = _cloneJson(source[language] || {});
+  ['cards', 'story', 'ui'].forEach(namespace => {
+    const sourceBucket = source.de?.[namespace] || {};
+    if (!target[namespace]) target[namespace] = {};
+    Object.keys(sourceBucket).forEach(key => {
+      if (target[namespace][key] === undefined) target[namespace][key] = '';
+    });
+  });
+  return {
+    sourceLanguage: 'de',
+    targetLanguage: language,
+    source: source.de || {},
+    target,
+  };
+}
+
+function exportTranslationTemplate(language = 'en') {
+  const template = buildTranslationTemplate(language);
+  downloadJSONFile(template, `dd_translation_template_${language}.json`);
+  showToast(_et('ui.editor.translationTemplateDone', { language: language.toUpperCase() }, `Translation template for ${language.toUpperCase()} exported ✓`));
 }
 
 function importJSON() {
@@ -2958,8 +3060,8 @@ function importJSON() {
         if (typeof prepareEnemyLocalization === 'function') Object.values(editorEnemies).forEach(prepareEnemyLocalization);
         if (typeof prepareWorldLocationLocalization === 'function') editorWorldMap.forEach(prepareWorldLocationLocalization);
         renderCardList(); initEnemyTab();
-        showToast('Import erfolgreich ✓');
-      }catch(err){alert('Import-Fehler: '+err.message);}
+        showToast(_et('ui.editor.importSuccess', null, 'Import successful ✓'));
+      }catch(err){alert(_et('ui.editor.importError', { message: err.message }, `Import error: ${err.message}`));}
     };
     reader.readAsText(file);
   };
@@ -3017,7 +3119,7 @@ function saveSynergies() {
   if (!window.DD_CUSTOM) window.DD_CUSTOM = {};
   window.DD_CUSTOM.synergies = rules;
   localStorage.setItem('dd_custom', JSON.stringify(window.DD_CUSTOM));
-  showToast('Synergien gespeichert ✓');
+  showToast(_et('ui.editor.synergies.saved', null, 'Synergies saved ✓'));
 }
 
 function resetSynergies() {
@@ -3025,14 +3127,28 @@ function resetSynergies() {
   delete window.DD_CUSTOM.synergies;
   localStorage.setItem('dd_custom', JSON.stringify(window.DD_CUSTOM));
   initSynergyTab();
-  showToast('Synergien zurückgesetzt ✓');
+  showToast(_et('ui.editor.synergies.reset', null, 'Synergies reset ✓'));
 }
 
 /* ═══════════════════════════════════════════════════
    INITIALISIERUNG
 ═══════════════════════════════════════════════════ */
+setDDLanguage(_editorPreviewLanguageMode());
+renderEditorChrome();
 initCardTab();
 initEnemyTab();
+window.addEventListener('dd-language-changed', () => {
+  renderEditorChrome();
+  const activeTab = document.querySelector('.tab-btn.active')?.dataset.editorTab;
+  if (activeTab) switchTab(activeTab);
+  if (selectedCardId) {
+    const card = editorCards.find(c => c.id === selectedCardId);
+    if (card) renderCardForm(card);
+  }
+  if (selectedEnemyId && editorEnemies[selectedEnemyId]) {
+    renderEnemyForm(editorEnemies[selectedEnemyId]);
+  }
+});
 </script>
 </body>
 </html>
