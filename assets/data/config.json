@@ -1,0 +1,43 @@
+﻿{
+    "config":  {
+                   "cfg-startlp":  4000,
+                   "cfg-startgold":  50,
+                   "cfg-maxhand":  9,
+                   "cfg-restratio":  30,
+                   "cfg-removecost":  25,
+                   "cfg-fleecost":  15,
+                   "cfg-price-common":  30,
+                   "cfg-price-uncommon":  45,
+                   "cfg-price-rare":  60,
+                   "cfg-price-epic":  100,
+                   "cfg-price-legendary":  150,
+                   "cfg-maxsummons":  3,
+                   "cfg-roster-order":  [
+                                            "goblin_chief",
+                                            "skeleton_mage",
+                                            "orc_warlord",
+                                            "forest_demon",
+                                            "shadow_knight",
+                                            "dark_priest",
+                                            "iron_golem_guard",
+                                            "chaos_lord",
+                                            "void_reaper",
+                                            "soul_devourer",
+                                            "dark_dimension_god",
+                                            "goblin_gang",
+                                            "kobold_kÃ¶nig",
+                                            "kobold_reiter",
+                                            "kobold_waldlaeufer",
+                                            "Wolfsrudel"
+                                        ],
+                   "cfg-music-menu":  [
+                                          "assets/audio/shadow-sigil-title.mp3"
+                                      ],
+                   "cfg-music-campaign":  [
+                                              "assets/audio/cursed-data-duel.mp3"
+                                          ],
+                   "cfg-music-story":  [
+                                           "assets/audio/cursed-data-duel.mp3"
+                                       ]
+               }
+}

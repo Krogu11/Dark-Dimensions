@@ -85,8 +85,8 @@ Use a local HTTP server instead.
 
 1. Start the same local server
 2. Open [http://127.0.0.1:8000/editor.html](http://127.0.0.1:8000/editor.html)
-2. Edit content
-3. Export or runtime-export it back into the game
+3. Edit content
+4. Export or runtime-export it back into the game
 
 ### Why this matters
 

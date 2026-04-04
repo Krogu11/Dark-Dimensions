@@ -1,0 +1,124 @@
+﻿{
+    "recipes":  [
+                    {
+                        "mat1":  "kobold_hauptmann",
+                        "mat2":  "kobold_hauptmann",
+                        "result":  "kobold_koenig"
+                    },
+                    {
+                        "mat1":  "kobold_winzling",
+                        "mat2":  "kobold_winzling",
+                        "result":  "kobold_speertraeger"
+                    },
+                    {
+                        "mat1":  "kobold_waldkobold",
+                        "mat2":  "wolf",
+                        "result":  "goblin_wolfreiter"
+                    },
+                    {
+                        "mat1":  "kobold_koenig",
+                        "mat2":  "kobold_koenig",
+                        "result":  "kobold_imperator"
+                    },
+                    {
+                        "mat1":  "kobold_winzling",
+                        "mat2":  "kobold_waldkobold",
+                        "result":  "kobold_jaeger"
+                    },
+                    {
+                        "mat1":  "kobold_jaeger",
+                        "mat2":  "kobold_jaeger",
+                        "result":  "kobold_schuetze"
+                    },
+                    {
+                        "mat1":  "kobold_speertraeger",
+                        "mat2":  "kobold_speertraeger",
+                        "result":  "kobold_krieger"
+                    },
+                    {
+                        "mat1":  "kobold_waldkobold",
+                        "mat2":  "kobold_waldkobold",
+                        "result":  "goblin_schamane"
+                    },
+                    {
+                        "mat1":  "kobold_krieger",
+                        "mat2":  "kobold_schuetze",
+                        "result":  "kobold_hauptmann"
+                    },
+                    {
+                        "mat1":  "welpe",
+                        "mat2":  "welpe",
+                        "result":  "wolf"
+                    },
+                    {
+                        "mat1":  "wolf",
+                        "mat2":  "wolf",
+                        "result":  "alphawolf"
+                    },
+                    {
+                        "mat1":  "mutiger_dorfbewohner",
+                        "mat2":  "Dorfwache",
+                        "result":  "dorfbeschÃ¼tzer"
+                    },
+                    {
+                        "mat1":  "dorfbeschÃ¼tzer",
+                        "mat2":  "Dorfwache",
+                        "result":  "dorfbeschÃ¼tze"
+                    },
+                    {
+                        "mat1":  "dorfbeschÃ¼tze",
+                        "mat2":  "mutiger_dorfbewohner",
+                        "result":  "bannertraeger"
+                    },
+                    {
+                        "mat1":  "bannertraeger",
+                        "mat2":  "Dorfwache",
+                        "result":  "held der bastion"
+                    },
+                    {
+                        "mat1":  "wolf",
+                        "mat2":  "mutiger_dorfbewohner",
+                        "result":  "Beste Freunde"
+                    },
+                    {
+                        "mat1":  "welpe",
+                        "mat2":  "Dorfwache",
+                        "result":  "Beste Freunde"
+                    },
+                    {
+                        "mat1":  "wolf",
+                        "mat2":  "Dorfwache",
+                        "result":  "Beste Freunde"
+                    },
+                    {
+                        "mat1":  "welpe",
+                        "mat2":  "mutiger_dorfbewohner",
+                        "result":  "Beste Freunde"
+                    },
+                    {
+                        "mat1":  "wolf",
+                        "mat2":  "dorfbeschÃ¼tzer",
+                        "result":  "Beste Freunde"
+                    },
+                    {
+                        "mat1":  "welpe",
+                        "mat2":  "dorfbeschÃ¼tzer",
+                        "result":  "Beste Freunde"
+                    },
+                    {
+                        "mat1":  "alphawolf",
+                        "mat2":  "dorfbeschÃ¼tzer",
+                        "result":  "Beste Freunde"
+                    },
+                    {
+                        "mat1":  "alphawolf",
+                        "mat2":  "Dorfwache",
+                        "result":  "Beste Freunde"
+                    },
+                    {
+                        "mat1":  "alphawolf",
+                        "mat2":  "mutiger_dorfbewohner",
+                        "result":  "Beste Freunde"
+                    }
+                ]
+}
