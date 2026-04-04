@@ -7,7 +7,7 @@
 (function bootRuntimeData(global) {
   const options = global.DD_RUNTIME_OPTIONS || {};
   const fallbackPlaylists = options.fallbackPlaylists || {
-    'cfg-music-menu': ['assets/audio/shadow-sigil-–-title-screen-theme.mp3'],
+    'cfg-music-menu': ['assets/audio/shadow-sigil-title.mp3'],
     'cfg-music-campaign': ['assets/audio/cursed-data-duel.mp3'],
     'cfg-music-story': ['assets/audio/cursed-data-duel.mp3'],
   };
@@ -59,9 +59,9 @@
       .replace(/\\/g, '/')
       .replace(/^\.\//, '')
       .replace(/^\/+/, '')
+      .replace(/^audio\//, 'assets/audio/')
       .replace(/^assets\/assets\//, 'assets/')
-      .replace(/â€“/g, '–')
-      .replace(/â€”/g, '—');
+      .replace(/shadow-sigil[^/]*title-screen-theme\.mp3$/i, 'shadow-sigil-title.mp3');
   }
 
   function normalizePlaylist(list) {
@@ -89,6 +89,13 @@
   }
 
   function loadJsonFile(basePath) {
+    if (global.location.protocol === 'file:') {
+      return {
+        loaded: false,
+        error: 'file-protocol-disabled',
+        data: {},
+      };
+    }
     const path = `${basePath}${cacheSuffix}`;
     try {
       const xhr = new XMLHttpRequest();
@@ -111,6 +118,9 @@
   }
 
   function loadFileSet() {
+    if (global.location.protocol === 'file:') {
+      console.warn('[RuntimeData] file:// detected. Runtime JSON is not loaded via XHR in this mode. Use serve-local.ps1 or a local HTTP server for full parity with GitHub Pages.');
+    }
     const runtimeConfig = loadJsonFile(runtimeConfigBasePath);
     let mergedData = runtimeConfig.data || {};
     const sources = [{

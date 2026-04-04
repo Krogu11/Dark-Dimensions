@@ -30,6 +30,7 @@
 - `js/utils/runtime-data-loader.js` is the shared boot layer for game and editor.
 - The loader merges deployed JSON files first, then optional local `dd_custom` overrides, and preserves the existing `window.DD_CUSTOM` contract.
 - `runtime-config.json` remains a full fallback for compatibility. Split JSON files override or supply the same sections when present.
+- `file://` is tolerated for inspection, but not the supported parity path. Use `serve-local.ps1` or another local HTTP server for testing that matches GitHub Pages.
 
 ## State Architecture
 - Legacy globals remain in place for compatibility: `RUN_STATE`, `BATTLE_STATE`, `SAVE_STATE`.
@@ -129,3 +130,4 @@
 
 ## Update Log
 - 2026-04-04: Added shared runtime data loader, split baseline JSON files, central `gameState` facade, lightweight event bus, and editor data helper module.
+- 2026-04-05: Rebased the structure branch onto the parity fixes. Preserved HTTP-first local dev guidance, file-protocol warnings, normalized audio paths, and deferred music start until user interaction.

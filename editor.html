@@ -369,15 +369,15 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
       </p>
       <div class="field-group">
         <label>Menü Playlist</label>
-        <textarea id="cfg-music-menu" rows="4" placeholder="audio/menu_theme_1.mp3&#10;audio/menu_theme_2.mp3"></textarea>
+        <textarea id="cfg-music-menu" rows="4" placeholder="assets/audio/menu-theme-1.mp3&#10;assets/audio/menu-theme-2.mp3"></textarea>
       </div>
       <div class="field-group">
         <label>Kampagnen Playlist</label>
-        <textarea id="cfg-music-campaign" rows="4" placeholder="audio/campaign_theme_1.mp3&#10;audio/campaign_theme_2.mp3"></textarea>
+        <textarea id="cfg-music-campaign" rows="4" placeholder="assets/audio/campaign-theme-1.mp3&#10;assets/audio/campaign-theme-2.mp3"></textarea>
       </div>
       <div class="field-group">
         <label>Ruhig / Story Playlist</label>
-        <textarea id="cfg-music-story" rows="4" placeholder="audio/story_theme_1.mp3&#10;audio/story_theme_2.mp3"></textarea>
+        <textarea id="cfg-music-story" rows="4" placeholder="assets/audio/story-theme-1.mp3&#10;assets/audio/story-theme-2.mp3"></textarea>
       </div>
     </div>
 
@@ -2291,6 +2291,10 @@ function _getPlaylistEditorValue(id) {
   return String(el.value || '')
     .split(/\r?\n/)
     .map(line => line.trim())
+    .map(line => line.replace(/\\/g, '/'))
+    .map(line => line.replace(/^\/+/, ''))
+    .map(line => line.replace(/^audio\//, 'assets/audio/'))
+    .map(line => line.replace(/^assets\/assets\//, 'assets/'))
     .filter(Boolean);
 }
 
