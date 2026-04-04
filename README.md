@@ -1,133 +1,133 @@
 # Dark Dimensions
 
-> Ein düsteres Singleplayer-Kartenkampfspiel mit Roguelike-Struktur, Weltkarte, Fusionen und permanentem Fortschritt.
+> A dark single-player card battler with roguelike progression, world map exploration, fusion mechanics, and persistent progression.
 
-**Dark Dimensions** verbindet einen schnellen, gut lesbaren Card-Battler mit einer finsteren Kampagne voller Gegner, Bossketten und stetigem Deck-Ausbau. Du wählst einen Speicherstand, startest einen Run, kämpfst dich über die Karte durch gefährliche Akte, sammelst Karten, investierst `DS` und formst aus einfachen Kreaturen mächtige Fusionen.
+**Dark Dimensions** blends a fast, readable card-battling experience with a grim campaign full of enemies, bosses, and constant deck growth. You choose a save slot, start a run, fight your way across dangerous acts, collect cards, invest `DS`, and turn simple creatures into powerful fusion monsters.
 
-Das Projekt ist bewusst ein **Hobby- und Vibecode-Projekt**: entstanden aus Spaß am Bauen, Ausprobieren und Weiterentwickeln. Ein zentraler Inspirationspunkt für das Spielgefühl und besonders für das **Fusionssystem** war das Spielkonzept von `Yu-Gi-Oh! Forbidden Memories`.
+This project is intentionally a **hobby vibecode project**: built for the joy of creating, experimenting, and expanding it over time. One of the biggest inspirations for the overall feel of the game, especially the **fusion system**, was the design concept of `Yu-Gi-Oh! Forbidden Memories`.
 
-## Warum das Spiel besonders ist
+## What Makes It Special
 
-- Dark-Fantasy-Atmosphäre mit klarer Arcade-/TCG-Lesbarkeit
-- Roguelike-Kampagnenstruktur mit Weltkarte, Hub, Story-Screens und Boss-Fortschritt
-- Kartensystem mit Monster-, Zauber-, Fallen-, Spielfeld- und Fusionskarten
-- Freies Duell gegen bereits besiegte Gegner zum Farmen und Testen von Decks
-- Permanenter Meta-Fortschritt über Save-Slots und `Dimensionsseelen (DS)`
-- Integrierter Developer-Editor für Karten, Gegner, Akte, Fusionen, Synergien und Weltenkarte
-- Von Anfang an auf einfache Modbarkeit ausgelegt
+- Dark fantasy atmosphere with clear arcade/TCG readability
+- Roguelike campaign structure with world map, hub areas, story screens, and boss progression
+- Card system with monsters, spells, traps, field cards, and fusion monsters
+- Free Duel mode for replaying unlocked enemies, farming cards, and testing decks
+- Persistent meta progression through save slots and `Dimensionsseelen (DS)`
+- Built-in developer editor for cards, enemies, acts, fusions, synergies, and the world map
+- Designed from the start to be easy to mod
 
-## Aktueller Umfang
+## Current Scope
 
-- `110` Karten
-- `11` Fusionsmonster
-- `24` Fusionsrezepte
-- `16` Gegner
-- `3` Akte
-- `8` Weltenkarten-Orte
+- `110` cards
+- `11` fusion monsters
+- `24` fusion recipes
+- `16` enemies
+- `3` acts
+- `8` world map locations
 
-## Gameplay-Loop
+## Gameplay Loop
 
-`Spielstand wählen → Run starten → Welt erkunden → Kämpfe gewinnen → Karte erhalten → Deck verbessern → Boss besiegen → Fortschritt sichern`
+`Choose save slot → Start run → Explore the world → Win battles → Earn cards → Improve your deck → Defeat bosses → Secure progress`
 
-Zusätzlich gibt es einen **Free-Duel-Modus**, in dem bereits freigeschaltete Gegner erneut bekämpft werden können, um die Sammlung gezielt auszubauen.
+There is also a **Free Duel mode** where already unlocked enemies can be challenged again to expand your collection more directly.
 
-## Kampfsystem
+## Combat System
 
-- Rundenphasen: `Draw → Main → Battle → End`
-- Pro Runde stehen standardmäßig `2` Beschwörungen zur Verfügung
-- Monster können im Angriffs- oder Verteidigungsmodus gespielt werden
-- Fusionen funktionieren mit `Hand + Hand` und `Feld + Hand`
-- Das Spielfeld nutzt `5` Monster-Slots und `3` Spell/Trap-Slots pro Seite
-- Die KI spielt nicht nur stumpf aus, sondern bewertet Lethals, Ziele, Effekte und Fusion-Potenzial
+- Turn phases: `Draw → Main → Battle → End`
+- You normally have `2` summons per turn
+- Monsters can be played in attack or defense mode
+- Fusions work with `Hand + Hand` and `Field + Hand`
+- The battlefield uses `5` monster slots and `3` spell/trap slots per side
+- The AI does more than just play cards randomly: it evaluates lethals, targets, effects, and fusion potential
 
-## Progression und Meta
+## Progression and Meta
 
-- `DS` bleiben slotübergreifend innerhalb des Speicherstands erhalten
-- Karten aus Runs werden erst nach wichtigen Erfolgen dauerhaft gesichert
-- Niederlagen bestrafen den aktuellen Run, aber nicht den gesamten Langzeitfortschritt
-- Der Deck-Editor erlaubt gültige Decks mit `15` bis `20` Karten
+- `DS` persists within each save slot
+- Cards earned during runs are only permanently secured after important milestones
+- Losing a run hurts the current run, but not your entire long-term progress
+- The deck editor supports valid decks with `15` to `20` cards
 
-## Steuerung im Spiel
+## Controls
 
-- Karte anklicken: auswählen / ausspielen
-- Angreifer wählen, dann Ziel anklicken: Angriff ausführen
-- Zwei passende Monster wählen: Fusion vorbereiten
-- Deck- und Kampfbildschirme sind komplett ingame erreichbar
-- `ESC`: Pause im Kampf
+- Click a card: select / play it
+- Select an attacker, then click a target: perform an attack
+- Select two compatible monsters: prepare a fusion
+- Deck and combat screens are fully accessible ingame
+- `ESC`: pause during battle
 
-## Projektstruktur
+## Project Structure
 
 ```text
-index.html                  Spielstart
-editor.html                 Developer-Editor
-css/style.css               Komplettes Styling
-js/core/                    Engine, KI, Effekte, Saves, Audio, Ranking
-js/data/                    Karten-, Gegner- und Map-Basisdaten
-js/ui/                      Screens, Battle-UI, Reward-, Title- und Worldmap-Logik
-assets/data/runtime-config.json  Exportierte Runtime-Daten
-.github/workflows/static.yml     GitHub-Pages-Deployment
+index.html                       Game entry point
+editor.html                      Developer editor
+css/style.css                    Main styling
+js/core/                         Engine, AI, effects, save system, audio, ranking
+js/data/                         Base card, enemy, and map data
+js/ui/                           Screens, battle UI, rewards, title screen, world map logic
+assets/data/runtime-config.json  Exported runtime data
+.github/workflows/static.yml     GitHub Pages deployment
 ```
 
-## Projekt lokal starten
+## Run Locally
 
-Da das Projekt ohne Build-Step auskommt, reicht ein statischer Start im Browser.
+The project has no build step, so opening it as a static browser project is enough.
 
-### Spiel starten
+### Start the Game
 
-1. [index.html](./index.html) im Browser öffnen
+1. Open [index.html](./index.html) in your browser
 
-### Editor starten
+### Start the Editor
 
-1. [editor.html](./editor.html) im Browser öffnen
-2. Inhalte bearbeiten
-3. Per Export oder Runtime-Export ins Spiel übernehmen
+1. Open [editor.html](./editor.html) in your browser
+2. Edit content
+3. Export or runtime-export it back into the game
 
-## Content-Workflow
+## Content Workflow
 
-Der Editor ist ein zentraler Bestandteil des Projekts. Er ist nicht nur ein Entwickler-Tool, sondern die Grundlage dafür, dass **Dark Dimensions leicht modbar** bleibt und künftig als **Community-Projekt** wachsen kann.
+The editor is a core part of the project. It is not just a developer tool, but the foundation that keeps **Dark Dimensions highly moddable** and capable of growing into a true **community project**.
 
-Darüber lassen sich unter anderem bearbeiten:
+With it, you can edit things like:
 
-- Karten und Kartengrafiken
-- Gegnerdecks und Gegnerverhalten
-- Drop-Tabellen
-- Akte und Knotengenerierung
-- Fusionen und Synergien
-- Weltkarte und Konfigurationswerte
+- cards and card art
+- enemy decks and enemy behaviors
+- drop tables
+- acts and node generation
+- fusions and synergies
+- world map data and configuration values
 
-Die Grundidee dahinter: Die Community soll beim Erstellen und Erweitern des Spiels aktiv mitwirken können, zum Beispiel bei:
+The main idea is that the community should be able to actively help shape and expand the game, for example by creating:
 
-- neuen Karten
-- neuen Decks
-- neuen Monstern und Gegnern
-- neuen Fusionen und Synergien
-- neuen Story-Elementen, Events und Worldmap-Inhalten
+- new cards
+- new decks
+- new monsters and enemies
+- new fusions and synergies
+- new story elements, events, and world map content
 
-Langfristig ist das Ziel, dass **Dark Dimensions** nicht nur mein eigenes Hobbyprojekt bleibt, sondern sich zu einem offenen Community-Projekt entwickelt, das durch Ideen, Content und Feedback gemeinsam weitergebaut wird.
+The long-term goal is for **Dark Dimensions** to become more than just my own hobby project. It is meant to grow into an open, community-driven project shaped by ideas, content, and feedback from the people who play it and build for it.
 
-Die exportierte Laufzeitdatei liegt unter [`assets/data/runtime-config.json`](./assets/data/runtime-config.json).  
-Für das Einspielen und Committen der Runtime-Konfiguration ist zusätzlich [`publish-runtime.ps1`](./publish-runtime.ps1) vorhanden.
+The exported runtime file lives at [`assets/data/runtime-config.json`](./assets/data/runtime-config.json).  
+There is also a helper script at [`publish-runtime.ps1`](./publish-runtime.ps1) for importing and committing runtime updates.
 
-## Technik
+## Tech Stack
 
 - Vanilla `HTML`, `CSS`, `JavaScript`
-- Kein Build-Step
-- Speicherung über `localStorage`
-- GitHub Pages Workflow für statisches Deployment
+- No build step
+- Save data stored via `localStorage`
+- GitHub Pages workflow for static deployment
 
 ## Status
 
-**Version 1.0** ist erreicht.  
-Das Projekt ist spielbar und inhaltlich bereits klar ausformuliert, wird aber weiterhin aktiv über Runtime-Daten und Editor-Workflows erweitert.
+**Version 1.0** has been reached.  
+The project is playable and already has a clear gameplay identity, but it is still actively expanding through runtime data and editor-driven workflows.
 
-## Hinweise
+## Notes
 
-- Das Projekt nutzt stark datengetriebene Inhalte.
-- Der Editor-Export und die Runtime-Konfiguration sind für den vollständigen Kampagnenstand wichtig.
-- In einzelnen Datenbeständen gibt es aktuell noch sichtbare Encoding-Probleme bei Sonderzeichen.
+- The project relies heavily on data-driven content
+- The editor export and runtime configuration are important for the complete campaign setup
+- Some data still contains visible character encoding issues
 
 ## Vision
 
-**Dark Dimensions** soll sich wie ein schneller, düsterer Boss-Run anfühlen: harte Kämpfe, starke Fusionen, spürbarer Fortschritt und ein Deck, das mit jedem Sieg gefährlicher wird.
+**Dark Dimensions** should feel like a fast, dark boss-run card battler: tough fights, powerful fusions, meaningful progression, and a deck that becomes more dangerous with every win.
 
-Gleichzeitig soll das Projekt offen, erweiterbar und gemeinschaftlich bleiben: ein modbares Dark-Fantasy-Kartenspiel, bei dem nicht nur gespielt, sondern auch mitgestaltet werden kann.
+At the same time, the project should stay open, extensible, and collaborative: a moddable dark-fantasy card game that is not only played, but also built together.
