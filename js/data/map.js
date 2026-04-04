@@ -15,10 +15,12 @@ function getActId(act) {
 
 function normalizeAct(act) {
   if (!act || typeof act !== 'object') return act;
-  return {
+  const normalized = {
     ...act,
     id: getActId(act),
   };
+  if (typeof prepareActLocalization === 'function') prepareActLocalization(normalized);
+  return normalized;
 }
 
 function strictDataError(message, details) {
@@ -46,13 +48,15 @@ function getAllActs() {
 }
 
 function getActData(actRef) {
+  let act = null;
   if (typeof actRef === 'string' && actRef.trim()) {
-    return MAP_DATA.find(act => getActId(act) === actRef.trim()) || null;
+    act = MAP_DATA.find(entry => getActId(entry) === actRef.trim()) || null;
   }
-  if (typeof actRef === 'number' && Number.isFinite(actRef)) {
-    return MAP_DATA.find(act => Number(act.actIndex) === Number(actRef)) || null;
+  if (!act && typeof actRef === 'number' && Number.isFinite(actRef)) {
+    act = MAP_DATA.find(entry => Number(entry.actIndex) === Number(actRef)) || null;
   }
-  return null;
+  if (act && typeof prepareActLocalization === 'function') prepareActLocalization(act);
+  return act;
 }
 
 function requireActData(actRef, contextLabel = 'Act') {

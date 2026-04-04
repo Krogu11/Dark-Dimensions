@@ -97,7 +97,7 @@ function renderMap() {
     label.setAttribute('y', cy + (node.type === 'boss' ? 50 : 42));
     label.setAttribute('text-anchor', 'middle');
     label.setAttribute('class', 'map-label');
-    label.textContent = NODE_LABELS[node.type] || node.type;
+    label.textContent = _mapUi(`ui.map.node.${node.type}`, null, NODE_LABELS[node.type] || node.type);
     svg.appendChild(label);
 
     // Klick (nur wenn verfügbar)
@@ -125,6 +125,10 @@ const NODE_LABELS = {
   rest:  'Lager',
   boss:  'BOSS',
 };
+
+function _mapUi(key, params, fallback) {
+  return typeof t === 'function' ? t(key, params, { fallbackValue: fallback }) : (fallback || key);
+}
 
 /* ── Node-Klick-Handler ── */
 function onNodeClick(node) {
@@ -155,6 +159,14 @@ function showDeckViewer() {
   container.innerHTML = '';
 
   const sorted = [...RUN_STATE.deck].sort((a, b) => a.name.localeCompare(b.name));
+  const title = overlay.querySelector('.overlay-title');
+  if (title) {
+    title.innerHTML = _mapUi('ui.map.overlayTitle', { count: sorted.length }, `📖 Your Deck (${sorted.length} cards)`);
+  }
+  const closeBtn = document.getElementById('btn-close-deck');
+  if (closeBtn) closeBtn.textContent = _mapUi('ui.common.close', null, 'Close');
+  const countEl = document.getElementById('deck-overlay-count');
+  if (countEl) countEl.textContent = sorted.length;
   sorted.forEach(card => {
     const el = createCardEl(card, false);
     el.style.cursor = 'default';
@@ -180,11 +192,12 @@ function updatePreviewOverlay(card) {
 function updatePreviewContent(panel, card) {
   if (!card) { panel.innerHTML = ''; return; }
   const typeLabel = { monster:'Monster', spell:'Zauber', trap:'Falle', fusion:'Fusion' }[card.type] || '';
-  const rarLabel  = { common:'Gewöhnlich', rare:'Selten', epic:'Episch', legendary:'Legendär' }[card.rarity] || '';
+  const rarLabel  = _mapUi(`ui.rarity.${card.rarity}`, null, card.rarity || '');
+  const typeText  = _mapUi(`ui.type.${card.type}`, null, typeLabel);
   panel.innerHTML = `
     <div class="preview-header rarity-${card.rarity}">${card.name}</div>
-    <div class="preview-meta">${typeLabel} · ${rarLabel}</div>
-    ${card.type==='monster'||card.type==='fusion'?`<div>ATK ${card.atk} / DEF ${card.def}${card.race ? ' · '+card.race : ''}</div>`:''}
+    <div class="preview-meta">${typeText} · ${rarLabel}</div>
+    ${card.type==='monster'||card.type==='fusion'?`<div>ATK ${card.atk} / DEF ${card.def}${card.race ? ' · '+translateRaceId(card.race) : ''}</div>`:''}
     ${card.effect ? `<div>${getEffectDescription(card.effect)}</div>` : ''}
     <div class="preview-flavor">"${card.flavor||''}"</div>
   `;

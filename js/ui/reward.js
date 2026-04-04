@@ -42,11 +42,11 @@ function _renderRewardScreen(droppedCard, dropResult, isFreeDuel) {
   const subEl = document.getElementById('reward-sub-text');
   if (subEl) {
     if (!droppedCard) {
-      subEl.textContent = 'KEINE KARTE VERFÜGBAR';
+      subEl.textContent = t('ui.reward.noCardAvailable');
     } else if (isFreeDuel) {
-      subEl.textContent = 'BEUTE — geht direkt ins Kartenbuch';
+      subEl.textContent = t('ui.reward.lootToCollection');
     } else {
-      subEl.textContent = 'DEIN DROP';
+      subEl.textContent = t('ui.reward.yourDrop');
     }
   }
 
@@ -54,15 +54,15 @@ function _renderRewardScreen(droppedCard, dropResult, isFreeDuel) {
   const skipBtn = document.getElementById('btn-skip-reward');
   if (skipBtn) {
     skipBtn.textContent = isFreeDuel
-      ? 'Ablehnen — zurück zur Liste'
-      : 'Überspringen — weiter';
+      ? t('ui.reward.declineBackToList')
+      : t('ui.reward.skipContinue');
   }
 
   // Kein Drop? Weiter-Button anzeigen
   if (!droppedCard) {
     const noCard = document.createElement('div');
     noCard.style.cssText = 'color:#555;font-size:14px;margin:20px 0';
-    noCard.textContent   = 'Der Gegner hat keine passende Karte fallen lassen.';
+    noCard.textContent   = t('ui.reward.enemyDroppedNothing');
     container.appendChild(noCard);
     return;
   }
@@ -71,13 +71,13 @@ function _renderRewardScreen(droppedCard, dropResult, isFreeDuel) {
   const wrapper = document.createElement('div');
   wrapper.className = 'reward-card-wrapper';
 
-  const typeNames   = { monster:'Monster', spell:'Zauber', trap:'Falle', fusion:'Fusion' };
-  const rarityNames = { common:'Gewöhnlich', uncommon:'Ungewöhnlich', rare:'Selten', epic:'Episch', legendary:'Legendär' };
+  const typeNames   = { monster:t('ui.type.monster'), spell:t('ui.type.spell'), trap:t('ui.type.trap'), fusion:t('ui.type.fusion') };
+  const rarityNames = { common:t('ui.rarity.common'), uncommon:t('ui.rarity.uncommon'), rare:t('ui.rarity.rare'), epic:t('ui.rarity.epic'), legendary:t('ui.rarity.legendary') };
   const typeIcon    = { monster:'🐉', spell:'✨', trap:'⚡', fusion:'⚗' }[droppedCard.type] || '?';
 
   // Drop-Chance anzeigen (wenn verfügbar)
   const chanceStr = dropResult
-    ? `<div class="reward-drop-chance">${dropResult.dropChance}% Drop-Chance</div>`
+    ? `<div class="reward-drop-chance">${t('ui.reward.dropChance', { chance: dropResult.dropChance })}</div>`
     : '';
 
   // Artwork-Block wenn Bild vorhanden, sonst kleines Karten-Element
@@ -116,10 +116,10 @@ function _renderRewardScreen(droppedCard, dropResult, isFreeDuel) {
   btn.className = 'btn-reward-pick';
   if (isFreeDuel) {
     // Freies Duell: Karte geht direkt ins Kartenbuch, nicht ins Run-Deck
-    btn.textContent = '🎒 Zum Beutel hinzufügen';
+    btn.textContent = t('ui.reward.addToBag');
     btn.addEventListener('click', () => pickFreeDuelCard(droppedCard));
   } else {
-    btn.textContent = '✓ Dem Deck hinzufügen';
+    btn.textContent = t('ui.reward.addToDeck');
     btn.addEventListener('click', () => pickRewardCard(droppedCard));
   }
 
@@ -141,7 +141,7 @@ function _renderRewardScreen(droppedCard, dropResult, isFreeDuel) {
  */
 function pickRewardCard(card) {
   RUN_STATE.deck.push(cloneCard(card));
-  battleLog && battleLog(`🃏 ${card.name} dem Deck hinzugefügt`, 'summon');
+  battleLog && battleLog(t('ui.reward.cardAddedToDeck', { card: card.name }), 'summon');
 
   /* In Run-Buffer aufnehmen — wird nach Boss-Sieg permanent ins Kartenbuch übertragen */
   if (typeof earnRunCard === 'function') earnRunCard(card.id);
@@ -173,7 +173,7 @@ function pickFreeDuelCard(card) {
     console.log('[FreeDuel] cardCollection nach Push:', SAVE_STATE.slot.cardCollection);
 
     if (typeof saveCurrentSlotWithFeedback === 'function') {
-      saveCurrentSlotWithFeedback('Spiel gespeichert');
+      saveCurrentSlotWithFeedback(t('ui.worldmap.save.saved'));
       console.log('[FreeDuel] saveCurrentSlotWithFeedback() aufgerufen');
     } else if (typeof saveCurrentSlot === 'function') {
       saveCurrentSlot();
@@ -185,7 +185,7 @@ function pickFreeDuelCard(card) {
     console.error('[FreeDuel] Kein SAVE_STATE.slot — Karte kann nicht gespeichert werden!');
   }
 
-  battleLog && battleLog(`🎒 ${card.name} zum Beutel hinzugefügt`, 'summon');
+  battleLog && battleLog(t('ui.reward.cardAddedToBag', { card: card.name }), 'summon');
   _afterReward();
 }
 
@@ -263,7 +263,7 @@ function renderShop() {
     const btn = document.createElement('button');
     btn.className   = 'btn-shop-buy';
     const canAfford = typeof getDimensionsSeelen === 'function' ? getDimensionsSeelen() >= card.price : false;
-    btn.textContent = canAfford ? 'Kaufen' : 'Zu teuer';
+    btn.textContent = canAfford ? t('ui.shop.buy') : t('ui.shop.tooExpensive');
     btn.disabled    = !canAfford;
     btn.addEventListener('click', () => buyCard(i));
 
@@ -296,7 +296,7 @@ function buyCard(offerIndex) {
   _shopOffer.splice(offerIndex, 1);
   if (_shopFromMainMenu) {
     if (typeof saveCurrentSlotWithFeedback === 'function') {
-      saveCurrentSlotWithFeedback('Spiel gespeichert');
+      saveCurrentSlotWithFeedback(t('ui.worldmap.save.saved'));
     } else if (typeof saveCurrentSlot === 'function') {
       saveCurrentSlot();
     }

@@ -153,15 +153,15 @@
     <div class="de-preview-panel">
       <div class="de-panel-label" data-i18n="ui.deckeditor.cardInfo">🔍 Karten-Info</div>
       <div id="de-preview" class="de-preview">
-        <div style="color:#333;font-size:12px;padding:12px">Hover über eine Karte</div>
+        <div style="color:#333;font-size:12px;padding:12px" data-i18n="ui.common.hoverCard">Hover over a card</div>
       </div>
       <div class="de-legend">
-        <div class="de-legend-title">Kartenanzahl</div>
-        <div class="de-legend-row"><span style="color:var(--clr-orange)">↑</span> Unter 15 (zu wenig)</div>
-        <div class="de-legend-row"><span style="color:var(--clr-green)">✓</span> 15–20 (gültig)</div>
-        <div class="de-legend-row"><span style="color:var(--clr-red)">⚠</span> Über 20 (zu viele)</div>
-        <div class="de-legend-title" style="margin-top:8px">Badge X/Y</div>
-        <div class="de-legend-row">X = im Deck, Y = verfügbar</div>
+        <div class="de-legend-title" data-i18n="ui.deckeditor.legend.countTitle">Card count</div>
+        <div class="de-legend-row" data-i18n="ui.deckeditor.legend.tooFew"><span style="color:var(--clr-orange)">↑</span> Under 15 (too few)</div>
+        <div class="de-legend-row" data-i18n="ui.deckeditor.legend.valid"><span style="color:var(--clr-green)">✓</span> 15-20 (valid)</div>
+        <div class="de-legend-row" data-i18n="ui.deckeditor.legend.tooMany"><span style="color:var(--clr-red)">⚠</span> Over 20 (too many)</div>
+        <div class="de-legend-title" style="margin-top:8px" data-i18n="ui.deckeditor.legend.badgeTitle">Badge X/Y</div>
+        <div class="de-legend-row" data-i18n="ui.deckeditor.legend.badgeInfo">X = in deck, Y = owned</div>
       </div>
     </div>
 
@@ -190,8 +190,8 @@
       </div>
     </div>
     <div class="map-header-stat">✦ <span class="stat-val" id="run-ds">0</span> DS</div>
-    <div class="map-act-name" id="run-act-name">Akt I — Der Dunkle Wald</div>
-    <div class="map-header-stat">🃏 <span class="stat-val" id="run-deck-count">15</span> Karten</div>
+    <div class="map-act-name" id="run-act-name">Act I - The Dark Forest</div>
+    <div class="map-header-stat">🃏 <span class="stat-val" id="run-deck-count">15</span> <span data-i18n="ui.common.cards">cards</span></div>
   </div>
 
   <!-- Map SVG Container -->
@@ -333,12 +333,12 @@
   <!-- Sieg-Header -->
   <div class="reward-victory-header">
     <div class="reward-victory-icon" id="reward-victory-icon">🏆</div>
-    <div class="reward-victory-title">SIEG</div>
+    <div class="reward-victory-title" data-i18n="ui.reward.victory">VICTORY</div>
   </div>
   <!-- Drop-Karten-Bereich -->
-  <div class="reward-sub" id="reward-sub-text">DEIN DROP</div>
+  <div class="reward-sub" id="reward-sub-text" data-i18n="ui.reward.yourDrop">YOUR DROP</div>
   <div id="reward-cards"></div>
-  <button id="btn-skip-reward" style="margin-top:20px;color:#555;border-color:#333">Überspringen — weiter</button>
+  <button id="btn-skip-reward" style="margin-top:20px;color:#555;border-color:#333" data-i18n="ui.reward.skipContinue">Skip - continue</button>
 </div>
 
 <!-- ════════════════════════════════════════════════
@@ -346,9 +346,9 @@
 ════════════════════════════════════════════════ -->
 <div id="screen-shop" class="screen">
   <div class="shop-header">
-    <div class="shop-title">🏪 Shop</div>
+    <div class="shop-title" data-i18n="ui.shop.title">Shop</div>
     <div class="shop-ds-display">✦ <span id="shop-ds">0</span> DS</div>
-    <button id="btn-leave-shop" class="btn-info">Weiter →</button>
+    <button id="btn-leave-shop" class="btn-info" data-i18n="ui.common.continue">Continue -></button>
   </div>
   <div id="shop-cards"></div>
 </div>
@@ -358,18 +358,18 @@
 ════════════════════════════════════════════════ -->
 <div id="screen-rest" class="screen">
   <div class="rest-icon">🏕</div>
-  <div class="rest-title">Lagerfeuer</div>
+  <div class="rest-title" data-i18n="ui.rest.title">Campfire</div>
   <div class="rest-hp-info">
     HP: <span id="rest-current-hp">4000</span> / <span id="rest-max-hp">4000</span>
   </div>
   <div class="rest-options">
     <button id="btn-rest-heal" class="btn-rest">
       <span class="rest-btn-icon">💚</span>
-      Ausruhen<br><small>+<span id="rest-heal-amount">1200</span> HP</small>
+      <span data-i18n="ui.rest.rest">Rest</span><br><small>+<span id="rest-heal-amount">1200</span> HP</small>
     </button>
     <button id="btn-rest-skip" class="btn-rest btn-rest-skip">
       <span class="rest-btn-icon">➡</span>
-      Weiterziehen<br><small>Kein Heileffekt</small>
+      <span data-i18n="ui.rest.moveOn">Move on</span><br><small data-i18n="ui.rest.noHeal">No healing</small>
     </button>
   </div>
 </div>
@@ -379,10 +379,10 @@
 ════════════════════════════════════════════════ -->
 <div id="screen-gameover" class="screen">
   <div class="over-icon">💀</div>
-  <div class="over-title gameover-title">NIEDERLAGE</div>
-  <div class="over-sub">Die Dunkelheit hat dich verschluckt.</div>
-  <div style="color:#666;font-size:13px;margin-top:8px">Verdiente Karten aus diesem Run sind verloren.</div>
-  <button id="btn-gameover-restart" style="margin-top:30px;padding:12px 30px;font-size:1rem">↩ Zum Titel</button>
+  <div class="over-title gameover-title" data-i18n="ui.gameover.title">DEFEAT</div>
+  <div class="over-sub" data-i18n="ui.gameover.subtitle">The darkness has swallowed you.</div>
+  <div style="color:#666;font-size:13px;margin-top:8px" data-i18n="ui.gameover.cardsLost">Cards earned during this run are lost.</div>
+  <button id="btn-gameover-restart" style="margin-top:30px;padding:12px 30px;font-size:1rem" data-i18n="ui.gameover.backToTitle">Back to title</button>
 </div>
 
 <!-- ════════════════════════════════════════════════
@@ -400,12 +400,12 @@
      OVERLAY: DECK VIEWER
 ════════════════════════════════════════════════ -->
 <div id="deck-overlay" class="overlay">
-  <div class="overlay-title">📖 Dein Deck (<span id="deck-overlay-count"></span> Karten)</div>
+  <div class="overlay-title">📖 Your Deck (<span id="deck-overlay-count"></span> cards)</div>
   <div style="display:flex;gap:20px;width:100%;max-width:960px;flex:1">
     <div id="deck-cards" style="flex:1"></div>
     <div id="deck-preview" style="width:200px;flex-shrink:0;background:#14142a;border:1px solid #2a2a55;border-radius:8px;padding:12px;font-size:12px;align-self:flex-start"></div>
   </div>
-  <button id="btn-close-deck" class="btn-danger">✕ Schließen</button>
+  <button id="btn-close-deck" class="btn-danger" data-i18n="ui.common.close">Close</button>
 </div>
 
 <!-- ════════════════════════════════════════════════

@@ -8,6 +8,7 @@
     enemies: new Set(),
     worldLocations: new Set(),
     storyLines: new Set(),
+    acts: new Set(),
   };
 
   function isPlainObject(value) {
@@ -269,6 +270,18 @@
     return line;
   }
 
+  function prepareActLocalization(act) {
+    if (!act || (act.actIndex === undefined && !act.id)) return act;
+    const actId = typeof act.id === 'string' && act.id.trim()
+      ? act.id.trim()
+      : `act_${Number(act.actIndex || 0)}`;
+    if (!act.nameKey) act.nameKey = `act.${actId}.name`;
+    seedLocaleValue(DEFAULT_LANGUAGE, 'story', act.nameKey, act.actName);
+    act.actName = t(act.nameKey, null, { fallbackValue: act.actName || actId });
+    tracked.acts.add(act);
+    return act;
+  }
+
   function refreshLocalizedData() {
     tracked.cards.forEach(card => {
       if (!card) return;
@@ -289,6 +302,10 @@
       if (!line) return;
       line.speaker = t(line.speakerKey, null, { fallbackValue: line.speaker || '' });
       line.text = t(line.textKey, null, { fallbackValue: line.text || '' });
+    });
+    tracked.acts.forEach(act => {
+      if (!act) return;
+      act.actName = t(act.nameKey, null, { fallbackValue: act.actName || act.id || `act_${Number(act.actIndex || 0)}` });
     });
   }
 
@@ -342,6 +359,7 @@
     prepareEnemyLocalization,
     prepareWorldLocationLocalization,
     prepareStoryLineLocalization,
+    prepareActLocalization,
     refreshLocalizedData,
     applyI18nToDocument,
     normalizeRaceId,
@@ -357,6 +375,7 @@
   window.prepareEnemyLocalization = prepareEnemyLocalization;
   window.prepareWorldLocationLocalization = prepareWorldLocationLocalization;
   window.prepareStoryLineLocalization = prepareStoryLineLocalization;
+  window.prepareActLocalization = prepareActLocalization;
   window.refreshLocalizedData = refreshLocalizedData;
   window.applyI18nToDocument = applyI18nToDocument;
   window.normalizeRaceId = normalizeRaceId;
