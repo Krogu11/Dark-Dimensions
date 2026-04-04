@@ -195,6 +195,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
   <div class="spacer"></div>
   <button class="hdr-btn" onclick="importJSON()">📂 Import</button>
   <button class="hdr-btn" onclick="exportJSON()">💾 Export</button>
+  <button class="hdr-btn" onclick="exportRuntimeConfig()">🌐 Runtime-Export</button>
   <button class="hdr-btn primary" onclick="saveToGame()">✓ Im Spiel speichern</button>
   <button class="hdr-btn" onclick="window.open('index.html','_blank')">🎮 Spiel öffnen</button>
 </header>
@@ -2762,13 +2763,25 @@ function deleteWmLocation(locId) {
    SPEICHERN / EXPORT / IMPORT
 ═══════════════════════════════════════════════════ */
 function saveToGame() {
+  const data = buildEditorDataPayload();
+  window.DD_CUSTOM = data;
+  localStorage.setItem('dd_custom', JSON.stringify(data));
+  showToast('✓ Gespeichert! Lade das Spiel neu (F5).');
+}
+
+function exportJSON() {
+  const data = buildEditorExportPayload();
+  downloadJSONFile(data, `dd_data_${Date.now()}.json`);
+  showToast('Export gestartet ✓');
+}
+
+function buildEditorDataPayload() {
   const regularCards = editorCards.filter(card => card.type !== 'fusion');
   const fusionCards  = editorCards.filter(card => card.type === 'fusion');
-  // Synergien aus aktuellem DD_CUSTOM übernehmen (werden vom Synergie-Tab geschrieben)
   const synToSave = window.DD_CUSTOM?.synergies || null;
 
-  const data = {
-    cards:          regularCards,   // enthält jetzt auch Spielfeld-Karten (type:'field')
+  return {
+    cards:          regularCards,
     fusionMonsters: fusionCards,
     synergies:      synToSave,
     enemies:        Object.values(editorEnemies),
@@ -2778,24 +2791,48 @@ function saveToGame() {
     starterDeck:    editorStarterDeck,
     worldMap:       editorWorldMap.length > 0 ? editorWorldMap : undefined,
   };
-  window.DD_CUSTOM = data;
-  localStorage.setItem('dd_custom', JSON.stringify(data));
-  showToast('✓ Gespeichert! Lade das Spiel neu (F5).');
 }
 
-function exportJSON() {
-  const regularCards = editorCards.filter(card => card.type !== 'fusion');
-  const fusionCards  = editorCards.filter(card => card.type === 'fusion');
-  const data={version:'2.0',timestamp:new Date().toISOString(),
-    cards:regularCards,fusionMonsters:fusionCards,enemies:Object.values(editorEnemies),
-    acts:editorActs,recipes:editorRecipes,config:editorConfig,starterDeck:editorStarterDeck,
-    worldMap:editorWorldMap.length>0?editorWorldMap:undefined};
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`dd_data_${Date.now()}.json`;
+function buildEditorExportPayload() {
+  return {
+    version: '2.0',
+    timestamp: new Date().toISOString(),
+    ...buildEditorDataPayload(),
+  };
+}
+
+function buildRuntimeConfigPayload() {
+  const data = buildEditorDataPayload();
+  return {
+    version: 'runtime-config-v2',
+    generatedFrom: 'editor-export',
+    generatedAt: new Date().toISOString(),
+    cards: data.cards || [],
+    fusionMonsters: data.fusionMonsters || [],
+    enemies: Array.isArray(data.enemies) ? data.enemies : [],
+    synergies: data.synergies || null,
+    acts: Array.isArray(data.acts) ? data.acts : [],
+    config: data.config || {},
+    starterDeck: Array.isArray(data.starterDeck) ? data.starterDeck : [],
+    worldMap: Array.isArray(data.worldMap) ? data.worldMap : [],
+    recipes: Array.isArray(data.recipes) ? data.recipes : [],
+  };
+}
+
+function downloadJSONFile(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
   a.click();
-  showToast('Export gestartet ✓');
+  setTimeout(() => URL.revokeObjectURL(a.href), 500);
+}
+
+function exportRuntimeConfig() {
+  if (typeof saveConfig === 'function') saveConfig();
+  const runtimeData = buildRuntimeConfigPayload();
+  downloadJSONFile(runtimeData, 'runtime-config.json');
+  showToast('Runtime-Export erstellt ✓ Datei als assets/data/runtime-config.json ablegen');
 }
 
 function importJSON() {

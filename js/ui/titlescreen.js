@@ -56,6 +56,9 @@ function renderTitleScreen() {
     btn.addEventListener('click', () => {
       const id = Number(btn.dataset.slot);
       loadSlot(id);
+      if (typeof window.logDDRuntimeDiagnostics === 'function') {
+        window.logDDRuntimeDiagnostics('new-game-click');
+      }
       const hasWorldMap = window.DD_CUSTOM && Array.isArray(window.DD_CUSTOM.worldMap) && window.DD_CUSTOM.worldMap.length > 0;
       if (!hasWorldMap || typeof initWorldState !== 'function') {
         strictDataError('Keine Weltenkarte konfiguriert. Neues Spiel kann nicht gestartet werden.');

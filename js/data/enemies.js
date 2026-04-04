@@ -438,12 +438,50 @@ const ENEMIES = {
 })();
 
 /** Gibt alle Gegner als Array zurück (für den Editor). */
+function _getCustomEnemyById(enemyId) {
+  if (!window.DD_CUSTOM || !window.DD_CUSTOM.enemies || !enemyId) return null;
+  const overrides = window.DD_CUSTOM.enemies;
+  if (Array.isArray(overrides)) {
+    return overrides.find(entry => entry && entry.id === enemyId) || null;
+  }
+  if (typeof overrides === 'object') {
+    return overrides[enemyId] ? { id: enemyId, ...overrides[enemyId] } : null;
+  }
+  return null;
+}
+
+function _ensureEnemyLoaded(enemyId) {
+  if (!enemyId) return null;
+  if (ENEMIES[enemyId]) return ENEMIES[enemyId];
+
+  const customEnemy = _getCustomEnemyById(enemyId);
+  if (!customEnemy) return null;
+
+  ENEMIES[enemyId] = { id: enemyId, ...customEnemy };
+  console.info('[Enemies] Runtime fallback loaded custom enemy:', enemyId);
+  return ENEMIES[enemyId];
+}
+
 function getEnemyList() {
+  const overrides = window.DD_CUSTOM?.enemies;
+  if (Array.isArray(overrides)) {
+    overrides.forEach(enemy => {
+      if (enemy && enemy.id && !ENEMIES[enemy.id]) {
+        ENEMIES[enemy.id] = { id: enemy.id, ...enemy };
+      }
+    });
+  } else if (overrides && typeof overrides === 'object') {
+    Object.entries(overrides).forEach(([id, enemy]) => {
+      if (id && enemy && !ENEMIES[id]) {
+        ENEMIES[id] = { id, ...enemy };
+      }
+    });
+  }
   return Object.values(ENEMIES);
 }
 
 function getEnemy(enemyId) {
-  const enemy = ENEMIES[enemyId];
+  const enemy = _ensureEnemyLoaded(enemyId);
   if (!enemy) return null;
 
   const deckIds = Array.isArray(enemy.deckIds)
