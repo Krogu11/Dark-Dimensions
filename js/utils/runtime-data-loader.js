@@ -53,9 +53,20 @@
     return cloneValue(overrideValue);
   }
 
+  function normalizeTrackPath(track) {
+    return String(track || '')
+      .trim()
+      .replace(/\\/g, '/')
+      .replace(/^\.\//, '')
+      .replace(/^\/+/, '')
+      .replace(/^assets\/assets\//, 'assets/')
+      .replace(/â€“/g, '–')
+      .replace(/â€”/g, '—');
+  }
+
   function normalizePlaylist(list) {
     return Array.isArray(list)
-      ? list.map(track => String(track || '').trim()).filter(Boolean)
+      ? list.map(normalizeTrackPath).filter(Boolean)
       : [];
   }
 
