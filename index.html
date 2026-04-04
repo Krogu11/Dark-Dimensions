@@ -478,6 +478,15 @@
     }
 
     function readLocalOverrides() {
+      const isLocalFile = window.location.protocol === 'file:';
+      const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const devOverrideEnabled = new URLSearchParams(window.location.search).get('devOverrides') === '1';
+      const allowLocalOverrides = isLocalFile || isLocalhost || devOverrideEnabled;
+
+      if (!allowLocalOverrides) {
+        return {};
+      }
+
       try {
         return JSON.parse(localStorage.getItem('dd_custom') || '{}');
       } catch (error) {
@@ -561,6 +570,9 @@
       runtimeConfigLoaded: !!fileConfig.loaded,
       runtimeConfigError: fileConfig.error,
       hasLocalOverrides: !!(localOverrides && Object.keys(localOverrides).length > 0),
+      localOverrideMode: (window.location.protocol === 'file:' || ['localhost', '127.0.0.1'].includes(window.location.hostname))
+        ? 'development'
+        : (new URLSearchParams(window.location.search).get('devOverrides') === '1' ? 'forced' : 'disabled'),
       playlistFallbacks: cloneValue(FALLBACK_PLAYLISTS),
     };
 
