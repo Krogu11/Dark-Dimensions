@@ -211,6 +211,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
   <button class="tab-btn" data-editor-tab="config" onclick="switchTab('config')">⚙ Konfiguration</button>
   <button class="tab-btn" data-editor-tab="synergies" onclick="switchTab('synergies')">⚗ Synergien</button>
   <button class="tab-btn" data-editor-tab="worldmap" onclick="switchTab('worldmap')">🌍 Weltenkarte</button>
+  <button class="tab-btn" data-editor-tab="storysys" onclick="switchTab('storysys')">📚 Story</button>
   <button class="tab-btn" data-editor-tab="debug" onclick="switchTab('debug')">🔧 Debug</button>
 </div>
 
@@ -447,6 +448,34 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
   </div>
 </div>
 
+<!-- ══════════ TAB: STORY / QUESTS / HUBS ══════════ -->
+<div id="tab-storysys" class="tab-panel" style="flex-direction:column;overflow:hidden">
+  <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0">
+    <span style="font-weight:700;color:var(--gold);font-size:12px;letter-spacing:1px">Story System</span>
+    <span style="color:var(--muted);font-size:11px">JSON editor for trigger events, quests and hubs. All texts are stored as translatable content.</span>
+    <div style="flex:1"></div>
+    <button class="btn-sm" onclick="storyJsonFormatAll()">Format JSON</button>
+    <button class="btn-sm" onclick="storyJsonLoadExample()">Load sample content</button>
+  </div>
+  <div style="flex:1;overflow:auto;padding:18px;display:grid;grid-template-columns:1fr;gap:16px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
+      <div style="font-weight:700;color:var(--gold)">Events JSON</div>
+      <div style="font-size:11px;color:var(--muted)">Triggers: `game_start`, `enter_hub`, `after_battle`, `quest_progress`, `random`.</div>
+      <textarea id="story-events-json" style="min-height:240px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Consolas,monospace;font-size:12px;resize:vertical"></textarea>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
+      <div style="font-weight:700;color:var(--gold)">Quests JSON</div>
+      <div style="font-size:11px;color:var(--muted)">Simple progress quests with goal, reward and optional `enemyIds` filters.</div>
+      <textarea id="story-quests-json" style="min-height:220px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Consolas,monospace;font-size:12px;resize:vertical"></textarea>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
+      <div style="font-weight:700;color:var(--gold)">Hubs JSON</div>
+      <div style="font-size:11px;color:var(--muted)">NPCs, quests, tournament series, challenges and feature toggles live here.</div>
+      <textarea id="story-hubs-json" style="min-height:240px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Consolas,monospace;font-size:12px;resize:vertical"></textarea>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════ TAB: DEBUG ══════════ -->
 <div id="tab-debug" class="tab-panel">
   <div class="debug-panel">
@@ -534,6 +563,9 @@ if (typeof prepareEnemyLocalization === 'function') Object.values(editorEnemies)
 
 /* Weltenkarte */
 let editorWorldMap = [];
+let editorEvents = [];
+let editorQuests = [];
+let editorHubs = [];
 function editorActId(act) {
   if (!act || typeof act !== 'object') return '';
   if (typeof act.id === 'string' && act.id.trim()) return act.id.trim();
@@ -564,8 +596,12 @@ function normalizeEditorAct(act) {
 try {
   const saved = JSON.parse(localStorage.getItem('dd_custom') || '{}');
   if (Array.isArray(saved.worldMap)) editorWorldMap = saved.worldMap.map(normalizeEditorWorldMapLocation);
+  if (Array.isArray(saved.events)) editorEvents = saved.events;
+  if (Array.isArray(saved.quests)) editorQuests = saved.quests;
+  if (Array.isArray(saved.hubs)) editorHubs = saved.hubs;
 } catch(e) {}
 if (typeof prepareWorldLocationLocalization === 'function') editorWorldMap.forEach(prepareWorldLocationLocalization);
+hydrateStoryEditorContent();
 
 let selectedCardId  = null;
 let selectedEnemyId = null;
@@ -637,6 +673,7 @@ function renderEditorChrome() {
     config: 'ui.editor.tabs.config',
     synergies: 'ui.editor.tabs.synergies',
     worldmap: 'ui.editor.tabs.worldmap',
+    storysys: 'ui.editor.tabs.storysys',
     debug: 'ui.editor.tabs.debug',
   };
   document.querySelectorAll('[data-editor-tab]').forEach(btn => {
@@ -971,7 +1008,7 @@ let _editingCardArt = null;
    TAB SWITCHING
 ═══════════════════════════════════════════════════ */
 function switchTab(name) {
-  const names = ['cards','enemies','drops','acts','fusions','config','synergies','worldmap','debug'];
+  const names = ['cards','enemies','drops','acts','fusions','config','synergies','worldmap','storysys','debug'];
   document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', names[i]===name));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   const panel = document.getElementById('tab-'+name);
@@ -983,6 +1020,7 @@ function switchTab(name) {
   if (name==='debug')      initDebugTab();
   if (name==='synergies')  { if (typeof initSynergyTab === 'function') initSynergyTab(); }
   if (name==='worldmap')   initWorldMapEditor();
+  if (name==='storysys')   initStorySystemEditor();
 }
 
 function showToast(msg = _et('ui.common.saved', null, 'Saved ✓')) {
@@ -2895,10 +2933,100 @@ function deleteWmLocation(locId) {
   renderWmDetail(null);
 }
 
+function syncStoryEditorsFromState() {
+  const eventsEl = document.getElementById('story-events-json');
+  const questsEl = document.getElementById('story-quests-json');
+  const hubsEl = document.getElementById('story-hubs-json');
+  if (eventsEl) eventsEl.value = JSON.stringify(editorEvents || [], null, 2);
+  if (questsEl) questsEl.value = JSON.stringify(editorQuests || [], null, 2);
+  if (hubsEl) hubsEl.value = JSON.stringify(editorHubs || [], null, 2);
+}
+
+function parseStoryEditorsIntoState() {
+  const eventsEl = document.getElementById('story-events-json');
+  const questsEl = document.getElementById('story-quests-json');
+  const hubsEl = document.getElementById('story-hubs-json');
+  try {
+    if (eventsEl) editorEvents = JSON.parse(eventsEl.value || '[]');
+    if (questsEl) editorQuests = JSON.parse(questsEl.value || '[]');
+    if (hubsEl) editorHubs = JSON.parse(hubsEl.value || '[]');
+    return true;
+  } catch (error) {
+    alert(`Story JSON error: ${error.message}`);
+    return false;
+  }
+}
+
+function initStorySystemEditor() {
+  syncStoryEditorsFromState();
+}
+
+function storyJsonFormatAll() {
+  if (!parseStoryEditorsIntoState()) return;
+  syncStoryEditorsFromState();
+  showToast('Story JSON formatted ✓');
+}
+
+function storyJsonLoadExample() {
+  editorEvents = _cloneJson(window.DD_CUSTOM?.events || []);
+  editorQuests = _cloneJson(window.DD_CUSTOM?.quests || []);
+  editorHubs = _cloneJson(window.DD_CUSTOM?.hubs || []);
+  hydrateStoryEditorContent();
+  syncStoryEditorsFromState();
+  showToast('Sample story content loaded ✓');
+}
+
+function hydrateStoryEditorContent() {
+  editorEvents = (editorEvents || []).map(event => {
+    const next = _cloneJson(event);
+    next.title = next.title || _et(next.titleKey, null, next.id || '');
+    next.dialog = (next.dialog || []).map(step => {
+      const nextStep = _cloneJson(step);
+      nextStep.speaker = nextStep.speaker || _et(nextStep.speakerKey, null, '');
+      nextStep.text = nextStep.text || _et(nextStep.textKey, null, '');
+      nextStep.choices = (nextStep.choices || []).map(choice => {
+        const nextChoice = _cloneJson(choice);
+        nextChoice.text = nextChoice.text || _et(nextChoice.textKey, null, '');
+        return nextChoice;
+      });
+      return nextStep;
+    });
+    return next;
+  });
+
+  editorQuests = (editorQuests || []).map(quest => ({
+    ...quest,
+    title: quest.title || _et(quest.titleKey, null, quest.id || ''),
+    description: quest.description || _et(quest.descriptionKey, null, ''),
+  }));
+
+  editorHubs = (editorHubs || []).map(hub => {
+    const next = _cloneJson(hub);
+    next.name = next.name || _et(next.nameKey, null, next.id || '');
+    next.description = next.description || _et(next.descriptionKey, null, '');
+    next.npcs = (next.npcs || []).map(npc => ({
+      ...npc,
+      name: npc.name || _et(npc.nameKey, null, npc.id || ''),
+    }));
+    next.tournaments = (next.tournaments || []).map(tournament => ({
+      ...tournament,
+      title: tournament.title || _et(tournament.titleKey, null, tournament.id || ''),
+      description: tournament.description || _et(tournament.descriptionKey, null, ''),
+    }));
+    next.challenges = (next.challenges || []).map(challenge => ({
+      ...challenge,
+      title: challenge.title || _et(challenge.titleKey, null, challenge.id || ''),
+      description: challenge.description || _et(challenge.descriptionKey, null, ''),
+    }));
+    return next;
+  });
+}
+
 /* ═══════════════════════════════════════════════════
    SPEICHERN / EXPORT / IMPORT
 ═══════════════════════════════════════════════════ */
 function saveToGame() {
+  if (!parseStoryEditorsIntoState()) return;
   const data = buildEditorDataPayload();
   window.DD_CUSTOM = data;
   localStorage.setItem('dd_custom', JSON.stringify(data));
@@ -2906,6 +3034,7 @@ function saveToGame() {
 }
 
 function exportJSON() {
+  if (!parseStoryEditorsIntoState()) return;
   const data = buildEditorExportPayload();
   downloadJSONFile(data, `dd_data_${Date.now()}.json`);
   showToast(_et('ui.editor.exportStarted', null, 'Export started ✓'));
@@ -3007,6 +3136,9 @@ function buildEditorDataPayload() {
     editorConfig,
     editorStarterDeck,
     editorWorldMap,
+    editorEvents,
+    editorQuests,
+    editorHubs,
     ddCustom: window.DD_CUSTOM,
     normalizeRaceId: typeof normalizeRaceId === 'function' ? normalizeRaceId : null,
   });
@@ -3021,6 +3153,9 @@ function buildEditorExportPayload() {
     editorConfig,
     editorStarterDeck,
     editorWorldMap,
+    editorEvents,
+    editorQuests,
+    editorHubs,
     ddCustom: window.DD_CUSTOM,
     normalizeRaceId: typeof normalizeRaceId === 'function' ? normalizeRaceId : null,
   });
@@ -3035,6 +3170,9 @@ function buildRuntimeConfigPayload() {
     editorConfig,
     editorStarterDeck,
     editorWorldMap,
+    editorEvents,
+    editorQuests,
+    editorHubs,
     ddCustom: window.DD_CUSTOM,
     normalizeRaceId: typeof normalizeRaceId === 'function' ? normalizeRaceId : null,
   });
@@ -3050,6 +3188,7 @@ function downloadJSONFile(data, filename) {
 }
 
 function exportRuntimeConfig() {
+  if (!parseStoryEditorsIntoState()) return;
   if (typeof saveConfig === 'function') saveConfig();
   const runtimeData = buildRuntimeConfigPayload();
   downloadJSONFile(runtimeData, 'runtime-config.json');
@@ -3057,6 +3196,7 @@ function exportRuntimeConfig() {
 }
 
 function buildTranslationTemplate(language) {
+  parseStoryEditorsIntoState();
   const source = _collectEditorLocales();
   const target = _cloneJson(source[language] || {});
   ['cards', 'story', 'ui'].forEach(namespace => {
@@ -3075,6 +3215,7 @@ function buildTranslationTemplate(language) {
 }
 
 function exportTranslationTemplate(language = 'en') {
+  if (!parseStoryEditorsIntoState()) return;
   const template = buildTranslationTemplate(language);
   downloadJSONFile(template, `dd_translation_template_${language}.json`);
   showToast(_et('ui.editor.translationTemplateDone', { language: language.toUpperCase() }, `Translation template for ${language.toUpperCase()} exported ✓`));
@@ -3100,6 +3241,9 @@ function importJSON() {
         if(data.config) editorConfig=data.config;
         if(data.starterDeck) editorStarterDeck=data.starterDeck;
         if(data.worldMap) editorWorldMap=data.worldMap.map(normalizeEditorWorldMapLocation);
+        if(data.events) editorEvents=data.events;
+        if(data.quests) editorQuests=data.quests;
+        if(data.hubs) editorHubs=data.hubs;
         if(data.locales) {
           const c = window.DD_CUSTOM || {};
           c.locales = data.locales;
@@ -3108,6 +3252,8 @@ function importJSON() {
         if (typeof prepareCardLocalization === 'function') editorCards.forEach(prepareCardLocalization);
         if (typeof prepareEnemyLocalization === 'function') Object.values(editorEnemies).forEach(prepareEnemyLocalization);
         if (typeof prepareWorldLocationLocalization === 'function') editorWorldMap.forEach(prepareWorldLocationLocalization);
+        hydrateStoryEditorContent();
+        syncStoryEditorsFromState();
         renderCardList(); initEnemyTab();
         showToast(_et('ui.editor.importSuccess', null, 'Import successful ✓'));
       }catch(err){alert(_et('ui.editor.importError', { message: err.message }, `Import error: ${err.message}`));}

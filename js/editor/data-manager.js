@@ -48,6 +48,54 @@ window.DDEditorDataManager = (function createEditorDataManager() {
       });
     });
 
+    (context.editorEvents || []).forEach(event => {
+      if (!event || !event.id) return;
+      const titleKey = event.titleKey || `event.${event.id}.title`;
+      if (event.title) deStory[titleKey] = event.title;
+      (event.dialog || []).forEach((step, stepIndex) => {
+        const speakerKey = step.speakerKey || `event.${event.id}.step.${stepIndex}.speaker`;
+        const textKey = step.textKey || `event.${event.id}.step.${stepIndex}.text`;
+        if (step.speaker) deStory[speakerKey] = step.speaker;
+        if (step.text) deStory[textKey] = step.text;
+        (step.choices || []).forEach((choice, choiceIndex) => {
+          const choiceKey = choice.textKey || `event.${event.id}.step.${stepIndex}.choice.${choiceIndex}`;
+          if (choice.text) deStory[choiceKey] = choice.text;
+        });
+      });
+    });
+
+    (context.editorQuests || []).forEach(quest => {
+      if (!quest || !quest.id) return;
+      const titleKey = quest.titleKey || `quest.${quest.id}.title`;
+      const descriptionKey = quest.descriptionKey || `quest.${quest.id}.description`;
+      if (quest.title) deStory[titleKey] = quest.title;
+      if (quest.description) deStory[descriptionKey] = quest.description;
+    });
+
+    (context.editorHubs || []).forEach(hub => {
+      if (!hub || !hub.id) return;
+      const nameKey = hub.nameKey || `hub.${hub.id}.name`;
+      const descriptionKey = hub.descriptionKey || `hub.${hub.id}.description`;
+      if (hub.name) deStory[nameKey] = hub.name;
+      if (hub.description) deStory[descriptionKey] = hub.description;
+      (hub.npcs || []).forEach((npc, npcIndex) => {
+        const npcKey = npc.nameKey || `hub.${hub.id}.npc.${npcIndex}.name`;
+        if (npc.name) deStory[npcKey] = npc.name;
+      });
+      (hub.tournaments || []).forEach((tournament, index) => {
+        const titleKey = tournament.titleKey || `hub.${hub.id}.tournament.${index}.title`;
+        const descriptionKey = tournament.descriptionKey || `hub.${hub.id}.tournament.${index}.description`;
+        if (tournament.title) deStory[titleKey] = tournament.title;
+        if (tournament.description) deStory[descriptionKey] = tournament.description;
+      });
+      (hub.challenges || []).forEach((challenge, index) => {
+        const titleKey = challenge.titleKey || `hub.${hub.id}.challenge.${index}.title`;
+        const descriptionKey = challenge.descriptionKey || `hub.${hub.id}.challenge.${index}.description`;
+        if (challenge.title) deStory[titleKey] = challenge.title;
+        if (challenge.description) deStory[descriptionKey] = challenge.description;
+      });
+    });
+
     return locales;
   }
 
@@ -90,6 +138,73 @@ window.DDEditorDataManager = (function createEditorDataManager() {
     });
   }
 
+  function sanitizeEventsForI18n(events) {
+    return (events || []).map(event => {
+      const next = cloneJson(event);
+      next.titleKey = next.titleKey || `event.${next.id}.title`;
+      delete next.title;
+      next.dialog = (next.dialog || []).map((step, stepIndex) => {
+        const storyStep = cloneJson(step);
+        storyStep.speakerKey = storyStep.speakerKey || `event.${next.id}.step.${stepIndex}.speaker`;
+        storyStep.textKey = storyStep.textKey || `event.${next.id}.step.${stepIndex}.text`;
+        delete storyStep.speaker;
+        delete storyStep.text;
+        storyStep.choices = (storyStep.choices || []).map((choice, choiceIndex) => {
+          const nextChoice = cloneJson(choice);
+          nextChoice.textKey = nextChoice.textKey || `event.${next.id}.step.${stepIndex}.choice.${choiceIndex}`;
+          delete nextChoice.text;
+          return nextChoice;
+        });
+        return storyStep;
+      });
+      return next;
+    });
+  }
+
+  function sanitizeQuestsForI18n(quests) {
+    return (quests || []).map(quest => {
+      const next = cloneJson(quest);
+      next.titleKey = next.titleKey || `quest.${next.id}.title`;
+      next.descriptionKey = next.descriptionKey || `quest.${next.id}.description`;
+      delete next.title;
+      delete next.description;
+      return next;
+    });
+  }
+
+  function sanitizeHubsForI18n(hubs) {
+    return (hubs || []).map(hub => {
+      const next = cloneJson(hub);
+      next.nameKey = next.nameKey || `hub.${next.id}.name`;
+      next.descriptionKey = next.descriptionKey || `hub.${next.id}.description`;
+      delete next.name;
+      delete next.description;
+      next.npcs = (next.npcs || []).map((npc, npcIndex) => {
+        const nextNpc = cloneJson(npc);
+        nextNpc.nameKey = nextNpc.nameKey || `hub.${next.id}.npc.${npcIndex}.name`;
+        delete nextNpc.name;
+        return nextNpc;
+      });
+      next.tournaments = (next.tournaments || []).map((tournament, index) => {
+        const nextTournament = cloneJson(tournament);
+        nextTournament.titleKey = nextTournament.titleKey || `hub.${next.id}.tournament.${index}.title`;
+        nextTournament.descriptionKey = nextTournament.descriptionKey || `hub.${next.id}.tournament.${index}.description`;
+        delete nextTournament.title;
+        delete nextTournament.description;
+        return nextTournament;
+      });
+      next.challenges = (next.challenges || []).map((challenge, index) => {
+        const nextChallenge = cloneJson(challenge);
+        nextChallenge.titleKey = nextChallenge.titleKey || `hub.${next.id}.challenge.${index}.title`;
+        nextChallenge.descriptionKey = nextChallenge.descriptionKey || `hub.${next.id}.challenge.${index}.description`;
+        delete nextChallenge.title;
+        delete nextChallenge.description;
+        return nextChallenge;
+      });
+      return next;
+    });
+  }
+
   function buildEditorDataPayload(context) {
     const regularCards = context.editorCards.filter(card => card.type !== 'fusion');
     const fusionCards = context.editorCards.filter(card => card.type === 'fusion');
@@ -105,6 +220,9 @@ window.DDEditorDataManager = (function createEditorDataManager() {
       config: context.editorConfig,
       starterDeck: context.editorStarterDeck,
       worldMap: context.editorWorldMap.length > 0 ? sanitizeWorldMapForI18n(context.editorWorldMap) : undefined,
+      events: context.editorEvents?.length > 0 ? sanitizeEventsForI18n(context.editorEvents) : undefined,
+      quests: context.editorQuests?.length > 0 ? sanitizeQuestsForI18n(context.editorQuests) : undefined,
+      hubs: context.editorHubs?.length > 0 ? sanitizeHubsForI18n(context.editorHubs) : undefined,
       locales,
     };
   }
@@ -131,6 +249,9 @@ window.DDEditorDataManager = (function createEditorDataManager() {
       config: data.config || {},
       starterDeck: Array.isArray(data.starterDeck) ? data.starterDeck : [],
       worldMap: Array.isArray(data.worldMap) ? data.worldMap : [],
+      events: Array.isArray(data.events) ? data.events : [],
+      quests: Array.isArray(data.quests) ? data.quests : [],
+      hubs: Array.isArray(data.hubs) ? data.hubs : [],
       recipes: Array.isArray(data.recipes) ? data.recipes : [],
     };
   }
@@ -162,6 +283,11 @@ window.DDEditorDataManager = (function createEditorDataManager() {
       },
       'world-map.json': {
         worldMap: runtimeConfig.worldMap,
+      },
+      'story-content.json': {
+        events: runtimeConfig.events,
+        quests: runtimeConfig.quests,
+        hubs: runtimeConfig.hubs,
       },
     };
   }

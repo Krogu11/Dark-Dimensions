@@ -1,0 +1,206 @@
+{
+  "events": [
+    {
+      "id": "event_intro_awakening",
+      "title": "Ein seltsames Erwachen",
+      "trigger": "game_start",
+      "once": true,
+      "dialog": [
+        {
+          "speaker": "",
+          "text": "Du oeffnest langsam die Augen. Kaltes Flusswasser klebt an deiner Haut, waehrend Stimmen naeher kommen.",
+          "choices": [
+            { "text": "Wo bin ich?", "next": 1 },
+            { "text": "...still bleiben", "next": 1, "effect": "gain_item:potion" }
+          ]
+        },
+        {
+          "speaker": "Dorfbeschuetzer",
+          "text": "Er lebt. Wenn du stehen kannst, komm mit uns ins Dorf. Monster treiben sich ueberall herum.",
+          "choices": [
+            { "text": "Ich vertraue euch.", "next": 2, "effect": { "type": "set_flag", "key": "intro_trust", "value": "trust" } },
+            { "text": "Ich bleibe misstrauisch.", "next": 2, "effect": { "type": "set_flag", "key": "intro_trust", "value": "distrust" } }
+          ]
+        },
+        {
+          "speaker": "Tutorial",
+          "text": "Spiele Karten in deiner Main Phase, greife mit Monstern an und besiege Gegner, um dein Ziel zu erreichen.",
+          "choices": [
+            { "text": "Weiter", "next": 3 }
+          ]
+        },
+        {
+          "speaker": "Tutorial",
+          "text": "Monster auf dem Feld bestimmen deine Optionen. Zauber helfen sofort, Fallen sichern dich spaeter ab.",
+          "choices": [
+            { "text": "Verstanden", "next": 4 }
+          ]
+        },
+        {
+          "speaker": "Tutorial",
+          "text": "Dein erstes Ziel ist einfach: Hilf dem Dorf zu ueberleben und baue dabei dein Deck aus.",
+          "choices": [
+            { "text": "Zum Dorf" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "event_village_arrival",
+      "title": "Willkommen im Dorf",
+      "trigger": "enter_hub",
+      "hubId": "hub_village_01",
+      "once": true,
+      "dialog": [
+        {
+          "speaker": "Mutiger Dorfbewohner",
+          "text": "Das Dorf ist klein, aber wir halten zusammen. Sprich mit den Leuten, wenn du helfen willst.",
+          "choices": [
+            { "text": "Ich sehe mich um.", "next": 1 }
+          ]
+        },
+        {
+          "speaker": "Dorfbeschuetzer",
+          "text": "Wir brauchen jemanden, der die Monster vor dem Tor zurueckdraengt. Der Dorfaelteste erklaert dir die Lage.",
+          "choices": [
+            { "text": "Ich rede spaeter mit ihm." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "event_elder_intro",
+      "title": "Der Hilferuf",
+      "dialog": [
+        {
+          "speaker": "Dorfaeltester",
+          "text": "Zwei Stoertrupps reichen, damit unsere Familien wieder durchatmen koennen. Bring sie zu Fall, dann reden wir ueber eine Belohnung.",
+          "choices": [
+            { "text": "Ich uebernehme das.", "effect": { "type": "start_quest", "questId": "quest_defend_village" } },
+            { "text": "Ich brauche noch einen Moment.", "next": 1 }
+          ]
+        },
+        {
+          "speaker": "Dorfaeltester",
+          "text": "Dann nutze das Hub. Sprich mit den Wachen, handle beim Haendler oder trainiere im Turnier.",
+          "choices": [
+            { "text": "Zurueck", "effect": { "type": "trigger_event", "eventId": "event_village_arrival" } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "event_guard_npc",
+      "title": "Dorfwache",
+      "dialog": [
+        {
+          "speaker": "Dorfwache",
+          "text": "Ich halte das Tor. Wenn du Kaempfe suchst, draussen auf dem Flussweg wirst du welche finden.",
+          "choices": [
+            { "text": "Danke fuer den Hinweis." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "event_villager_npc",
+      "title": "Dorfbewohner",
+      "dialog": [
+        {
+          "speaker": "Mutiger Dorfbewohner",
+          "text": "Seit du aufgetaucht bist, reden hier alle wieder von Hoffnung. Lass uns das nicht bereuen.",
+          "choices": [
+            { "text": "Ich gebe mein Bestes." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "event_merchant_npc",
+      "title": "Haendler",
+      "dialog": [
+        {
+          "speaker": "Wanderhaendler",
+          "text": "Ich tausche Karten gegen Dimensionsseelen. Im Shop findest du vielleicht genau das, was dir noch fehlt.",
+          "choices": [
+            { "text": "Ich schaue spaeter vorbei." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "event_village_success",
+      "title": "Die Reaktion des Dorfes",
+      "trigger": "quest_progress",
+      "questId": "quest_defend_village",
+      "status": "claimable",
+      "once": true,
+      "dialog": [
+        {
+          "speaker": "Mutiger Dorfbewohner",
+          "text": "Die Monster ziehen sich zurueck! Vielleicht schaffen wir es wirklich.",
+          "choices": [
+            { "text": "Ich melde mich beim Aeltesten.", "next": 1 }
+          ]
+        },
+        {
+          "speaker": "Dorfaeltester",
+          "text": "Du hast uns Luft verschafft. Komm zum Quest-Brett im Hub und hol dir, was dir zusteht.",
+          "choices": [
+            { "text": "Ich bin gleich da." }
+          ]
+        }
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": "quest_defend_village",
+      "title": "Beschuetze das Dorf",
+      "description": "Besiege 2 Monstergruppen auf dem Flussweg.",
+      "goal": 2,
+      "progress": 0,
+      "reward": {
+        "gold": 100,
+        "card": "mutiger_dorfbewohner"
+      }
+    }
+  ],
+  "hubs": [
+    {
+      "id": "hub_village_01",
+      "name": "Kleines Dorf",
+      "description": "Ein provisorischer Zufluchtsort am Fluss mit Leuten, die jeden Vorteil brauchen koennen.",
+      "questIds": ["quest_defend_village"],
+      "npcs": [
+        { "name": "Dorfaeltester", "dialogEventId": "event_elder_intro" },
+        { "name": "Dorfwache", "dialogEventId": "event_guard_npc" },
+        { "name": "Mutiger Dorfbewohner", "dialogEventId": "event_villager_npc" },
+        { "name": "Wanderhaendler", "dialogEventId": "event_merchant_npc" }
+      ],
+      "tournaments": [
+        {
+          "id": "tournament_village",
+          "title": "Dorfring",
+          "description": "Zwei schnelle Kaempfe, um den Leuten zu zeigen, dass du es ernst meinst.",
+          "enemyIds": ["kobold_waldlaeufer", "Wolfsrudel"],
+          "reward": {
+            "gold": 60,
+            "card": "dorfbewohner"
+          }
+        }
+      ],
+      "challenges": [
+        {
+          "id": "challenge_first_patrol",
+          "title": "Patrouille",
+          "description": "Gewinne einen Kampf ausserhalb des Dorfes.",
+          "goal": 1,
+          "reward": {
+            "gold": 30
+          }
+        }
+      ]
+    }
+  ]
+}

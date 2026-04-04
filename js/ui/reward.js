@@ -195,7 +195,9 @@ function skipReward() {
 
 /** Zentrale Rückkehr-Logik nach Reward-Screen. */
 function _afterReward() {
-  if (RUN_STATE._freeDuelReturn) {
+  if (typeof handleStoryBattleReturn === 'function' && handleStoryBattleReturn()) {
+    return;
+  } else if (RUN_STATE._freeDuelReturn) {
     /* Freies Duell: direkt zurück zur Gegner-Liste */
     RUN_STATE._freeDuelReturn = false;
     RUN_STATE._isFreeDuel     = false;

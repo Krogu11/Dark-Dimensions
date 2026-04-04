@@ -23,6 +23,7 @@
     'config.json',
     'starter-deck.json',
     'world-map.json',
+    'story-content.json',
   ];
 
   function isPlainObject(value) {
