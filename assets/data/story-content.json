@@ -1,51 +1,6 @@
 {
   "events": [
     {
-      "id": "event_intro_awakening",
-      "title": "Ein seltsames Erwachen",
-      "trigger": "game_start",
-      "once": true,
-      "dialog": [
-        {
-          "speaker": "",
-          "text": "Du oeffnest langsam die Augen. Kaltes Flusswasser klebt an deiner Haut, waehrend Stimmen naeher kommen.",
-          "choices": [
-            { "text": "Wo bin ich?", "next": 1 },
-            { "text": "...still bleiben", "next": 1, "effect": "gain_item:potion" }
-          ]
-        },
-        {
-          "speaker": "Dorfbeschuetzer",
-          "text": "Er lebt. Wenn du stehen kannst, komm mit uns ins Dorf. Monster treiben sich ueberall herum.",
-          "choices": [
-            { "text": "Ich vertraue euch.", "next": 2, "effect": { "type": "set_flag", "key": "intro_trust", "value": "trust" } },
-            { "text": "Ich bleibe misstrauisch.", "next": 2, "effect": { "type": "set_flag", "key": "intro_trust", "value": "distrust" } }
-          ]
-        },
-        {
-          "speaker": "Tutorial",
-          "text": "Spiele Karten in deiner Main Phase, greife mit Monstern an und besiege Gegner, um dein Ziel zu erreichen.",
-          "choices": [
-            { "text": "Weiter", "next": 3 }
-          ]
-        },
-        {
-          "speaker": "Tutorial",
-          "text": "Monster auf dem Feld bestimmen deine Optionen. Zauber helfen sofort, Fallen sichern dich spaeter ab.",
-          "choices": [
-            { "text": "Verstanden", "next": 4 }
-          ]
-        },
-        {
-          "speaker": "Tutorial",
-          "text": "Dein erstes Ziel ist einfach: Hilf dem Dorf zu ueberleben und baue dabei dein Deck aus.",
-          "choices": [
-            { "text": "Zum Dorf" }
-          ]
-        }
-      ]
-    },
-    {
       "id": "event_village_arrival",
       "title": "Willkommen im Dorf",
       "trigger": "enter_hub",
@@ -54,16 +9,16 @@
       "dialog": [
         {
           "speaker": "Mutiger Dorfbewohner",
-          "text": "Das Dorf ist klein, aber wir halten zusammen. Sprich mit den Leuten, wenn du helfen willst.",
+          "text": "Gerade rechtzeitig. Ohne dich waeren die Kobolde bis an die Haeuser gekommen.",
           "choices": [
-            { "text": "Ich sehe mich um.", "next": 1 }
+            { "text": "Ich brauche einen Ueberblick.", "next": 1 }
           ]
         },
         {
           "speaker": "Dorfbeschuetzer",
-          "text": "Wir brauchen jemanden, der die Monster vor dem Tor zurueckdraengt. Der Dorfaelteste erklaert dir die Lage.",
+          "text": "Dann fang hier an. Sprich mit dem Aeltesten, nimm eine Quest an und halte dich fuer das kleine Turnier bereit.",
           "choices": [
-            { "text": "Ich rede spaeter mit ihm." }
+            { "text": "Ich sehe mich um." }
           ]
         }
       ]
@@ -74,17 +29,17 @@
       "dialog": [
         {
           "speaker": "Dorfaeltester",
-          "text": "Zwei Stoertrupps reichen, damit unsere Familien wieder durchatmen koennen. Bring sie zu Fall, dann reden wir ueber eine Belohnung.",
+          "text": "Wenn du uns wirklich helfen willst, schalte vor dem Dorf zwei Monstergruppen aus. Dann sehen wir weiter.",
           "choices": [
             { "text": "Ich uebernehme das.", "effect": { "type": "start_quest", "questId": "quest_defend_village" } },
-            { "text": "Ich brauche noch einen Moment.", "next": 1 }
+            { "text": "Ich brauche erst noch Informationen.", "next": 1 }
           ]
         },
         {
           "speaker": "Dorfaeltester",
-          "text": "Dann nutze das Hub. Sprich mit den Wachen, handle beim Haendler oder trainiere im Turnier.",
+          "text": "Nutze die Pfade auf der Weltkarte. Dort passiert nicht immer etwas, aber oft genug das Falsche.",
           "choices": [
-            { "text": "Zurueck", "effect": { "type": "trigger_event", "eventId": "event_village_arrival" } }
+            { "text": "Verstanden." }
           ]
         }
       ]
@@ -95,9 +50,9 @@
       "dialog": [
         {
           "speaker": "Dorfwache",
-          "text": "Ich halte das Tor. Wenn du Kaempfe suchst, draussen auf dem Flussweg wirst du welche finden.",
+          "text": "Die Pfade vor dem Dorf sind unberechenbar. Manchmal ist es still, manchmal springt dir sofort etwas an die Kehle.",
           "choices": [
-            { "text": "Danke fuer den Hinweis." }
+            { "text": "Ich bin vorbereitet." }
           ]
         }
       ]
@@ -108,9 +63,9 @@
       "dialog": [
         {
           "speaker": "Mutiger Dorfbewohner",
-          "text": "Seit du aufgetaucht bist, reden hier alle wieder von Hoffnung. Lass uns das nicht bereuen.",
+          "text": "Der Dorfplatz fuehlt sich seit deiner Ankunft gleich ein bisschen sicherer an.",
           "choices": [
-            { "text": "Ich gebe mein Bestes." }
+            { "text": "Dann sollte ich diesen Vorteil nutzen." }
           ]
         }
       ]
@@ -121,9 +76,48 @@
       "dialog": [
         {
           "speaker": "Wanderhaendler",
-          "text": "Ich tausche Karten gegen Dimensionsseelen. Im Shop findest du vielleicht genau das, was dir noch fehlt.",
+          "text": "Ich habe Karten, Vorrat und eine schlechte Meinung ueber Kobolde. Im Shop kannst du alles bis auf die Meinung kaufen.",
           "choices": [
-            { "text": "Ich schaue spaeter vorbei." }
+            { "text": "Klingt fair." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "event_river_whispers",
+      "title": "Stimmen am Wasser",
+      "dialog": [
+        {
+          "speaker": "",
+          "text": "Zwischen den Schilfbuesche liegen frische Spuren. Irgendjemand beobachtet das Dorf vom anderen Ufer aus.",
+          "choices": [
+            { "text": "Ich merke mir die Stelle." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "event_lost_supplies",
+      "title": "Verlorene Vorräte",
+      "dialog": [
+        {
+          "speaker": "",
+          "text": "Im Wrack eines Karrens findest du verstreute Vorratskisten. Die Dorfbewohner koennen so etwas brauchen.",
+          "choices": [
+            { "text": "Ich bringe mit, was ich tragen kann.", "effect": { "type": "gain_gold", "amount": 20 } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "event_forest_trail",
+      "title": "Dunkler Pfad",
+      "dialog": [
+        {
+          "speaker": "",
+          "text": "Der Wald ist still, aber nicht friedlich. Zwischen den Baeumen warten neue Feinde.",
+          "choices": [
+            { "text": "Ich gehe weiter." }
           ]
         }
       ]
@@ -138,16 +132,9 @@
       "dialog": [
         {
           "speaker": "Mutiger Dorfbewohner",
-          "text": "Die Monster ziehen sich zurueck! Vielleicht schaffen wir es wirklich.",
+          "text": "Die Monster werden vorsichtiger. Das Dorf redet schon ueber deinen ersten Sieg.",
           "choices": [
-            { "text": "Ich melde mich beim Aeltesten.", "next": 1 }
-          ]
-        },
-        {
-          "speaker": "Dorfaeltester",
-          "text": "Du hast uns Luft verschafft. Komm zum Quest-Brett im Hub und hol dir, was dir zusteht.",
-          "choices": [
-            { "text": "Ich bin gleich da." }
+            { "text": "Dann hole ich mir meine Belohnung." }
           ]
         }
       ]
@@ -157,7 +144,7 @@
     {
       "id": "quest_defend_village",
       "title": "Beschuetze das Dorf",
-      "description": "Besiege 2 Monstergruppen auf dem Flussweg.",
+      "description": "Besiege 2 Monstergruppen auf den Pfaden vor dem Dorf.",
       "goal": 2,
       "progress": 0,
       "reward": {
@@ -170,7 +157,7 @@
     {
       "id": "hub_village_01",
       "name": "Kleines Dorf",
-      "description": "Ein provisorischer Zufluchtsort am Fluss mit Leuten, die jeden Vorteil brauchen koennen.",
+      "description": "Das erste echte Hub mit NPCs, Questbrett, Shop, Turnier und optionalen Herausforderungen.",
       "questIds": ["quest_defend_village"],
       "npcs": [
         { "name": "Dorfaeltester", "dialogEventId": "event_elder_intro" },
@@ -182,7 +169,7 @@
         {
           "id": "tournament_village",
           "title": "Dorfring",
-          "description": "Zwei schnelle Kaempfe, um den Leuten zu zeigen, dass du es ernst meinst.",
+          "description": "Zwei kurze Kaempfe als Trainingsserie fuer den neuen Verteidiger des Dorfes.",
           "enemyIds": ["kobold_waldlaeufer", "Wolfsrudel"],
           "reward": {
             "gold": 60,
@@ -194,7 +181,7 @@
         {
           "id": "challenge_first_patrol",
           "title": "Patrouille",
-          "description": "Gewinne einen Kampf ausserhalb des Dorfes.",
+          "description": "Gewinne 1 Kampf auf einem Pfadknoten der Worldmap.",
           "goal": 1,
           "reward": {
             "gold": 30

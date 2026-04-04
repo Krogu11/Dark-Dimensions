@@ -581,6 +581,19 @@ function normalizeEditorWorldMapLocation(loc) {
   }
   if (normalized.bgm === undefined) normalized.bgm = '';
   if (normalized.battleBgm === undefined) normalized.battleBgm = '';
+  if (!normalized.worldEventConfig || typeof normalized.worldEventConfig !== 'object') {
+    normalized.worldEventConfig = {
+      noneWeight: 100,
+      battleWeight: 0,
+      eventWeight: 0,
+      enemyId: '',
+      eventId: '',
+      enemyPool: [],
+    };
+  }
+  if (normalized.postStoryBattleEnemyId === undefined) normalized.postStoryBattleEnemyId = '';
+  if (normalized.postStoryGoToLocationId === undefined) normalized.postStoryGoToLocationId = '';
+  if (normalized.isStart === undefined) normalized.isStart = false;
   delete normalized.actIndex;
   return normalized;
 }
@@ -2564,8 +2577,8 @@ function renderWmCanvas() {
       user-select:none;
     `;
     const isSelected = selectedWmLocId === loc.id;
-    const typeColor = { dungeon:'#7c3aed', hub:'#2a7040', story:'#7a5a10' }[loc.type] || '#444';
-    const typeIcon  = { dungeon:'⚔', hub:'🏕', story:'📜' }[loc.type] || '•';
+    const typeColor = { dungeon:'#7c3aed', hub:'#2a7040', story:'#7a5a10', path:'#256b8f' }[loc.type] || '#444';
+    const typeIcon  = { dungeon:'⚔', hub:'🏕', story:'📜', path:'✦' }[loc.type] || '•';
 
     el.innerHTML = `
       <div style="
@@ -2655,6 +2668,8 @@ function wmCanvasClick(e) {
     unlockConditions: [], actId: editorActId(editorActs[0]),
     hubFeatures: ['rest','shop','deck','save'],
     storyLines: [], description: '', bgm: '', battleBgm: '',
+    worldEventConfig: { noneWeight: 100, battleWeight: 0, eventWeight: 0, enemyId: '', eventId: '', enemyPool: [] },
+    postStoryBattleEnemyId: '', postStoryGoToLocationId: '', isStart: false,
   });
   selectedWmLocId = id;
   renderWmCanvas();
@@ -2670,6 +2685,8 @@ function addWorldMapLocation() {
     connections: [], unlockConditions: [],
     actId: editorActId(editorActs[0]), hubFeatures: ['rest','shop','deck','save'],
     storyLines: [], description: '', bgm: '', battleBgm: '',
+    worldEventConfig: { noneWeight: 100, battleWeight: 0, eventWeight: 0, enemyId: '', eventId: '', enemyPool: [] },
+    postStoryBattleEnemyId: '', postStoryGoToLocationId: '', isStart: false,
   });
   selectedWmLocId = id;
   renderWmCanvas();
@@ -2743,7 +2760,16 @@ function renderWmDetail(locId) {
           <option value="dungeon" ${loc.type==='dungeon'?'selected':''}>${_et('ui.editor.worldmap.type.dungeon', null, '⚔ Dungeon')}</option>
           <option value="hub"     ${loc.type==='hub'    ?'selected':''}>${_et('ui.editor.worldmap.type.hub', null, '🏕 Hub')}</option>
           <option value="story"   ${loc.type==='story'  ?'selected':''}>${_et('ui.editor.worldmap.type.story', null, '📜 Story')}</option>
+          <option value="path"    ${loc.type==='path'   ?'selected':''}>${_et('ui.editor.worldmap.type.path', null, '✦ Pfad')}</option>
         </select>
+      </div>
+
+      <div class="field-group">
+        <label>Start Node</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px">
+          <input type="checkbox" ${loc.isStart ? 'checked' : ''} onchange="wmUpdate('isStart',this.checked)">
+          This node starts a new run
+        </label>
       </div>
 
       <!-- Beschreibung -->
@@ -2791,6 +2817,47 @@ function renderWmDetail(locId) {
             </div>`).join('')}
         </div>
         <button class="btn-sm" style="margin-top:6px" onclick="wmAddStoryLine()">${_et('ui.editor.worldmap.addLine', null, '+ Add line')}</button>
+        <div class="field-row" style="margin-top:10px">
+          <div class="field-group">
+            <label>Post-story battle enemy</label>
+            <input type="text" value="${esc(loc.postStoryBattleEnemyId||'')}" oninput="wmUpdate('postStoryBattleEnemyId',this.value)">
+          </div>
+          <div class="field-group">
+            <label>Go to location after win</label>
+            <input type="text" value="${esc(loc.postStoryGoToLocationId||'')}" oninput="wmUpdate('postStoryGoToLocationId',this.value)">
+          </div>
+        </div>
+      </div>` : ''}
+
+      ${loc.type==='path' ? `
+      <div class="field-group">
+        <label>Path encounter chances</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div class="field-group">
+            <label>Nothing weight</label>
+            <input type="number" min="0" value="${Number(loc.worldEventConfig?.noneWeight||0)}" oninput="wmUpdateWorldEvent('noneWeight',parseInt(this.value||0,10)||0)">
+          </div>
+          <div class="field-group">
+            <label>Battle weight</label>
+            <input type="number" min="0" value="${Number(loc.worldEventConfig?.battleWeight||0)}" oninput="wmUpdateWorldEvent('battleWeight',parseInt(this.value||0,10)||0)">
+          </div>
+          <div class="field-group">
+            <label>Event weight</label>
+            <input type="number" min="0" value="${Number(loc.worldEventConfig?.eventWeight||0)}" oninput="wmUpdateWorldEvent('eventWeight',parseInt(this.value||0,10)||0)">
+          </div>
+        </div>
+        <div class="field-row" style="margin-top:8px">
+          <div class="field-group">
+            <label>Fallback battle enemy</label>
+            <input type="text" value="${esc(loc.worldEventConfig?.enemyId||'')}" oninput="wmUpdateWorldEvent('enemyId',this.value)">
+          </div>
+          <div class="field-group">
+            <label>Event ID</label>
+            <input type="text" value="${esc(loc.worldEventConfig?.eventId||'')}" oninput="wmUpdateWorldEvent('eventId',this.value)">
+          </div>
+        </div>
+        <label style="margin-top:8px;font-size:11px;color:var(--muted)">Enemy pool JSON</label>
+        <textarea rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:6px;color:var(--text);font-size:12px;resize:vertical" oninput="wmUpdateEnemyPool(this.value)">${esc(JSON.stringify(loc.worldEventConfig?.enemyPool||[], null, 2))}</textarea>
       </div>` : ''}
 
       <!-- Verbindungen -->
@@ -2931,6 +2998,25 @@ function deleteWmLocation(locId) {
   selectedWmLocId = null;
   renderWmCanvas();
   renderWmDetail(null);
+}
+
+function wmUpdateWorldEvent(field, value) {
+  const loc = editorWorldMap.find(l => l.id === selectedWmLocId);
+  if (!loc) return;
+  if (!loc.worldEventConfig || typeof loc.worldEventConfig !== 'object') {
+    loc.worldEventConfig = { noneWeight: 100, battleWeight: 0, eventWeight: 0, enemyId: '', eventId: '', enemyPool: [] };
+  }
+  loc.worldEventConfig[field] = value;
+}
+
+function wmUpdateEnemyPool(raw) {
+  const loc = editorWorldMap.find(l => l.id === selectedWmLocId);
+  if (!loc) return;
+  try {
+    const parsed = JSON.parse(raw || '[]');
+    loc.worldEventConfig = loc.worldEventConfig || { noneWeight: 100, battleWeight: 0, eventWeight: 0, enemyId: '', eventId: '', enemyPool: [] };
+    loc.worldEventConfig.enemyPool = Array.isArray(parsed) ? parsed : [];
+  } catch (_error) {}
 }
 
 function syncStoryEditorsFromState() {

@@ -1,55 +1,158 @@
 {
   "worldMap": [
     {
+      "id": "loc_intro_river",
+      "type": "story",
+      "isStart": true,
+      "x": 12,
+      "y": 44,
+      "connections": ["hub_village_01"],
+      "unlockConditions": [],
+      "hubFeatures": ["rest", "shop", "deck", "save"],
+      "storyLines": [
+        { "speaker": "", "text": "~Du hoerst Wasser und Wind. Dein Koerper liegt halb im kalten Ufergras.~" },
+        { "speaker": "Mutiger Dorfbewohner", "text": "Da drueben! Beim Flussufer liegt jemand!" },
+        { "speaker": "Dorfwache", "text": "Er ist einfach vom Himmel gefallen... oder aus einer anderen Welt." },
+        { "speaker": "Dorfbeschuetzer", "text": "Egal was er ist, wir bringen ihn erst in Sicherheit. Wenn er kaempfen kann, ist das unser Glueck." },
+        { "speaker": "", "text": "~Du zwingst dich auf die Beine. Noch bevor du antworten kannst, hallt ein heiseres Kreischen aus den Bueschen. Eine Kobold-Bande bricht aus dem Ufergestruepp.~" }
+      ],
+      "postStoryBattleEnemyId": "goblin_gang",
+      "postStoryGoToLocationId": "hub_village_01",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": "audio/cursed-data-duel.mp3",
+      "name": "Am Fluss",
+      "description": "Hier beginnt dein Weg durch die dunklen Dimensionen."
+    },
+    {
       "id": "hub_village_01",
       "type": "hub",
-      "x": 16,
-      "y": 52,
-      "connections": ["loc_river_path", "loc_forest_edge"],
+      "x": 28,
+      "y": 54,
+      "connections": ["loc_intro_river", "loc_river_crossing", "loc_broken_cart"],
       "unlockConditions": [],
       "hubFeatures": ["rest", "shop", "deck", "save"],
       "storyLines": [],
-      "actId": "act_0",
       "hubId": "hub_village_01",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
       "bgm": "audio/cursed-data-duel.mp3",
       "battleBgm": "",
       "name": "Kleines Dorf",
-      "description": "Dreh- und Angelpunkt deiner ersten Reise."
+      "description": "Ein echtes Hub mit Leuten, Sorgen und Chancen."
     },
     {
-      "id": "loc_river_path",
+      "id": "loc_river_crossing",
+      "type": "path",
+      "x": 48,
+      "y": 35,
+      "connections": ["hub_village_01", "loc_kobold_camp"],
+      "unlockConditions": [],
+      "hubFeatures": ["rest", "shop", "deck", "save"],
+      "storyLines": [],
+      "worldEventConfig": {
+        "noneWeight": 45,
+        "battleWeight": 35,
+        "eventWeight": 20,
+        "enemyId": "kobold_waldlaeufer",
+        "eventId": "event_river_whispers",
+        "enemyPool": [
+          { "enemyId": "goblin_gang", "weight": 7 },
+          { "enemyId": "kobold_waldlaeufer", "weight": 5 }
+        ]
+      },
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": "audio/cursed-data-duel.mp3",
+      "name": "Flussuebergang",
+      "description": "Ein unsicherer Pfad mit der Chance auf Ruhe, Gefahr oder Entdeckungen."
+    },
+    {
+      "id": "loc_broken_cart",
+      "type": "path",
+      "x": 50,
+      "y": 68,
+      "connections": ["hub_village_01", "loc_kobold_camp"],
+      "unlockConditions": [],
+      "hubFeatures": ["rest", "shop", "deck", "save"],
+      "storyLines": [],
+      "worldEventConfig": {
+        "noneWeight": 55,
+        "battleWeight": 30,
+        "eventWeight": 15,
+        "enemyId": "Wolfsrudel",
+        "eventId": "event_lost_supplies",
+        "enemyPool": [
+          { "enemyId": "goblin_gang", "weight": 4 },
+          { "enemyId": "Wolfsrudel", "weight": 6 }
+        ]
+      },
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": "audio/cursed-data-duel.mp3",
+      "name": "Zerbrochener Karren",
+      "description": "Nicht jeder Knoten muss etwas Grosses ausloesen, aber alles kann passieren."
+    },
+    {
+      "id": "loc_kobold_camp",
       "type": "dungeon",
-      "x": 45,
-      "y": 36,
-      "connections": ["hub_village_01", "loc_forest_edge"],
+      "x": 73,
+      "y": 52,
+      "connections": ["loc_river_crossing", "loc_broken_cart", "loc_forest_edge"],
       "unlockConditions": [],
       "hubFeatures": ["rest", "shop", "deck", "save"],
       "storyLines": [],
       "actId": "act_0",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
       "bgm": "audio/cursed-data-duel.mp3",
       "battleBgm": "audio/cursed-data-duel.mp3",
-      "name": "Flussweg",
-      "description": "Monster rotten sich entlang des Wassers zusammen."
+      "name": "Koboldlager",
+      "description": "Der erste richtige Vorstoss gegen die Angreifer."
     },
     {
       "id": "loc_forest_edge",
-      "type": "dungeon",
-      "x": 72,
-      "y": 60,
-      "connections": ["hub_village_01", "loc_river_path"],
+      "type": "path",
+      "x": 88,
+      "y": 30,
+      "connections": ["loc_kobold_camp"],
       "unlockConditions": [
-        {
-          "type": "locationCompleted",
-          "locationId": "loc_river_path"
-        }
+        { "type": "locationCompleted", "locationId": "loc_kobold_camp" }
       ],
       "hubFeatures": ["rest", "shop", "deck", "save"],
       "storyLines": [],
-      "actId": "act_1",
+      "worldEventConfig": {
+        "noneWeight": 40,
+        "battleWeight": 40,
+        "eventWeight": 20,
+        "enemyId": "kobold_reiter",
+        "eventId": "event_forest_trail",
+        "enemyPool": [
+          { "enemyId": "kobold_waldlaeufer", "weight": 6 },
+          { "enemyId": "kobold_reiter", "weight": 4 }
+        ]
+      },
       "bgm": "audio/cursed-data-duel.mp3",
       "battleBgm": "audio/cursed-data-duel.mp3",
-      "name": "Waldgrenze",
-      "description": "Hinter den Baeumen sammelt sich die naechste Gefahr."
+      "name": "Waldpfad",
+      "description": "Hinter dem Lager beginnt bereits der naechste Abschnitt."
     }
   ]
 }

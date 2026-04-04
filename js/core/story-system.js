@@ -6,6 +6,11 @@
     currentHubId: null,
   };
 
+  function getWorldMap() {
+    if (typeof global._getWorldMapData === 'function') return global._getWorldMapData() || [];
+    return Array.isArray(global.DD_CUSTOM?.worldMap) ? global.DD_CUSTOM.worldMap : [];
+  }
+
   function cloneJson(value) {
     return JSON.parse(JSON.stringify(value));
   }
@@ -281,6 +286,22 @@
     if (!event) return false;
     runtime.activeEvent = {
       eventId,
+      eventData: event,
+      stepIndex: Math.max(0, Number(options?.stepIndex || 0)),
+      returnMode: options?.returnMode || 'worldmap',
+      returnHubId: options?.returnHubId || null,
+      returnLocationId: options?.returnLocationId || null,
+    };
+    renderActiveEvent();
+    if (typeof showScreen === 'function') showScreen('story');
+    return true;
+  }
+
+  function startSyntheticEvent(eventData, options) {
+    if (!eventData) return false;
+    runtime.activeEvent = {
+      eventId: eventData.id || null,
+      eventData,
       stepIndex: Math.max(0, Number(options?.stepIndex || 0)),
       returnMode: options?.returnMode || 'worldmap',
       returnHubId: options?.returnHubId || null,
@@ -299,13 +320,33 @@
 
   function finishActiveEvent() {
     const state = ensureStoryState();
-    const current = runtime.activeEvent ? byId(getEvents(), runtime.activeEvent.eventId) : null;
+    const current = runtime.activeEvent?.eventData || (runtime.activeEvent ? byId(getEvents(), runtime.activeEvent.eventId) : null);
     if (state && current && !state.completedEvents.includes(current.id)) {
       state.completedEvents.push(current.id);
     }
-    const fallbackMode = runtime.activeEvent?.returnMode || 'worldmap';
-    const fallbackHubId = runtime.activeEvent?.returnHubId || runtime.currentHubId;
+    const pendingEvent = runtime.activeEvent;
+    const fallbackMode = pendingEvent?.returnMode || 'worldmap';
+    const fallbackHubId = pendingEvent?.returnHubId || runtime.currentHubId;
+    const locationId = pendingEvent?.returnLocationId || null;
     runtime.activeEvent = null;
+
+    if (current?.afterBattleEnemyId) {
+      startStoryBattle({
+        enemyId: current.afterBattleEnemyId,
+        returnMode: current.afterBattleReturnMode || fallbackMode,
+        returnHubId: current.afterBattleReturnHubId || fallbackHubId,
+        returnLocationId: current.afterBattleReturnLocationId || locationId,
+        markCompletedLocationId: current.markCompletedLocationId || locationId,
+        onWinGoToLocationId: current.onWinGoToLocationId || null,
+      });
+      return;
+    }
+
+    if (fallbackMode === 'worldmap' && locationId) {
+      completeWorldLocation(current?.markCompletedLocationId || locationId, current?.onWinGoToLocationId || locationId);
+      return;
+    }
+
     if (fallbackMode === 'hub' && fallbackHubId) {
       showHubScreen({ id: fallbackHubId, hubId: fallbackHubId });
     } else if (typeof renderWorldMap === 'function' && typeof showScreen === 'function') {
@@ -371,12 +412,14 @@
         return startEventById(effect.value || effect.eventId, {
           returnMode: context?.returnMode || 'worldmap',
           returnHubId: context?.returnHubId || runtime.currentHubId,
+          returnLocationId: context?.returnLocationId || null,
         });
       case 'start_battle':
         return startStoryBattle({
           enemyId: effect.enemyId || effect.value,
           returnMode: context?.returnMode || 'worldmap',
           returnHubId: context?.returnHubId || runtime.currentHubId,
+          returnLocationId: context?.returnLocationId || null,
           resumeEventId: context?.eventId || null,
           resumeStepIndex: Number.isInteger(effect.nextAfterBattle) ? Number(effect.nextAfterBattle) : null,
           onWinEventId: effect.onWinEventId || null,
@@ -399,6 +442,7 @@
       eventId: runtime.activeEvent.eventId,
       returnMode: runtime.activeEvent.returnMode,
       returnHubId: runtime.activeEvent.returnHubId,
+      returnLocationId: runtime.activeEvent.returnLocationId,
     };
     const effects = [];
     if (choice.effect) effects.push(choice.effect);
@@ -418,7 +462,7 @@
 
   function renderActiveEvent() {
     const eventState = runtime.activeEvent;
-    const event = eventState ? byId(getEvents(), eventState.eventId) : null;
+    const event = eventState?.eventData || (eventState ? byId(getEvents(), eventState.eventId) : null);
     const screen = global.document.getElementById('screen-story');
     if (!screen || !event) return;
     const step = (event.dialog || [])[eventState.stepIndex] || null;
@@ -735,6 +779,15 @@
       return true;
     }
 
+    if (pending.markCompletedLocationId || pending.onWinGoToLocationId || pending.returnLocationId) {
+      const completedId = pending.markCompletedLocationId || pending.returnLocationId || null;
+      const targetId = pending.onWinGoToLocationId || pending.returnLocationId || pending.markCompletedLocationId || null;
+      runtime.pendingBattle = null;
+      RUN_STATE._storyBattleSafeReturn = false;
+      completeWorldLocation(completedId, targetId);
+      return true;
+    }
+
     runtime.pendingBattle = null;
     RUN_STATE._storyBattleSafeReturn = false;
     if (pending.returnMode === 'hub' && pending.returnHubId) {
@@ -750,6 +803,90 @@
     BATTLE_STATE.active = false;
     BATTLE_STATE.gameOver = true;
     handleStoryBattleReturn();
+  }
+
+  function completeWorldLocation(locationId, goToLocationId) {
+    if (typeof WORLD_STATE === 'undefined') return;
+    const targetId = goToLocationId || locationId || WORLD_STATE.currentLocationId;
+    if (locationId) WORLD_STATE.completedLocations.add(locationId);
+    if (targetId) {
+      WORLD_STATE.currentLocationId = targetId;
+      WORLD_STATE.visitedLocations.add(targetId);
+      WORLD_STATE.lastVisitedNodeId = targetId;
+    }
+    if (typeof saveWorldProgress === 'function') saveWorldProgress();
+    if (typeof renderWorldMap === 'function') renderWorldMap();
+    if (typeof showScreen === 'function') showScreen('worldmap');
+  }
+
+  function weightedPick(entries) {
+    const valid = (entries || []).filter(entry => Number(entry.weight || 0) > 0);
+    const total = valid.reduce((sum, entry) => sum + Number(entry.weight || 0), 0);
+    if (total <= 0) return null;
+    let roll = Math.random() * total;
+    for (const entry of valid) {
+      roll -= Number(entry.weight || 0);
+      if (roll <= 0) return entry;
+    }
+    return valid[valid.length - 1] || null;
+  }
+
+  function chooseEnemyFromPool(pool) {
+    const pick = weightedPick(pool);
+    return pick ? pick.enemyId : null;
+  }
+
+  function startWorldMapLocationStory(loc) {
+    if (!loc || !Array.isArray(loc.storyLines) || loc.storyLines.length === 0) return false;
+    const dialog = loc.storyLines.map((line, index) => ({
+      speaker: line.speaker || '',
+      speakerKey: line.speakerKey,
+      text: line.text || '',
+      textKey: line.textKey,
+      choices: index < loc.storyLines.length - 1 ? [{ text: translateKey('ui.story.next', 'Next'), next: index + 1 }] : [{ text: translateKey('ui.story.finish', 'Continue') }],
+    }));
+    return startSyntheticEvent({
+      id: `world_story_${loc.id}`,
+      title: loc.name || loc.id,
+      titleKey: loc.nameKey,
+      dialog,
+      afterBattleEnemyId: loc.postStoryBattleEnemyId || null,
+      afterBattleReturnMode: loc.postStoryBattleEnemyId ? 'worldmap' : null,
+      afterBattleReturnLocationId: loc.id,
+      markCompletedLocationId: loc.id,
+      onWinGoToLocationId: loc.postStoryGoToLocationId || null,
+    }, {
+      returnMode: 'worldmap',
+      returnLocationId: loc.id,
+    });
+  }
+
+  function resolveWorldMapNodeEncounter(loc) {
+    if (!loc || !loc.worldEventConfig) return false;
+    const config = loc.worldEventConfig || {};
+    const outcome = weightedPick([
+      { type: 'none', weight: Number(config.noneWeight || 0) },
+      { type: 'event', weight: Number(config.eventWeight || 0), eventId: config.eventId || '' },
+      { type: 'battle', weight: Number(config.battleWeight || 0), enemyId: config.enemyId || chooseEnemyFromPool(config.enemyPool || []) },
+    ]);
+    if (!outcome) return false;
+    if (outcome.type === 'none') {
+      completeWorldLocation(loc.id);
+      return true;
+    }
+    if (outcome.type === 'event' && outcome.eventId) {
+      return startEventById(outcome.eventId, { returnMode: 'worldmap', returnLocationId: loc.id });
+    }
+    if (outcome.type === 'battle' && outcome.enemyId) {
+      return startStoryBattle({
+        enemyId: outcome.enemyId,
+        returnMode: 'worldmap',
+        returnLocationId: loc.id,
+        markCompletedLocationId: loc.id,
+      });
+    }
+    completeWorldLocation(loc.id);
+    return true;
   }
 
   function attachBattleHooks() {
@@ -819,12 +956,7 @@
   const legacyInitWorldState = global.initWorldState;
   global.initWorldState = function patchedInitWorldState() {
     initStorySystem();
-    if (typeof legacyInitWorldState === 'function') legacyInitWorldState();
-    const state = ensureStoryState();
-    if (state && !state.started) {
-      state.started = true;
-      triggerStoryEvents('game_start', { returnMode: 'worldmap' });
-    }
+    if (typeof legacyInitWorldState === 'function') return legacyInitWorldState.apply(this, arguments);
   };
 
   const legacyRenderWorldMap = global.renderWorldMap;
@@ -837,6 +969,8 @@
   global.initStorySystem = initStorySystem;
   global.triggerStoryEvents = triggerStoryEvents;
   global.startEventById = startEventById;
+  global.startWorldMapLocationStory = startWorldMapLocationStory;
+  global.resolveWorldMapNodeEncounter = resolveWorldMapNodeEncounter;
   global.handleStoryBattleReturn = handleStoryBattleReturn;
   global.handleSafeStoryBattleLoss = handleSafeStoryBattleLoss;
   global.openQuestLog = openQuestLog;
