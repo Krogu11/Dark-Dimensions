@@ -72,6 +72,10 @@ const _AI_SUMMON_FX = {
   graveRevive: 180, stealHand: 250, heal800: 120,
 };
 
+function _aiUi(key, params, fallback) {
+  return typeof t === 'function' ? t(key, params, { fallbackValue: fallback }) : (fallback || key);
+}
+
 
 /* ══════════════════════════════════════════════════
    HAUPT-ROUTINE
@@ -82,7 +86,7 @@ function enemyFullTurn() {
   const behavior = enemy.behavior;
 
   if (!bs.enemyHand) bs.enemyHand = [];
-  battleLog(`── ${enemy.portrait} ${enemy.name} zieht ──`, 'phase');
+  battleLog(_aiUi('ui.battle.ai.enemyDrawTurn', { portrait: enemy.portrait || '', name: enemy.name }, `-- ${enemy.portrait} ${enemy.name} draws --`), 'phase');
 
   // 1. Karten ziehen
   const drawCount = (behavior.startsWith('boss') || behavior === 'final_boss') ? 3 : 2;
@@ -122,7 +126,7 @@ function enemyFullTurn() {
   // 7. Angriff — mit Lethal Check + dynamischer Neubewertung
   aiAttack(behavior);
 
-  battleLog(`── Dein Zug ──`, 'phase');
+  battleLog(_aiUi('ui.battle.ai.yourTurn', null, '-- Your turn --'), 'phase');
 }
 
 
@@ -275,7 +279,7 @@ function _aiLethalInfo() {
 /** Führt die Lethal-Sequenz aus: erst alle Blocker eliminieren, dann Direktangriff */
 function _aiExecuteLethal(info, behavior) {
   const bs = BATTLE_STATE;
-  battleLog(`⚡ ${bs.enemy.name} sieht Lethal!`, 'damage');
+  battleLog(_aiUi('ui.battle.ai.seesLethal', { name: bs.enemy.name }, `${bs.enemy.name} sees lethal!`), 'damage');
 
   // Phase A: Blocker-Monster eliminieren
   for (const { attacker, target } of info.killers) {
@@ -292,7 +296,7 @@ function _aiExecuteLethal(info, behavior) {
     const dmg = card.atk;
     bs.playerLP -= dmg;
     animateDamageNumber('player', dmg);
-    battleLog(`💥 ${card.name} Direktangriff (Lethal) → ${dmg} Schaden`, 'damage');
+    battleLog(_aiUi('ui.battle.ai.directAttackLethal', { name: card.name, damage: dmg }, `${card.name} direct attack (lethal) -> ${dmg} damage`), 'damage');
     checkWinCondition();
   }
 }
@@ -328,7 +332,7 @@ function aiPlaySpells(behavior) {
 
   toPlay.reverse().forEach(idx => {
     const card = bs.enemyHand[idx];
-    battleLog(`🃏 ${bs.enemy.name} aktiviert: ${card.name}`, 'spell');
+    battleLog(_aiUi('ui.battle.ai.enemyActivates', { name: bs.enemy.name, card: card.name }, `${bs.enemy.name} activates: ${card.name}`), 'spell');
     applySpellEffect(card, false);
     sendToGrave(card, false);
     bs.enemyHand.splice(idx, 1);
@@ -506,10 +510,10 @@ function aiSummon(behavior, summonState) {
   const hi = bs.enemyHand.indexOf(chosen.card);
   if (hi >= 0) bs.enemyHand.splice(hi, 1);
 
-  const modeStr = placed.mode === 'defense' ? '🛡 Verteidigung' : '⚔ Angriff';
+  const modeStr = placed.mode === 'defense' ? _aiUi('ui.battle.ai.modeDefense', null, 'Defense') : _aiUi('ui.battle.ai.modeAttack', null, 'Attack');
   const raceStr = placed.race ? ` [${placed.race}]` : '';
   summonState.count++;
-  battleLog(`👹 ${bs.enemy.name} beschwört: ${placed.name}${raceStr} [${modeStr}] ATK ${placed.atk} / DEF ${placed.def}`, 'summon');
+  battleLog(_aiUi('ui.battle.ai.enemySummons', { name: bs.enemy.name, card: placed.name, race: raceStr, mode: modeStr, atk: placed.atk, def: placed.def }, `${bs.enemy.name} summons: ${placed.name}${raceStr} [${modeStr}] ATK ${placed.atk} / DEF ${placed.def}`), 'summon');
   applyOnSummonEffect(placed, false);
   if (typeof applyFieldCardToNewMonster === 'function') applyFieldCardToNewMonster(placed);
   applyFieldSynergies(false);
@@ -536,10 +540,10 @@ function aiAdaptFieldModes() {
 
     if (!wouldWin && card.mode !== 'defense') {
       card.mode = 'defense';
-      battleLog(`🛡 ${card.name} wechselt in Verteidigungsmodus (DEF ${card.def})`, 'combat');
+      battleLog(_aiUi('ui.battle.ai.switchesDefense', { name: card.name, def: card.def }, `${card.name} switches to defense mode (DEF ${card.def})`), 'combat');
     } else if (wouldWin && card.mode !== 'attack') {
       card.mode = 'attack';
-      battleLog(`⚔ ${card.name} geht in Angriffsmodus (ATK ${card.atk})`, 'combat');
+      battleLog(_aiUi('ui.battle.ai.switchesAttack', { name: card.name, atk: card.atk }, `${card.name} switches to attack mode (ATK ${card.atk})`), 'combat');
     }
   });
 }
@@ -566,7 +570,7 @@ function aiSetTraps() {
     card.hidden = true;
     bs.enemySTZone[actualSlot] = card;
     bs.enemyHand.splice(idx, 1);
-    battleLog(`🔽 ${bs.enemy.name} stellt eine Falle auf...`, 'spell');
+    battleLog(_aiUi('ui.battle.ai.setsTrap', { name: bs.enemy.name }, `${bs.enemy.name} sets a trap...`), 'spell');
   });
 }
 
@@ -623,7 +627,7 @@ function aiAttack(behavior) {
         const dmg = attacker.atk;
         bs.playerLP -= dmg;
         animateDamageNumber('player', dmg);
-        battleLog(`💥 ${attacker.name} Direktangriff → ${dmg} Schaden`, 'damage');
+        battleLog(_aiUi('ui.battle.ai.directAttack', { name: attacker.name, damage: dmg }, `${attacker.name} direct attack -> ${dmg} damage`), 'damage');
         checkWinCondition();
 
       } else {

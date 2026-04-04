@@ -23,6 +23,10 @@ const _storyProgress = {};  // { [locationId]: lineIndex }
 let _currentStoryLoc  = null;
 let _currentStoryLine = 0;
 
+function _wmUi(key, params, fallback) {
+  return typeof t === 'function' ? t(key, params, { fallbackValue: fallback }) : (fallback || key);
+}
+
 /* —�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�
    HILFSFUNKTIONEN
 —�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—� */
@@ -66,8 +70,12 @@ function _getStartLocationId(worldMap) {
 
 /** Typ-Label für UI-Anzeige. */
 function _getTypeLabel(type) {
-  const labels = { dungeon: '&#9876; Dungeon', hub: '&#127957; Lager', story: '&#128220; Geschichte' };
-  return labels[type] || type || 'Ort';
+  const labels = {
+    dungeon: _wmUi('ui.worldmap.type.dungeon', null, '&#9876; Dungeon'),
+    hub: _wmUi('ui.worldmap.type.hub', null, '&#127957; Hub'),
+    story: _wmUi('ui.worldmap.type.story', null, '&#128220; Story'),
+  };
+  return labels[type] || type || _wmUi('ui.worldmap.type.location', null, 'Location');
 }
 
 function _isDungeonReentryBlocked(locationId) {
@@ -86,19 +94,19 @@ function _markVisitedLocation(loc) {
 }
 
 function _getLocationDisplayName(loc, isCurrent, isVisited) {
-  if (!loc) return '???';
-  if (loc.type === 'dungeon' && !isVisited && !isCurrent) return '???';
-  return loc.name || 'Ort';
+  if (!loc) return _wmUi('ui.worldmap.unknown', null, '???');
+  if (loc.type === 'dungeon' && !isVisited && !isCurrent) return _wmUi('ui.worldmap.unknown', null, '???');
+  return loc.name || _wmUi('ui.worldmap.type.location', null, 'Location');
 }
 
 function _getLocationHoverText(loc, isCurrent, isVisited) {
   if (!loc) return '';
   if (loc.type === 'dungeon') {
-    if (_isDungeonReentryBlocked(loc.id)) return 'Dungeon gesperrt: Erst ein anderes Feld betreten';
-    if (!isVisited && !isCurrent) return '???\nDungeon muss betreten werden';
-    return `${loc.name}\nDungeon muss betreten werden`;
+    if (_isDungeonReentryBlocked(loc.id)) return _wmUi('ui.worldmap.hover.dungeonBlocked', null, 'Dungeon locked: enter another location first');
+    if (!isVisited && !isCurrent) return _wmUi('ui.worldmap.hover.dungeonUnknown', null, '???\nDungeon must be entered');
+    return _wmUi('ui.worldmap.hover.dungeon', { name: loc.name }, `${loc.name}\nDungeon must be entered`);
   }
-  return `${loc.name}\n${_getTypeLabel(loc.type)}`;
+  return _wmUi('ui.worldmap.hover.location', { name: loc.name, type: _getTypeLabel(loc.type) }, `${loc.name}\n${_getTypeLabel(loc.type)}`);
 }
 
 /* —�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�—�
@@ -114,7 +122,7 @@ function initWorldState() {
   const worldMap = _getWorldMapData();
 
   if (!worldMap) {
-    _showStrictWorldError('Keine Weltenkarte konfiguriert.', 'Bitte Worldmap-Daten im Editor anlegen.');
+    _showStrictWorldError(_wmUi('ui.worldmap.error.noMap', null, 'No world map configured.'), _wmUi('ui.worldmap.error.createMapInEditor', null, 'Please create world map data in the editor.'));
     return;
   }
 
@@ -142,7 +150,7 @@ function initWorldState() {
   }
 
   if (!WORLD_STATE.currentLocationId) {
-    _showStrictWorldError('Kein Start-Ort auf der Weltenkarte gefunden.', 'Es wird ein freigeschalteter Story-Ort ohne Unlock-Bedingungen benoetigt.');
+    _showStrictWorldError(_wmUi('ui.worldmap.error.noStartLocation', null, 'No start location found on the world map.'), _wmUi('ui.worldmap.error.startLocationHint', null, 'A story location without unlock conditions is required.'));
     return;
   }
 
@@ -193,7 +201,7 @@ function commitHubSave() {
     SAVE_STATE.slot.worldProgress.maxHP = RUN_STATE.maxHP;
   }
   SAVE_STATE.slot.activeRun = null;
-  if (typeof saveCurrentSlotWithFeedback === 'function') saveCurrentSlotWithFeedback('Spiel gespeichert');
+  if (typeof saveCurrentSlotWithFeedback === 'function') saveCurrentSlotWithFeedback(_wmUi('ui.worldmap.save.saved', null, 'Game saved'));
   else if (typeof saveCurrentSlot === 'function') saveCurrentSlot();
   return true;
 }
@@ -260,8 +268,8 @@ function renderWorldMap() {
     screen.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#aaa;gap:16px">
         <div style="font-size:40px">�x�</div>
-        <div>Keine Weltenkarte konfiguriert.</div>
-        <div style="font-size:12px;color:#555">Erstelle eine Weltenkarte im Editor unter dem Tab "�xR� Weltenkarte".</div>
+        <div>${_wmUi('ui.worldmap.error.noMap', null, 'No world map configured.')}</div>
+        <div style="font-size:12px;color:#555">${_wmUi('ui.worldmap.error.createMapInEditor', null, 'Create a world map in the editor.')}</div>
       </div>`;
     return;
   }
@@ -279,7 +287,7 @@ function renderWorldMap() {
   const header = document.createElement('div');
   header.className = 'wm-header';
   header.innerHTML = `
-    <div class="wm-title">&#9876; DARK DIMENSIONS</div>
+    <div class="wm-title">${_wmUi('ui.title.logo', null, '&#9876; DARK DIMENSIONS')}</div>
     <div class="wm-header-stats">
       <div class="wm-stat">
         <span class="wm-stat-icon">❤</span>
@@ -293,7 +301,7 @@ function renderWorldMap() {
         <span class="wm-stat-val">${dimensionsSeelen} DS</span>
       </div>
     </div>
-    <button class="btn-pause-hud wm-pause-btn" id="btn-wm-pause" title="Pause (ESC)">⏸</button>
+    <button class="btn-pause-hud wm-pause-btn" id="btn-wm-pause" title="${_wmUi('ui.common.pauseEsc', null, 'Pause (ESC)')}">⏸</button>
   `;
   screen.appendChild(header);
 
@@ -340,7 +348,7 @@ function renderWorldMap() {
       <div class="wm-node-pulse"></div>
       <div class="wm-node-icon">${isCompleted ? '&#10003;' : typeIcon}</div>
       <div class="wm-node-label">${displayName}</div>
-      ${loc.type === 'dungeon' ? `<div class="wm-node-note">${isReentryBlocked ? 'Gesperrt' : 'Pflicht-Dungeon'}</div>` : ''}
+      ${loc.type === 'dungeon' ? `<div class="wm-node-note">${isReentryBlocked ? _wmUi('ui.worldmap.locked', null, 'Locked') : _wmUi('ui.worldmap.requiredDungeon', null, 'Required dungeon')}</div>` : ''}
     `;
 
     /* Klick-Handler */
@@ -363,14 +371,14 @@ function renderWorldMap() {
   if (currentLoc) {
     const isCompleted = WORLD_STATE.completedLocations.has(currentLoc.id);
     const isBlocked   = currentLoc.type === 'dungeon' && _isDungeonReentryBlocked(currentLoc.id);
-    const btnLabel    = isBlocked ? 'Gesperrt' : (isCompleted ? '&larr; Erneut betreten' : '&#9654; Betreten');
+    const btnLabel    = isBlocked ? _wmUi('ui.worldmap.locked', null, 'Locked') : (isCompleted ? _wmUi('ui.worldmap.reenter', null, '&larr; Re-enter') : _wmUi('ui.worldmap.enter', null, '&#9654; Enter'));
     const btnClass    = isBlocked ? 'btn-danger' : (isCompleted ? 'btn-secondary' : 'btn-success');
     const currentName = _getLocationDisplayName(currentLoc, true, WORLD_STATE.visitedLocations.has(currentLoc.id));
 
     footer.innerHTML = `
       <div class="wm-current-info">
         <div class="wm-current-name">${currentName}</div>
-        <div class="wm-current-type">${_getTypeLabel(currentLoc.type)}${isCompleted ? ' <span class="wm-done-badge">�S Erledigt</span>' : ''}${isBlocked ? ' <span class="wm-done-badge">Warte auf anderes Feld</span>' : ''}</div>
+        <div class="wm-current-type">${_getTypeLabel(currentLoc.type)}${isCompleted ? ` <span class="wm-done-badge">${_wmUi('ui.worldmap.completed', null, 'Completed')}</span>` : ''}${isBlocked ? ` <span class="wm-done-badge">${_wmUi('ui.worldmap.waitOtherLocation', null, 'Visit another location first')}</span>` : ''}</div>
       </div>
       <button id="btn-wm-enter" class="${btnClass} wm-enter-btn" ${isBlocked ? 'disabled' : ''}>${btnLabel}</button>
     `;
@@ -445,11 +453,11 @@ function travelToLocation(locationId) {
   const isCurrent = WORLD_STATE.currentLocationId === locationId;
 
   if (!isCurrent && !isLocationAccessible(locationId)) {
-    _showStrictWorldError('Bewegung blockiert.', 'Ziel ist nicht direkt verbunden oder nicht freigeschaltet.');
+    _showStrictWorldError(_wmUi('ui.worldmap.error.travelBlocked', null, 'Travel blocked.'), _wmUi('ui.worldmap.error.targetNotConnected', null, 'Target is not directly connected or not unlocked.'));
     return;
   }
   if (loc.type === 'dungeon' && _isDungeonReentryBlocked(locationId)) {
-    _showStrictWorldError('Dungeon gesperrt.', 'Erst ein anderes Feld betreten, bevor dieser Dungeon erneut gestartet werden darf.');
+    _showStrictWorldError(_wmUi('ui.worldmap.error.dungeonLocked', null, 'Dungeon locked.'), _wmUi('ui.worldmap.error.dungeonLockedDetails', null, 'Enter another location before starting this dungeon again.'));
     return;
   }
 
@@ -479,7 +487,7 @@ function enterCurrentLocation() {
   const loc = worldMap.find(l => l.id === WORLD_STATE.currentLocationId);
   if (!loc) return;
   if (loc.type === 'dungeon' && _isDungeonReentryBlocked(loc.id)) {
-    _showStrictWorldError('Dungeon gesperrt.', 'Erst ein anderes Feld betreten, bevor dieser Dungeon erneut gestartet werden darf.');
+    _showStrictWorldError(_wmUi('ui.worldmap.error.dungeonLocked', null, 'Dungeon locked.'), _wmUi('ui.worldmap.error.dungeonLockedDetails', null, 'Enter another location before starting this dungeon again.'));
     return;
   }
 
@@ -504,9 +512,9 @@ function enterDungeon(loc) {
   const cfg       = (window.DD_CUSTOM && window.DD_CUSTOM.config) ? window.DD_CUSTOM.config : {};
   const startLP   = Number(cfg['cfg-startlp']) || 4000;
   const actId     = _getLocationActId(loc);
-  const actConfig = requireActData(actId, `Dungeon-Act fuer Ort "${loc.name || loc.id}"`);
+  const actConfig = requireActData(actId, _wmUi('ui.worldmap.error.dungeonActForLocation', { name: loc.name || loc.id }, `Dungeon act for location "${loc.name || loc.id}"`));
   if (!actConfig) {
-    _showStrictWorldError('Dungeon konnte nicht gestartet werden.', `Ort: ${loc.name || loc.id}\nAct-ID: ${String(actId)}`);
+    _showStrictWorldError(_wmUi('ui.worldmap.error.dungeonStartFailed', null, 'Dungeon could not be started.'), _wmUi('ui.worldmap.error.locationAct', { name: loc.name || loc.id, actId: String(actId) }, `Location: ${loc.name || loc.id}\nAct ID: ${String(actId)}`));
     return;
   }
   const act = (actConfig.mode === 'random' && actConfig.generatorConfig && typeof generateAct === 'function')
@@ -524,7 +532,7 @@ function enterDungeon(loc) {
 
   const startNode = Array.isArray(act.nodes) ? act.nodes.find(node => node.type === 'start') : null;
   if (!startNode || !Array.isArray(startNode.next) || startNode.next.length === 0) {
-    _showStrictWorldError('Dungeon-Act hat keinen gueltigen Startknoten.', `Act-ID: ${actId}`);
+    _showStrictWorldError(_wmUi('ui.worldmap.error.invalidStartNode', null, 'Dungeon act has no valid start node.'), _wmUi('ui.worldmap.error.actId', { actId }, `Act ID: ${actId}`));
     return;
   }
 
@@ -658,13 +666,13 @@ function _showNewLocationNotification(locations) {
   overlay.className = 'wm-unlock-overlay';
   overlay.innerHTML = `
     <div class="wm-unlock-box">
-      <div class="wm-unlock-title">&#128506; Neue Orte freigeschaltet!</div>
+      <div class="wm-unlock-title">${_wmUi('ui.worldmap.newLocationsUnlocked', null, '&#128506; New locations unlocked!')}</div>
       <div class="wm-unlock-list">
         ${locations.map(l => `<div class="wm-unlock-item">
           ${({ dungeon:'&#9876;', hub:'&#127957;', story:'&#128220;' }[l.type] || '&bull;')} ${l.name}
         </div>`).join('')}
       </div>
-      <button class="btn-success wm-unlock-close">Weiter erkunden &#9654;</button>
+      <button class="btn-success wm-unlock-close">${_wmUi('ui.worldmap.continueExploring', null, 'Continue exploring &#9654;')}</button>
     </div>
   `;
   overlay.querySelector('.wm-unlock-close').addEventListener('click', () => overlay.remove());
@@ -715,34 +723,34 @@ function showHubScreen(loc) {
         ${features.includes('rest') ? `
           <button class="hub-btn hub-btn-rest" id="btn-hub-rest" ${curHP >= maxHP ? 'disabled' : ''}>
             <div class="hub-btn-icon">&#10084;</div>
-            <div class="hub-btn-label">Rasten</div>
-            <div class="hub-btn-sub">${curHP >= maxHP ? 'LP bereits voll' : 'LP zu 30% wiederherstellen'}</div>
+            <div class="hub-btn-label">${_wmUi('ui.hub.rest', null, 'Rest')}</div>
+            <div class="hub-btn-sub">${curHP >= maxHP ? _wmUi('ui.hub.hpFull', null, 'HP already full') : _wmUi('ui.hub.restoreThirty', null, 'Restore 30% HP')}</div>
           </button>` : ''}
 
         ${features.includes('shop') ? `
           <button class="hub-btn hub-btn-shop" id="btn-hub-shop">
             <div class="hub-btn-icon">&#128722;</div>
-            <div class="hub-btn-label">Händler</div>
-            <div class="hub-btn-sub">Karten mit DS kaufen</div>
+            <div class="hub-btn-label">${_wmUi('ui.hub.shop', null, 'Shop')}</div>
+            <div class="hub-btn-sub">${_wmUi('ui.hub.shopSub', null, 'Buy cards with DS')}</div>
           </button>` : ''}
 
         ${features.includes('deck') ? `
           <button class="hub-btn hub-btn-deck" id="btn-hub-deck">
             <div class="hub-btn-icon">&#127183;</div>
-            <div class="hub-btn-label">Deck verwalten</div>
-            <div class="hub-btn-sub">Karten hinzufügen / entfernen</div>
+            <div class="hub-btn-label">${_wmUi('ui.hub.deck', null, 'Manage deck')}</div>
+            <div class="hub-btn-sub">${_wmUi('ui.hub.deckSub', null, 'Add or remove cards')}</div>
           </button>` : ''}
 
         ${features.includes('save') ? `
           <button class="hub-btn hub-btn-save" id="btn-hub-save">
             <div class="hub-btn-icon">&#128190;</div>
-            <div class="hub-btn-label">Speichern</div>
-            <div class="hub-btn-sub">Spielstand sichern</div>
+            <div class="hub-btn-label">${_wmUi('ui.hub.save', null, 'Save')}</div>
+            <div class="hub-btn-sub">${_wmUi('ui.hub.saveSub', null, 'Store progress')}</div>
           </button>` : ''}
       </div>
 
       <div class="hub-footer">
-        <button class="btn-secondary hub-back-btn" id="btn-hub-back">&larr; Zur&uuml;ck zur Weltenkarte</button>
+        <button class="btn-secondary hub-back-btn" id="btn-hub-back">${_wmUi('ui.hub.backToWorldMap', null, '&larr; Back to world map')}</button>
       </div>
     </div>
   `;
@@ -787,8 +795,8 @@ function _hubRest(screen) {
   const btn = screen ? screen.querySelector('#btn-hub-rest') : null;
   if (btn) {
     btn.disabled = true;
-    btn.querySelector('.hub-btn-sub').textContent = `+${gained} LP -> jetzt ${RUN_STATE.playerHP} / ${maxHP}`;
-    btn.querySelector('.hub-btn-icon').textContent = 'OK';
+    btn.querySelector('.hub-btn-sub').textContent = _wmUi('ui.hub.restResult', { gained, current: RUN_STATE.playerHP, max: maxHP }, `+${gained} HP -> now ${RUN_STATE.playerHP} / ${maxHP}`);
+    btn.querySelector('.hub-btn-icon').textContent = _wmUi('ui.common.okShort', null, 'OK');
   }
   /* HP-Anzeige aktualisieren */
   const statsEl = screen ? screen.querySelector('.hub-stats') : null;
@@ -840,15 +848,15 @@ function _renderStoryLine() {
         <div class="story-dialog-box">
           ${line && line.speaker ? `<div class="story-speaker">${line.speaker}</div>` : ''}
           <div class="story-text" id="story-text-content">
-            ${line ? line.text || '...' : '<em style="color:#444">Keine Story-Zeilen vorhanden.</em>'}
+            ${line ? line.text || '...' : `<em style="color:#444">${_wmUi('ui.story.none', null, 'No story lines available.')}</em>`}
           </div>
         </div>
       </div>
 
       <div class="story-footer">
-        <button class="btn-secondary story-skip-btn" id="btn-story-skip">&olarr; &Uuml;berspringen</button>
+        <button class="btn-secondary story-skip-btn" id="btn-story-skip">${_wmUi('ui.story.skip', null, '&olarr; Skip')}</button>
         <button class="btn-success story-next-btn" id="btn-story-next">
-          ${isLast ? '&#10003; Abschlie&szlig;en' : 'Weiter &#9654;'}
+          ${isLast ? _wmUi('ui.story.finish', null, '&#10003; Finish') : _wmUi('ui.story.next', null, 'Next &#9654;')}
         </button>
       </div>
     </div>
