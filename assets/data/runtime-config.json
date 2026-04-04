@@ -1,7 +1,7 @@
 {
   "version": "runtime-config-v2",
   "generatedFrom": "editor-export",
-  "generatedAt": "2026-04-04T09:31:19.813Z",
+  "generatedAt": "2026-04-04T10:32:25.124Z",
   "cards": [
     {
       "id": "kobold_jung",
@@ -4218,7 +4218,8 @@
       "y": 13.542408828737335,
       "connections": [
         "loc_1775231331878",
-        "loc_1775250693168"
+        "loc_1775250693168",
+        "loc_1775298719477"
       ],
       "unlockConditions": [],
       "actId": "act_0",
@@ -4238,6 +4239,28 @@
           "text": ""
         }
       ],
+      "description": "",
+      "bgm": "",
+      "battleBgm": ""
+    },
+    {
+      "id": "loc_1775298719477",
+      "name": "publish test",
+      "type": "dungeon",
+      "x": 19.585252275784466,
+      "y": 14.255167188144563,
+      "connections": [
+        "loc_1775268650512"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
       "description": "",
       "bgm": "",
       "battleBgm": ""
