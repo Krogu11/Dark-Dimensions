@@ -521,10 +521,27 @@
         : [];
     }
 
-    function applyConfigFallbacks(ddCustom) {
+    function applyRuntimeFallbacks(ddCustom, fileData) {
       const next = isPlainObject(ddCustom) ? ddCustom : {};
+      const fileCfg = isPlainObject(fileData?.config) ? fileData.config : {};
+
+      if ((!Array.isArray(next.worldMap) || next.worldMap.length === 0) && Array.isArray(fileData?.worldMap) && fileData.worldMap.length > 0) {
+        next.worldMap = cloneValue(fileData.worldMap);
+      }
+
+      if ((!Array.isArray(next.acts) || next.acts.length === 0) && Array.isArray(fileData?.acts) && fileData.acts.length > 0) {
+        next.acts = cloneValue(fileData.acts);
+      }
+
+      if ((!Array.isArray(next.starterDeck) || next.starterDeck.length === 0) && Array.isArray(fileData?.starterDeck) && fileData.starterDeck.length > 0) {
+        next.starterDeck = cloneValue(fileData.starterDeck);
+      }
+
       next.config = isPlainObject(next.config) ? next.config : {};
       Object.keys(FALLBACK_PLAYLISTS).forEach(key => {
+        if (normalizePlaylist(next.config[key]).length === 0 && normalizePlaylist(fileCfg[key]).length > 0) {
+          next.config[key] = cloneValue(fileCfg[key]);
+        }
         if (normalizePlaylist(next.config[key]).length === 0) {
           next.config[key] = [...FALLBACK_PLAYLISTS[key]];
         }
@@ -534,7 +551,10 @@
 
     const fileConfig = loadRuntimeConfigFile();
     const localOverrides = readLocalOverrides();
-    window.DD_CUSTOM = applyConfigFallbacks(mergeRuntimeData(fileConfig.data || {}, localOverrides || {}));
+    window.DD_CUSTOM = applyRuntimeFallbacks(
+      mergeRuntimeData(fileConfig.data || {}, localOverrides || {}),
+      fileConfig.data || {}
+    );
 
     window.__DD_RUNTIME_BOOT = {
       runtimeConfigPath: RUNTIME_CONFIG_PATH,
@@ -567,6 +587,8 @@
           campaign: campaignPlaylist.length,
           story: storyPlaylist.length,
         },
+        hasStoredWorldMapOverride: Array.isArray(localOverrides?.worldMap),
+        storedWorldMapCount: Array.isArray(localOverrides?.worldMap) ? localOverrides.worldMap.length : null,
         menuPlaylist,
       };
 
