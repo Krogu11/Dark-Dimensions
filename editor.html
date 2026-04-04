@@ -1044,19 +1044,19 @@ function renderCardForm(card) {
   const hasArt  = !!_editingCardArt;
   document.getElementById('card-form-col').innerHTML = `
     <div class="field-row">
-      <div class="field-group"><label>ID <span class="info-hint" title="Interne Kennung — wird im Code und für Deck-Definitionen verwendet">i</span></label>
+      <div class="field-group"><label>${_et('ui.editor.form.id', null, 'ID')} <span class="info-hint" title="${esc(_et('ui.editor.cards.idHint', null, 'Internal identifier used in code and deck definitions.'))}">i</span></label>
         <input id="cf-id" value="${esc(card.id)}" oninput="updatePreview()"></div>
-      <div class="field-group" style="flex:2"><label>Name</label>
+      <div class="field-group" style="flex:2"><label>${_et('ui.editor.form.name', null, 'Name')}</label>
         <input id="cf-name" value="${esc(card.name)}" oninput="updatePreview()"></div>
     </div>
     <div class="field-row">
-      <div class="field-group"><label>Typ</label>
+      <div class="field-group"><label>${_et('ui.editor.form.type', null, 'Type')}</label>
         <select id="cf-type" onchange="onTypeChange();updatePreview()">
-          ${['monster','spell','trap','fusion','field'].map(t=>`<option value="${t}"${card.type===t?' selected':''}>${{monster:'⚔ Monster',spell:'✨ Zauber',trap:'🪤 Falle',fusion:'⚗ Fusion',field:'🗺 Spielfeld'}[t]}</option>`).join('')}
+          ${['monster','spell','trap','fusion','field'].map(t=>`<option value="${t}"${card.type===t?' selected':''}>${_editorTypeLabel(t)}</option>`).join('')}
         </select></div>
-      <div class="field-group"><label>Seltenheit</label>
+      <div class="field-group"><label>${_et('ui.editor.form.rarity', null, 'Rarity')}</label>
         <select id="cf-rarity" onchange="updatePreview()">
-          ${['common','uncommon','rare','epic','legendary'].map(r=>`<option value="${r}"${card.rarity===r?' selected':''}>${r.charAt(0).toUpperCase()+r.slice(1)}</option>`).join('')}
+          ${['common','uncommon','rare','epic','legendary'].map(r=>`<option value="${r}"${card.rarity===r?' selected':''}>${_editorRarityLabel(r)}</option>`).join('')}
         </select></div>
     </div>
     <div class="field-row" id="cf-stats-row" style="${(card.type==='spell'||card.type==='trap'||card.type==='field')?'opacity:.4;pointer-events:none':''}">
@@ -1064,40 +1064,39 @@ function renderCardForm(card) {
       <div class="field-group"><label>DEF</label><input id="cf-def" type="number" value="${card.def||0}" oninput="updatePreview()"></div>
     </div>
     ${card.type==='field'?`<div style="font-size:10px;color:var(--muted);padding:6px 10px;background:rgba(130,80,255,.12);border:1px solid rgba(130,80,255,.3);border-radius:6px">
-      🗺 <b>Spielfeld-Karte</b> — Das hochgeladene Bild (unten) wird gleichzeitig als Kampf-Hintergrund verwendet.
-      Die Effekte gelten <b>global für beide Seiten</b>.
+      ${_et('ui.editor.cards.fieldCardHint', null, 'Field card: the uploaded image is also used as the battle background, and its effects apply globally to both sides.')}
     </div>`:''}
     <div class="field-group" id="cf-race-row" style="${(card.type==='spell'||card.type==='trap'||card.type==='field')?'display:none':''}">
-      <label>Rasse</label>
+      <label>${_et('ui.editor.form.race', null, 'Race')}</label>
       <select id="cf-race" onchange="updatePreview()">
         ${['','Kobold','Ork','Dämon','Drache','Untoter','Mensch','Bestie','Maschine','Schattenwesen','Elementar']
-          .map(r=>`<option value="${r}"${(card.race||'')===r?' selected':''}>${r||'— (keine Rasse)'}</option>`).join('')}
+          .map(r=>`<option value="${r}"${(card.race||'')===r?' selected':''}>${r?translateRaceId(normalizeRaceId(r)):_et('ui.editor.cards.noRace', null, '— No race —')}</option>`).join('')}
       </select></div>
     <div class="field-group">
-      <label>${card.type==='field'?'Spielfeld-Effekte':'Effekte'} <span style="font-size:10px;color:var(--muted)">(mehrere möglich)</span></label>
+      <label>${card.type==='field'?_et('ui.editor.cards.fieldEffects', null, 'Field effects'):_et('ui.editor.cards.effects', null, 'Effects')} <span style="font-size:10px;color:var(--muted)">(${_et('ui.editor.common.multiplePossible', null, 'multiple possible')})</span></label>
       <div id="cf-effects-builder"></div>
     </div>
-    <div class="field-group"><label>Flavor-Text</label>
+    <div class="field-group"><label>${_et('ui.editor.cards.flavor', null, 'Flavor text')}</label>
       <input id="cf-flavor" value="${esc(card.flavor||'')}" oninput="updatePreview()"></div>
 
     <div class="field-group">
-      <label>${card.type==='field'?'🖼 Bild (Karten-Art + Kampf-Hintergrund)':'🖼 Karten-Artwork'}</label>
+      <label>${card.type==='field'?_et('ui.editor.cards.fieldImage', null, '🖼 Image (card art + battle background)'):_et('ui.editor.cards.artwork', null, '🖼 Card artwork')}</label>
       <div class="cf-art-wrap">
         <div class="cf-art-thumb" id="cf-art-thumb">
           ${hasArt?`<img src="${card.image}">`:'<span style="font-size:24px;color:var(--muted)">🖼</span>'}
         </div>
         <div style="flex:1;display:flex;flex-direction:column;gap:6px">
-          <label for="cf-art-upload" class="btn-sm" style="cursor:pointer;text-align:center">📁 Bild hochladen (PNG/JPG)</label>
+          <label for="cf-art-upload" class="btn-sm" style="cursor:pointer;text-align:center">${_et('ui.editor.cards.uploadImage', null, '📁 Upload image (PNG/JPG)')}</label>
           <input type="file" id="cf-art-upload" accept="image/*" style="display:none" onchange="uploadCardArt(this)">
-          ${hasArt?`<button class="btn-danger-sm" onclick="clearCardArt()">✕ Artwork entfernen</button>`:''}
-          <div style="font-size:10px;color:var(--muted)">${card.type==='field'?'Wird als Karten-Bild UND Kampf-Hintergrund verwendet.':'Wird als Base64 in der Karte gespeichert.'}</div>
+          ${hasArt?`<button class="btn-danger-sm" onclick="clearCardArt()">${_et('ui.editor.cards.removeArtwork', null, '✕ Remove artwork')}</button>`:''}
+          <div style="font-size:10px;color:var(--muted)">${card.type==='field'?_et('ui.editor.cards.fieldImageNote', null, 'Used as both card image and battle background.'):_et('ui.editor.cards.base64Note', null, 'Stored as Base64 inside the card data.')}</div>
         </div>
       </div>
     </div>
 
     <div style="display:flex;gap:8px;padding-top:4px">
-      <button class="btn-save" onclick="saveCard()">✓ Speichern</button>
-      <button class="btn-danger-sm" onclick="deleteCard()">🗑 Löschen</button>
+      <button class="btn-save" onclick="saveCard()">${_et('ui.common.save', null, 'Save')}</button>
+      <button class="btn-danger-sm" onclick="deleteCard()">${_et('ui.common.delete', null, 'Delete')}</button>
     </div>`;
   // Effekt-Builder initialisieren (nach innerHTML-Render)
   renderEffectBuilder(card.type);
@@ -1172,7 +1171,7 @@ function updatePreview() {
   el.innerHTML = `
     ${_editingCardArt?`<img class="pc-art" src="${_editingCardArt}">`:''}
     <div class="pc-name" style="color:${rc}">${esc(name)||'—'}</div>
-    <div class="pc-type">${type.toUpperCase()}${race?` · <span style="color:#7ac8ff;font-size:10px">${race}</span>`:''}</div>
+    <div class="pc-type">${_editorTypeLabel(type).toUpperCase()}${race?` · <span style="color:#7ac8ff;font-size:10px">${translateRaceId(normalizeRaceId(race))}</span>`:''}</div>
     ${isMonster?`<div class="pc-stats"><span>ATK ${atk}</span><span>DEF ${def}</span></div>`:''}
     ${effLabels?`<div class="pc-effect">${effLabels}</div>`:''}
     ${flavor?`<div class="pc-flavor">${esc(flavor)}</div>`:''}`;
@@ -1270,26 +1269,26 @@ function renderEnemyForm(enemy) {
 
   document.getElementById('enemy-form-col').innerHTML = `
     <div class="field-row">
-      <div class="field-group"><label>ID</label><input id="ef-id" value="${esc(enemy.id)}"></div>
-      <div class="field-group" style="flex:2"><label>Name</label><input id="ef-name" value="${esc(enemy.name)}"></div>
+      <div class="field-group"><label>${_et('ui.editor.form.id', null, 'ID')}</label><input id="ef-id" value="${esc(enemy.id)}"></div>
+      <div class="field-group" style="flex:2"><label>${_et('ui.editor.form.name', null, 'Name')}</label><input id="ef-name" value="${esc(enemy.name)}"></div>
     </div>
-    <div class="field-group"><label>Titel</label><input id="ef-title" value="${esc(enemy.title||'')}"></div>
+    <div class="field-group"><label>${_et('ui.editor.enemies.title', null, 'Title')}</label><input id="ef-title" value="${esc(enemy.title||'')}"></div>
 
     <div class="field-group">
-      <label>Portrait</label>
+      <label>${_et('ui.editor.enemies.portrait', null, 'Portrait')}</label>
       <div class="portrait-box">
         <div class="portrait-preview" id="portrait-preview-box">${portraitPreviewHtml}</div>
         <div style="display:flex;flex-direction:column;gap:6px;flex:1">
           <div style="display:flex;gap:6px">
-            <input id="ef-portrait" value="${esc(!isImg?(enemy.portrait||''):'')}" placeholder="Emoji z.B. 👹" oninput="updatePortraitPreview()"
+            <input id="ef-portrait" value="${esc(!isImg?(enemy.portrait||''):'')}" placeholder="${esc(_et('ui.editor.enemies.portraitPlaceholder', null, 'Emoji e.g. 👹'))}" oninput="updatePortraitPreview()"
               style="flex:1;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)">
           </div>
           <div style="display:flex;gap:6px;align-items:center">
-            <label for="portrait-upload" class="btn-sm" style="cursor:pointer">🖼 Bild hochladen</label>
+            <label for="portrait-upload" class="btn-sm" style="cursor:pointer">${_et('ui.editor.enemies.uploadPortrait', null, '🖼 Upload image')}</label>
             <input type="file" id="portrait-upload" accept="image/*" style="display:none" onchange="uploadPortrait(this)">
-            ${isImg?`<button class="btn-danger-sm" onclick="clearPortrait()">✕ Entfernen</button>`:''}
+            ${isImg?`<button class="btn-danger-sm" onclick="clearPortrait()">${_et('ui.common.remove', null, 'Remove')}</button>`:''}
           </div>
-          <div style="font-size:10px;color:var(--muted)">Emoji-Text ODER Bild (PNG/JPG, wird als Base64 gespeichert)</div>
+          <div style="font-size:10px;color:var(--muted)">${_et('ui.editor.enemies.portraitNote', null, 'Emoji text or image (PNG/JPG, stored as Base64)')}</div>
         </div>
       </div>
     </div>
@@ -1298,69 +1297,69 @@ function renderEnemyForm(enemy) {
       <div class="field-group"><label>LP</label><input id="ef-hp" type="number" value="${enemy.hp||3000}"></div>
     </div>
     <div class="field-row">
-      <div class="field-group"><label>Behavior</label>
+      <div class="field-group"><label>${_et('ui.editor.enemies.behavior', null, 'Behavior')}</label>
         <select id="ef-behavior">${behaviors.map(b=>`<option value="${b}"${enemy.behavior===b?' selected':''}>${b}</option>`).join('')}</select></div>
-      <div class="field-group"><label>Schwierigkeit (1-6)</label><input id="ef-diff" type="number" min="1" max="6" value="${enemy.difficulty||1}"></div>
+      <div class="field-group"><label>${_et('ui.editor.enemies.difficulty', null, 'Difficulty (1-6)')}</label><input id="ef-diff" type="number" min="1" max="6" value="${enemy.difficulty||1}"></div>
     </div>
     <div class="field-row">
-      <div class="field-group"><label>Field Bonus ATK</label><input id="ef-bonus" type="number" value="${enemy.fieldBonus||0}"></div>
-      <div class="field-group"><label>Max Beschwörungen</label><input id="ef-summons" type="number" min="1" max="5" value="${enemy.maxSummons||1}"></div>
-      <div class="field-group"><label>Multi-Angriff</label>
-        <select id="ef-multi"><option value="false"${!enemy.multiAttack?' selected':''}>Nein</option><option value="true"${enemy.multiAttack?' selected':''}>Ja</option></select></div>
+      <div class="field-group"><label>${_et('ui.editor.enemies.fieldBonusAtk', null, 'Field Bonus ATK')}</label><input id="ef-bonus" type="number" value="${enemy.fieldBonus||0}"></div>
+      <div class="field-group"><label>${_et('ui.editor.enemies.maxSummons', null, 'Max summons')}</label><input id="ef-summons" type="number" min="1" max="5" value="${enemy.maxSummons||1}"></div>
+      <div class="field-group"><label>${_et('ui.editor.enemies.multiAttack', null, 'Multi attack')}</label>
+        <select id="ef-multi"><option value="false"${!enemy.multiAttack?' selected':''}>${_et('ui.common.no', null, 'No')}</option><option value="true"${enemy.multiAttack?' selected':''}>${_et('ui.common.yes', null, 'Yes')}</option></select></div>
     </div>
     <div class="field-group">
-      <label>⚔ Startfeld
-        <span class="info-hint" title="Diese Monster stehen beim Kampfbeginn bereits auf dem Feld des Gegners (max. 5)">i</span>
+      <label>${_et('ui.editor.enemies.startField', null, '⚔ Starting field')}
+        <span class="info-hint" title="${esc(_et('ui.editor.enemies.startFieldHint', null, 'These monsters start on the enemy field at battle start (max. 5).'))}">i</span>
       </label>
       <div class="chip-area" id="ef-field-chips">
         ${(enemy.startField||[]).map((id,i)=>{const c=editorCards.find(x=>x.id===id);return`<span class="chip chip-monster">${c?c.name:id}<span class="chip-del" onclick="removeFieldCard(${i})">×</span></span>`;}).join('')}
       </div>
       <div class="chip-picker-row">
-        <input class="chip-search" id="ef-field-search" placeholder="Monster suchen…" oninput="filterFieldSearch(this.value)">
+        <input class="chip-search" id="ef-field-search" placeholder="${esc(_et('ui.editor.enemies.searchMonster', null, 'Search monster...'))}" oninput="filterFieldSearch(this.value)">
         <select id="ef-field-select" style="flex:1;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px">
           ${editorCards.filter(c=>c.type==='monster'||c.type==='fusion').map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
         </select>
-        <button class="btn-sm" onclick="addFieldCard()" style="white-space:nowrap">+ Hinzufügen</button>
+        <button class="btn-sm" onclick="addFieldCard()" style="white-space:nowrap">${_et('ui.common.add', null, '+ Add')}</button>
       </div>
     </div>
     <div class="field-group">
-      <label>🪤 Startfallen
-        <span class="info-hint" title="Diese Fallen liegen beim Kampfbeginn bereits verdeckt in der Spell/Trap-Zone des Gegners (max. 3)">i</span>
+      <label>${_et('ui.editor.enemies.startTraps', null, '🪤 Starting traps')}
+        <span class="info-hint" title="${esc(_et('ui.editor.enemies.startTrapsHint', null, 'These traps start face-down in the enemy spell/trap zone (max. 3).'))}">i</span>
       </label>
       <div class="chip-area" id="ef-trap-chips">
         ${(enemy.startTraps||[]).map((id,i)=>{const c=editorCards.find(x=>x.id===id);return`<span class="chip chip-trap">${c?c.name:id}<span class="chip-del" onclick="removeTrapCard(${i})">×</span></span>`;}).join('')}
       </div>
       <div class="chip-picker-row">
-        <input class="chip-search" id="ef-trap-search" placeholder="Falle suchen…" oninput="filterTrapSearch(this.value)">
+        <input class="chip-search" id="ef-trap-search" placeholder="${esc(_et('ui.editor.enemies.searchTrap', null, 'Search trap...'))}" oninput="filterTrapSearch(this.value)">
         <select id="ef-trap-select" style="flex:1;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px">
           ${editorCards.filter(c=>c.type==='trap'||c.type==='spell').map(c=>`<option value="${c.id}">${esc(c.name)} (${c.type})</option>`).join('')}
         </select>
-        <button class="btn-sm" onclick="addTrapCard()" style="white-space:nowrap">+ Hinzufügen</button>
+        <button class="btn-sm" onclick="addTrapCard()" style="white-space:nowrap">${_et('ui.common.add', null, '+ Add')}</button>
       </div>
     </div>
     <div class="field-group">
-      <label>🗺 Start-Spielfeldkarte
-        <span class="info-hint" title="Diese Spielfeldkarte wird beim Kampfbeginn automatisch für den Gegner ausgelegt. Sie beeinflusst BEIDE Seiten.">i</span>
+      <label>${_et('ui.editor.enemies.startFieldCard', null, '🗺 Starting field card')}
+        <span class="info-hint" title="${esc(_et('ui.editor.enemies.startFieldCardHint', null, 'This field card is activated automatically at battle start and affects both sides.'))}">i</span>
       </label>
       <select id="ef-startfieldcard" style="padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px">
-        <option value="">— Kein Spielfeld —</option>
-        ${editorCards.filter(c=>c.type==='field').map(fc=>`<option value="${fc.id}" ${(enemy.startFieldCard===fc.id)?'selected':''}>${fc.name} (${fc.rarity})</option>`).join('')}
+        <option value="">${_et('ui.editor.field.none', null, '— No Field —')}</option>
+        ${editorCards.filter(c=>c.type==='field').map(fc=>`<option value="${fc.id}" ${(enemy.startFieldCard===fc.id)?'selected':''}>${fc.name} (${_editorRarityLabel(fc.rarity)})</option>`).join('')}
       </select>
     </div>
-    <div class="field-group"><label>Starthand (Anzahl)</label><input id="ef-starthand" type="number" min="0" max="10" value="${enemy.startHandCount||3}"></div>
+    <div class="field-group"><label>${_et('ui.editor.enemies.startHandCount', null, 'Starting hand (count)')}</label><input id="ef-starthand" type="number" min="0" max="10" value="${enemy.startHandCount||3}"></div>
     <div class="field-group">
-      <label>Deck (${(enemy.deckIds||[]).length} Karten — × zum Entfernen)</label>
+      <label>${_et('ui.editor.enemies.deckCount', { count: (enemy.deckIds||[]).length }, `Deck (${(enemy.deckIds||[]).length} cards — × to remove)`)}</label>
       <div id="ef-deck-display" style="padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;min-height:36px">${deckHtml}</div>
     </div>
     <div style="display:flex;gap:8px">
       <select id="ef-deck-add" style="flex:1;padding:5px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)">
-        ${editorCards.filter(c=>c.type!=='fusion').map(c=>`<option value="${c.id}">${c.name} (${c.type})</option>`).join('')}
+        ${editorCards.filter(c=>c.type!=='fusion').map(c=>`<option value="${c.id}">${c.name} (${_editorTypeLabel(c.type)})</option>`).join('')}
       </select>
-      <button class="btn-save" onclick="addDeckCard()">+ Hinzufügen</button>
+      <button class="btn-save" onclick="addDeckCard()">${_et('ui.common.add', null, '+ Add')}</button>
     </div>
     <div style="display:flex;gap:8px">
-      <button class="btn-save" onclick="saveEnemy()">✓ Gegner speichern</button>
-      <button class="btn-danger-sm" onclick="deleteEnemy()">🗑 Löschen</button>
+      <button class="btn-save" onclick="saveEnemy()">${_et('ui.editor.enemies.save', null, '✓ Save enemy')}</button>
+      <button class="btn-danger-sm" onclick="deleteEnemy()">${_et('ui.common.delete', null, 'Delete')}</button>
     </div>
   `;
 }
@@ -2602,7 +2601,7 @@ function renderWmDetail(locId) {
 
   if (!locId) {
     panel.innerHTML = `<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px 0">
-      Wähle einen Ort auf der Karte aus, um ihn zu bearbeiten.
+      ${_et('ui.editor.worldmap.selectLocation', null, 'Select a location on the map to edit it.')}
     </div>`;
     return;
   }
@@ -2616,10 +2615,10 @@ function renderWmDetail(locId) {
 
   /* Unlock-Bedingungen */
   const condTypes = [
-    { v:'locationCompleted', l:'Ort abgeschlossen' },
-    { v:'locationVisited',   l:'Ort besucht' },
-    { v:'cardOwned',         l:'Karte besitzen' },
-    { v:'always',            l:'Immer (kein Lock)' },
+    { v:'locationCompleted', l:_et('ui.editor.worldmap.condition.locationCompleted', null, 'Location completed') },
+    { v:'locationVisited',   l:_et('ui.editor.worldmap.condition.locationVisited', null, 'Location visited') },
+    { v:'cardOwned',         l:_et('ui.editor.worldmap.condition.cardOwned', null, 'Card owned') },
+    { v:'always',            l:_et('ui.editor.worldmap.condition.always', null, 'Always') },
   ];
 
   /* Story Lines */
@@ -2630,42 +2629,42 @@ function renderWmDetail(locId) {
 
       <!-- Kopfzeile -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border)">
-        <span style="font-weight:700;color:var(--gold);font-size:12px">✏ ORT BEARBEITEN</span>
-        <button class="btn-danger-sm" onclick="deleteWmLocation('${esc(locId)}')">🗑 Löschen</button>
+        <span style="font-weight:700;color:var(--gold);font-size:12px">${_et('ui.editor.worldmap.editLocation', null, '✏ Edit location')}</span>
+        <button class="btn-danger-sm" onclick="deleteWmLocation('${esc(locId)}')">${_et('ui.common.delete', null, 'Delete')}</button>
       </div>
 
       <!-- ID (readonly) -->
       <div class="field-group">
-        <label>ID</label>
+        <label>${_et('ui.editor.form.id', null, 'ID')}</label>
         <input type="text" value="${esc(loc.id)}" readonly style="opacity:.5;cursor:not-allowed">
       </div>
 
       <!-- Name -->
       <div class="field-group">
-        <label>Name</label>
+        <label>${_et('ui.editor.form.name', null, 'Name')}</label>
         <input type="text" id="wm-f-name" value="${esc(loc.name||'')}" oninput="wmUpdate('name',this.value)">
       </div>
 
       <!-- Typ -->
       <div class="field-group">
-        <label>Typ</label>
+        <label>${_et('ui.editor.form.type', null, 'Type')}</label>
         <select id="wm-f-type" onchange="wmUpdate('type',this.value)">
-          <option value="dungeon" ${loc.type==='dungeon'?'selected':''}>⚔ Dungeon (Kämpfe)</option>
-          <option value="hub"     ${loc.type==='hub'    ?'selected':''}>🏕 Lager (Rest / Shop)</option>
-          <option value="story"   ${loc.type==='story'  ?'selected':''}>📜 Geschichte (Dialog)</option>
+          <option value="dungeon" ${loc.type==='dungeon'?'selected':''}>${_et('ui.editor.worldmap.type.dungeon', null, '⚔ Dungeon')}</option>
+          <option value="hub"     ${loc.type==='hub'    ?'selected':''}>${_et('ui.editor.worldmap.type.hub', null, '🏕 Hub')}</option>
+          <option value="story"   ${loc.type==='story'  ?'selected':''}>${_et('ui.editor.worldmap.type.story', null, '📜 Story')}</option>
         </select>
       </div>
 
       <!-- Beschreibung -->
       <div class="field-group">
-        <label>Beschreibung (Untertitel)</label>
+        <label>${_et('ui.editor.worldmap.description', null, 'Description (subtitle)')}</label>
         <input type="text" value="${esc(loc.description||'')}" oninput="wmUpdate('description',this.value)">
       </div>
 
       <!-- Dungeon: Act-ID -->
       ${loc.type==='dungeon' ? `
       <div class="field-group">
-        <label>Act (welcher Dungeon geladen wird)</label>
+        <label>${_et('ui.editor.worldmap.actId', null, 'Act (which dungeon gets loaded)')}</label>
         <select id="wm-f-actid" onchange="wmUpdate('actId',this.value)">
           ${editorActs.map(a=>`<option value="${esc(editorActId(a))}" ${loc.actId===editorActId(a)?'selected':''}>${esc(a.actName||a.name||editorActId(a))} (${esc(editorActId(a))})</option>`).join('')}
         </select>
@@ -2674,9 +2673,9 @@ function renderWmDetail(locId) {
       <!-- Hub: verfügbare Features -->
       ${loc.type==='hub' ? `
       <div class="field-group">
-        <label>Hub-Features (Mehrfachauswahl)</label>
+        <label>${_et('ui.editor.worldmap.hubFeatures', null, 'Hub features')}</label>
         <div style="display:flex;flex-wrap:wrap;gap:6px;padding:6px;background:var(--bg);border:1px solid var(--border);border-radius:4px">
-          ${[['rest','💤 Rasten'],['shop','🛒 Shop'],['deck','🃏 Deck-Editor'],['save','💾 Speichern']].map(([v,l])=>`
+          ${[['rest',_et('ui.editor.worldmap.feature.rest', null, '💤 Rest')],['shop',_et('ui.editor.worldmap.feature.shop', null, '🛒 Shop')],['deck',_et('ui.editor.worldmap.feature.deck', null, '🃏 Deck Editor')],['save',_et('ui.editor.worldmap.feature.save', null, '💾 Save')]].map(([v,l])=>`
             <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px">
               <input type="checkbox" value="${v}" ${(loc.hubFeatures||[]).includes(v)?'checked':''}
                 onchange="wmUpdateFeature('${v}',this.checked)"> ${l}
@@ -2687,28 +2686,28 @@ function renderWmDetail(locId) {
       <!-- Story: Zeilen-Editor -->
       ${loc.type==='story' ? `
       <div class="field-group">
-        <label>Story-Zeilen</label>
+        <label>${_et('ui.editor.worldmap.storyLines', null, 'Story lines')}</label>
         <div id="wm-story-lines" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px">
           ${storyLines.map((sl,i)=>`
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:6px;display:flex;flex-direction:column;gap:4px">
               <div style="display:flex;gap:6px">
-                <input type="text" placeholder="Sprecher" value="${esc(sl.speaker||'')}" style="flex:1"
+                <input type="text" placeholder="${esc(_et('ui.editor.worldmap.speaker', null, 'Speaker'))}" value="${esc(sl.speaker||'')}" style="flex:1"
                   oninput="wmUpdateStoryLine(${i},'speaker',this.value)">
                 <button class="btn-danger-sm" onclick="wmDeleteStoryLine(${i})">✕</button>
               </div>
-              <textarea placeholder="Text…" rows="2" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:4px;color:var(--text);font-size:12px;resize:vertical"
+              <textarea placeholder="${esc(_et('ui.editor.worldmap.text', null, 'Text...'))}" rows="2" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:4px;color:var(--text);font-size:12px;resize:vertical"
                 oninput="wmUpdateStoryLine(${i},'text',this.value)">${esc(sl.text||'')}</textarea>
             </div>`).join('')}
         </div>
-        <button class="btn-sm" style="margin-top:6px" onclick="wmAddStoryLine()">+ Zeile hinzufügen</button>
+        <button class="btn-sm" style="margin-top:6px" onclick="wmAddStoryLine()">${_et('ui.editor.worldmap.addLine', null, '+ Add line')}</button>
       </div>` : ''}
 
       <!-- Verbindungen -->
       <div class="field-group">
-        <label>Verbindungen (erreichbare Orte)</label>
+        <label>${_et('ui.editor.worldmap.connections', null, 'Connections')}</label>
         <div style="display:flex;flex-direction:column;gap:4px;padding:6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;max-height:120px;overflow-y:auto">
           ${otherLocs.length === 0
-            ? '<div style="color:var(--muted);font-size:11px">Noch keine anderen Orte</div>'
+            ? `<div style="color:var(--muted);font-size:11px">${_et('ui.editor.worldmap.noOtherLocations', null, 'No other locations yet')}</div>`
             : otherLocs.map(ol=>`
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px">
               <input type="checkbox" value="${esc(ol.id)}" ${connectedIds.has(ol.id)?'checked':''}
@@ -2721,7 +2720,7 @@ function renderWmDetail(locId) {
 
       <!-- Freischalt-Bedingungen -->
       <div class="field-group">
-        <label>Freischalt-Bedingungen</label>
+        <label>${_et('ui.editor.worldmap.unlockConditions', null, 'Unlock conditions')}</label>
         <div id="wm-unlock-conds" style="display:flex;flex-direction:column;gap:6px;max-height:150px;overflow-y:auto;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px">
           ${(loc.unlockConditions||[]).map((cond,i)=>`
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:6px;display:flex;gap:6px;align-items:center">
@@ -2729,24 +2728,24 @@ function renderWmDetail(locId) {
                 ${condTypes.map(ct=>`<option value="${ct.v}" ${cond.type===ct.v?'selected':''}>${ct.l}</option>`).join('')}
               </select>
               ${cond.type!=='always' ? `
-                <input type="text" placeholder="${cond.type==='cardOwned'?'Karten-ID':'Ort-ID'}"
+                <input type="text" placeholder="${cond.type==='cardOwned'?_et('ui.editor.worldmap.cardId', null, 'Card ID'):_et('ui.editor.worldmap.locationId', null, 'Location ID')}"
                   value="${esc(cond.locationId||cond.cardId||'')}" style="flex:1"
                   oninput="wmUpdateCond(${i},'${cond.type==='cardOwned'?'cardId':'locationId'}',this.value)">
               ` : ''}
               <button class="btn-danger-sm" onclick="wmDeleteCond(${i})">✕</button>
             </div>`).join('')}
         </div>
-        <button class="btn-sm" style="margin-top:6px" onclick="wmAddCond()">+ Bedingung</button>
+        <button class="btn-sm" style="margin-top:6px" onclick="wmAddCond()">${_et('ui.editor.worldmap.addCondition', null, '+ Add condition')}</button>
       </div>
 
       <!-- Position (numerisch) -->
       <div class="field-row">
         <div class="field-group">
-          <label>X-Position (%)</label>
+          <label>${_et('ui.editor.worldmap.xPosition', null, 'X Position (%)')}</label>
           <input type="number" min="5" max="95" value="${Math.round(loc.x||50)}" oninput="wmUpdate('x',parseFloat(this.value));renderWmCanvas()">
         </div>
         <div class="field-group">
-          <label>Y-Position (%)</label>
+          <label>${_et('ui.editor.worldmap.yPosition', null, 'Y Position (%)')}</label>
           <input type="number" min="5" max="95" value="${Math.round(loc.y||50)}" oninput="wmUpdate('y',parseFloat(this.value));renderWmCanvas()">
         </div>
       </div>
