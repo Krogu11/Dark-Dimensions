@@ -496,3 +496,8 @@ function getEnemy(enemyId) {
   };
 }
 
+(function _prepareLocalizedEnemies() {
+  if (typeof prepareEnemyLocalization !== 'function') return;
+  Object.values(ENEMIES).forEach(prepareEnemyLocalization);
+})();
+

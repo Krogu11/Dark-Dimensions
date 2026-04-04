@@ -14,7 +14,7 @@ function renderBattle() {
   const curPhase = getCurrentPhase();
   const phaseEl  = document.getElementById('phase-label');
   if (phaseEl) {
-    phaseEl.textContent = curPhase;
+    phaseEl.textContent = t(`ui.phase.${curPhase.toLowerCase()}`, null, { fallbackValue: curPhase });
     phaseEl.className   = `phase-badge phase-${curPhase.toLowerCase()}`;
   }
 
@@ -153,7 +153,7 @@ function renderSynergyPanel() {
 
   panel.innerHTML = active.map(({ rule, count }) => `
     <div class="synergy-entry" style="border-left:2px solid ${rule.color || '#aaa'}">
-      <span style="color:${rule.color || '#aaa'}">${rule.race}</span>
+      <span style="color:${rule.color || '#aaa'}">${translateRaceId(rule.race)}</span>
       <span style="color:#ddd">${rule.description.split(':')[1]?.trim() || ''}</span>
       <span style="color:#888">(${count}× auf Feld)</span>
     </div>
@@ -290,7 +290,7 @@ function createCardEl(card, inHand = false) {
       <div class="card-spell-type card-field-type">🗺 Spielfeld</div>
       ${card.flavor ? `<div class="card-flavor">${card.flavor}</div>` : ''}
     ` : `
-      <div class="card-spell-type">${card.type === 'spell' ? 'Zauber' : 'Falle'}</div>
+      <div class="card-spell-type">${card.type === 'spell' ? t('ui.card.spell') : t('ui.card.trap')}</div>
     `}
     ${modeLabel}
   `;
@@ -310,7 +310,7 @@ function updatePreview(card) {
     return;
   }
 
-  const typeLabel   = { monster:'Monster', spell:'Zauber', trap:'Falle', fusion:'Fusion', field:'Spielfeld' }[card.type] || '';
+  const typeLabel   = t(`ui.type.${card.type}`, null, { fallbackValue: card.type || '' });
   const rarityLabel = { common:'Gewöhnlich', uncommon:'Ungewöhnlich', rare:'Selten', epic:'Episch', legendary:'Legendär' }[card.rarity] || '';
   const typeIcon    = { monster:'🐉', spell:'✨', trap:'⚡', fusion:'⚗', field:'🗺' }[card.type] || '?';
 
@@ -344,7 +344,7 @@ function updatePreview(card) {
         🗺 <b>Spielfeld-Effekte:</b><br>
         ${typeof getFieldCardDescription === 'function' ? getFieldCardDescription(card).split(' • ').join('<br>') : ''}
       </div>
-    ` : (card.effects?.length > 0 || card.effect) ? `<div class="preview-effect">Effekt: ${getEffectDescription(card.effects || card.effect, card)}</div>` : '<div class="preview-effect">Kein Effekt</div>'}
+    ` : (card.effects?.length > 0 || card.effect) ? `<div class="preview-effect">${t('ui.card.effect')}: ${getEffectDescription(card.effects || card.effect, card)}</div>` : '<div class="preview-effect">Kein Effekt</div>'}
     <div class="preview-flavor">"${card.flavor || ''}"</div>
   `;
 }
@@ -374,3 +374,4 @@ function toggleCardMode(slotIndex) {
   battleLog(`🔄 ${card.name}: ${card.mode === 'defense' ? 'Verteidigung' : 'Angriff'}smodus`, '');
   renderBattle();
 }
+

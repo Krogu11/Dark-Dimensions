@@ -118,6 +118,13 @@ const SYNERGY_RULES = [
   },
 ];
 
+(function _normalizeSynergyRaces() {
+  if (typeof normalizeRaceId !== 'function') return;
+  SYNERGY_RULES.forEach(rule => {
+    rule.race = normalizeRaceId(rule.race);
+  });
+})();
+
 /* ── Getter ── */
 function getSynergyRules() {
   if (window.DD_CUSTOM && window.DD_CUSTOM.synergies) return window.DD_CUSTOM.synergies;

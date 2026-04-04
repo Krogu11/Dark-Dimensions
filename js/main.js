@@ -9,6 +9,10 @@ if (typeof SCREENS !== 'undefined') {
   SCREENS.push('mainmenu', 'freeduel', 'deckeditor', 'worldmap', 'hub', 'story');
 }
 
+function showHowTo() {
+  alert(t('ui.help.message'));
+}
+
 /* �?��?� Pause-Menü (global, damit andere Module zugreifen können) �?��?� */
 function showPauseMenu() {
   const overlay = document.getElementById('overlay-pause');
@@ -48,6 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
   �"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"� */
 
   /* Kampagne starten / fortsetzen */
+  if (typeof applyI18nToDocument === 'function') applyI18nToDocument(document);
+
   document.getElementById('btn-mainmenu-campaign')?.addEventListener('click', () => {
     if (!SAVE_STATE.slot) return;
     if (typeof window.logDDRuntimeDiagnostics === 'function') {
@@ -55,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const hasWorldMap = window.DD_CUSTOM && Array.isArray(window.DD_CUSTOM.worldMap) && window.DD_CUSTOM.worldMap.length > 0;
     if (!hasWorldMap || typeof initWorldState !== 'function') {
-      strictDataError('Keine Weltenkarte konfiguriert. Kampagne kann nicht gestartet werden.');
+      strictDataError(t('ui.errors.noWorldMapCampaign'));
       return;
     }
     const saved = SAVE_STATE.slot.worldProgress;
@@ -146,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* Pause-Menü */
   function abandonRun() {
-    if (!confirm('Fortschritt seit dem letzten Speichern geht verloren. Wirklich aufgeben?')) return;
+    if (!confirm(t('ui.pause.confirmAbandon'))) return;
     hidePauseMenu();
     if (typeof discardRun === 'function') discardRun();
     if (typeof restoreLastSavedProgressState === 'function') restoreLastSavedProgressState();
@@ -204,4 +210,28 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Start */
   renderTitleScreen();
   showScreen('title');
+});
+
+window.addEventListener('dd-language-changed', () => {
+  if (typeof renderTitleScreen === 'function' && document.getElementById('screen-title')?.classList.contains('active')) {
+    renderTitleScreen();
+  }
+  if (typeof renderMainMenu === 'function' && document.getElementById('screen-mainmenu')?.classList.contains('active')) {
+    renderMainMenu();
+  }
+  if (typeof renderFreeDuelScreen === 'function' && document.getElementById('screen-freeduel')?.classList.contains('active')) {
+    renderFreeDuelScreen();
+  }
+  if (typeof renderDeckEditor === 'function' && document.getElementById('screen-deckeditor')?.classList.contains('active')) {
+    renderDeckEditor();
+  }
+  if (typeof renderWorldMap === 'function' && document.getElementById('screen-worldmap')?.classList.contains('active')) {
+    renderWorldMap();
+  }
+  if (typeof renderBattle === 'function' && document.getElementById('screen-battle')?.classList.contains('active')) {
+    renderBattle();
+  }
+  if (typeof renderMap === 'function' && document.getElementById('screen-map')?.classList.contains('active')) {
+    renderMap();
+  }
 });

@@ -383,3 +383,8 @@ function buildShopOffer() {
     else          FUSION_MONSTERS.push(custom);
   });
 })();
+
+(function _prepareLocalizedCards() {
+  if (typeof prepareCardLocalization !== 'function') return;
+  [...ALL_CARDS, ...FUSION_MONSTERS].forEach(prepareCardLocalization);
+})();

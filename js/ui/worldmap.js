@@ -29,9 +29,13 @@ let _currentStoryLine = 0;
 
 /** Gibt die Weltenkarten-Daten aus DD_CUSTOM zurück. */
 function _getWorldMapData() {
-  return (window.DD_CUSTOM && Array.isArray(window.DD_CUSTOM.worldMap) && window.DD_CUSTOM.worldMap.length > 0)
+  const worldMap = (window.DD_CUSTOM && Array.isArray(window.DD_CUSTOM.worldMap) && window.DD_CUSTOM.worldMap.length > 0)
     ? window.DD_CUSTOM.worldMap
     : null;
+  if (worldMap && typeof prepareWorldLocationLocalization === 'function') {
+    worldMap.forEach(prepareWorldLocationLocalization);
+  }
+  return worldMap;
 }
 
 function _showStrictWorldError(message, details) {

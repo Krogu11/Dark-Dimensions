@@ -479,6 +479,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 <div id="toast">Gespeichert ✓</div>
 
 <!-- Game data files -->
+<script src="js/core/i18n.js"></script>
 <script src="js/data/cards.js"></script>
 <script src="js/data/enemies.js"></script>
 <script src="js/data/map.js"></script>
@@ -514,6 +515,9 @@ try {
   if (saved.starterDeck) editorStarterDeck = saved.starterDeck;
 } catch(e) {}
 
+if (typeof prepareCardLocalization === 'function') editorCards.forEach(prepareCardLocalization);
+if (typeof prepareEnemyLocalization === 'function') Object.values(editorEnemies).forEach(prepareEnemyLocalization);
+
 /* Weltenkarte */
 let editorWorldMap = [];
 function editorActId(act) {
@@ -547,6 +551,7 @@ try {
   const saved = JSON.parse(localStorage.getItem('dd_custom') || '{}');
   if (Array.isArray(saved.worldMap)) editorWorldMap = saved.worldMap.map(normalizeEditorWorldMapLocation);
 } catch(e) {}
+if (typeof prepareWorldLocationLocalization === 'function') editorWorldMap.forEach(prepareWorldLocationLocalization);
 
 let selectedCardId  = null;
 let selectedEnemyId = null;
@@ -2775,21 +2780,110 @@ function exportJSON() {
   showToast('Export gestartet ✓');
 }
 
+function _cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function _ensureLocaleBucket(locales, language, namespace) {
+  if (!locales[language]) locales[language] = {};
+  if (!locales[language][namespace]) locales[language][namespace] = {};
+  return locales[language][namespace];
+}
+
+function _collectEditorLocales() {
+  const locales = _cloneJson(window.DD_CUSTOM?.locales || {});
+  const deCards = _ensureLocaleBucket(locales, 'de', 'cards');
+  const deStory = _ensureLocaleBucket(locales, 'de', 'story');
+
+  editorCards.forEach(card => {
+    if (!card || !card.id) return;
+    const nameKey = card.nameKey || `card.${card.id}.name`;
+    const flavorKey = card.flavorKey || `card.${card.id}.flavor`;
+    if (card.name) deCards[nameKey] = card.name;
+    if (card.flavor) deCards[flavorKey] = card.flavor;
+  });
+
+  Object.values(editorEnemies).forEach(enemy => {
+    if (!enemy || !enemy.id) return;
+    const nameKey = enemy.nameKey || `enemy.${enemy.id}.name`;
+    const titleKey = enemy.titleKey || `enemy.${enemy.id}.title`;
+    if (enemy.name) deCards[nameKey] = enemy.name;
+    if (enemy.title) deCards[titleKey] = enemy.title;
+  });
+
+  (editorWorldMap || []).forEach(loc => {
+    if (!loc || !loc.id) return;
+    const nameKey = loc.nameKey || `world.${loc.id}.name`;
+    const descriptionKey = loc.descriptionKey || `world.${loc.id}.description`;
+    if (loc.name) deStory[nameKey] = loc.name;
+    if (loc.description) deStory[descriptionKey] = loc.description;
+    (loc.storyLines || []).forEach((line, index) => {
+      const speakerKey = line.speakerKey || `story.${loc.id}.${index}.speaker`;
+      const textKey = line.textKey || `story.${loc.id}.${index}.text`;
+      if (line.speaker) deStory[speakerKey] = line.speaker;
+      if (line.text) deStory[textKey] = line.text;
+    });
+  });
+
+  return locales;
+}
+
+function _sanitizeCardForI18n(card) {
+  const next = _cloneJson(card);
+  next.nameKey = next.nameKey || `card.${next.id}.name`;
+  next.flavorKey = next.flavorKey || `card.${next.id}.flavor`;
+  delete next.name;
+  delete next.flavor;
+  if (next.race && typeof normalizeRaceId === 'function') next.race = normalizeRaceId(next.race);
+  return next;
+}
+
+function _sanitizeEnemyForI18n(enemy) {
+  const next = _cloneJson(enemy);
+  next.nameKey = next.nameKey || `enemy.${next.id}.name`;
+  next.titleKey = next.titleKey || `enemy.${next.id}.title`;
+  delete next.name;
+  delete next.title;
+  if (next.theme && typeof normalizeRaceId === 'function') next.theme = normalizeRaceId(next.theme);
+  return next;
+}
+
+function _sanitizeWorldMapForI18n(worldMap) {
+  return (worldMap || []).map(loc => {
+    const next = _cloneJson(loc);
+    next.nameKey = next.nameKey || `world.${next.id}.name`;
+    next.descriptionKey = next.descriptionKey || `world.${next.id}.description`;
+    delete next.name;
+    delete next.description;
+    next.storyLines = (next.storyLines || []).map((line, index) => {
+      const storyLine = _cloneJson(line);
+      storyLine.speakerKey = storyLine.speakerKey || `story.${next.id}.${index}.speaker`;
+      storyLine.textKey = storyLine.textKey || `story.${next.id}.${index}.text`;
+      delete storyLine.speaker;
+      delete storyLine.text;
+      return storyLine;
+    });
+    return next;
+  });
+}
+
 function buildEditorDataPayload() {
   const regularCards = editorCards.filter(card => card.type !== 'fusion');
   const fusionCards  = editorCards.filter(card => card.type === 'fusion');
   const synToSave = window.DD_CUSTOM?.synergies || null;
+  const locales = _collectEditorLocales();
 
   return {
-    cards:          regularCards,
-    fusionMonsters: fusionCards,
+    cards:          regularCards.map(_sanitizeCardForI18n),
+    fusionMonsters: fusionCards.map(_sanitizeCardForI18n),
     synergies:      synToSave,
-    enemies:        Object.values(editorEnemies),
+    enemies:        Object.values(editorEnemies).map(_sanitizeEnemyForI18n),
     acts:           editorActs,
     recipes:        editorRecipes,
     config:         editorConfig,
     starterDeck:    editorStarterDeck,
-    worldMap:       editorWorldMap.length > 0 ? editorWorldMap : undefined,
+    worldMap:       editorWorldMap.length > 0 ? _sanitizeWorldMapForI18n(editorWorldMap) : undefined,
+    locales,
   };
 }
 
@@ -2855,6 +2949,14 @@ function importJSON() {
         if(data.config) editorConfig=data.config;
         if(data.starterDeck) editorStarterDeck=data.starterDeck;
         if(data.worldMap) editorWorldMap=data.worldMap.map(normalizeEditorWorldMapLocation);
+        if(data.locales) {
+          const c = window.DD_CUSTOM || {};
+          c.locales = data.locales;
+          window.DD_CUSTOM = c;
+        }
+        if (typeof prepareCardLocalization === 'function') editorCards.forEach(prepareCardLocalization);
+        if (typeof prepareEnemyLocalization === 'function') Object.values(editorEnemies).forEach(prepareEnemyLocalization);
+        if (typeof prepareWorldLocationLocalization === 'function') editorWorldMap.forEach(prepareWorldLocationLocalization);
         renderCardList(); initEnemyTab();
         showToast('Import erfolgreich ✓');
       }catch(err){alert('Import-Fehler: '+err.message);}
