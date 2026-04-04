@@ -42,11 +42,11 @@ function _renderRewardScreen(droppedCard, dropResult, isFreeDuel) {
   const subEl = document.getElementById('reward-sub-text');
   if (subEl) {
     if (!droppedCard) {
-      subEl.textContent = 'KEINE KARTE VERFÜGBAR';
+      subEl.textContent = t('ui.reward.noCardAvailable', null, { fallbackValue: 'NO CARD AVAILABLE' });
     } else if (isFreeDuel) {
-      subEl.textContent = 'BEUTE — geht direkt ins Kartenbuch';
+      subEl.textContent = t('ui.reward.lootToCollection', null, { fallbackValue: 'LOOT — goes straight to the collection' });
     } else {
-      subEl.textContent = 'DEIN DROP';
+      subEl.textContent = t('ui.reward.yourDrop', null, { fallbackValue: 'YOUR DROP' });
     }
   }
 
@@ -54,15 +54,15 @@ function _renderRewardScreen(droppedCard, dropResult, isFreeDuel) {
   const skipBtn = document.getElementById('btn-skip-reward');
   if (skipBtn) {
     skipBtn.textContent = isFreeDuel
-      ? 'Ablehnen — zurück zur Liste'
-      : 'Überspringen — weiter';
+      ? t('ui.reward.declineBack', null, { fallbackValue: 'Decline — back to list' })
+      : t('ui.reward.skipContinue', null, { fallbackValue: 'Skip — continue' });
   }
 
   // Kein Drop? Weiter-Button anzeigen
   if (!droppedCard) {
     const noCard = document.createElement('div');
     noCard.style.cssText = 'color:#555;font-size:14px;margin:20px 0';
-    noCard.textContent   = 'Der Gegner hat keine passende Karte fallen lassen.';
+    noCard.textContent   = t('ui.reward.noMatchingDrop', null, { fallbackValue: 'This enemy did not drop a matching card.' });
     container.appendChild(noCard);
     return;
   }
@@ -71,8 +71,8 @@ function _renderRewardScreen(droppedCard, dropResult, isFreeDuel) {
   const wrapper = document.createElement('div');
   wrapper.className = 'reward-card-wrapper';
 
-  const typeNames   = { monster:'Monster', spell:'Zauber', trap:'Falle', fusion:'Fusion' };
-  const rarityNames = { common:'Gewöhnlich', uncommon:'Ungewöhnlich', rare:'Selten', epic:'Episch', legendary:'Legendär' };
+  const typeNames   = { monster:t('ui.type.monster'), spell:t('ui.type.spell'), trap:t('ui.type.trap'), fusion:t('ui.type.fusion') };
+  const rarityNames = { common:t('ui.rarity.common'), uncommon:t('ui.rarity.uncommon'), rare:t('ui.rarity.rare'), epic:t('ui.rarity.epic'), legendary:t('ui.rarity.legendary') };
   const typeIcon    = { monster:'🐉', spell:'✨', trap:'⚡', fusion:'⚗' }[droppedCard.type] || '?';
 
   // Drop-Chance anzeigen (wenn verfügbar)
@@ -116,10 +116,10 @@ function _renderRewardScreen(droppedCard, dropResult, isFreeDuel) {
   btn.className = 'btn-reward-pick';
   if (isFreeDuel) {
     // Freies Duell: Karte geht direkt ins Kartenbuch, nicht ins Run-Deck
-    btn.textContent = '🎒 Zum Beutel hinzufügen';
+    btn.textContent = t('ui.reward.addToCollection', null, { fallbackValue: '🎒 Add to collection' });
     btn.addEventListener('click', () => pickFreeDuelCard(droppedCard));
   } else {
-    btn.textContent = '✓ Dem Deck hinzufügen';
+    btn.textContent = t('ui.reward.addToDeck', null, { fallbackValue: '✓ Add to deck' });
     btn.addEventListener('click', () => pickRewardCard(droppedCard));
   }
 
@@ -173,7 +173,7 @@ function pickFreeDuelCard(card) {
     console.log('[FreeDuel] cardCollection nach Push:', SAVE_STATE.slot.cardCollection);
 
     if (typeof saveCurrentSlotWithFeedback === 'function') {
-      saveCurrentSlotWithFeedback('Spiel gespeichert');
+      saveCurrentSlotWithFeedback(t('ui.common.gameSaved', null, { fallbackValue: 'Game saved' }));
       console.log('[FreeDuel] saveCurrentSlotWithFeedback() aufgerufen');
     } else if (typeof saveCurrentSlot === 'function') {
       saveCurrentSlot();
@@ -206,7 +206,7 @@ function _afterReward() {
     if (typeof completeDungeonLocation === 'function') {
       completeDungeonLocation();
     } else {
-      strictDataError('Dungeon-Abschluss konnte nicht verarbeitet werden.', 'Worldmap-Funktion completeDungeonLocation fehlt.');
+      strictDataError(t('ui.errors.dungeonCompleteFailed', null, { fallbackValue: 'Dungeon completion could not be processed.' }), 'Worldmap function completeDungeonLocation is missing.');
     }
   } else {
     /* Normaler Run: zurück zur Dungeon-Karte */
@@ -263,7 +263,9 @@ function renderShop() {
     const btn = document.createElement('button');
     btn.className   = 'btn-shop-buy';
     const canAfford = typeof getDimensionsSeelen === 'function' ? getDimensionsSeelen() >= card.price : false;
-    btn.textContent = canAfford ? 'Kaufen' : 'Zu teuer';
+    btn.textContent = canAfford
+      ? t('ui.shop.buy', null, { fallbackValue: 'Buy' })
+      : t('ui.shop.tooExpensive', null, { fallbackValue: 'Too expensive' });
     btn.disabled    = !canAfford;
     btn.addEventListener('click', () => buyCard(i));
 
@@ -296,7 +298,7 @@ function buyCard(offerIndex) {
   _shopOffer.splice(offerIndex, 1);
   if (_shopFromMainMenu) {
     if (typeof saveCurrentSlotWithFeedback === 'function') {
-      saveCurrentSlotWithFeedback('Spiel gespeichert');
+      saveCurrentSlotWithFeedback(t('ui.common.gameSaved', null, { fallbackValue: 'Game saved' }));
     } else if (typeof saveCurrentSlot === 'function') {
       saveCurrentSlot();
     }

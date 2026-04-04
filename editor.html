@@ -552,6 +552,49 @@ let selectedCardId  = null;
 let selectedEnemyId = null;
 let selectedWmLocId = null;   // aktuell ausgewählter Weltenkarten-Ort
 
+function renderEditorLanguageControls() {
+  const header = document.querySelector('header');
+  if (!header) return;
+
+  let wrap = document.getElementById('editor-language-tools');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'editor-language-tools';
+    wrap.style.cssText = 'display:flex;align-items:center;gap:8px;margin-left:12px';
+    const spacer = header.querySelector('.spacer');
+    header.insertBefore(wrap, spacer);
+  }
+
+  wrap.innerHTML = `
+    <span style="font-size:11px;color:var(--muted)">Preview language</span>
+    <select id="editor-preview-language" style="padding:5px 10px;background:var(--bg);border:1px solid var(--border);border-radius:999px;color:var(--text);font-size:11px">
+      <option value="system">System</option>
+      <option value="en">English</option>
+      <option value="de">Deutsch</option>
+    </select>
+  `;
+
+  const select = wrap.querySelector('#editor-preview-language');
+  const stored = localStorage.getItem('dd_editor_preview_language') || 'system';
+  select.value = stored;
+  select.onchange = () => {
+    const mode = select.value || 'system';
+    localStorage.setItem('dd_editor_preview_language', mode);
+    const lang = mode === 'system'
+      ? ((navigator.language || 'en').toLowerCase().startsWith('de') ? 'de' : 'en')
+      : mode;
+    setDDLanguage(lang);
+    renderCardList(document.getElementById('card-search')?.value || '');
+    initEnemyTab();
+    if (selectedEnemyId && editorEnemies[selectedEnemyId]) renderEnemyForm(editorEnemies[selectedEnemyId]);
+    if (selectedCardId) {
+      const card = editorCards.find(c => c.id === selectedCardId);
+      if (card) renderCardForm(card);
+    }
+    if (selectedWmLocId) renderWmDetail(selectedWmLocId);
+  };
+}
+
 /* ═══════════════════════════════════════════════════
    NEUES EFFEKTSYSTEM v4.0 — Modularer Multi-Effekt-Builder
 ═══════════════════════════════════════════════════ */
@@ -2931,6 +2974,7 @@ function resetSynergies() {
 ═══════════════════════════════════════════════════ */
 initCardTab();
 initEnemyTab();
+renderEditorLanguageControls();
 </script>
 </body>
 </html>

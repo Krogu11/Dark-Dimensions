@@ -97,7 +97,7 @@ function renderMap() {
     label.setAttribute('y', cy + (node.type === 'boss' ? 50 : 42));
     label.setAttribute('text-anchor', 'middle');
     label.setAttribute('class', 'map-label');
-    label.textContent = NODE_LABELS[node.type] || node.type;
+    label.textContent = (NODE_LABELS[node.type] ? NODE_LABELS[node.type]() : node.type);
     svg.appendChild(label);
 
     // Klick (nur wenn verfügbar)
@@ -118,12 +118,12 @@ function renderMap() {
 }
 
 const NODE_LABELS = {
-  start: 'Start',
-  battle:'Kampf',
-  elite: 'Elite',
-  shop:  'Shop',
-  rest:  'Lager',
-  boss:  'BOSS',
+  start: () => t('ui.map.node.start', null, { fallbackValue: 'Start' }),
+  battle:() => t('ui.map.node.battle', null, { fallbackValue: 'Battle' }),
+  elite: () => t('ui.map.node.elite', null, { fallbackValue: 'Elite' }),
+  shop:  () => t('ui.map.node.shop', null, { fallbackValue: 'Shop' }),
+  rest:  () => t('ui.map.node.rest', null, { fallbackValue: 'Camp' }),
+  boss:  () => t('ui.map.node.boss', null, { fallbackValue: 'BOSS' }),
 };
 
 /* ── Node-Klick-Handler ── */
@@ -179,12 +179,12 @@ function updatePreviewOverlay(card) {
 
 function updatePreviewContent(panel, card) {
   if (!card) { panel.innerHTML = ''; return; }
-  const typeLabel = { monster:'Monster', spell:'Zauber', trap:'Falle', fusion:'Fusion' }[card.type] || '';
-  const rarLabel  = { common:'Gewöhnlich', rare:'Selten', epic:'Episch', legendary:'Legendär' }[card.rarity] || '';
+  const typeLabel = t(`ui.type.${card.type}`, null, { fallbackValue: card.type || '' });
+  const rarLabel  = t(`ui.rarity.${card.rarity}`, null, { fallbackValue: card.rarity || '' });
   panel.innerHTML = `
     <div class="preview-header rarity-${card.rarity}">${card.name}</div>
     <div class="preview-meta">${typeLabel} · ${rarLabel}</div>
-    ${card.type==='monster'||card.type==='fusion'?`<div>ATK ${card.atk} / DEF ${card.def}${card.race ? ' · '+card.race : ''}</div>`:''}
+    ${card.type==='monster'||card.type==='fusion'?`<div>ATK ${card.atk} / DEF ${card.def}${card.race ? ' · '+translateRaceId(card.race) : ''}</div>`:''}
     ${card.effect ? `<div>${getEffectDescription(card.effect)}</div>` : ''}
     <div class="preview-flavor">"${card.flavor||''}"</div>
   `;

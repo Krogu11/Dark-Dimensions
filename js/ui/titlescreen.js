@@ -2,6 +2,59 @@
    ui/titlescreen.js — Title, Main Menu, Free Duel, Deck-Editor
    ============================================================ */
 
+function _ui(key, vars, fallbackValue) {
+  return t(key, vars, { fallbackValue });
+}
+
+function _typeLabel(type) {
+  return _ui(`ui.type.${type}`, null, type || '');
+}
+
+function _rarityLabel(rarity) {
+  return _ui(`ui.rarity.${rarity}`, null, rarity || '');
+}
+
+function _actLabel(index, isBoss = false, isFinal = false) {
+  const base = _ui(`ui.act.${index + 1}`, null, `Act ${index + 1}`);
+  if (isFinal) return `${base} · ${_ui('ui.freeduel.finalBoss', null, 'FINAL BOSS')}`;
+  if (isBoss) return `${base} · ${_ui('ui.freeduel.boss', null, 'Boss')}`;
+  return base;
+}
+
+function renderLanguageControls() {
+  const host = document.getElementById('screen-title');
+  if (!host) return;
+
+  let wrap = document.getElementById('title-language-switcher');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'title-language-switcher';
+    wrap.style.cssText = 'position:absolute;top:18px;right:18px;display:flex;gap:8px;align-items:center;z-index:5;background:rgba(0,0,0,.35);padding:8px 10px;border:1px solid rgba(255,255,255,.12);border-radius:999px;backdrop-filter:blur(6px)';
+    host.appendChild(wrap);
+  }
+
+  wrap.innerHTML = `
+    <span style="font-size:12px;color:#f1e7c4">${_ui('ui.language.label', null, 'Language')}</span>
+    <select id="title-language-select" style="background:#141424;color:#fff;border:1px solid #3a3a6a;border-radius:999px;padding:4px 10px;font-size:12px">
+      <option value="system">${_ui('ui.language.system', null, 'System')}</option>
+      <option value="en">English</option>
+      <option value="de">Deutsch</option>
+    </select>
+  `;
+
+  const select = wrap.querySelector('#title-language-select');
+  const stored = localStorage.getItem('dd_language_mode') || 'system';
+  select.value = stored;
+  select.onchange = () => {
+    const mode = select.value || 'system';
+    localStorage.setItem('dd_language_mode', mode);
+    const lang = mode === 'system'
+      ? ((navigator.language || 'en').toLowerCase().startsWith('de') ? 'de' : 'en')
+      : mode;
+    setDDLanguage(lang);
+  };
+}
+
 /* ─────────────────────────────────────────────────────
    TITLE SCREEN — Save-Slot-Auswahl
 ───────────────────────────────────────────────────── */
@@ -9,6 +62,7 @@ function renderTitleScreen() {
   if (typeof setMusicPlaylist === 'function') setMusicPlaylist(MUSIC_PLAYLISTS.menu);
   const container = document.getElementById('title-slots');
   if (!container) return;
+  renderLanguageControls();
 
   const slots = getAllSlots();
   container.innerHTML = '';
@@ -32,7 +86,7 @@ function renderTitleScreen() {
         <div class="slot-info-sub">${sum.line2}</div>
         <div class="slot-act-bar" data-act="${Math.min(Math.max(...(slot.unlockedActs||[0])), 2)}"></div>
         <div class="slot-actions">
-          <button class="btn-slot-load" data-slot="${id}">▶ Laden</button>
+          <button class="btn-slot-load" data-slot="${id}">${_ui('ui.title.loadSlot', null, '▶ Load')}</button>
           <button class="btn-slot-delete" data-slot="${id}">🗑</button>
         </div>
       `;
@@ -41,9 +95,9 @@ function renderTitleScreen() {
         <div class="slot-header">
           <span class="slot-id-badge">SLOT ${id}</span>
         </div>
-        <div class="slot-empty-label">— Kein Spielstand —</div>
+        <div class="slot-empty-label">${_ui('ui.title.emptySlot', null, '— Empty Slot —')}</div>
         <div class="slot-actions">
-          <button class="btn-slot-new" data-slot="${id}">✦ Neues Spiel</button>
+          <button class="btn-slot-new" data-slot="${id}">${_ui('ui.title.newGame', null, '✦ New Game')}</button>
         </div>
       `;
     }
@@ -61,7 +115,7 @@ function renderTitleScreen() {
       }
       const hasWorldMap = window.DD_CUSTOM && Array.isArray(window.DD_CUSTOM.worldMap) && window.DD_CUSTOM.worldMap.length > 0;
       if (!hasWorldMap || typeof initWorldState !== 'function') {
-        strictDataError('Keine Weltenkarte konfiguriert. Neues Spiel kann nicht gestartet werden.');
+        strictDataError(_ui('ui.errors.noWorldMapNewGame', null, 'No world map configured. New game cannot be started.'));
         return;
       }
       if (SAVE_STATE.slot) SAVE_STATE.slot.activeRun = null;
@@ -81,7 +135,7 @@ function renderTitleScreen() {
   container.querySelectorAll('.btn-slot-delete').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = Number(btn.dataset.slot);
-      if (confirm(`Slot ${id} wirklich löschen? Alle Daten gehen verloren.`)) {
+      if (confirm(_ui('ui.title.confirmDeleteSlot', { id }, `Delete slot ${id}? All data will be lost.`))) {
         deleteSlot(id);
         renderTitleScreen();
       }
@@ -101,26 +155,26 @@ function renderMainMenu() {
   const infoEl = document.getElementById('mainmenu-slot-info');
   if (infoEl) {
     const actNames = [
-      'Akt I — Der Dunkle Wald',
-      'Akt II — Die Verfluchten Ruinen',
-      'Akt III — Die Dunkle Dimension',
+      _actLabel(0),
+      _actLabel(1),
+      _actLabel(2),
     ];
     const maxAct = Math.min(Math.max(...(slot.unlockedActs || [0])), 2);
     infoEl.innerHTML = `
-      <div class="mm-slot-title">Spielstand ${slot.slotId}</div>
+      <div class="mm-slot-title">${_ui('ui.mainmenu.saveSlot', { id: slot.slotId }, `Save Slot ${slot.slotId}`)}</div>
       <div class="mm-slot-stats">
         <span>✦ ${slot.ds || 0} DS</span>
-        <span>🃏 ${slot.cardCollection.length} Karten</span>
+        <span>${_ui('ui.mainmenu.cardCount', { count: slot.cardCollection.length }, `🃏 ${slot.cardCollection.length} cards`)}</span>
         <span>📍 ${actNames[maxAct]}</span>
       </div>
-      <div class="mm-save-date">Zuletzt gespielt: ${formatSaveDate(slot.timestamp)}</div>
+      <div class="mm-save-date">${_ui('ui.mainmenu.lastPlayed', { date: formatSaveDate(slot.timestamp) }, `Last played: ${formatSaveDate(slot.timestamp)}`)}</div>
     `;
   }
 
   /* Kampagnen-Button anpassen */
   const btnCampaign = document.getElementById('btn-mainmenu-campaign');
   if (btnCampaign) {
-    btnCampaign.textContent = '⚔ Kampagne';
+    btnCampaign.textContent = _ui('ui.mainmenu.campaign', null, '⚔ Campaign');
     btnCampaign.classList.remove('btn-resume');
   }
 
@@ -139,14 +193,11 @@ const ROSTER_ORDER = [
   'void_reaper', 'soul_devourer', 'dark_dimension_god',
 ];
 
-/** Akt-Label für Gegner-Karten. */
-const ROSTER_ACT_LABEL = {
-  goblin_chief:      'Akt I',   skeleton_mage:     'Akt I',
-  orc_warlord:       'Akt I',   forest_demon:      'Akt I · Boss',
-  shadow_knight:     'Akt II',  dark_priest:       'Akt II',
-  iron_golem_guard:  'Akt II',  chaos_lord:        'Akt II · Boss',
-  void_reaper:       'Akt III', soul_devourer:     'Akt III',
-  dark_dimension_god:'Akt III · FINALBOSS',
+/** Akt-Index für Gegner-Karten. */
+const ROSTER_ACT_INDEX = {
+  goblin_chief: 0, skeleton_mage: 0, orc_warlord: 0, forest_demon: 0,
+  shadow_knight: 1, dark_priest: 1, iron_golem_guard: 1, chaos_lord: 1,
+  void_reaper: 2, soul_devourer: 2, dark_dimension_god: 2,
 };
 
 function renderFreeDuelScreen() {
@@ -178,12 +229,12 @@ function renderFreeDuelScreen() {
   // ── Header-Zähler ──
   const subEl = document.querySelector('#screen-freeduel .freeduel-sub');
   if (subEl) subEl.textContent =
-    `${defeated.length} / ${allEnemies.length} Gegner freigeschaltet · Besiege sie erneut für ihre Karten`;
+    _ui('ui.freeduel.progress', { unlocked: defeated.length, total: allEnemies.length }, `${defeated.length} / ${allEnemies.length} enemies unlocked`);
 
   container.innerHTML = '';
 
   if (allEnemies.length === 0) {
-    container.innerHTML = '<p style="color:#555;text-align:center;padding:60px 0">Keine Gegner verfügbar</p>';
+    container.innerHTML = `<p style="color:#555;text-align:center;padding:60px 0">${_ui('ui.freeduel.none', null, 'No enemies available')}</p>`;
     return;
   }
 
@@ -194,7 +245,10 @@ function renderFreeDuelScreen() {
     const unlocked = defeated.includes(enemy.id);
     const isBoss   = !!(enemy.title?.toLowerCase().includes('boss') || (enemy.difficulty || 0) >= 4);
     const rec      = record[enemy.id] || { wins: 0, losses: 0 };
-    const actLabel = ROSTER_ACT_LABEL[enemy.id] || enemy.theme || '';
+    const actIndex = ROSTER_ACT_INDEX[enemy.id];
+    const actLabel = Number.isInteger(actIndex)
+      ? _actLabel(actIndex, isBoss, enemy.id === 'dark_dimension_god')
+      : (enemy.theme ? translateRaceId(enemy.theme) : '');
     const stars    = '★'.repeat(Math.min(enemy.difficulty || 1, 6));
     const empty    = '☆'.repeat(Math.max(0, 6 - (enemy.difficulty || 1)));
 
@@ -222,21 +276,21 @@ function renderFreeDuelScreen() {
           <div class="fd-record">
             <div class="fd-rec-w">
               <span class="fd-rec-num">${rec.wins}</span>
-              <span class="fd-rec-lbl">Siege</span>
+              <span class="fd-rec-lbl">${_ui('ui.freeduel.wins', null, 'Wins')}</span>
             </div>
             <div class="fd-rec-sep"></div>
             <div class="fd-rec-l">
               <span class="fd-rec-num">${rec.losses}</span>
-              <span class="fd-rec-lbl">Niederlagen</span>
+              <span class="fd-rec-lbl">${_ui('ui.freeduel.losses', null, 'Losses')}</span>
             </div>
           </div>
-          <div class="fd-lp">💚 ${enemy.hp || '?'} LP</div>
+          <div class="fd-lp">${_ui('ui.freeduel.hp', { hp: enemy.hp || '?' }, `💚 ${enemy.hp || '?'} HP`)}</div>
           <div class="fd-actions">
-            <button class="fd-btn-fight">⚔ Herausfordern</button>
-            <button class="fd-btn-drops">📊 Drops</button>
+            <button class="fd-btn-fight">${_ui('ui.freeduel.challenge', null, '⚔ Challenge')}</button>
+            <button class="fd-btn-drops">${_ui('ui.freeduel.drops', null, '📊 Drops')}</button>
           </div>
         ` : `
-          <div class="fd-hint">In der Kampagne besiegen</div>
+          <div class="fd-hint">${_ui('ui.freeduel.unlockHint', null, 'Defeat in the campaign')}</div>
         `}
       </div>
     `;
@@ -299,7 +353,7 @@ function showDropChanceModal(enemy) {
   const nameEl  = document.getElementById('drop-modal-enemy-name');
   const titleEl = document.getElementById('drop-modal-enemy-title');
   if (nameEl)  nameEl.textContent  = enemy.name || enemy.id;
-  if (titleEl) titleEl.textContent = enemy.title || ROSTER_ACT_LABEL[enemy.id] || '';
+  if (titleEl) titleEl.textContent = enemy.title || (Number.isInteger(ROSTER_ACT_INDEX[enemy.id]) ? _actLabel(ROSTER_ACT_INDEX[enemy.id]) : '');
 
   // Content: einheitliche Droptabelle
   const content = document.getElementById('drop-modal-content');
@@ -311,7 +365,7 @@ function showDropChanceModal(enemy) {
     : [];
 
   if (entries.length === 0) {
-    content.innerHTML = '<div style="color:var(--clr-muted);text-align:center;padding:30px">Dieser Gegner hat keine Drop-Tabelle.</div>';
+    content.innerHTML = `<div style="color:var(--clr-muted);text-align:center;padding:30px">${_ui('ui.drops.noneForEnemy', null, 'This enemy has no drop table.')}</div>`;
   } else {
     const table = document.createElement('table');
     table.className = 'drop-rank-table';
@@ -406,9 +460,9 @@ function _deCount(cardId) {
 function _deAdd(cardId) {
   const entry = DE.pool[cardId];
   if (!entry) return;
-  if (DE.deck.length >= DE.MAX) { _deFlash('⚠ Maximum 20 Karten erreicht!', false); return; }
-  if (_deCount(cardId) >= entry.owned) { _deFlash('⚠ Keine weiteren Kopien verfügbar', false); return; }
-  if (_deCount(cardId) >= 3) { _deFlash('⚠ Max. 3× dieselbe Karte', false); return; }
+  if (DE.deck.length >= DE.MAX) { _deFlash(_ui('ui.deckeditor.maxReached', null, '⚠ Maximum 20 cards reached!'), false); return; }
+  if (_deCount(cardId) >= entry.owned) { _deFlash(_ui('ui.deckeditor.noCopies', null, '⚠ No more copies available'), false); return; }
+  if (_deCount(cardId) >= 3) { _deFlash(_ui('ui.deckeditor.maxCopies', null, '⚠ Max. 3× the same card'), false); return; }
   DE.deck.push(cardId);
   _deRefresh();
 }
@@ -473,7 +527,7 @@ function _deRenderPool() {
   });
 
   if (entries.length === 0) {
-    container.innerHTML = `<div class="de-empty">Keine Karten in dieser Kategorie.</div>`;
+    container.innerHTML = `<div class="de-empty">${_ui('ui.deckeditor.noCardsInCategory', null, 'No cards in this category.')}</div>`;
     return;
   }
 
@@ -512,7 +566,7 @@ function _deRenderDeck() {
   list.innerHTML = '';
 
   if (DE.deck.length === 0) {
-    list.innerHTML = `<div class="de-deck-empty">Deck ist leer.<br>Klicke links auf eine Karte.</div>`;
+    list.innerHTML = `<div class="de-deck-empty">${_ui('ui.deckeditor.emptyDeck', null, 'Deck is empty.<br>Click a card on the left.')}</div>`;
     return;
   }
 
@@ -535,7 +589,7 @@ function _deRenderDeck() {
   deckEntries.forEach(({ card, count }) => {
     const row = document.createElement('div');
     row.className = `de-deck-row rarity-border-${card.rarity}`;
-    row.title = `${card.name} entfernen`;
+    row.title = _ui('ui.deckeditor.removeCard', { card: card.name }, `Remove ${card.name}`);
 
     const typeIcon = { monster:'⚔', spell:'✨', trap:'🕸', fusion:'⚗' }[card.type] || '?';
     const statsStr = (card.type === 'monster' || card.type === 'fusion')
@@ -547,7 +601,7 @@ function _deRenderDeck() {
       <span class="de-row-name rarity-${card.rarity}">${card.name}</span>
       ${statsStr}
       <span class="de-row-count">×${count}</span>
-      <button class="de-row-remove" title="Entfernen">−</button>
+      <button class="de-row-remove" title="${_ui('ui.common.remove', null, 'Remove')}">−</button>
     `;
 
     row.querySelector('.de-row-remove').addEventListener('click', e => {
@@ -566,11 +620,11 @@ function _deRenderDeck() {
 function _deShowPreview(card) {
   const panel = document.getElementById('de-preview');
   if (!panel) return;
-  const typeLabel = { monster:'Monster', spell:'Zauber', trap:'Falle', fusion:'Fusion' }[card.type] || '';
-  const rarLabel  = { common:'Gewöhnlich', uncommon:'Ungewöhnlich', rare:'Selten', epic:'Episch', legendary:'Legendär' }[card.rarity] || '';
+  const typeLabel = _typeLabel(card.type);
+  const rarLabel  = _rarityLabel(card.rarity);
   panel.innerHTML = `
     <div class="preview-header rarity-${card.rarity}">${card.name}</div>
-    <div class="preview-meta">${typeLabel} · ${rarLabel}${card.race ? ' · ' + card.race : ''}</div>
+    <div class="preview-meta">${typeLabel} · ${rarLabel}${card.race ? ' · ' + translateRaceId(card.race) : ''}</div>
     ${(card.type === 'monster' || card.type === 'fusion')
       ? `<div class="de-preview-stats"><span>ATK <b>${card.atk}</b></span><span>DEF <b>${card.def}</b></span></div>`
       : ''}
@@ -607,14 +661,14 @@ function _deBindFilters() {
     if (!SAVE_STATE.slot) return;
     SAVE_STATE.slot.baseDeck = [...DE.deck];
     saveCurrentSlot();
-    _deFlash(`✓ Deck gespeichert! (${DE.deck.length} Karten)`, true);
+    _deFlash(_ui('ui.deckeditor.saved', { count: DE.deck.length }, `✓ Deck saved! (${DE.deck.length} cards)`), true);
   });
 
   /* Reset auf gespeichertes Deck */
   document.getElementById('btn-de-reset')?.addEventListener('click', () => {
     const base = SAVE_STATE.slot?.baseDeck;
     _deLoadDeck(base || buildStarterDeck().map(c => c.id));
-    _deFlash('↩ Auf gespeichertes Deck zurückgesetzt', true);
+    _deFlash(_ui('ui.deckeditor.resetSaved', null, '↩ Reset to saved deck'), true);
   });
 
   /* Zurück-Button */
