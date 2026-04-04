@@ -291,7 +291,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 <!-- ══════════ TAB: DROP-TABELLEN ══════════ -->
 <div id="tab-drops" class="tab-panel" style="flex-direction:column;overflow:hidden">
   <div style="padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0">
-    <label style="font-size:11px;color:var(--muted);letter-spacing:1px">GEGNER:</label>
+    <label style="font-size:11px;color:var(--muted);letter-spacing:1px" data-i18n="ui.editor.drops.enemyLabel">ENEMY:</label>
     <select id="drop-enemy-select" onchange="renderDropTable()" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)"></select>
     <span id="drop-enemy-info" style="color:var(--muted);font-size:11px"></span>
   </div>
@@ -301,9 +301,9 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 <!-- ══════════ TAB: AKTE ══════════ -->
 <div id="tab-acts" class="tab-panel" style="flex-direction:column;overflow:hidden">
   <div style="padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0">
-    <span style="font-size:11px;color:var(--muted)">Konfiguriere Acts, Knotenpunkte und Gegner-Pools. Pools = zufällige Gegnerwahl pro Run.</span>
+    <span style="font-size:11px;color:var(--muted)" data-i18n="ui.editor.acts.description">Configure acts, node structure and enemy pools. Pools are used for random enemy selection per run.</span>
     <div class="spacer"></div>
-    <button class="btn-save" onclick="saveActs()">✓ Acts speichern</button>
+    <button class="btn-save" onclick="saveActs()" data-i18n="ui.editor.acts.save">Save acts</button>
   </div>
   <div id="act-editor-area" style="flex:1;overflow-y:auto;padding:20px"></div>
 </div>
@@ -311,9 +311,9 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 <!-- ══════════ TAB: FUSIONEN ══════════ -->
 <div id="tab-fusions" class="tab-panel" style="flex-direction:column;overflow:hidden">
   <div style="padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0">
-    <span style="font-size:11px;color:var(--muted)">Definiere Fusionsrezepte: Welche 2 Monster ergeben welche Fusion?</span>
+    <span style="font-size:11px;color:var(--muted)" data-i18n="ui.editor.fusions.description">Define fusion recipes: which 2 monsters create which fusion?</span>
     <div class="spacer"></div>
-    <button class="btn-save" onclick="saveFusions()">✓ Rezepte speichern</button>
+    <button class="btn-save" onclick="saveFusions()" data-i18n="ui.editor.fusions.save">Save recipes</button>
   </div>
   <div id="fusion-editor-area" style="flex:1;overflow-y:auto;padding:20px;max-width:800px"></div>
 </div>
@@ -400,9 +400,9 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 <!-- ══════════ TAB: SYNERGIEN ══════════ -->
 <div id="tab-synergies" class="tab-panel" style="flex-direction:column;overflow:hidden">
   <div style="padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0">
-    <span style="font-size:11px;color:var(--muted)">Passe Rassen-Synergien für besseres Balancing an. Änderungen überschreiben nur die Werte — der Typ bleibt erhalten.</span>
-    <button class="btn-save" style="margin-left:auto" onclick="saveSynergies()">✓ Synergien speichern</button>
-    <button class="btn-sm" onclick="resetSynergies()">↩ Zurücksetzen</button>
+    <span style="font-size:11px;color:var(--muted)" data-i18n="ui.editor.synergies.description">Adjust race synergies for balancing. Changes only override values, not the rule type.</span>
+    <button class="btn-save" style="margin-left:auto" onclick="saveSynergies()" data-i18n="ui.editor.synergies.save">Save synergies</button>
+    <button class="btn-sm" onclick="resetSynergies()" data-i18n="ui.editor.synergies.resetButton">Reset</button>
   </div>
   <div id="synergy-editor-area" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px"></div>
 </div>
@@ -411,11 +411,11 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 <div id="tab-worldmap" class="tab-panel" style="flex-direction:column;overflow:hidden">
 
   <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0">
-    <span style="font-weight:700;color:var(--gold);font-size:12px;letter-spacing:1px">🌍 WELTENKARTE</span>
-    <span style="color:var(--muted);font-size:11px">Klicke auf die Karte um einen Ort zu platzieren. Ziehe Orte um sie zu verschieben.</span>
+    <span style="font-weight:700;color:var(--gold);font-size:12px;letter-spacing:1px" data-i18n="ui.editor.worldmap.title">World Map</span>
+    <span style="color:var(--muted);font-size:11px" data-i18n="ui.editor.worldmap.toolbarHelp">Click on the map to place a location. Drag locations to move them.</span>
     <div style="flex:1"></div>
-    <button class="btn-sm" onclick="addWorldMapLocation()">+ Ort hinzufügen</button>
-    <button class="btn-sm" onclick="clearWorldMap()" style="border-color:var(--red);color:var(--red)">🗑 Karte leeren</button>
+    <button class="btn-sm" onclick="addWorldMapLocation()" data-i18n="ui.editor.worldmap.addLocation">Add location</button>
+    <button class="btn-sm" onclick="clearWorldMap()" style="border-color:var(--red);color:var(--red)" data-i18n="ui.editor.worldmap.clearMap">Clear map</button>
   </div>
 
   <div style="display:flex;flex:1;overflow:hidden">
@@ -430,7 +430,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
         <!-- Leere-Karte-Hinweis -->
         <div id="wm-empty-hint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--muted);pointer-events:none">
           <div style="font-size:32px">🗺</div>
-          <div>Klicke irgendwo auf die Karte um den ersten Ort zu platzieren</div>
+          <div data-i18n="ui.editor.worldmap.emptyHint">Click anywhere on the map to place the first location</div>
         </div>
       </div>
     </div>
@@ -438,8 +438,8 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
     <!-- Rechte Seite: Ort-Detailformular -->
     <div style="width:320px;flex-shrink:0;overflow-y:auto;display:flex;flex-direction:column;gap:0">
       <div id="wm-detail-panel" style="padding:14px;flex:1">
-        <div style="color:var(--muted);font-size:12px;text-align:center;padding:20px 0">
-          Wähle einen Ort auf der Karte aus, um ihn zu bearbeiten.
+        <div style="color:var(--muted);font-size:12px;text-align:center;padding:20px 0" data-i18n="ui.editor.worldmap.selectHint">
+          Select a location on the map to edit it.
         </div>
       </div>
     </div>
@@ -451,34 +451,34 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 <div id="tab-debug" class="tab-panel">
   <div class="debug-panel">
     <div class="debug-card">
-      <h3>🎲 DROP-TESTER</h3>
-      <div class="input-row"><label>Gegner:</label>
+      <h3 data-i18n="ui.editor.debug.dropTester">Drop Tester</h3>
+      <div class="input-row"><label data-i18n="ui.editor.debug.enemyLabel">Enemy:</label>
         <select id="dbg-enemy" style="flex:1;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)"></select></div>
-      <div class="input-row"><label>Seed (leer=Zufall):</label><input id="dbg-seed" type="number" placeholder="z.B. 42"></div>
+      <div class="input-row"><label data-i18n="ui.editor.debug.seedLabel">Seed (empty = random):</label><input id="dbg-seed" type="number" placeholder="e.g. 42" data-i18n-placeholder="ui.editor.debug.seedPlaceholder"></div>
       <div style="display:flex;gap:5px;margin-bottom:8px">
         <button class="btn-save" style="flex:1" onclick="testDrop(1)">1×</button>
         <button class="btn-sm" style="flex:1" onclick="testDrop(10)">10×</button>
         <button class="btn-sm" style="flex:1" onclick="testDrop(100)">100×</button>
         <button class="btn-sm" style="flex:1" onclick="testDrop(1000)">1000×</button>
       </div>
-      <div class="debug-result" id="dbg-drop-result">—</div>
+      <div class="debug-result" id="dbg-drop-result" data-i18n="ui.editor.debug.empty">-</div>
     </div>
     <div class="debug-card" style="max-width:420px">
-      <h3>📈 DROP-CHANCE-ANALYSE</h3>
+      <h3 data-i18n="ui.editor.debug.dropAnalysis">Drop Chance Analysis</h3>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <select id="dbg-analysis-enemy" onchange="runAnalysis()" style="flex:1;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)"></select>
       </div>
       <div id="dbg-analysis-result"></div>
     </div>
     <div class="debug-card">
-      <h3>🎮 LETZTE KAMPF-STATS</h3>
+      <h3 data-i18n="ui.editor.debug.lastBattleStats">Last Battle Stats</h3>
       <div class="debug-result" id="dbg-battle-stats" style="font-family:monospace;font-size:11px"></div>
-      <button class="btn-sm" style="width:100%;margin-top:8px" onclick="loadBattleStats()">🔄 Aktualisieren</button>
+      <button class="btn-sm" style="width:100%;margin-top:8px" onclick="loadBattleStats()" data-i18n="ui.common.refresh">Refresh</button>
     </div>
   </div>
 </div>
 
-<div id="toast">Gespeichert ✓</div>
+<div id="toast" data-i18n="ui.common.saved">Saved ✓</div>
 
 <!-- Game data files -->
 <script src="js/core/embedded-locales.js"></script>
@@ -686,6 +686,38 @@ const EFFECT_TYPES = [
   { type:'burnOnAttack',  label:'🔥 Brandschaden beim Angriff', param:'amount', unit:'LP', default:200, groups:['monster','fusion'] },
 ];
 
+const EFFECT_TYPE_LABEL_KEYS = {
+  burn: 'ui.editor.effects.burn',
+  burnPercent: 'ui.editor.effects.burnPercent',
+  drain: 'ui.editor.effects.drain',
+  heal: 'ui.editor.effects.heal',
+  healPercent: 'ui.editor.effects.healPercent',
+  buff: 'ui.editor.effects.buff',
+  buffDef: 'ui.editor.effects.buffDef',
+  buffAll: 'ui.editor.effects.buffAll',
+  buffDefAll: 'ui.editor.effects.buffDefAll',
+  weakenOne: 'ui.editor.effects.weakenOne',
+  weakenDefOne: 'ui.editor.effects.weakenDefOne',
+  weakenAll: 'ui.editor.effects.weakenAll',
+  destroy1: 'ui.editor.effects.destroy1',
+  destroyAll: 'ui.editor.effects.destroyAll',
+  destroyAttacker: 'ui.editor.effects.destroyAttacker',
+  destroyAllAtk: 'ui.editor.effects.destroyAllAtk',
+  draw: 'ui.editor.effects.draw',
+  stealHand: 'ui.editor.effects.stealHand',
+  stealField: 'ui.editor.effects.stealField',
+  revive: 'ui.editor.effects.revive',
+  reviveBest: 'ui.editor.effects.reviveBest',
+  massRevive: 'ui.editor.effects.massRevive',
+  specialSummon: 'ui.editor.effects.specialSummon',
+  shield: 'ui.editor.effects.shield',
+  taunt: 'ui.editor.effects.taunt',
+  negate: 'ui.editor.effects.negate',
+  raceBuffATK: 'ui.editor.effects.raceBuffATK',
+  raceBuffDEF: 'ui.editor.effects.raceBuffDEF',
+  burnOnAttack: 'ui.editor.effects.burnOnAttack',
+};
+
 /* Temporäres Array für Effekte in Bearbeitung */
 let _editingEffects = [];
 
@@ -695,6 +727,12 @@ function getEffectMeta(type) {
 
 function getEffectsForType(type) {
   return EFFECT_TYPES.filter(e => e.groups.includes(type));
+}
+
+function _effectLabel(meta) {
+  if (!meta) return '';
+  const key = EFFECT_TYPE_LABEL_KEYS[meta.type];
+  return key ? _et(key, null, meta.label) : meta.label;
 }
 
 /* ── Effekt-Builder rendern — field-Typ bekommt eigenen Builder ── */
@@ -708,22 +746,22 @@ function renderEffectBuilder(cardType) {
   container.innerHTML = `
     <div id="cf-effects-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
       ${_editingEffects.map((eff, i) => _renderEffectTag(eff, i)).join('')}
-      ${_editingEffects.length === 0 ? '<div style="color:var(--muted);font-size:12px">— Noch keine Effekte —</div>' : ''}
+      ${_editingEffects.length === 0 ? `<div style="color:var(--muted);font-size:12px">${_et('ui.editor.effects.none', null, 'No effects yet')}</div>` : ''}
     </div>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <select id="eff-type-select" style="flex:2;min-width:180px" onchange="onEffectTypeChange()">
-        <option value="">— Effekt wählen —</option>
-        ${allowed.map(e => `<option value="${e.type}">${e.label}</option>`).join('')}
+        <option value="">${_et('ui.editor.effects.select', null, 'Select effect')}</option>
+        ${allowed.map(e => `<option value="${e.type}">${_effectLabel(e)}</option>`).join('')}
       </select>
       <div id="eff-param-wrap" style="display:none;flex:1;min-width:100px">
-        <input id="eff-param-input" type="number" placeholder="Wert" min="1" max="99999"
+        <input id="eff-param-input" type="number" placeholder="${esc(_et('ui.editor.effects.value', null, 'Value'))}" min="1" max="99999"
           style="width:100%;padding:6px;background:#0e0e1e;border:1px solid #333;color:#ccc;border-radius:5px">
       </div>
       <div id="eff-cardid-wrap" style="display:none;flex:2;min-width:150px">
-        <input id="eff-cardid-input" type="text" placeholder="Karten-ID (z.B. dark_knight)"
+        <input id="eff-cardid-input" type="text" placeholder="${esc(_et('ui.editor.effects.cardIdPlaceholder', null, 'Card ID (e.g. dark_knight)'))}"
           style="width:100%;padding:6px;background:#0e0e1e;border:1px solid #333;color:#ccc;border-radius:5px">
       </div>
-      <button onclick="addEffectEntry()" style="background:rgba(100,200,100,0.15);border-color:#4caf50;color:#7aff7a;white-space:nowrap">+ Hinzufügen</button>
+      <button onclick="addEffectEntry()" style="background:rgba(100,200,100,0.15);border-color:#4caf50;color:#7aff7a;white-space:nowrap">${_et('ui.common.add', null, '+ Add')}</button>
     </div>
   `;
 }
@@ -856,7 +894,7 @@ function removeFieldFxEntry(idx) {
 
 function _renderEffectTag(eff, idx) {
   const meta  = getEffectMeta(eff.type);
-  const label = meta ? meta.label : eff.type;
+  const label = meta ? _effectLabel(meta) : eff.type;
   let valueStr = '';
   if (eff.amount !== undefined) valueStr = ` <strong>${eff.amount}${meta?.unit || ''}</strong>`;
   else if (eff.count  !== undefined) valueStr = ` <strong>×${eff.count}</strong>`;
@@ -1575,7 +1613,7 @@ function renderDropTable() {
   const enemy   = editorEnemies[enemyId];
   if(!enemy) return;
   _migrateDropTable(enemy);
-  document.getElementById('drop-enemy-info').textContent=`LP: ${enemy.hp} | ${enemy.title||enemy.name}`;
+  document.getElementById('drop-enemy-info').textContent = _et('ui.editor.drops.enemyInfo', { hp: enemy.hp, title: enemy.title || enemy.name }, `HP: ${enemy.hp} | ${enemy.title||enemy.name}`);
   const area = document.getElementById('drop-table-area');
   area.innerHTML='';
 
@@ -1587,8 +1625,8 @@ function renderDropTable() {
   sec.style.cssText='min-width:320px;flex:1;max-width:600px';
   sec.innerHTML=`
     <div class="drop-section-header">
-      <span style="font-size:12px;color:var(--gold);letter-spacing:2px">DROPTABELLE</span>
-      <span style="font-size:11px;color:var(--muted)">Gesamt-Gewicht: ${total}</span>
+      <span style="font-size:12px;color:var(--gold);letter-spacing:2px">${_et('ui.editor.drops.tableTitle', null, 'Drop Table')}</span>
+      <span style="font-size:11px;color:var(--muted)">${_et('ui.editor.drops.totalWeight', { total }, `Total weight: ${total}`)}</span>
     </div>
     <div id="pool-drops-${enemyId}">
       ${pool.map((entry,i)=>{
@@ -1609,7 +1647,7 @@ function renderDropTable() {
         ${editorCards.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select>
       <input id="add-w-drops-${enemyId}" type="number" min="1" value="10"
         style="width:55px;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text)">
-      <button onclick="addDropEntry('${enemyId}')">+ Hinzufügen</button>
+      <button onclick="addDropEntry('${enemyId}')">${_et('ui.common.add', null, '+ Add')}</button>
     </div>
     <div style="display:flex;gap:5px;margin-top:8px">
       <button class="btn-save" style="flex:1;font-size:10px;padding:4px" onclick="quickSim('${enemyId}',100)">🎲 100×</button>
@@ -1646,7 +1684,7 @@ function quickSim(eId,n) {
   if(!enemy) return;
   const results=simulateDrops(enemy,n);
   const out=document.getElementById(`sim-drops-${eId}`);
-  if(!results.length){out.textContent='Keine Ergebnisse';return;}
+  if(!results.length){out.textContent=_et('ui.editor.common.noResults', null, 'No results');return;}
   const maxPct=results[0].percent;
   out.innerHTML=results.map(r=>{
     const col={common:'#aaa',rare:'#60a5fa',epic:'#c084fc',legendary:'#ffd700'}[r.rarity]||'#aaa';
@@ -2125,8 +2163,8 @@ function renderFusionEditor() {
   area.innerHTML = `
     <div style="margin-bottom:20px">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
-        <div style="font-size:12px;color:var(--gold);letter-spacing:2px">AKTIVE REZEPTE (${editorRecipes.length})</div>
-        <input class="recipe-filter" id="recipe-search" placeholder="🔍 Karte suchen…" oninput="filterRecipeList(this.value)">
+        <div style="font-size:12px;color:var(--gold);letter-spacing:2px">${_et('ui.editor.fusions.activeRecipes', { count: editorRecipes.length }, `Active recipes (${editorRecipes.length})`)}</div>
+        <input class="recipe-filter" id="recipe-search" placeholder="${esc(_et('ui.editor.fusions.searchCard', null, 'Search card...'))}" oninput="filterRecipeList(this.value)">
       </div>
       <div id="recipe-list">
         ${editorRecipes.map((r,i)=>{
@@ -2145,20 +2183,20 @@ function renderFusionEditor() {
       </div>
     </div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px">
-      <div style="font-size:12px;color:var(--gold);letter-spacing:2px;margin-bottom:14px">NEUES REZEPT</div>
+      <div style="font-size:12px;color:var(--gold);letter-spacing:2px;margin-bottom:14px">${_et('ui.editor.fusions.newRecipe', null, 'New recipe')}</div>
       <div class="field-row">
-        <div class="field-group"><label>Material 1</label>
-          <input id="new-mat1-search" placeholder="Monster suchen..." oninput="filterFusionSelect('new-mat1', this.value)">
+        <div class="field-group"><label>${_et('ui.editor.fusions.material1', null, 'Material 1')}</label>
+          <input id="new-mat1-search" placeholder="${esc(_et('ui.editor.fusions.searchMonster', null, 'Search monster...'))}" oninput="filterFusionSelect('new-mat1', this.value)">
           <select id="new-mat1"${hasMonsters?'':' disabled'}>${mOpts}</select></div>
-        <div class="field-group"><label>Material 2</label>
-          <input id="new-mat2-search" placeholder="Monster suchen..." oninput="filterFusionSelect('new-mat2', this.value)">
+        <div class="field-group"><label>${_et('ui.editor.fusions.material2', null, 'Material 2')}</label>
+          <input id="new-mat2-search" placeholder="${esc(_et('ui.editor.fusions.searchMonster', null, 'Search monster...'))}" oninput="filterFusionSelect('new-mat2', this.value)">
           <select id="new-mat2"${hasMonsters?'':' disabled'}>${mOpts}</select></div>
-        <div class="field-group"><label>Ergebnis (Monster)</label>
-          <input id="new-result-search" placeholder="Ergebnis suchen..." oninput="filterFusionSelect('new-result', this.value)">
+        <div class="field-group"><label>${_et('ui.editor.fusions.result', null, 'Result')}</label>
+          <input id="new-result-search" placeholder="${esc(_et('ui.editor.fusions.searchResult', null, 'Search result...'))}" oninput="filterFusionSelect('new-result', this.value)">
           <select id="new-result"${hasMonsters?'':' disabled'}>${mOpts}</select></div>
       </div>
-      ${hasMonsters ? '' : '<div style="margin:12px 0;color:var(--red);font-size:12px">Keine Monsterkarten vorhanden. Lege zuerst Monster im Karten-Tab an.</div>'}
-      <button class="btn-save" onclick="addRecipe()"${hasMonsters?'':' disabled'}>+ Rezept hinzufügen</button>
+      ${hasMonsters ? '' : `<div style="margin:12px 0;color:var(--red);font-size:12px">${_et('ui.editor.fusions.noMonsters', null, 'No monster cards available. Create monsters in the cards tab first.')}</div>`}
+      <button class="btn-save" onclick="addRecipe()"${hasMonsters?'':' disabled'}>${_et('ui.editor.fusions.addRecipe', null, 'Add recipe')}</button>
     </div>
   `;
 }
@@ -2394,15 +2432,15 @@ function testDrop(n) {
   const out=document.getElementById('dbg-drop-result');
   if(n===1){
     const result=resolveDropForEnemy(enemy,seed);
-    if(!result){out.textContent='⚠ Keine Karte — Droptabelle leer oder fehlerhaft';return;}
+    if(!result){out.textContent=_et('ui.editor.debug.noDrop', null, 'No card - drop table is empty or invalid');return;}
     const c=result.card;
     const col={common:'#aaa',rare:'#60a5fa',epic:'#c084fc',legendary:'#ffd700'}[c.rarity]||'#aaa';
     out.innerHTML=`<div style="color:${col};font-weight:700;font-size:14px">${c.name}</div>
       <div style="color:var(--muted);font-size:11px">${c.type} · ${c.rarity}</div>
-      <div style="font-size:11px;margin-top:4px">Drop-Chance: <b>${result.dropChance}%</b></div>`;
+      <div style="font-size:11px;margin-top:4px">${_et('ui.editor.debug.dropChance', { chance: result.dropChance }, `Drop chance: ${result.dropChance}%`)}</div>`;
   } else {
     const results=simulateDrops(enemy,n,seed);
-    out.innerHTML=`<div style="margin-bottom:6px;font-size:11px">${n}× Simuliert:</div>`+
+    out.innerHTML=`<div style="margin-bottom:6px;font-size:11px">${_et('ui.editor.debug.simulated', { count: n }, `${n}x simulated:`)}</div>`+
       results.map(r=>{
         const col={common:'#aaa',rare:'#60a5fa',epic:'#c084fc',legendary:'#ffd700'}[r.rarity]||'#aaa';
         return `<div class="sim-result-row">
@@ -2417,9 +2455,9 @@ function runAnalysis() {
   const eId=document.getElementById('dbg-analysis-enemy').value;
   const enemy=editorEnemies[eId];
   const out=document.getElementById('dbg-analysis-result');
-  if(!enemy){out.textContent='Keine Daten';return;}
+  if(!enemy){out.textContent=_et('ui.editor.debug.noData', null, 'No data');return;}
   const results=analyzeDropPool(enemy.dropTable);
-  if(!results.length){out.innerHTML='<div style="color:var(--muted)">Keine Einträge in der Droptabelle</div>';return;}
+  if(!results.length){out.innerHTML=`<div style="color:var(--muted)">${_et('ui.editor.debug.noDropEntries', null, 'No entries in the drop table')}</div>`;return;}
   out.innerHTML=results.map(entry=>{
     const col={common:'#aaa',rare:'#60a5fa',epic:'#c084fc',legendary:'#ffd700'}[entry.rarity]||'#aaa';
     return `<div class="sim-result-row">
@@ -2433,12 +2471,12 @@ function loadBattleStats() {
   const out=document.getElementById('dbg-battle-stats');
   try {
     const s=localStorage.getItem('dd_last_battle_stats');
-    if(!s){out.textContent='Keine Daten.\n(Nach einem Kampf werden Stats gespeichert.)';return;}
+    if(!s){out.textContent=_et('ui.editor.debug.noBattleStats', null, 'No data.\n(Stats are saved after a battle.)');return;}
     const data=JSON.parse(s);
     out.innerHTML=Object.entries(data).map(([k,v])=>
       `<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04)">
         <span style="color:var(--muted)">${k}:</span><span>${v}</span></div>`).join('');
-  }catch(e){out.textContent='Fehler: '+e.message;}
+  }catch(e){out.textContent=_et('ui.editor.debug.error', { message: e.message }, `Error: ${e.message}`);}
 }
 
 /* ═══════════════════════════════════════════════════
@@ -3079,12 +3117,12 @@ function initSynergyTab() {
   if (!area) return;
   const rules = (window.DD_CUSTOM?.synergies) || SYNERGY_RULES;
   const typeLabels = {
-    passive_atk_per_card:    'ATK pro Karte (passiv)',
-    passive_atk_flat:        'ATK pauschal (passiv)',
-    passive_def_flat:        'DEF pauschal (passiv)',
-    on_summon_debuff_enemy:  'Debuff Gegner (bei Beschwörung)',
-    on_summon_buff_self:     'Buff Verbündete (bei Beschwörung)',
-    on_death_damage:         'Schaden bei Tod',
+    passive_atk_per_card:    _et('ui.editor.synergies.type.passiveAtkPerCard', null, 'ATK per card (passive)'),
+    passive_atk_flat:        _et('ui.editor.synergies.type.passiveAtkFlat', null, 'Flat ATK (passive)'),
+    passive_def_flat:        _et('ui.editor.synergies.type.passiveDefFlat', null, 'Flat DEF (passive)'),
+    on_summon_debuff_enemy:  _et('ui.editor.synergies.type.onSummonDebuffEnemy', null, 'Debuff enemy (on summon)'),
+    on_summon_buff_self:     _et('ui.editor.synergies.type.onSummonBuffSelf', null, 'Buff allies (on summon)'),
+    on_death_damage:         _et('ui.editor.synergies.type.onDeathDamage', null, 'Damage on death'),
   };
   area.innerHTML = rules.map((rule, i) => `
     <div style="background:var(--surface);border:1px solid ${rule.color||'var(--border)'};border-radius:8px;padding:12px;display:flex;gap:12px;align-items:flex-start">
@@ -3094,11 +3132,11 @@ function initSynergyTab() {
         <div style="font-size:11px;color:var(--muted)">${rule.description}</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <div class="field-group" style="flex:0 0 auto">
-            <label style="font-size:10px">Schwelle (ab X Karten)</label>
+            <label style="font-size:10px">${_et('ui.editor.synergies.threshold', null, 'Threshold (from X cards)')}</label>
             <input type="number" min="1" max="5" value="${rule.threshold}" data-syn-idx="${i}" data-syn-field="threshold" style="width:60px">
           </div>
           <div class="field-group" style="flex:0 0 auto">
-            <label style="font-size:10px">Wert (ATK/DEF/LP)</label>
+            <label style="font-size:10px">${_et('ui.editor.synergies.value', null, 'Value (ATK/DEF/LP)')}</label>
             <input type="number" min="0" max="5000" value="${rule.value}" data-syn-idx="${i}" data-syn-field="value" style="width:80px">
           </div>
         </div>
@@ -3135,10 +3173,12 @@ function resetSynergies() {
 ═══════════════════════════════════════════════════ */
 setDDLanguage(_editorPreviewLanguageMode());
 renderEditorChrome();
+if (typeof applyI18nToDocument === 'function') applyI18nToDocument(document);
 initCardTab();
 initEnemyTab();
 window.addEventListener('dd-language-changed', () => {
   renderEditorChrome();
+  if (typeof applyI18nToDocument === 'function') applyI18nToDocument(document);
   const activeTab = document.querySelector('.tab-btn.active')?.dataset.editorTab;
   if (activeTab) switchTab(activeTab);
   if (selectedCardId) {
