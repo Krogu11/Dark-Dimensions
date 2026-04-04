@@ -445,7 +445,7 @@
     const RUNTIME_CONFIG_BASE_PATH = 'assets/data/runtime-config.json';
     const RUNTIME_CONFIG_PATH = `${RUNTIME_CONFIG_BASE_PATH}?v=${Date.now()}`;
     const FALLBACK_PLAYLISTS = {
-      'cfg-music-menu': ['assets/audio/shadow-sigil-–-title-screen-theme.mp3'],
+      'cfg-music-menu': ['assets/audio/shadow-sigil-title.mp3'],
       'cfg-music-campaign': ['assets/audio/cursed-data-duel.mp3'],
       'cfg-music-story': ['assets/audio/cursed-data-duel.mp3'],
     };
@@ -497,6 +497,14 @@
     }
 
     function loadRuntimeConfigFile() {
+      if (window.location.protocol === 'file:') {
+        console.warn('[RuntimeConfig] file:// detected. Runtime JSON is not loaded via XHR in this mode. Use serve-local.ps1 or a local HTTP server for full parity with GitHub Pages.');
+        return {
+          data: {},
+          loaded: false,
+          error: 'file-protocol-disabled',
+        };
+      }
       try {
         const xhr = new XMLHttpRequest();
         xhr.open('GET', RUNTIME_CONFIG_PATH, false);

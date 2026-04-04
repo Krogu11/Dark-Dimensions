@@ -70,17 +70,29 @@ assets/data/runtime-config.json  Exported runtime data
 
 ## Run Locally
 
-The project has no build step, so opening it as a static browser project is enough.
+Do not rely on `file://` for normal development. Browsers handle locale loading and media behavior differently there than on GitHub Pages.
+
+Use a local HTTP server instead.
 
 ### Start the Game
 
-1. Open [index.html](./index.html) in your browser
+1. Start a local server:
+   - PowerShell: `./serve-local.ps1`
+   - Or manually: `python -m http.server 8000`
+2. Open [http://127.0.0.1:8000/index.html](http://127.0.0.1:8000/index.html)
 
 ### Start the Editor
 
-1. Open [editor.html](./editor.html) in your browser
+1. Start the same local server
+2. Open [http://127.0.0.1:8000/editor.html](http://127.0.0.1:8000/editor.html)
 2. Edit content
 3. Export or runtime-export it back into the game
+
+### Why this matters
+
+- `file://` can trigger CORS restrictions for locale loading
+- audio autoplay behavior differs more strongly without a normal page lifecycle
+- GitHub Pages runs over HTTP, so local HTTP development is the closest match
 
 ## Content Workflow
 

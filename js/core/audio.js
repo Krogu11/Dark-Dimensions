@@ -18,6 +18,8 @@ const BGM_STATE = {
   playedTracks: {},
   pendingPlaylist: null,
   started: false,
+  userInteracted: false,
+  unlockBound: false,
 };
 
 function _musicStrictError(message, details) {
@@ -32,7 +34,44 @@ function _musicStrictError(message, details) {
 }
 
 function _normalizeTrackPath(track) {
-  return typeof track === 'string' && track.trim() ? track.trim() : '';
+  if (typeof track !== 'string' || !track.trim()) return '';
+  return track.trim()
+    .replace(/\\/g, '/')
+    .replace(/^\.\//, '')
+    .replace(/^\/+/, '')
+    .replace(/^audio\//, 'assets/audio/')
+    .replace(/^assets\/assets\//, 'assets/')
+    .replace(/â€“/g, '–')
+    .replace(/â€”/g, '—');
+}
+
+function _resumePlaybackAfterInteraction() {
+  BGM_STATE.userInteracted = true;
+  if (BGM_STATE.pendingPlaylist) {
+    const playlist = BGM_STATE.pendingPlaylist;
+    BGM_STATE.pendingPlaylist = null;
+    BGM_STATE.started = true;
+    _switchPlaylistNow(playlist);
+    return;
+  }
+  if (BGM_STATE.currentPlaylist && (!BGM_STATE.currentAudio || BGM_STATE.currentAudio.paused)) {
+    BGM_STATE.started = true;
+    _switchPlaylistNow(BGM_STATE.currentPlaylist);
+  }
+}
+
+function _bindAudioUnlock() {
+  if (BGM_STATE.unlockBound || typeof document === 'undefined') return;
+  BGM_STATE.unlockBound = true;
+  const unlock = () => {
+    _resumePlaybackAfterInteraction();
+    ['pointerdown', 'keydown', 'touchstart'].forEach(eventName => {
+      document.removeEventListener(eventName, unlock, true);
+    });
+  };
+  ['pointerdown', 'keydown', 'touchstart'].forEach(eventName => {
+    document.addEventListener(eventName, unlock, true);
+  });
 }
 
 function _getConfiguredPlaylist(playlistName) {
@@ -107,7 +146,10 @@ function _playTrack(trackPath) {
 
   const playPromise = audio.play();
   if (playPromise && typeof playPromise.catch === 'function') {
-    playPromise.catch(err => console.warn('[Music] autoplay blocked:', trackPath, err));
+    playPromise.catch(err => {
+      console.warn('[Music] autoplay blocked:', trackPath, err);
+      BGM_STATE.pendingPlaylist = BGM_STATE.currentPlaylist;
+    });
   }
   return true;
 }
@@ -155,6 +197,7 @@ function _handleTrackEnded() {
 function setMusicPlaylist(playlistName) {
   const normalized = String(playlistName || '').trim();
   if (!normalized) return false;
+  _bindAudioUnlock();
 
   if (BGM_STATE.currentPlaylist === normalized) {
     BGM_STATE.pendingPlaylist = null;
@@ -163,6 +206,12 @@ function setMusicPlaylist(playlistName) {
   if (BGM_STATE.pendingPlaylist === normalized) return true;
 
   _preloadPlaylistTracks(normalized);
+
+  if (!BGM_STATE.userInteracted) {
+    BGM_STATE.currentPlaylist = normalized;
+    BGM_STATE.pendingPlaylist = normalized;
+    return true;
+  }
 
   if (!BGM_STATE.currentAudio || BGM_STATE.currentAudio.paused || !BGM_STATE.started) {
     BGM_STATE.started = true;
@@ -188,3 +237,5 @@ function stopMusicPlayback() {
   }
   BGM_STATE.currentAudio = null;
 }
+
+_bindAudioUnlock();

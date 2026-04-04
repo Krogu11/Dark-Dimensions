@@ -55,7 +55,15 @@
     return root[language][namespace];
   }
 
+  function shouldLoadLocaleFiles() {
+    if (typeof window === 'undefined' || !window.location) return false;
+    return window.location.protocol !== 'file:';
+  }
+
   function loadLocaleFileSync(language, namespace) {
+    if (!shouldLoadLocaleFiles()) {
+      return window.DD_EMBEDDED_LOCALES?.[language]?.[namespace] || {};
+    }
     const path = `locales/${language}/${namespace}.json`;
     try {
       const xhr = new XMLHttpRequest();
