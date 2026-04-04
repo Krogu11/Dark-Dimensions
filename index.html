@@ -439,10 +439,144 @@
 <!-- ════════════════════════════════════════════════
      SCRIPTS — Ladereihenfolge beachten!
 ════════════════════════════════════════════════ -->
-<!-- Custom-Data-Override: Editor speichert hier, Spiel liest beim Start -->
+<!-- Runtime-Konfiguration: localStorage-Overrides + versionierte JSON-Fallbacks -->
 <script>
-  try { window.DD_CUSTOM = JSON.parse(localStorage.getItem('dd_custom') || '{}'); }
-  catch(e) { window.DD_CUSTOM = {}; }
+  (function bootRuntimeConfig() {
+    const RUNTIME_CONFIG_PATH = 'assets/data/runtime-config.json';
+    const FALLBACK_PLAYLISTS = {
+      'cfg-music-menu': ['assets/audio/shadow-sigil-–-title-screen-theme.mp3'],
+      'cfg-music-campaign': ['assets/audio/cursed-data-duel.mp3'],
+      'cfg-music-story': ['assets/audio/cursed-data-duel.mp3'],
+    };
+
+    function isPlainObject(value) {
+      return !!value && typeof value === 'object' && !Array.isArray(value);
+    }
+
+    function cloneValue(value) {
+      if (Array.isArray(value)) return value.map(cloneValue);
+      if (isPlainObject(value)) {
+        const out = {};
+        Object.keys(value).forEach(key => { out[key] = cloneValue(value[key]); });
+        return out;
+      }
+      return value;
+    }
+
+    function mergeRuntimeData(baseValue, overrideValue) {
+      if (overrideValue === undefined) return cloneValue(baseValue);
+      if (Array.isArray(overrideValue)) return overrideValue.map(cloneValue);
+      if (isPlainObject(baseValue) && isPlainObject(overrideValue)) {
+        const out = {};
+        const keys = new Set([...Object.keys(baseValue), ...Object.keys(overrideValue)]);
+        keys.forEach(key => {
+          out[key] = mergeRuntimeData(baseValue[key], overrideValue[key]);
+        });
+        return out;
+      }
+      return cloneValue(overrideValue);
+    }
+
+    function readLocalOverrides() {
+      try {
+        return JSON.parse(localStorage.getItem('dd_custom') || '{}');
+      } catch (error) {
+        console.warn('[RuntimeConfig] localStorage dd_custom konnte nicht gelesen werden:', error);
+        return {};
+      }
+    }
+
+    function loadRuntimeConfigFile() {
+      try {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', RUNTIME_CONFIG_PATH, false);
+        xhr.send(null);
+
+        const isSuccess = (xhr.status >= 200 && xhr.status < 300) || (xhr.status === 0 && xhr.responseText);
+        if (!isSuccess || !xhr.responseText) {
+          return {
+            data: {},
+            loaded: false,
+            error: `HTTP ${xhr.status || 0}`,
+          };
+        }
+
+        return {
+          data: JSON.parse(xhr.responseText),
+          loaded: true,
+          error: null,
+        };
+      } catch (error) {
+        return {
+          data: {},
+          loaded: false,
+          error: error && error.message ? error.message : String(error),
+        };
+      }
+    }
+
+    function normalizePlaylist(list) {
+      return Array.isArray(list)
+        ? list.map(track => String(track || '').trim()).filter(Boolean)
+        : [];
+    }
+
+    function applyConfigFallbacks(ddCustom) {
+      const next = isPlainObject(ddCustom) ? ddCustom : {};
+      next.config = isPlainObject(next.config) ? next.config : {};
+      Object.keys(FALLBACK_PLAYLISTS).forEach(key => {
+        if (normalizePlaylist(next.config[key]).length === 0) {
+          next.config[key] = [...FALLBACK_PLAYLISTS[key]];
+        }
+      });
+      return next;
+    }
+
+    const fileConfig = loadRuntimeConfigFile();
+    const localOverrides = readLocalOverrides();
+    window.DD_CUSTOM = applyConfigFallbacks(mergeRuntimeData(fileConfig.data || {}, localOverrides || {}));
+
+    window.__DD_RUNTIME_BOOT = {
+      runtimeConfigPath: RUNTIME_CONFIG_PATH,
+      runtimeConfigLoaded: !!fileConfig.loaded,
+      runtimeConfigError: fileConfig.error,
+      hasLocalOverrides: !!(localOverrides && Object.keys(localOverrides).length > 0),
+      playlistFallbacks: cloneValue(FALLBACK_PLAYLISTS),
+    };
+
+    window.logDDRuntimeDiagnostics = function logDDRuntimeDiagnostics(context) {
+      const worldMap = Array.isArray(window.DD_CUSTOM?.worldMap) ? window.DD_CUSTOM.worldMap : [];
+      const acts = Array.isArray(window.DD_CUSTOM?.acts) ? window.DD_CUSTOM.acts : [];
+      const cfg = window.DD_CUSTOM?.config || {};
+      const menuPlaylist = normalizePlaylist(cfg['cfg-music-menu']);
+      const campaignPlaylist = normalizePlaylist(cfg['cfg-music-campaign']);
+      const storyPlaylist = normalizePlaylist(cfg['cfg-music-story']);
+
+      const details = {
+        context: context || 'runtime',
+        runtimeConfigLoaded: window.__DD_RUNTIME_BOOT?.runtimeConfigLoaded || false,
+        runtimeConfigPath: window.__DD_RUNTIME_BOOT?.runtimeConfigPath || RUNTIME_CONFIG_PATH,
+        hasLocalOverrides: window.__DD_RUNTIME_BOOT?.hasLocalOverrides || false,
+        runtimeConfigError: window.__DD_RUNTIME_BOOT?.runtimeConfigError || null,
+        worldMapLoaded: worldMap.length > 0,
+        worldMapCount: worldMap.length,
+        actsLoaded: acts.length > 0,
+        actCount: acts.length,
+        playlistCounts: {
+          menu: menuPlaylist.length,
+          campaign: campaignPlaylist.length,
+          story: storyPlaylist.length,
+        },
+        menuPlaylist,
+      };
+
+      window.__DD_RUNTIME_BOOT.lastDiagnostics = details;
+      console.info('[RuntimeConfig]', details);
+      return details;
+    };
+
+    window.logDDRuntimeDiagnostics('boot');
+  })();
 </script>
 
 <!-- CDN: GSAP -->

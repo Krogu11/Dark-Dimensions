@@ -50,6 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Kampagne starten / fortsetzen */
   document.getElementById('btn-mainmenu-campaign')?.addEventListener('click', () => {
     if (!SAVE_STATE.slot) return;
+    if (typeof window.logDDRuntimeDiagnostics === 'function') {
+      window.logDDRuntimeDiagnostics('campaign-button');
+    }
     const hasWorldMap = window.DD_CUSTOM && Array.isArray(window.DD_CUSTOM.worldMap) && window.DD_CUSTOM.worldMap.length > 0;
     if (!hasWorldMap || typeof initWorldState !== 'function') {
       strictDataError('Keine Weltenkarte konfiguriert. Kampagne kann nicht gestartet werden.');

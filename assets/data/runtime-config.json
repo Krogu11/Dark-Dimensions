@@ -1,0 +1,776 @@
+{
+  "version": "runtime-config-v1",
+  "generatedFrom": "chrome-localStorage-dd_custom",
+  "acts": [
+    {
+      "actIndex": 0,
+      "actName": "Flussweg",
+      "background": "linear-gradient(135deg, #0a0f06 0%, #0d1a0d 100%)",
+      "nodes": [
+        {
+          "id": "1_start",
+          "type": "start",
+          "x": 5,
+          "y": 50,
+          "next": [
+            "1_1a",
+            "1_1b"
+          ]
+        },
+        {
+          "id": "1_1a",
+          "type": "battle",
+          "x": 22,
+          "y": 28,
+          "next": [
+            "1_2a",
+            "1_2b"
+          ],
+          "enemyId": "goblin_gang",
+          "enemyPool": []
+        },
+        {
+          "id": "1_1b",
+          "type": "shop",
+          "x": 22,
+          "y": 72,
+          "next": [
+            "1_2b",
+            "1_2c"
+          ],
+          "enemyId": null
+        },
+        {
+          "id": "1_2a",
+          "type": "battle",
+          "x": 42,
+          "y": 18,
+          "next": [
+            "1_3a"
+          ],
+          "enemyId": "skeleton_mage"
+        },
+        {
+          "id": "1_2b",
+          "type": "elite",
+          "x": 42,
+          "y": 50,
+          "next": [
+            "1_3a",
+            "1_3b"
+          ],
+          "enemyId": "orc_warlord"
+        },
+        {
+          "id": "1_2c",
+          "type": "rest",
+          "x": 42,
+          "y": 82,
+          "next": [
+            "1_3b"
+          ],
+          "enemyId": null
+        },
+        {
+          "id": "1_3a",
+          "type": "battle",
+          "x": 62,
+          "y": 33,
+          "next": [
+            "1_boss"
+          ],
+          "enemyId": "skeleton_mage"
+        },
+        {
+          "id": "1_3b",
+          "type": "shop",
+          "x": 62,
+          "y": 68,
+          "next": [
+            "1_boss"
+          ],
+          "enemyId": null
+        },
+        {
+          "id": "1_boss",
+          "type": "boss",
+          "x": 82,
+          "y": 50,
+          "next": [
+            "act2"
+          ],
+          "enemyId": "forest_demon"
+        }
+      ],
+      "mode": "random",
+      "generatorConfig": {
+        "layers": 2,
+        "minWidth": 1,
+        "maxWidth": 2,
+        "distribution": {
+          "battle": 90,
+          "elite": 0,
+          "shop": 0,
+          "rest": 10
+        },
+        "battlePool": [
+          {
+            "enemyId": "goblin_gang",
+            "weight": 10
+          },
+          {
+            "enemyId": "kobold_waldlaeufer",
+            "weight": 10
+          },
+          {
+            "enemyId": "Wolfsrudel",
+            "weight": 3
+          }
+        ],
+        "elitePool": [],
+        "bossId": "kobold_reiter"
+      },
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": "audio/cursed-data-duel.mp3"
+    },
+    {
+      "actIndex": 1,
+      "actName": "Der Kobold Wald",
+      "background": "linear-gradient(135deg, #0f0806 0%, #1a0d0d 100%)",
+      "nodes": [
+        {
+          "id": "2_start",
+          "type": "start",
+          "x": 5,
+          "y": 50,
+          "next": [
+            "2_1a",
+            "2_1b"
+          ]
+        },
+        {
+          "id": "2_1a",
+          "type": "battle",
+          "x": 22,
+          "y": 25,
+          "next": [
+            "2_2a",
+            "2_2b"
+          ],
+          "enemyId": "shadow_knight"
+        },
+        {
+          "id": "2_1b",
+          "type": "rest",
+          "x": 22,
+          "y": 75,
+          "next": [
+            "2_2b",
+            "2_2c"
+          ],
+          "enemyId": null
+        },
+        {
+          "id": "2_2a",
+          "type": "elite",
+          "x": 40,
+          "y": 15,
+          "next": [
+            "2_3a"
+          ],
+          "enemyId": "iron_golem_guard"
+        },
+        {
+          "id": "2_2b",
+          "type": "battle",
+          "x": 40,
+          "y": 50,
+          "next": [
+            "2_3a",
+            "2_3b"
+          ],
+          "enemyId": "dark_priest"
+        },
+        {
+          "id": "2_2c",
+          "type": "shop",
+          "x": 40,
+          "y": 85,
+          "next": [
+            "2_3b"
+          ],
+          "enemyId": null
+        },
+        {
+          "id": "2_3a",
+          "type": "battle",
+          "x": 58,
+          "y": 25,
+          "next": [
+            "2_4a",
+            "2_4b"
+          ],
+          "enemyId": "shadow_knight"
+        },
+        {
+          "id": "2_3b",
+          "type": "rest",
+          "x": 58,
+          "y": 75,
+          "next": [
+            "2_4b"
+          ],
+          "enemyId": null
+        },
+        {
+          "id": "2_4a",
+          "type": "elite",
+          "x": 75,
+          "y": 35,
+          "next": [
+            "2_boss"
+          ],
+          "enemyId": "iron_golem_guard"
+        },
+        {
+          "id": "2_4b",
+          "type": "shop",
+          "x": 75,
+          "y": 65,
+          "next": [
+            "2_boss"
+          ],
+          "enemyId": null
+        },
+        {
+          "id": "2_boss",
+          "type": "boss",
+          "x": 90,
+          "y": 50,
+          "next": [
+            "act3"
+          ],
+          "enemyId": "chaos_lord"
+        }
+      ],
+      "mode": "random",
+      "generatorConfig": {
+        "layers": 2,
+        "minWidth": 2,
+        "maxWidth": 3,
+        "distribution": {
+          "battle": 70,
+          "elite": 20,
+          "shop": 0,
+          "rest": 10
+        },
+        "battlePool": [
+          {
+            "enemyId": "goblin_gang",
+            "weight": 10
+          },
+          {
+            "enemyId": "kobold_waldlaeufer",
+            "weight": 10
+          },
+          {
+            "enemyId": "Wolfsrudel",
+            "weight": 3
+          }
+        ],
+        "elitePool": [
+          {
+            "enemyId": "kobold_reiter",
+            "weight": 10
+          },
+          {
+            "enemyId": "goblin_chief",
+            "weight": 10
+          }
+        ],
+        "bossId": "kobold_könig"
+      },
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": "audio/cursed-data-duel.mp3"
+    },
+    {
+      "actIndex": 2,
+      "actName": "Kleines Dorf",
+      "background": "linear-gradient(135deg, #060612 0%, #0d0a1a 100%)",
+      "nodes": [
+        {
+          "id": "3_start",
+          "type": "start",
+          "x": 5,
+          "y": 50,
+          "next": [
+            "3_1a",
+            "3_1b"
+          ]
+        },
+        {
+          "id": "3_1a",
+          "type": "battle",
+          "x": 20,
+          "y": 30,
+          "next": [
+            "3_2a",
+            "3_2b"
+          ],
+          "enemyId": "void_reaper"
+        },
+        {
+          "id": "3_1b",
+          "type": "shop",
+          "x": 20,
+          "y": 70,
+          "next": [
+            "3_2b",
+            "3_2c"
+          ],
+          "enemyId": null
+        },
+        {
+          "id": "3_2a",
+          "type": "elite",
+          "x": 38,
+          "y": 20,
+          "next": [
+            "3_3a"
+          ],
+          "enemyId": "soul_devourer"
+        },
+        {
+          "id": "3_2b",
+          "type": "battle",
+          "x": 38,
+          "y": 50,
+          "next": [
+            "3_3a",
+            "3_3b"
+          ],
+          "enemyId": "void_reaper"
+        },
+        {
+          "id": "3_2c",
+          "type": "rest",
+          "x": 38,
+          "y": 80,
+          "next": [
+            "3_3b"
+          ],
+          "enemyId": null
+        },
+        {
+          "id": "3_3a",
+          "type": "battle",
+          "x": 57,
+          "y": 30,
+          "next": [
+            "3_4a",
+            "3_4b"
+          ],
+          "enemyId": "void_reaper"
+        },
+        {
+          "id": "3_3b",
+          "type": "shop",
+          "x": 57,
+          "y": 70,
+          "next": [
+            "3_4b"
+          ],
+          "enemyId": null
+        },
+        {
+          "id": "3_4a",
+          "type": "elite",
+          "x": 73,
+          "y": 40,
+          "next": [
+            "3_boss"
+          ],
+          "enemyId": "soul_devourer"
+        },
+        {
+          "id": "3_4b",
+          "type": "rest",
+          "x": 73,
+          "y": 60,
+          "next": [
+            "3_boss"
+          ],
+          "enemyId": null
+        },
+        {
+          "id": "3_boss",
+          "type": "boss",
+          "x": 88,
+          "y": 50,
+          "next": [
+            "victory"
+          ],
+          "enemyId": "dark_dimension_god"
+        }
+      ],
+      "mode": "fixed",
+      "generatorConfig": {
+        "layers": 4,
+        "minWidth": 2,
+        "maxWidth": 3,
+        "distribution": {
+          "battle": 55,
+          "elite": 25,
+          "shop": 10,
+          "rest": 10
+        },
+        "battlePool": [
+          {
+            "enemyId": "void_reaper",
+            "weight": 10
+          }
+        ],
+        "elitePool": [
+          {
+            "enemyId": "soul_devourer",
+            "weight": 10
+          }
+        ],
+        "bossId": "dark_dimension_god"
+      },
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": "audio/cursed-data-duel.mp3"
+    }
+  ],
+  "config": {
+    "cfg-startlp": 4000,
+    "cfg-startgold": 50,
+    "cfg-maxhand": 9,
+    "cfg-restratio": 30,
+    "cfg-removecost": 75,
+    "cfg-fleecost": 50,
+    "cfg-price-common": 50,
+    "cfg-price-uncommon": 100,
+    "cfg-price-rare": 200,
+    "cfg-price-epic": 500,
+    "cfg-price-legendary": 1000,
+    "cfg-maxsummons": 3,
+    "cfg-roster-order": [
+      "goblin_gang",
+      "kobold_waldlaeufer",
+      "kobold_reiter",
+      "Wolfsrudel",
+      "goblin_chief",
+      "kobold_könig",
+      "skeleton_mage",
+      "forest_demon",
+      "orc_warlord",
+      "shadow_knight",
+      "dark_priest",
+      "iron_golem_guard",
+      "chaos_lord",
+      "void_reaper",
+      "soul_devourer",
+      "dark_dimension_god"
+    ]
+  },
+  "starterDeck": [
+    "heallight",
+    "mutiger_dorfbewohner",
+    "mutiger_dorfbewohner",
+    "mutiger_dorfbewohner",
+    "Dorfwache",
+    "Dorfwache",
+    "Dorfwache",
+    "dorfbeschützer",
+    "dorfbeschützer",
+    "dorfbeschützer"
+  ],
+  "worldMap": [
+    {
+      "id": "loc_1775231331878",
+      "name": "Das Erwachen",
+      "type": "story",
+      "x": 6.826741701974166,
+      "y": 6.8883614827579915,
+      "connections": [
+        "loc_1775250693168"
+      ],
+      "unlockConditions": [],
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "description": "",
+      "actId": "act_0",
+      "bgm": "",
+      "battleBgm": ""
+    },
+    {
+      "id": "loc_1775231361823",
+      "name": "Flussweg",
+      "type": "dungeon",
+      "x": 7.159314907534657,
+      "y": 30.11404068495539,
+      "connections": [
+        "loc_1775250693168",
+        "loc_1775232277913"
+      ],
+      "unlockConditions": [],
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "description": "",
+      "actId": "act_0",
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": "audio/cursed-data-duel.mp3"
+    },
+    {
+      "id": "loc_1775232277913",
+      "name": "Lager am Fluss",
+      "type": "hub",
+      "x": 19.91441617957916,
+      "y": 32.25231576317707,
+      "connections": [
+        "loc_1775232402455",
+        "loc_1775231361823"
+      ],
+      "unlockConditions": [],
+      "hubFeatures": [
+        "rest",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "description": "",
+      "actId": "act_0",
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": ""
+    },
+    {
+      "id": "loc_1775232402455",
+      "name": "Koboldwald",
+      "type": "dungeon",
+      "x": 30.44766110100946,
+      "y": 32.25231576317707,
+      "connections": [
+        "loc_1775232277913",
+        "loc_1775232499746",
+        "loc_1775232533674"
+      ],
+      "unlockConditions": [],
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "description": "",
+      "actId": "act_1",
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": "audio/cursed-data-duel.mp3"
+    },
+    {
+      "id": "loc_1775232499746",
+      "name": "Domäne des Koboldimperators",
+      "type": "dungeon",
+      "x": 40.65174211864506,
+      "y": 32.965074122584305,
+      "connections": [
+        "loc_1775232402455"
+      ],
+      "unlockConditions": [
+        {
+          "type": "locationVisited",
+          "locationId": "loc_1775232533674"
+        }
+      ],
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "description": "",
+      "actId": "act_2",
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": "audio/cursed-data-duel.mp3"
+    },
+    {
+      "id": "loc_1775232533674",
+      "name": "Kleines Dorf",
+      "type": "hub",
+      "x": 30.529952076958132,
+      "y": 52.20954982657946,
+      "connections": [
+        "loc_1775232402455"
+      ],
+      "unlockConditions": [],
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "description": "",
+      "actId": "act_0",
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": ""
+    },
+    {
+      "id": "loc_1775250693168",
+      "name": "Am Fluss",
+      "type": "story",
+      "x": 6.826741701974166,
+      "y": 18.368962947239265,
+      "connections": [
+        "loc_1775231331878",
+        "loc_1775231361823"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "description": "",
+      "bgm": "",
+      "battleBgm": ""
+    }
+  ],
+  "recipes": [
+    {
+      "mat1": "kobold_hauptmann",
+      "mat2": "kobold_hauptmann",
+      "result": "kobold_koenig"
+    },
+    {
+      "mat1": "kobold_winzling",
+      "mat2": "kobold_winzling",
+      "result": "kobold_speertraeger"
+    },
+    {
+      "mat1": "kobold_waldkobold",
+      "mat2": "wolf",
+      "result": "goblin_wolfreiter"
+    },
+    {
+      "mat1": "kobold_koenig",
+      "mat2": "kobold_koenig",
+      "result": "kobold_imperator"
+    },
+    {
+      "mat1": "kobold_winzling",
+      "mat2": "kobold_waldkobold",
+      "result": "kobold_jaeger"
+    },
+    {
+      "mat1": "kobold_jaeger",
+      "mat2": "kobold_jaeger",
+      "result": "kobold_schuetze"
+    },
+    {
+      "mat1": "kobold_speertraeger",
+      "mat2": "kobold_speertraeger",
+      "result": "kobold_krieger"
+    },
+    {
+      "mat1": "kobold_waldkobold",
+      "mat2": "kobold_waldkobold",
+      "result": "goblin_schamane"
+    },
+    {
+      "mat1": "kobold_krieger",
+      "mat2": "kobold_schuetze",
+      "result": "kobold_hauptmann"
+    },
+    {
+      "mat1": "welpe",
+      "mat2": "welpe",
+      "result": "wolf"
+    },
+    {
+      "mat1": "wolf",
+      "mat2": "wolf",
+      "result": "alphawolf"
+    },
+    {
+      "mat1": "mutiger_dorfbewohner",
+      "mat2": "Dorfwache",
+      "result": "dorfbeschützer"
+    },
+    {
+      "mat1": "dorfbeschützer",
+      "mat2": "Dorfwache",
+      "result": "dorfbeschütze"
+    },
+    {
+      "mat1": "dorfbeschütze",
+      "mat2": "mutiger_dorfbewohner",
+      "result": "bannertraeger"
+    },
+    {
+      "mat1": "bannertraeger",
+      "mat2": "Dorfwache",
+      "result": "held der bastion"
+    },
+    {
+      "mat1": "wolf",
+      "mat2": "mutiger_dorfbewohner",
+      "result": "Beste Freunde"
+    },
+    {
+      "mat1": "welpe",
+      "mat2": "Dorfwache",
+      "result": "Beste Freunde"
+    },
+    {
+      "mat1": "wolf",
+      "mat2": "Dorfwache",
+      "result": "Beste Freunde"
+    },
+    {
+      "mat1": "welpe",
+      "mat2": "mutiger_dorfbewohner",
+      "result": "Beste Freunde"
+    },
+    {
+      "mat1": "wolf",
+      "mat2": "dorfbeschützer",
+      "result": "Beste Freunde"
+    },
+    {
+      "mat1": "welpe",
+      "mat2": "dorfbeschützer",
+      "result": "Beste Freunde"
+    },
+    {
+      "mat1": "alphawolf",
+      "mat2": "dorfbeschützer",
+      "result": "Beste Freunde"
+    },
+    {
+      "mat1": "alphawolf",
+      "mat2": "Dorfwache",
+      "result": "Beste Freunde"
+    },
+    {
+      "mat1": "alphawolf",
+      "mat2": "mutiger_dorfbewohner",
+      "result": "Beste Freunde"
+    }
+  ]
+}

@@ -242,6 +242,9 @@ document.addEventListener('click', event => {
 
     const id = Number(newSlotBtn.dataset.slot);
     loadSlot(id);
+    if (typeof window.logDDRuntimeDiagnostics === 'function') {
+      window.logDDRuntimeDiagnostics('runtime-new-game-click');
+    }
 
     const hasWorldMap = window.DD_CUSTOM && Array.isArray(window.DD_CUSTOM.worldMap) && window.DD_CUSTOM.worldMap.length > 0;
     if (!hasWorldMap) {
@@ -259,6 +262,9 @@ document.addEventListener('click', event => {
 
   event.preventDefault();
   event.stopImmediatePropagation();
+  if (typeof window.logDDRuntimeDiagnostics === 'function') {
+    window.logDDRuntimeDiagnostics('runtime-campaign-button');
+  }
 
   const hasWorldMap = window.DD_CUSTOM && Array.isArray(window.DD_CUSTOM.worldMap) && window.DD_CUSTOM.worldMap.length > 0;
   if (!hasWorldMap) {
