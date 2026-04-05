@@ -415,7 +415,7 @@
                                        "enemyId":  "dark_dimension_god"
                                    }
                                ],
-                     "mode":  "fixed",
+                     "mode":  "random",
                      "generatorConfig":  {
                                              "layers":  4,
                                              "minWidth":  2,
@@ -423,8 +423,8 @@
                                              "distribution":  {
                                                                   "battle":  55,
                                                                   "elite":  25,
-                                                                  "shop":  10,
-                                                                  "rest":  10
+                                                                  "shop":  0,
+                                                                  "rest":  20
                                                               },
                                              "battlePool":  [
                                                                 {
