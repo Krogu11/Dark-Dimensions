@@ -24,6 +24,11 @@ function Append-Log {
   $TextBox.ScrollToCaret()
 }
 
+function Quote-Arg([string]$value) {
+  if ($null -eq $value) { return '""' }
+  return '"' + ($value -replace '"', '\"') + '"'
+}
+
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $publishScript = Join-Path $repoRoot "publish-runtime.ps1"
 
@@ -190,17 +195,6 @@ $publishButton.Add_Click({
   Append-Log $logBox "Publish gestartet..."
 
   try {
-    $argList = @(
-      "-NoProfile",
-      "-ExecutionPolicy", "Bypass",
-      "-File", $publishScript,
-      "-SourcePath", $sourcePath,
-      "-CommitMessage", $messageBox.Text
-    )
-    if (-not $pushCheckbox.Checked) {
-      $argList += "-SkipGit"
-    }
-
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = New-Object System.Diagnostics.ProcessStartInfo
     $process.StartInfo.FileName = "powershell.exe"
@@ -209,9 +203,17 @@ $publishButton.Add_Click({
     $process.StartInfo.RedirectStandardOutput = $true
     $process.StartInfo.RedirectStandardError = $true
     $process.StartInfo.CreateNoWindow = $true
-    foreach ($arg in $argList) {
-      [void]$process.StartInfo.ArgumentList.Add($arg)
+    $argumentString = @(
+      "-NoProfile"
+      "-ExecutionPolicy Bypass"
+      "-File $(Quote-Arg $publishScript)"
+      "-SourcePath $(Quote-Arg $sourcePath)"
+      "-CommitMessage $(Quote-Arg $messageBox.Text)"
+    )
+    if (-not $pushCheckbox.Checked) {
+      $argumentString += "-SkipGit"
     }
+    $process.StartInfo.Arguments = ($argumentString -join ' ')
 
     $null = $process.Start()
     $stdout = $process.StandardOutput.ReadToEnd()
