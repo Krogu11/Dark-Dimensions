@@ -421,6 +421,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
       <span style="color:var(--muted);font-size:11px" data-i18n="ui.editor.worldmap.toolbarHelp">Klick auf die Karte um einen Ort zu platzieren.</span>
       <div style="flex:1"></div>
       <button class="btn-sm" onclick="addWorldMapLocation()" data-i18n="ui.editor.worldmap.addLocation">+ Ort</button>
+      <button class="btn-sm" onclick="resetWorldMapFromRuntime()" style="border-color:#60a5fa;color:#60a5fa" title="Weltenkarte auf den aktuellen Runtime-Stand zurücksetzen (überschreibt lokale Änderungen)">↺ WorldMap neu laden</button>
       <button class="btn-sm" onclick="clearWorldMap()" style="border-color:var(--red);color:var(--red)" data-i18n="ui.editor.worldmap.clearMap">Karte leeren</button>
     </div>
     <div style="display:flex;flex:1;overflow:hidden">
@@ -662,11 +663,42 @@ function normalizeEditorAct(act) {
     battleBgm: typeof act.battleBgm === 'string' ? act.battleBgm : '',
   };
 }
-// Fallback: WorldMap aus DD_CUSTOM laden, wenn localStorage keine enthält
-// (Tritt auf beim ersten Start, bei file://-Modus und nach Cache-Leerung)
-if (editorWorldMap.length === 0 && Array.isArray(window.DD_CUSTOM?.worldMap) && window.DD_CUSTOM.worldMap.length > 0) {
-  editorWorldMap = JSON.parse(JSON.stringify(window.DD_CUSTOM.worldMap)).map(normalizeEditorWorldMapLocation);
+// ── WorldMap-Migration & Fallback ─────────────────────────────────────────
+// Erkennt veraltete WorldMaps mit Timestamp-basierten IDs (z.B. loc_1775231331878)
+// die in alten Editor-Sessions gespeichert wurden und nicht mehr zur Spielstruktur passen.
+function _worldmapHasLegacyTimestampIds(worldMap) {
+  if (!Array.isArray(worldMap) || worldMap.length === 0) return false;
+  return worldMap.some(loc => /^(loc_)?\d{10,}$/.test(String(loc.id || '')));
 }
+
+function _loadWorldmapFromRuntime() {
+  if (Array.isArray(window.DD_CUSTOM?.worldMap) && window.DD_CUSTOM.worldMap.length > 0) {
+    return JSON.parse(JSON.stringify(window.DD_CUSTOM.worldMap)).map(normalizeEditorWorldMapLocation);
+  }
+  return [];
+}
+
+// Fallback: leer → aus DD_CUSTOM laden
+if (editorWorldMap.length === 0) {
+  editorWorldMap = _loadWorldmapFromRuntime();
+}
+
+// Migration: alte Timestamp-IDs erkannt → automatisch auf aktuelle Struktur umstellen
+// (Das Erwachen / Tutorial / etc. werden durch die neue WorldMap ersetzt)
+if (_worldmapHasLegacyTimestampIds(editorWorldMap)) {
+  console.warn('[Editor] Veraltete WorldMap-IDs erkannt — automatische Migration auf aktuelle Spielstruktur.');
+  const fresh = _loadWorldmapFromRuntime();
+  if (fresh.length > 0) {
+    editorWorldMap = fresh;
+    // Auch aus localStorage entfernen, damit beim nächsten Laden keine alten Daten zurückkommen
+    try {
+      const ls = JSON.parse(localStorage.getItem('dd_custom') || '{}');
+      delete ls.worldMap;
+      localStorage.setItem('dd_custom', JSON.stringify(ls));
+    } catch (_e) {}
+  }
+}
+
 if (typeof prepareWorldLocationLocalization === 'function') editorWorldMap.forEach(prepareWorldLocationLocalization);
 hydrateStoryEditorContent();
 
@@ -3271,6 +3303,28 @@ function clearWorldMap() {
   selectedWmLocId = null;
   renderWmCanvas();
   renderWmDetail(null);
+}
+
+/* WorldMap auf aktuellen Runtime-Stand zurücksetzen (löscht lokale Overrides) */
+function resetWorldMapFromRuntime() {
+  if (!confirm('WorldMap zurücksetzen?\n\nDie aktuelle WorldMap aus der Spielstruktur (world-map.json / runtime-config.js) wird geladen. Lokale Änderungen an der WorldMap werden überschrieben.')) return;
+  const fresh = _loadWorldmapFromRuntime();
+  if (fresh.length === 0) {
+    showToast('Keine Runtime-WorldMap verfügbar — Bitte erst per HTTP-Server oder GitHub Pages öffnen.');
+    return;
+  }
+  editorWorldMap = fresh;
+  if (typeof prepareWorldLocationLocalization === 'function') editorWorldMap.forEach(prepareWorldLocationLocalization);
+  // Alten WorldMap-Eintrag aus localStorage entfernen
+  try {
+    const ls = JSON.parse(localStorage.getItem('dd_custom') || '{}');
+    delete ls.worldMap;
+    localStorage.setItem('dd_custom', JSON.stringify(ls));
+  } catch (_e) {}
+  selectedWmLocId = null;
+  renderWmCanvas();
+  renderWmDetail(null);
+  showToast('✓ WorldMap auf aktuellen Runtime-Stand zurückgesetzt');
 }
 
 /* ── Detail-Panel ── */
