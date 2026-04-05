@@ -575,6 +575,8 @@ window.DD_RUNTIME_OPTIONS = {
 <script src="js/core/drops.js"></script>
 <script src="js/core/actgenerator.js"></script>
 <script src="js/editor/data-manager.js"></script>
+<!-- synergies.js liefert SYNERGY_RULES für den Synergie-Tab -->
+<script src="js/core/synergies.js"></script>
 
 <script>
 /* ═══════════════════════════════════════════════════
@@ -592,7 +594,16 @@ let editorStarterDeck = [
   'assassin','dragon','fireball','heallight','darkinsight','counterstrike','sacredwall'
 ];
 
-// Load existing overrides
+/* Weltenkarte & Story System
+   WICHTIG: Deklaration VOR dem try-Block, damit kein TDZ-ReferenceError entsteht.
+   Vorinitialisierung aus DD_CUSTOM (Embedded Runtime / Online-Daten).
+   localStorage-Overrides werden weiter unten im try-Block angewendet. */
+let editorWorldMap = [];
+let editorEvents = JSON.parse(JSON.stringify(window.DD_CUSTOM?.events || []));
+let editorQuests = JSON.parse(JSON.stringify(window.DD_CUSTOM?.quests || []));
+let editorHubs   = JSON.parse(JSON.stringify(window.DD_CUSTOM?.hubs   || []));
+
+// Load existing overrides (localStorage überschreibt DD_CUSTOM-Werte)
 try {
   const saved = JSON.parse(localStorage.getItem('dd_custom') || '{}');
   if (saved.cards)   saved.cards.forEach(c => { const i = editorCards.findIndex(x=>x.id===c.id); if(i>=0) editorCards[i]=c; else editorCards.push(c); });
@@ -602,20 +613,15 @@ try {
   if (saved.recipes) editorRecipes = saved.recipes;
   if (saved.config)  editorConfig  = saved.config;
   if (saved.starterDeck) editorStarterDeck = saved.starterDeck;
-  // Story overrides — merge individual items by id
-  if (Array.isArray(saved.events) && saved.events.length > 0) editorEvents = saved.events;
-  if (Array.isArray(saved.quests) && saved.quests.length > 0) editorQuests = saved.quests;
-  if (Array.isArray(saved.hubs)   && saved.hubs.length   > 0) editorHubs   = saved.hubs;
+  // WorldMap & Story-Overrides aus localStorage
+  if (Array.isArray(saved.worldMap))                             editorWorldMap = saved.worldMap.map(normalizeEditorWorldMapLocation);
+  if (Array.isArray(saved.events) && saved.events.length > 0)   editorEvents   = saved.events;
+  if (Array.isArray(saved.quests) && saved.quests.length > 0)   editorQuests   = saved.quests;
+  if (Array.isArray(saved.hubs)   && saved.hubs.length   > 0)   editorHubs     = saved.hubs;
 } catch(e) {}
 
 if (typeof prepareCardLocalization === 'function') editorCards.forEach(prepareCardLocalization);
 if (typeof prepareEnemyLocalization === 'function') Object.values(editorEnemies).forEach(prepareEnemyLocalization);
-
-/* Weltenkarte & Story System – aus DD_CUSTOM vorbelegt */
-let editorWorldMap = [];
-let editorEvents = JSON.parse(JSON.stringify(window.DD_CUSTOM?.events || []));
-let editorQuests = JSON.parse(JSON.stringify(window.DD_CUSTOM?.quests || []));
-let editorHubs   = JSON.parse(JSON.stringify(window.DD_CUSTOM?.hubs   || []));
 function editorActId(act) {
   if (!act || typeof act !== 'object') return '';
   if (typeof act.id === 'string' && act.id.trim()) return act.id.trim();
@@ -656,13 +662,11 @@ function normalizeEditorAct(act) {
     battleBgm: typeof act.battleBgm === 'string' ? act.battleBgm : '',
   };
 }
-try {
-  const saved = JSON.parse(localStorage.getItem('dd_custom') || '{}');
-  if (Array.isArray(saved.worldMap)) editorWorldMap = saved.worldMap.map(normalizeEditorWorldMapLocation);
-  if (Array.isArray(saved.events)) editorEvents = saved.events;
-  if (Array.isArray(saved.quests)) editorQuests = saved.quests;
-  if (Array.isArray(saved.hubs)) editorHubs = saved.hubs;
-} catch(e) {}
+// Fallback: WorldMap aus DD_CUSTOM laden, wenn localStorage keine enthält
+// (Tritt auf beim ersten Start, bei file://-Modus und nach Cache-Leerung)
+if (editorWorldMap.length === 0 && Array.isArray(window.DD_CUSTOM?.worldMap) && window.DD_CUSTOM.worldMap.length > 0) {
+  editorWorldMap = JSON.parse(JSON.stringify(window.DD_CUSTOM.worldMap)).map(normalizeEditorWorldMapLocation);
+}
 if (typeof prepareWorldLocationLocalization === 'function') editorWorldMap.forEach(prepareWorldLocationLocalization);
 hydrateStoryEditorContent();
 
@@ -1085,9 +1089,17 @@ function switchTab(name) {
 
 function switchWbTab(name) {
   document.querySelectorAll('.wb-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.wbTab === name));
-  document.querySelectorAll('.wb-panel').forEach(p => p.classList.remove('active'));
+  // Inline-Style direkt setzen – CSS-Klassen reichen nicht, da wb-panel-Divs
+  // teilweise inline display-Werte haben, die CSS-Klassen überschreiben würden.
+  document.querySelectorAll('.wb-panel').forEach(p => {
+    p.classList.remove('active');
+    p.style.display = 'none';
+  });
   const panel = document.getElementById('wb-panel-'+name);
-  if (panel) panel.classList.add('active');
+  if (panel) {
+    panel.classList.add('active');
+    panel.style.display = 'flex';
+  }
   if (name==='locations') initWorldMapEditor();
   if (name==='dungeons')  renderActEditor();
   if (name==='quests')    wbRenderQuestList();
@@ -1116,12 +1128,17 @@ function initEnemiesDropsTab() {
 }
 
 function wbReloadFromGame() {
+  // Alle WorldBuilder-Daten aus DD_CUSTOM (Runtime-Stand) neu laden
+  if (Array.isArray(window.DD_CUSTOM?.worldMap) && window.DD_CUSTOM.worldMap.length > 0) {
+    editorWorldMap = JSON.parse(JSON.stringify(window.DD_CUSTOM.worldMap)).map(normalizeEditorWorldMapLocation);
+    if (typeof prepareWorldLocationLocalization === 'function') editorWorldMap.forEach(prepareWorldLocationLocalization);
+  }
   editorEvents = JSON.parse(JSON.stringify(window.DD_CUSTOM?.events || []));
   editorQuests = JSON.parse(JSON.stringify(window.DD_CUSTOM?.quests || []));
   editorHubs   = JSON.parse(JSON.stringify(window.DD_CUSTOM?.hubs   || []));
   hydrateStoryEditorContent();
   const active = document.querySelector('.wb-tab-btn.active');
-  if (active) switchWbTab(active.dataset.wbTab || 'quests');
+  if (active) switchWbTab(active.dataset.wbTab || 'locations');
   showToast('World Builder Daten neu geladen ✓');
 }
 
