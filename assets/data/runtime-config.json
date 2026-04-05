@@ -1,7 +1,7 @@
 {
   "version": "runtime-config-v2",
   "generatedFrom": "editor-export",
-  "generatedAt": "2026-04-04T23:02:21.788Z",
+  "generatedAt": "2026-04-05T13:11:39.711Z",
   "cards": [
     {
       "id": "kobold_jung",
@@ -1109,19 +1109,6 @@
       "flavorKey": "card.feld_chaos.flavor"
     },
     {
-      "id": "kobold_imperator",
-      "type": "monster",
-      "rarity": "epic",
-      "atk": 1600,
-      "def": 1400,
-      "race": "kobold",
-      "effects": [],
-      "effect": null,
-      "image": "data:image/jpeg;base64,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",
-      "nameKey": "card.kobold_imperator.name",
-      "flavorKey": "card.kobold_imperator.flavor"
-    },
-    {
       "id": "kobold_schuetze",
       "type": "monster",
       "rarity": "common",
@@ -1538,6 +1525,17 @@
     }
   ],
   "fusionMonsters": [
+    {
+      "id": "kobold_imperator",
+      "type": "fusion",
+      "race": "kobold",
+      "atk": 2000,
+      "def": 1400,
+      "effect": "raceBuffATK300",
+      "rarity": "legendary",
+      "nameKey": "card.kobold_imperator.name",
+      "flavorKey": "card.kobold_imperator.flavor"
+    },
     {
       "id": "wardragon",
       "type": "fusion",
@@ -3946,7 +3944,7 @@
   "config": {
     "cfg-startlp": 4000,
     "cfg-startgold": 50,
-    "cfg-maxhand": 9,
+    "cfg-maxhand": 7,
     "cfg-restratio": 30,
     "cfg-removecost": 25,
     "cfg-fleecost": 15,
@@ -3955,34 +3953,11 @@
     "cfg-price-rare": 60,
     "cfg-price-epic": 100,
     "cfg-price-legendary": 150,
-    "cfg-maxsummons": 3,
-    "cfg-roster-order": [
-      "goblin_chief",
-      "skeleton_mage",
-      "orc_warlord",
-      "forest_demon",
-      "shadow_knight",
-      "dark_priest",
-      "iron_golem_guard",
-      "chaos_lord",
-      "void_reaper",
-      "soul_devourer",
-      "dark_dimension_god",
-      "goblin_gang",
-      "kobold_könig",
-      "kobold_reiter",
-      "kobold_waldlaeufer",
-      "Wolfsrudel"
-    ],
-    "cfg-music-menu": [
-      "assets/audio/shadow-sigil-–-title-screen-theme.mp3"
-    ],
-    "cfg-music-campaign": [
-      "assets/audio/shadow-sigil-–-title-screen-theme.mp3"
-    ],
-    "cfg-music-story": [
-      "assets/audio/shadow-sigil-–-title-screen-theme.mp3"
-    ]
+    "cfg-maxsummons": 2,
+    "cfg-roster-order": [],
+    "cfg-music-menu": [],
+    "cfg-music-campaign": [],
+    "cfg-music-story": []
   },
   "starterDeck": [
     "heallight",
@@ -4004,8 +3979,8 @@
       "id": "loc_intro_river",
       "type": "story",
       "isStart": true,
-      "x": 12,
-      "y": 44,
+      "x": 6.089532220201892,
+      "y": 10.41044833055183,
       "connections": [
         "hub_village_01"
       ],
@@ -4018,24 +3993,24 @@
       ],
       "storyLines": [
         {
-          "speaker": "",
-          "text": "~Du hoerst Wasser und Wind. Dein Koerper liegt halb im kalten Ufergras.~"
+          "speakerKey": "story.loc_intro_river.0.speaker",
+          "textKey": "story.loc_intro_river.0.text"
         },
         {
-          "speaker": "Mutiger Dorfbewohner",
-          "text": "Da drueben! Beim Flussufer liegt jemand!"
+          "speakerKey": "story.loc_intro_river.1.speaker",
+          "textKey": "story.loc_intro_river.1.text"
         },
         {
-          "speaker": "Dorfwache",
-          "text": "Er ist einfach vom Himmel gefallen... oder aus einer anderen Welt."
+          "speakerKey": "story.loc_intro_river.2.speaker",
+          "textKey": "story.loc_intro_river.2.text"
         },
         {
-          "speaker": "Dorfbeschuetzer",
-          "text": "Egal was er ist, wir bringen ihn erst in Sicherheit. Wenn er kaempfen kann, ist das unser Glueck."
+          "speakerKey": "story.loc_intro_river.3.speaker",
+          "textKey": "story.loc_intro_river.3.text"
         },
         {
-          "speaker": "",
-          "text": "~Du zwingst dich auf die Beine. Noch bevor du antworten kannst, hallt ein heiseres Kreischen aus den Bueschen. Eine Kobold-Bande bricht aus dem Ufergestruepp.~"
+          "speakerKey": "story.loc_intro_river.4.speaker",
+          "textKey": "story.loc_intro_river.4.text"
         }
       ],
       "postStoryBattleEnemyId": "goblin_gang",
@@ -4050,14 +4025,14 @@
       },
       "bgm": "audio/cursed-data-duel.mp3",
       "battleBgm": "audio/cursed-data-duel.mp3",
-      "name": "Am Fluss",
-      "description": "Hier beginnt dein Weg durch die dunklen Dimensionen."
+      "nameKey": "world.loc_intro_river.name",
+      "descriptionKey": "world.loc_intro_river.description"
     },
     {
       "id": "hub_village_01",
       "type": "hub",
-      "x": 28,
-      "y": 54,
+      "x": 6.336405148047914,
+      "y": 26.64179161413392,
       "connections": [
         "loc_intro_river",
         "loc_river_crossing",
@@ -4082,17 +4057,20 @@
       },
       "bgm": "audio/cursed-data-duel.mp3",
       "battleBgm": "",
-      "name": "Kleines Dorf",
-      "description": "Ein echtes Hub mit Leuten, Sorgen und Chancen."
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.hub_village_01.name",
+      "descriptionKey": "world.hub_village_01.description"
     },
     {
       "id": "loc_river_crossing",
       "type": "path",
-      "x": 48,
-      "y": 35,
+      "x": 16.705068117580865,
+      "y": 19.738806539507053,
       "connections": [
         "hub_village_01",
-        "loc_kobold_camp"
+        "loc_1775393366001"
       ],
       "unlockConditions": [],
       "hubFeatures": [
@@ -4121,17 +4099,20 @@
       },
       "bgm": "audio/cursed-data-duel.mp3",
       "battleBgm": "audio/cursed-data-duel.mp3",
-      "name": "Flussuebergang",
-      "description": "Ein unsicherer Pfad mit der Chance auf Ruhe, Gefahr oder Entdeckungen."
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_river_crossing.name",
+      "descriptionKey": "world.loc_river_crossing.description"
     },
     {
       "id": "loc_broken_cart",
       "type": "path",
-      "x": 50,
-      "y": 68,
+      "x": 6.665569051842611,
+      "y": 44.55223937532795,
       "connections": [
         "hub_village_01",
-        "loc_kobold_camp"
+        "loc_1775394465406"
       ],
       "unlockConditions": [],
       "hubFeatures": [
@@ -4160,18 +4141,20 @@
       },
       "bgm": "audio/cursed-data-duel.mp3",
       "battleBgm": "audio/cursed-data-duel.mp3",
-      "name": "Zerbrochener Karren",
-      "description": "Nicht jeder Knoten muss etwas Grosses ausloesen, aber alles kann passieren."
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_broken_cart.name",
+      "descriptionKey": "world.loc_broken_cart.description"
     },
     {
       "id": "loc_kobold_camp",
       "type": "dungeon",
-      "x": 73,
-      "y": 52,
+      "x": 67.56089125386153,
+      "y": 68.99253788279064,
       "connections": [
-        "loc_river_crossing",
-        "loc_broken_cart",
-        "loc_forest_edge"
+        "loc_1775394070114",
+        "loc_1775393918879"
       ],
       "unlockConditions": [],
       "hubFeatures": [
@@ -4192,16 +4175,21 @@
       },
       "bgm": "audio/cursed-data-duel.mp3",
       "battleBgm": "audio/cursed-data-duel.mp3",
-      "name": "Koboldlager",
-      "description": "Der erste richtige Vorstoss gegen die Angreifer."
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_kobold_camp.name",
+      "descriptionKey": "world.loc_kobold_camp.description"
     },
     {
       "id": "loc_forest_edge",
       "type": "path",
-      "x": 88,
-      "y": 30,
+      "x": 53.40684339068956,
+      "y": 28.320896091745862,
       "connections": [
-        "loc_kobold_camp"
+        "loc_1775393767809",
+        "loc_1775393921929",
+        "loc_1775393916513"
       ],
       "unlockConditions": [
         {
@@ -4235,8 +4223,593 @@
       },
       "bgm": "audio/cursed-data-duel.mp3",
       "battleBgm": "audio/cursed-data-duel.mp3",
-      "name": "Waldpfad",
-      "description": "Hinter dem Lager beginnt bereits der naechste Abschnitt."
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_forest_edge.name",
+      "descriptionKey": "world.loc_forest_edge.description"
+    },
+    {
+      "id": "loc_1775393366001",
+      "type": "dungeon",
+      "x": 31.105988908598853,
+      "y": 19.17910504696974,
+      "connections": [
+        "loc_river_crossing",
+        "loc_1775393767809"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775393366001.name",
+      "descriptionKey": "world.loc_1775393366001.description"
+    },
+    {
+      "id": "loc_1775393767809",
+      "type": "path",
+      "x": 47.728766050231044,
+      "y": 18.619403554432427,
+      "connections": [
+        "loc_1775393366001",
+        "loc_forest_edge"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775393767809.name",
+      "descriptionKey": "world.loc_1775393767809.description"
+    },
+    {
+      "id": "loc_1775393916513",
+      "type": "path",
+      "x": 51.26727801602404,
+      "y": 48.84328415144735,
+      "connections": [
+        "loc_forest_edge",
+        "loc_1775394066747"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775393916513.name",
+      "descriptionKey": "world.loc_1775393916513.description"
+    },
+    {
+      "id": "loc_1775393918879",
+      "type": "path",
+      "x": 72.74522273862802,
+      "y": 84.2910453454772,
+      "connections": [
+        "loc_kobold_camp"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775393918879.name",
+      "descriptionKey": "world.loc_1775393918879.description"
+    },
+    {
+      "id": "loc_1775393921929",
+      "type": "path",
+      "x": 63.28176050453047,
+      "y": 29.813433405178696,
+      "connections": [
+        "loc_forest_edge",
+        "loc_1775394066747"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775393921929.name",
+      "descriptionKey": "world.loc_1775393921929.description"
+    },
+    {
+      "id": "loc_1775393925717",
+      "type": "path",
+      "x": 72.82751371457668,
+      "y": 46.23134385293989,
+      "connections": [
+        "loc_1775394066747",
+        "loc_1775394070114"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775393925717.name",
+      "descriptionKey": "world.loc_1775393925717.description"
+    },
+    {
+      "id": "loc_1775394066747",
+      "type": "path",
+      "x": 61.22448610581361,
+      "y": 51.828358778313024,
+      "connections": [
+        "loc_1775393921929",
+        "loc_1775393916513",
+        "loc_1775393925717",
+        "loc_1775394073578"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775394066747.name",
+      "descriptionKey": "world.loc_1775394066747.description"
+    },
+    {
+      "id": "loc_1775394070114",
+      "type": "path",
+      "x": 78.67017300693256,
+      "y": 58.73134385293989,
+      "connections": [
+        "loc_1775393925717",
+        "loc_kobold_camp"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775394070114.name",
+      "descriptionKey": "world.loc_1775394070114.description"
+    },
+    {
+      "id": "loc_1775394073578",
+      "type": "path",
+      "x": 57.192228284328586,
+      "y": 69.55223937532796,
+      "connections": [
+        "loc_1775394066747"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775394073578.name",
+      "descriptionKey": "world.loc_1775394073578.description"
+    },
+    {
+      "id": "loc_1775394465406",
+      "type": "path",
+      "x": 6.830151003739961,
+      "y": 64.70149310667124,
+      "connections": [
+        "loc_broken_cart"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775394465406.name",
+      "descriptionKey": "world.loc_1775394465406.description"
+    }
+  ],
+  "events": [
+    {
+      "id": "event_village_arrival",
+      "trigger": "enter_hub",
+      "hubId": "hub_village_01",
+      "once": true,
+      "dialog": [
+        {
+          "choices": [
+            {
+              "next": 1,
+              "textKey": "event.event_village_arrival.step.0.choice.0"
+            }
+          ],
+          "speakerKey": "event.event_village_arrival.step.0.speaker",
+          "textKey": "event.event_village_arrival.step.0.text"
+        },
+        {
+          "choices": [
+            {
+              "textKey": "event.event_village_arrival.step.1.choice.0"
+            }
+          ],
+          "speakerKey": "event.event_village_arrival.step.1.speaker",
+          "textKey": "event.event_village_arrival.step.1.text"
+        }
+      ],
+      "titleKey": "event.event_village_arrival.title"
+    },
+    {
+      "id": "event_elder_intro",
+      "dialog": [
+        {
+          "choices": [
+            {
+              "effect": {
+                "type": "start_quest",
+                "questId": "quest_defend_village"
+              },
+              "textKey": "event.event_elder_intro.step.0.choice.0"
+            },
+            {
+              "next": 1,
+              "textKey": "event.event_elder_intro.step.0.choice.1"
+            }
+          ],
+          "speakerKey": "event.event_elder_intro.step.0.speaker",
+          "textKey": "event.event_elder_intro.step.0.text"
+        },
+        {
+          "choices": [
+            {
+              "textKey": "event.event_elder_intro.step.1.choice.0"
+            }
+          ],
+          "speakerKey": "event.event_elder_intro.step.1.speaker",
+          "textKey": "event.event_elder_intro.step.1.text"
+        }
+      ],
+      "titleKey": "event.event_elder_intro.title"
+    },
+    {
+      "id": "event_guard_npc",
+      "dialog": [
+        {
+          "choices": [
+            {
+              "textKey": "event.event_guard_npc.step.0.choice.0"
+            }
+          ],
+          "speakerKey": "event.event_guard_npc.step.0.speaker",
+          "textKey": "event.event_guard_npc.step.0.text"
+        }
+      ],
+      "titleKey": "event.event_guard_npc.title"
+    },
+    {
+      "id": "event_villager_npc",
+      "dialog": [
+        {
+          "choices": [
+            {
+              "textKey": "event.event_villager_npc.step.0.choice.0"
+            }
+          ],
+          "speakerKey": "event.event_villager_npc.step.0.speaker",
+          "textKey": "event.event_villager_npc.step.0.text"
+        }
+      ],
+      "titleKey": "event.event_villager_npc.title"
+    },
+    {
+      "id": "event_merchant_npc",
+      "dialog": [
+        {
+          "choices": [
+            {
+              "textKey": "event.event_merchant_npc.step.0.choice.0"
+            }
+          ],
+          "speakerKey": "event.event_merchant_npc.step.0.speaker",
+          "textKey": "event.event_merchant_npc.step.0.text"
+        }
+      ],
+      "titleKey": "event.event_merchant_npc.title"
+    },
+    {
+      "id": "event_river_whispers",
+      "dialog": [
+        {
+          "choices": [
+            {
+              "textKey": "event.event_river_whispers.step.0.choice.0"
+            }
+          ],
+          "speakerKey": "event.event_river_whispers.step.0.speaker",
+          "textKey": "event.event_river_whispers.step.0.text"
+        }
+      ],
+      "titleKey": "event.event_river_whispers.title"
+    },
+    {
+      "id": "event_lost_supplies",
+      "dialog": [
+        {
+          "choices": [
+            {
+              "effect": {
+                "type": "gain_gold",
+                "amount": 20
+              },
+              "textKey": "event.event_lost_supplies.step.0.choice.0"
+            }
+          ],
+          "speakerKey": "event.event_lost_supplies.step.0.speaker",
+          "textKey": "event.event_lost_supplies.step.0.text"
+        }
+      ],
+      "titleKey": "event.event_lost_supplies.title"
+    },
+    {
+      "id": "event_forest_trail",
+      "dialog": [
+        {
+          "choices": [
+            {
+              "textKey": "event.event_forest_trail.step.0.choice.0"
+            }
+          ],
+          "speakerKey": "event.event_forest_trail.step.0.speaker",
+          "textKey": "event.event_forest_trail.step.0.text"
+        }
+      ],
+      "titleKey": "event.event_forest_trail.title"
+    },
+    {
+      "id": "event_village_success",
+      "trigger": "quest_progress",
+      "questId": "quest_defend_village",
+      "status": "claimable",
+      "once": true,
+      "dialog": [
+        {
+          "choices": [
+            {
+              "textKey": "event.event_village_success.step.0.choice.0"
+            }
+          ],
+          "speakerKey": "event.event_village_success.step.0.speaker",
+          "textKey": "event.event_village_success.step.0.text"
+        }
+      ],
+      "titleKey": "event.event_village_success.title"
+    }
+  ],
+  "quests": [
+    {
+      "id": "quest_defend_village",
+      "type": "main",
+      "goal": 2,
+      "progress": 0,
+      "reward": {
+        "gold": 100,
+        "card": "mutiger_dorfbewohner"
+      },
+      "titleKey": "quest.quest_defend_village.title",
+      "descriptionKey": "quest.quest_defend_village.description"
+    }
+  ],
+  "hubs": [
+    {
+      "id": "hub_village_01",
+      "questIds": [
+        "quest_defend_village"
+      ],
+      "npcs": [
+        {
+          "dialogEventId": "event_elder_intro",
+          "nameKey": "hub.hub_village_01.npc.0.name"
+        },
+        {
+          "dialogEventId": "event_guard_npc",
+          "nameKey": "hub.hub_village_01.npc.1.name"
+        },
+        {
+          "dialogEventId": "event_villager_npc",
+          "nameKey": "hub.hub_village_01.npc.2.name"
+        },
+        {
+          "dialogEventId": "event_merchant_npc",
+          "nameKey": "hub.hub_village_01.npc.3.name"
+        }
+      ],
+      "tournaments": [
+        {
+          "id": "tournament_village",
+          "enemyIds": [
+            "kobold_waldlaeufer",
+            "Wolfsrudel"
+          ],
+          "reward": {
+            "gold": 60,
+            "card": "dorfbewohner"
+          },
+          "titleKey": "hub.hub_village_01.tournament.0.title",
+          "descriptionKey": "hub.hub_village_01.tournament.0.description"
+        }
+      ],
+      "challenges": [
+        {
+          "id": "challenge_first_patrol",
+          "goal": 1,
+          "reward": {
+            "gold": 30
+          },
+          "titleKey": "hub.hub_village_01.challenge.0.title",
+          "descriptionKey": "hub.hub_village_01.challenge.0.description"
+        }
+      ],
+      "nameKey": "hub.hub_village_01.name",
+      "descriptionKey": "hub.hub_village_01.description"
     }
   ],
   "recipes": [
@@ -4359,248 +4932,6 @@
       "mat1": "alphawolf",
       "mat2": "mutiger_dorfbewohner",
       "result": "Beste Freunde"
-    }
-  ],
-  "events": [
-    {
-      "id": "event_village_arrival",
-      "title": "Willkommen im Dorf",
-      "trigger": "enter_hub",
-      "hubId": "hub_village_01",
-      "once": true,
-      "dialog": [
-        {
-          "speaker": "Mutiger Dorfbewohner",
-          "text": "Gerade rechtzeitig. Ohne dich waeren die Kobolde bis an die Haeuser gekommen.",
-          "choices": [
-            {
-              "text": "Ich brauche einen Ueberblick.",
-              "next": 1
-            }
-          ]
-        },
-        {
-          "speaker": "Dorfbeschuetzer",
-          "text": "Dann fang hier an. Sprich mit dem Aeltesten, nimm eine Quest an und halte dich fuer das kleine Turnier bereit.",
-          "choices": [
-            {
-              "text": "Ich sehe mich um."
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_elder_intro",
-      "title": "Der Hilferuf",
-      "dialog": [
-        {
-          "speaker": "Dorfaeltester",
-          "text": "Wenn du uns wirklich helfen willst, schalte vor dem Dorf zwei Monstergruppen aus. Dann sehen wir weiter.",
-          "choices": [
-            {
-              "text": "Ich uebernehme das.",
-              "effect": {
-                "type": "start_quest",
-                "questId": "quest_defend_village"
-              }
-            },
-            {
-              "text": "Ich brauche erst noch Informationen.",
-              "next": 1
-            }
-          ]
-        },
-        {
-          "speaker": "Dorfaeltester",
-          "text": "Nutze die Pfade auf der Weltkarte. Dort passiert nicht immer etwas, aber oft genug das Falsche.",
-          "choices": [
-            {
-              "text": "Verstanden."
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_guard_npc",
-      "title": "Dorfwache",
-      "dialog": [
-        {
-          "speaker": "Dorfwache",
-          "text": "Die Pfade vor dem Dorf sind unberechenbar. Manchmal ist es still, manchmal springt dir sofort etwas an die Kehle.",
-          "choices": [
-            {
-              "text": "Ich bin vorbereitet."
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_villager_npc",
-      "title": "Dorfbewohner",
-      "dialog": [
-        {
-          "speaker": "Mutiger Dorfbewohner",
-          "text": "Der Dorfplatz fuehlt sich seit deiner Ankunft gleich ein bisschen sicherer an.",
-          "choices": [
-            {
-              "text": "Dann sollte ich diesen Vorteil nutzen."
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_merchant_npc",
-      "title": "Haendler",
-      "dialog": [
-        {
-          "speaker": "Wanderhaendler",
-          "text": "Ich habe Karten, Vorrat und eine schlechte Meinung ueber Kobolde. Im Shop kannst du alles bis auf die Meinung kaufen.",
-          "choices": [
-            {
-              "text": "Klingt fair."
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_river_whispers",
-      "title": "Stimmen am Wasser",
-      "dialog": [
-        {
-          "speaker": "",
-          "text": "Zwischen den Schilfbuesche liegen frische Spuren. Irgendjemand beobachtet das Dorf vom anderen Ufer aus.",
-          "choices": [
-            {
-              "text": "Ich merke mir die Stelle."
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_lost_supplies",
-      "title": "Verlorene Vorräte",
-      "dialog": [
-        {
-          "speaker": "",
-          "text": "Im Wrack eines Karrens findest du verstreute Vorratskisten. Die Dorfbewohner koennen so etwas brauchen.",
-          "choices": [
-            {
-              "text": "Ich bringe mit, was ich tragen kann.",
-              "effect": {
-                "type": "gain_gold",
-                "amount": 20
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_forest_trail",
-      "title": "Dunkler Pfad",
-      "dialog": [
-        {
-          "speaker": "",
-          "text": "Der Wald ist still, aber nicht friedlich. Zwischen den Baeumen warten neue Feinde.",
-          "choices": [
-            {
-              "text": "Ich gehe weiter."
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_village_success",
-      "title": "Die Reaktion des Dorfes",
-      "trigger": "quest_progress",
-      "questId": "quest_defend_village",
-      "status": "claimable",
-      "once": true,
-      "dialog": [
-        {
-          "speaker": "Mutiger Dorfbewohner",
-          "text": "Die Monster werden vorsichtiger. Das Dorf redet schon ueber deinen ersten Sieg.",
-          "choices": [
-            {
-              "text": "Dann hole ich mir meine Belohnung."
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  "quests": [
-    {
-      "id": "quest_defend_village",
-      "title": "Beschuetze das Dorf",
-      "description": "Besiege 2 Monstergruppen auf den Pfaden vor dem Dorf.",
-      "goal": 2,
-      "progress": 0,
-      "reward": {
-        "gold": 100,
-        "card": "mutiger_dorfbewohner"
-      }
-    }
-  ],
-  "hubs": [
-    {
-      "id": "hub_village_01",
-      "name": "Kleines Dorf",
-      "description": "Das erste echte Hub mit NPCs, Questbrett, Shop, Turnier und optionalen Herausforderungen.",
-      "questIds": [
-        "quest_defend_village"
-      ],
-      "npcs": [
-        {
-          "name": "Dorfaeltester",
-          "dialogEventId": "event_elder_intro"
-        },
-        {
-          "name": "Dorfwache",
-          "dialogEventId": "event_guard_npc"
-        },
-        {
-          "name": "Mutiger Dorfbewohner",
-          "dialogEventId": "event_villager_npc"
-        },
-        {
-          "name": "Wanderhaendler",
-          "dialogEventId": "event_merchant_npc"
-        }
-      ],
-      "tournaments": [
-        {
-          "id": "tournament_village",
-          "title": "Dorfring",
-          "description": "Zwei kurze Kaempfe als Trainingsserie fuer den neuen Verteidiger des Dorfes.",
-          "enemyIds": [
-            "kobold_waldlaeufer",
-            "Wolfsrudel"
-          ],
-          "reward": {
-            "gold": 60,
-            "card": "dorfbewohner"
-          }
-        }
-      ],
-      "challenges": [
-        {
-          "id": "challenge_first_patrol",
-          "title": "Patrouille",
-          "description": "Gewinne 1 Kampf auf einem Pfadknoten der Worldmap.",
-          "goal": 1,
-          "reward": {
-            "gold": 30
-          }
-        }
-      ]
     }
   ]
 }
