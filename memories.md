@@ -66,6 +66,37 @@
 - Editor helper logic belongs in `/js/editor`; avoid adding more large inline utility code to `editor.html` when an external helper is enough.
 - Do not break existing editor globals such as `editorCards`, `editorEnemies`, `editorActs`, `editorRecipes`, `editorConfig`, `editorStarterDeck`, and `editorWorldMap`.
 
+## Local Editor vs Online Game
+- There are three distinct states and they must not be confused:
+  - editor working state in `localStorage['dd_custom']`
+  - exported runtime snapshot in `runtime-config*.json`
+  - deployed GitHub Pages files committed in the repo
+- Changing data in `editor.html` does not update GitHub Pages by itself. Editor saves only update the local working state until a runtime export is created and published.
+- The local editor is the authoring tool. The exported runtime JSON is the transport artifact. The committed repo files are the deployed source for the online game.
+- The online game on GitHub Pages does not read your local browser `dd_custom` state. It only reads committed files from the repository.
+- The game runtime on GitHub Pages loads `assets/data/runtime-config.json` as the canonical deployed content source, then applies no local overrides by default.
+- `assets/data/runtime-config.js` exists as an embedded fallback mirror of `runtime-config.json`, mainly for `file://` compatibility and defensive fallback behavior.
+- Split files such as `assets/data/world-map.json`, `assets/data/story-content.json`, and `locales/*/*.json` are derived deployment artifacts and must stay in sync with `runtime-config.json`.
+- If `runtime-config.json` and derived files diverge, the online game can show stale world map data or missing localization even when the editor export itself is correct.
+- The publish pipeline is responsible for removing that drift by regenerating all derived files from one runtime export before commit/push.
+- Local verification rule:
+  - if something looks correct in the editor but wrong online, first ask whether the change only exists in `dd_custom` or has actually been exported and published
+  - then compare online `runtime-config.json`, `world-map.json`, and relevant `locales/*/*.json`
+  - if online `runtime-config.json` is new but `world-map.json` or locale files are old or empty, the publish step was incomplete or used a bad export
+- Runtime localization rule:
+  - world map locations use `nameKey` and `descriptionKey`
+  - displayed names depend on locale keys existing in `locales/*/story.json` or in `runtime-config.json.locales`
+  - if a location falls back to its ID online, treat it as a locale export/publish sync issue, not a map rendering issue
+- Editor-to-online path of truth:
+  1. edit data in `editor.html`
+  2. save to game if needed for local testing
+  3. create a fresh runtime export
+  4. publish that runtime export through the publish tool
+  5. let the tool sync repo deployment artifacts
+  6. commit and push
+  7. GitHub Pages serves the committed files
+- Never manually copy JSON from `Downloads` into `assets/data` anymore. That old process caused repeated runtime drift and locale wipeouts.
+
 ## Deployment Flow
 - Required deployment path:
   1. Export `runtime-config.json` from `editor.html`.
@@ -76,6 +107,12 @@
 - `publish-runtime.ps1 -SkipGit` is the safe local validation mode for checking generation without commit/push.
 - `publish-runtime.bat` is now the preferred user-facing entry point. It launches `publish-runtime-gui.ps1` as a one-window publish tool.
 - `publish-runtime-cli.bat` is the legacy console entry point for fallback/debugging.
+- `publish-runtime-gui.ps1` supports two practical modes:
+  - auto mode using the newest `runtime-config*.json` from `Downloads`
+  - manual mode choosing a specific runtime export file
+- The GUI can either:
+  - sync only repo files without git push when `Direkt committen und pushen` is disabled
+  - sync, commit, and push in one run when it stays enabled
 - If GitHub Pages shows stale data, verify `runtime-config.json` and `world-map.json` online first. A mismatch means derived files were not regenerated before push.
 
 ## Data Contracts
@@ -168,3 +205,4 @@
 - 2026-04-05: Rebased the structure branch onto the parity fixes. Preserved HTTP-first local dev guidance, file-protocol warnings, normalized audio paths, and deferred music start until user interaction.
 - 2026-04-05: Added `file://` runtime fallback via `assets/data/runtime-config.js`, disabled game-side local overrides by default, hardened mojibake normalization in runtime/i18n loaders, and fixed hub auto-event repeat loops using `seenEvents` plus per-hub auto-trigger gating.
 - 2026-04-05: Fixed recurring local-vs-online drift by making `assets/data/runtime-config.json` the deployed runtime source of truth, preventing split JSON override by default, adding runtime boot diagnostics, and making `publish-runtime.ps1` regenerate all derived data and locale files from the runtime export.
+- 2026-04-05: Added a one-window publish GUI via `publish-runtime.bat` and `publish-runtime-gui.ps1`, with automatic latest-export pickup from `Downloads`, optional manual file selection, and integrated sync/commit/push flow.
