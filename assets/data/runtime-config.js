@@ -4539,6 +4539,7 @@ window.DD_RUNTIME_EMBEDDED_DATA = {
   "quests": [
     {
       "id": "quest_defend_village",
+      "type": "main",
       "title": "Beschuetze das Dorf",
       "description": "Besiege 2 Monstergruppen auf den Pfaden vor dem Dorf.",
       "goal": 2,

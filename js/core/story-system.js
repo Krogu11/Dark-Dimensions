@@ -138,11 +138,11 @@
 
   function getQuestStatus(questId) {
     const state = ensureStoryState();
-    if (!state) return 'locked';
+    if (!state) return 'available';
     if (state.completedQuests[questId]) return 'completed';
     if (state.activeQuests[questId]?.status === 'claimable') return 'claimable';
     if (state.activeQuests[questId]) return 'active';
-    return 'locked';
+    return 'available';
   }
 
   function emitQuestProgress(questId, status) {
@@ -549,6 +549,37 @@
     return byId(getHubs(), loc.id);
   }
 
+  function _questStatusLabel(status) {
+    const labels = {
+      available: translateKey('ui.quest.log.available', 'Verfügbar'),
+      active: translateKey('ui.quest.log.active', 'Aktiv'),
+      claimable: translateKey('ui.quest.log.claimable', 'Abschließbar'),
+      completed: translateKey('ui.quest.log.completed', 'Abgeschlossen'),
+    };
+    return labels[status] || status;
+  }
+
+  function _questStatusColor(status) {
+    return { available: '#98a3d1', active: '#cdd5f7', claimable: '#ffd700', completed: '#6fe29c' }[status] || '#ccc';
+  }
+
+  function _renderQuestCard(quest, entry, status) {
+    const typeBadge = quest.type === 'main'
+      ? `<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(255,215,0,0.18);color:#ffd700;font-weight:700;letter-spacing:1px">${translateKey('ui.quest.type.main', 'HAUPTQUEST')}</span>`
+      : quest.type === 'side'
+        ? `<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(150,150,200,0.18);color:#b0b8e0;font-weight:700;letter-spacing:1px">${translateKey('ui.quest.type.side', 'NEBENQUEST')}</span>`
+        : '';
+    const progress = entry ? `<div style="margin-top:8px;font-size:12px;color:#cdd5f7">${translateKey('ui.quest.progress', 'Fortschritt')}: ${entry.progress} / ${entry.goal}</div>` : '';
+    const statusLabel = `<div style="margin-top:4px;font-size:12px;color:${_questStatusColor(status)}">${_questStatusLabel(status)}</div>`;
+    return `<div style="padding:14px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">${typeBadge}<div style="font-size:15px;font-weight:700">${quest.title}</div></div>
+      <div style="color:#9aa3ca;font-size:13px">${quest.description}</div>
+      ${progress}
+      <div style="margin-top:6px;font-size:12px;color:#8a92b8">${translateKey('ui.common.reward', 'Belohnung')}: ${rewardSummary(quest.reward)}</div>
+      ${statusLabel}
+    </div>`;
+  }
+
   function openQuestLog() {
     let overlay = global.document.getElementById('quest-log-overlay');
     if (!overlay) {
@@ -558,20 +589,48 @@
       global.document.body.appendChild(overlay);
     }
     const state = ensureStoryState();
-    const activeEntries = Object.values(state?.activeQuests || {});
+    const allQuests = getQuests();
+    // Collect all quest IDs visible via hubs
+    const knownQuestIds = new Set(getHubs().flatMap(hub => hub.questIds || []));
+    allQuests.forEach(q => { if (q && q.id) knownQuestIds.add(q.id); });
+
+    const mainQuests = [];
+    const sideQuests = [];
+    knownQuestIds.forEach(questId => {
+      const quest = byId(allQuests, questId);
+      if (!quest) return;
+      const status = getQuestStatus(questId);
+      const entry = state?.activeQuests?.[questId] || null;
+      const bucket = quest.type === 'side' ? sideQuests : mainQuests;
+      bucket.push({ quest, entry, status });
+    });
+    // Sort: active/claimable first, then available, then completed
+    const sortOrder = { claimable: 0, active: 1, available: 2, completed: 3 };
+    const sortFn = (a, b) => (sortOrder[a.status] ?? 9) - (sortOrder[b.status] ?? 9);
+    mainQuests.sort(sortFn);
+    sideQuests.sort(sortFn);
+
+    function renderSection(label, items) {
+      if (items.length === 0) return '';
+      return `
+        <div style="margin-bottom:18px">
+          <div style="font-size:13px;font-weight:700;color:#ffd700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">${label}</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            ${items.map(({ quest, entry, status }) => _renderQuestCard(quest, entry, status)).join('')}
+          </div>
+        </div>`;
+    }
+
+    const hasAny = mainQuests.length + sideQuests.length > 0;
     overlay.innerHTML = `
-      <div style="width:min(720px,100%);max-height:80vh;overflow:auto;background:#0f1324;border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:22px;color:#d8def5;box-shadow:0 20px 70px rgba(0,0,0,0.35)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-          <div style="font-size:20px;font-weight:700">Quest Log</div>
-          <button class="btn-secondary" id="btn-close-quest-log">Close</button>
+      <div style="width:min(760px,100%);max-height:82vh;overflow:auto;background:#0f1324;border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:24px;color:#d8def5;box-shadow:0 20px 70px rgba(0,0,0,0.35)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+          <div style="font-size:20px;font-weight:700">📖 ${translateKey('ui.quest.log.title', 'Questbuch')}</div>
+          <button class="btn-secondary" id="btn-close-quest-log">${translateKey('ui.quest.log.close', 'Schließen')}</button>
         </div>
-        <div style="display:flex;flex-direction:column;gap:12px">
-          ${activeEntries.length === 0 ? '<div style="color:#8a92b8">No active quests.</div>' : activeEntries.map(entry => {
-            const quest = byId(getQuests(), entry.id);
-            if (!quest) return '';
-            return `<div style="padding:14px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06)"><div style="font-size:16px;font-weight:700">${quest.title}</div><div style="color:#9aa3ca;margin-top:4px">${quest.description}</div><div style="margin-top:10px;font-size:13px">Progress: ${entry.progress} / ${entry.goal}</div><div style="margin-top:4px;font-size:13px">Reward: ${rewardSummary(quest.reward)}</div><div style="margin-top:4px;font-size:13px">Status: ${entry.status === 'claimable' ? 'Ready to turn in' : 'Active'}</div></div>`;
-          }).join('')}
-        </div>
+        ${!hasAny ? `<div style="color:#8a92b8">${translateKey('ui.quest.log.empty', 'Keine Quests.')}</div>` : ''}
+        ${renderSection(translateKey('ui.quest.log.main', 'Hauptquests'), mainQuests)}
+        ${renderSection(translateKey('ui.quest.log.side', 'Nebenquests'), sideQuests)}
       </div>
     `;
     overlay.onclick = event => {
@@ -655,7 +714,7 @@
           <div class="hub-stats">
             <span>❤ ${hp} / ${maxHP}</span>
             <span>✦ ${typeof getDimensionsSeelen === 'function' ? getDimensionsSeelen() : 0} DS</span>
-            <button class="btn-sm" id="btn-open-quest-log">Quest Log</button>
+            <button class="btn-sm" id="btn-open-quest-log">📖 ${translateKey('ui.quest.log.title', 'Questbuch')}</button>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
@@ -664,13 +723,26 @@
             ${(hub.npcs || []).map(npc => `<button class="btn-secondary" data-hub-npc="${npc.dialogEventId || npc.dialog_event || ''}">${npc.name}</button>`).join('') || '<div style="color:#8a92b8">No NPCs.</div>'}
           </div>
           <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px">
-            <div style="font-size:15px;font-weight:700">Quests</div>
+            <div style="font-size:15px;font-weight:700">${translateKey('ui.hub.quests', 'Quests')}</div>
             ${(hub.questIds || []).map(questId => {
               const quest = byId(getQuests(), questId);
               if (!quest) return '';
               const status = getQuestStatus(questId);
-              return `<div style="padding:10px;border-radius:10px;background:rgba(0,0,0,0.18)"><div style="font-weight:700">${quest.title}</div><div style="font-size:13px;color:#9aa3ca;margin:4px 0">${quest.description}</div><div style="font-size:12px;margin-bottom:8px">Reward: ${rewardSummary(quest.reward)}</div>${status === 'locked' ? `<button class="btn-success" data-quest-start="${questId}">Accept</button>` : ''}${status === 'active' ? `<div style="font-size:12px;color:#cdd5f7">In progress: ${(state.activeQuests?.[questId]?.progress || 0)} / ${quest.goal}</div>` : ''}${status === 'claimable' ? `<button class="btn-success" data-quest-claim="${questId}">Turn in</button>` : ''}${status === 'completed' ? `<div style="font-size:12px;color:#6fe29c">Completed</div>` : ''}</div>`;
-            }).join('') || '<div style="color:#8a92b8">No quests.</div>'}
+              const typeBadge = quest.type === 'main'
+                ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(255,215,0,0.18);color:#ffd700;font-weight:700">${translateKey('ui.quest.type.main', 'HAUPTQUEST')}</span>`
+                : quest.type === 'side'
+                  ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(150,150,200,0.18);color:#b0b8e0;font-weight:700">${translateKey('ui.quest.type.side', 'NEBENQUEST')}</span>`
+                  : '';
+              return `<div style="padding:10px;border-radius:10px;background:rgba(0,0,0,0.18)">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">${typeBadge}<div style="font-weight:700">${quest.title}</div></div>
+                <div style="font-size:13px;color:#9aa3ca;margin:4px 0">${quest.description}</div>
+                <div style="font-size:12px;margin-bottom:8px">${translateKey('ui.common.reward', 'Belohnung')}: ${rewardSummary(quest.reward)}</div>
+                ${status === 'available' ? `<button class="btn-success" data-quest-start="${questId}">${translateKey('ui.quest.accept', 'Annehmen')}</button>` : ''}
+                ${status === 'active' ? `<div style="font-size:12px;color:#cdd5f7">${translateKey('ui.quest.progress', 'Fortschritt')}: ${(state.activeQuests?.[questId]?.progress || 0)} / ${quest.goal}</div>` : ''}
+                ${status === 'claimable' ? `<button class="btn-success" data-quest-claim="${questId}">${translateKey('ui.quest.turnin', 'Abgeben')}</button>` : ''}
+                ${status === 'completed' ? `<div style="font-size:12px;color:#6fe29c">${translateKey('ui.quest.log.completed', 'Abgeschlossen')}</div>` : ''}
+              </div>`;
+            }).join('') || `<div style="color:#8a92b8">${translateKey('ui.quest.log.empty', 'Keine Quests.')}</div>`}
           </div>
           <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px">
             <div style="font-size:15px;font-weight:700">Tournament</div>
@@ -690,11 +762,11 @@
           </div>
         </div>
         <div class="hub-options" style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="hub-btn hub-btn-rest" id="btn-hub-rest-lite" ${hp >= maxHP ? 'disabled' : ''}>Rest</button>
-          <button class="hub-btn hub-btn-shop" id="btn-hub-shop-lite">Shop</button>
-          <button class="hub-btn hub-btn-deck" id="btn-hub-deck-lite">Deck</button>
-          <button class="hub-btn hub-btn-save" id="btn-hub-save-lite">Save</button>
-          <button class="btn-secondary hub-back-btn" id="btn-hub-back-lite">Back to world map</button>
+          <button class="hub-btn hub-btn-rest" id="btn-hub-rest-lite" ${hp >= maxHP ? 'disabled' : ''}>${translateKey('ui.hub.rest', 'Rasten')}</button>
+          <button class="hub-btn hub-btn-shop" id="btn-hub-shop-lite">${translateKey('ui.hub.shop', 'Shop')}</button>
+          <button class="hub-btn hub-btn-deck" id="btn-hub-deck-lite">${translateKey('ui.hub.deck', 'Deck')}</button>
+          <button class="hub-btn hub-btn-save" id="btn-hub-save-lite">${translateKey('ui.hub.save', 'Speichern')}</button>
+          <button class="btn-secondary hub-back-btn" id="btn-hub-back-lite">${translateKey('ui.hub.backToWorldMap', '← Weltkarte')}</button>
         </div>
       </div>
     `;
@@ -702,29 +774,36 @@
     screen.querySelector('#btn-open-quest-log')?.addEventListener('click', openQuestLog);
     screen.querySelectorAll('[data-hub-npc]').forEach(button => button.addEventListener('click', () => startEventById(button.dataset.hubNpc, { returnMode: 'hub', returnHubId: hub.id })));
     screen.querySelectorAll('[data-quest-start]').forEach(button => button.addEventListener('click', () => {
-      startQuest(button.dataset.questStart);
-      renderHubScreen({ id: hub.id, hubId: hub.id });
+      const qid = button.dataset.questStart;
+      const accepted = startQuest(qid);
+      if (accepted) {
+        const q = byId(getQuests(), qid);
+        const msg = `${translateKey('ui.quest.accepted.toast', 'Quest angenommen')}: ${q ? q.title : qid}`;
+        if (typeof showToast === 'function') showToast(msg);
+        else if (typeof DDToast === 'function') DDToast(msg);
+      }
+      renderHubScreen({ id: hub.id, hubId: hub.id }, { suppressAutoEvent: true });
     }));
     screen.querySelectorAll('[data-quest-claim]').forEach(button => button.addEventListener('click', () => {
       claimQuest(button.dataset.questClaim);
-      renderHubScreen({ id: hub.id, hubId: hub.id });
+      renderHubScreen({ id: hub.id, hubId: hub.id }, { suppressAutoEvent: true });
     }));
     screen.querySelectorAll('[data-tournament-start]').forEach(button => button.addEventListener('click', () => startTournament(hub.id, button.dataset.tournamentStart)));
     screen.querySelectorAll('[data-tournament-claim]').forEach(button => button.addEventListener('click', () => {
       claimTournamentReward(button.dataset.tournamentClaim);
-      renderHubScreen({ id: hub.id, hubId: hub.id });
+      renderHubScreen({ id: hub.id, hubId: hub.id }, { suppressAutoEvent: true });
     }));
     screen.querySelectorAll('[data-challenge-start]').forEach(button => button.addEventListener('click', () => {
       startChallenge(hub.id, button.dataset.challengeStart);
-      renderHubScreen({ id: hub.id, hubId: hub.id });
+      renderHubScreen({ id: hub.id, hubId: hub.id }, { suppressAutoEvent: true });
     }));
     screen.querySelectorAll('[data-challenge-claim]').forEach(button => button.addEventListener('click', () => {
       claimChallenge(hub.id, button.dataset.challengeClaim);
-      renderHubScreen({ id: hub.id, hubId: hub.id });
+      renderHubScreen({ id: hub.id, hubId: hub.id }, { suppressAutoEvent: true });
     }));
     screen.querySelector('#btn-hub-rest-lite')?.addEventListener('click', () => {
       if (typeof _hubRest === 'function') _hubRest(screen);
-      renderHubScreen({ id: hub.id, hubId: hub.id });
+      renderHubScreen({ id: hub.id, hubId: hub.id }, { suppressAutoEvent: true });
     });
     screen.querySelector('#btn-hub-shop-lite')?.addEventListener('click', () => {
       if (typeof showMainMenuShop === 'function') showMainMenuShop('hub');
@@ -955,21 +1034,35 @@
     if (!screen || screen.querySelector('[data-quest-summary-panel]')) return;
     const state = ensureStoryState();
     const activeEntries = Object.values(state?.activeQuests || {}).slice(0, 3);
+
+    // Count available quests across all hubs
+    const allQuests = getQuests();
+    let availableCount = 0;
+    getHubs().forEach(hub => {
+      (hub.questIds || []).forEach(qid => {
+        if (getQuestStatus(qid) === 'available') availableCount++;
+      });
+    });
+
     const panel = global.document.createElement('div');
     panel.dataset.questSummaryPanel = '1';
-    panel.style.cssText = 'position:absolute;right:20px;bottom:88px;width:min(280px,calc(100vw - 40px));background:rgba(8,12,24,0.82);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;z-index:20;backdrop-filter:blur(6px);';
+    panel.style.cssText = 'position:absolute;right:20px;bottom:88px;width:min(290px,calc(100vw - 40px));background:rgba(8,12,24,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;z-index:20;backdrop-filter:blur(6px);';
     panel.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="font-weight:700">Active Quests</div>
-        <button class="btn-sm" id="btn-world-quest-log">Open</button>
+        <div style="font-weight:700">📖 ${translateKey('ui.quest.log.title', 'Questbuch')}</div>
+        <button class="btn-sm" id="btn-world-quest-log">${translateKey('ui.common.open', 'Öffnen')}</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
-        ${activeEntries.length === 0 ? '<div style="font-size:12px;color:#98a3d1">No active quests yet.</div>' : activeEntries.map(entry => {
-          const quest = byId(getQuests(), entry.id);
-          if (!quest) return '';
-          return `<div style="font-size:12px;color:#dce3ff"><strong>${quest.title}</strong><br>${entry.progress} / ${entry.goal}</div>`;
-        }).join('')}
+        ${activeEntries.length === 0
+          ? `<div style="font-size:12px;color:#98a3d1">${translateKey('ui.worldmap.noActiveQuests', 'Keine aktiven Quests.')}</div>`
+          : activeEntries.map(entry => {
+              const quest = byId(allQuests, entry.id);
+              if (!quest) return '';
+              const claimable = entry.status === 'claimable';
+              return `<div style="font-size:12px;color:${claimable ? '#ffd700' : '#dce3ff'}"><strong>${quest.title}</strong><br>${entry.progress} / ${entry.goal}${claimable ? ` — <em>${translateKey('ui.quest.log.claimable', 'Abschließbar')}</em>` : ''}</div>`;
+            }).join('')}
       </div>
+      ${availableCount > 0 ? `<div style="margin-top:8px;font-size:11px;color:#7a85b0;border-top:1px solid rgba(255,255,255,0.06);padding-top:7px">${availableCount} ${translateKey('ui.worldmap.questsAvailableInHubs', 'Quest(s) verfügbar — betrete einen Hub zum Annehmen')}</div>` : ''}
     `;
     screen.style.position = 'relative';
     screen.appendChild(panel);

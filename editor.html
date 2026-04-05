@@ -22,6 +22,11 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 .tab-btn{padding:9px 18px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-weight:600;letter-spacing:1px;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;}
 .tab-btn:hover{color:var(--text);}
 .tab-btn.active{color:#fff;border-bottom-color:var(--accent);}
+.wb-tab-btn{padding:7px 14px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:11px;font-weight:600;letter-spacing:.5px;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;}
+.wb-tab-btn:hover{color:var(--text);}
+.wb-tab-btn.active{color:#fff;border-bottom-color:var(--accent);}
+.wb-panel{display:none;}
+.wb-panel.active{display:flex;}
 .tab-panel{display:none;flex:1;overflow:hidden;}
 .tab-panel.active{display:flex;}
 .sidebar{width:210px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
@@ -203,20 +208,15 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 </header>
 
 <div class="tabs">
-  <button class="tab-btn active" data-editor-tab="cards" onclick="switchTab('cards')">🃏 Karten</button>
-  <button class="tab-btn" data-editor-tab="enemies" onclick="switchTab('enemies')">👹 Gegner</button>
-  <button class="tab-btn" data-editor-tab="drops" onclick="switchTab('drops')">🎲 Drop-Tabellen</button>
-  <button class="tab-btn" data-editor-tab="acts" onclick="switchTab('acts')">🗺 Akte</button>
-  <button class="tab-btn" data-editor-tab="fusions" onclick="switchTab('fusions')">⚗ Fusionen</button>
+  <button class="tab-btn active" data-editor-tab="cards_fusions" onclick="switchTab('cards_fusions')">🃏 Karten & Fusionen</button>
+  <button class="tab-btn" data-editor-tab="enemies_drops" onclick="switchTab('enemies_drops')">👹 Gegner & Drops</button>
+  <button class="tab-btn" data-editor-tab="worldbuilder" onclick="switchTab('worldbuilder')">🌍 World Builder</button>
   <button class="tab-btn" data-editor-tab="config" onclick="switchTab('config')">⚙ Konfiguration</button>
-  <button class="tab-btn" data-editor-tab="synergies" onclick="switchTab('synergies')">⚗ Synergien</button>
-  <button class="tab-btn" data-editor-tab="worldmap" onclick="switchTab('worldmap')">🌍 Weltenkarte</button>
-  <button class="tab-btn" data-editor-tab="storysys" onclick="switchTab('storysys')">📚 Story</button>
   <button class="tab-btn" data-editor-tab="debug" onclick="switchTab('debug')">🔧 Debug</button>
 </div>
 
-<!-- ══════════ TAB: KARTEN ══════════ -->
-<div id="tab-cards" class="tab-panel active">
+<!-- ══════════ TAB: KARTEN & FUSIONEN ══════════ -->
+<div id="tab-cards_fusions" class="tab-panel active">
   <div class="sidebar">
     <div class="sidebar-hdr">🃏 KARTEN <span id="card-count" style="color:var(--muted);font-weight:400;margin-left:4px"></span></div>
     <input class="sidebar-search" id="card-search" type="text" placeholder="Name oder ID suchen…" oninput="filterCardList()">
@@ -270,54 +270,45 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
       </div>
     </div>
   </div>
+  <!-- Fusionen-Spalte (inline im Karten & Fusionen Tab) -->
+  <div style="width:260px;flex-shrink:0;border-left:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column">
+    <div style="padding:10px 12px;font-weight:700;color:var(--gold);font-size:11px;letter-spacing:1px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+      ⚗ FUSIONEN
+      <button class="btn-sm" style="margin-left:auto;font-size:10px" onclick="saveFusions()">Speichern</button>
+    </div>
+    <div style="padding:10px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border)">Welche 2 Monster erzeugen welche Fusion?</div>
+    <div id="fusion-editor-area" style="flex:1;overflow-y:auto;padding:10px"></div>
+  </div>
 </div>
 
-<!-- ══════════ TAB: GEGNER ══════════ -->
-<div id="tab-enemies" class="tab-panel">
-  <div class="sidebar">
-    <div class="sidebar-hdr">👹 GEGNER</div>
-    <div class="sidebar-list" id="enemy-list"></div>
-    <div class="sidebar-footer">
-      <button onclick="newEnemy()">+ Neu</button>
-      <button onclick="deleteEnemy()" style="border-color:var(--red);color:var(--red)">🗑</button>
+<!-- ══════════ TAB: GEGNER & DROPS ══════════ -->
+<div id="tab-enemies_drops" class="tab-panel" style="flex-direction:column;overflow:hidden">
+  <div style="display:flex;flex:1;overflow:hidden">
+    <div class="sidebar">
+      <div class="sidebar-hdr">👹 GEGNER</div>
+      <div class="sidebar-list" id="enemy-list"></div>
+      <div class="sidebar-footer">
+        <button onclick="newEnemy()">+ Neu</button>
+        <button onclick="deleteEnemy()" style="border-color:var(--red);color:var(--red)">🗑</button>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
+      <div class="content-area" style="flex:none">
+        <div class="form-col" id="enemy-form-col">
+          <div style="color:var(--muted);padding:40px;text-align:center">← Gegner auswählen</div>
+        </div>
+      </div>
+      <!-- Inline Drop-Tabelle -->
+      <div id="enemy-inline-drops" style="display:none;padding:0 20px 20px">
+        <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px">
+          <div style="font-weight:700;color:var(--gold);font-size:12px;letter-spacing:1px;margin-bottom:10px">🎲 DROP-TABELLE</div>
+          <div id="drop-table-area" style="display:flex;flex-wrap:wrap;gap:14px;align-content:flex-start"></div>
+        </div>
+      </div>
     </div>
   </div>
-  <div class="content-area">
-    <div class="form-col" id="enemy-form-col">
-      <div style="color:var(--muted);padding:40px;text-align:center">← Gegner auswählen</div>
-    </div>
-  </div>
 </div>
 
-<!-- ══════════ TAB: DROP-TABELLEN ══════════ -->
-<div id="tab-drops" class="tab-panel" style="flex-direction:column;overflow:hidden">
-  <div style="padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0">
-    <label style="font-size:11px;color:var(--muted);letter-spacing:1px" data-i18n="ui.editor.drops.enemyLabel">ENEMY:</label>
-    <select id="drop-enemy-select" onchange="renderDropTable()" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)"></select>
-    <span id="drop-enemy-info" style="color:var(--muted);font-size:11px"></span>
-  </div>
-  <div id="drop-table-area" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-wrap:wrap;gap:14px;align-content:flex-start"></div>
-</div>
-
-<!-- ══════════ TAB: AKTE ══════════ -->
-<div id="tab-acts" class="tab-panel" style="flex-direction:column;overflow:hidden">
-  <div style="padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0">
-    <span style="font-size:11px;color:var(--muted)" data-i18n="ui.editor.acts.description">Configure acts, node structure and enemy pools. Pools are used for random enemy selection per run.</span>
-    <div class="spacer"></div>
-    <button class="btn-save" onclick="saveActs()" data-i18n="ui.editor.acts.save">Save acts</button>
-  </div>
-  <div id="act-editor-area" style="flex:1;overflow-y:auto;padding:20px"></div>
-</div>
-
-<!-- ══════════ TAB: FUSIONEN ══════════ -->
-<div id="tab-fusions" class="tab-panel" style="flex-direction:column;overflow:hidden">
-  <div style="padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0">
-    <span style="font-size:11px;color:var(--muted)" data-i18n="ui.editor.fusions.description">Define fusion recipes: which 2 monsters create which fusion?</span>
-    <div class="spacer"></div>
-    <button class="btn-save" onclick="saveFusions()" data-i18n="ui.editor.fusions.save">Save recipes</button>
-  </div>
-  <div id="fusion-editor-area" style="flex:1;overflow-y:auto;padding:20px;max-width:800px"></div>
-</div>
 
 <!-- ══════════ TAB: KONFIGURATION ══════════ -->
 <div id="tab-config" class="tab-panel">
@@ -395,85 +386,139 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
     </div>
 
     <button class="btn-save" style="align-self:flex-start" onclick="saveConfig()">✓ Konfiguration speichern</button>
+
+    <!-- Synergien-Sektion (inline in Config) -->
+    <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:16px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <h3 style="margin:0">⚗ RASSEN-SYNERGIEN</h3>
+        <span style="font-size:11px;color:var(--muted)" data-i18n="ui.editor.synergies.description">Adjust race synergies for balancing. Changes only override values, not the rule type.</span>
+        <button class="btn-save" style="margin-left:auto" onclick="saveSynergies()" data-i18n="ui.editor.synergies.save">Save synergies</button>
+        <button class="btn-sm" onclick="resetSynergies()" data-i18n="ui.editor.synergies.resetButton">Reset</button>
+      </div>
+      <div id="synergy-editor-area" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
   </div>
 </div>
 
-<!-- ══════════ TAB: SYNERGIEN ══════════ -->
-<div id="tab-synergies" class="tab-panel" style="flex-direction:column;overflow:hidden">
-  <div style="padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0">
-    <span style="font-size:11px;color:var(--muted)" data-i18n="ui.editor.synergies.description">Adjust race synergies for balancing. Changes only override values, not the rule type.</span>
-    <button class="btn-save" style="margin-left:auto" onclick="saveSynergies()" data-i18n="ui.editor.synergies.save">Save synergies</button>
-    <button class="btn-sm" onclick="resetSynergies()" data-i18n="ui.editor.synergies.resetButton">Reset</button>
-  </div>
-  <div id="synergy-editor-area" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px"></div>
-</div>
+<!-- ══════════ TAB: WORLD BUILDER ══════════ -->
+<div id="tab-worldbuilder" class="tab-panel" style="flex-direction:column;overflow:hidden">
 
-<!-- ══════════ TAB: WELTENKARTE ══════════ -->
-<div id="tab-worldmap" class="tab-panel" style="flex-direction:column;overflow:hidden">
-
-  <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0">
-    <span style="font-weight:700;color:var(--gold);font-size:12px;letter-spacing:1px" data-i18n="ui.editor.worldmap.title">World Map</span>
-    <span style="color:var(--muted);font-size:11px" data-i18n="ui.editor.worldmap.toolbarHelp">Click on the map to place a location. Drag locations to move them.</span>
+  <!-- Sub-Tab-Leiste -->
+  <div style="display:flex;align-items:center;gap:0;padding:0 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0">
+    <span style="font-weight:700;color:var(--gold);font-size:11px;letter-spacing:1px;margin-right:16px">🌍 WORLD BUILDER</span>
+    <button class="wb-tab-btn active" data-wb-tab="locations" onclick="switchWbTab('locations')">🗺 Orte</button>
+    <button class="wb-tab-btn" data-wb-tab="dungeons" onclick="switchWbTab('dungeons')">⚔ Dungeons</button>
+    <button class="wb-tab-btn" data-wb-tab="quests" onclick="switchWbTab('quests')">📜 Quests</button>
+    <button class="wb-tab-btn" data-wb-tab="events" onclick="switchWbTab('events')">💬 Events</button>
+    <button class="wb-tab-btn" data-wb-tab="hubs" onclick="switchWbTab('hubs')">🏘 Hubs</button>
     <div style="flex:1"></div>
-    <button class="btn-sm" onclick="addWorldMapLocation()" data-i18n="ui.editor.worldmap.addLocation">Add location</button>
-    <button class="btn-sm" onclick="clearWorldMap()" style="border-color:var(--red);color:var(--red)" data-i18n="ui.editor.worldmap.clearMap">Clear map</button>
+    <button class="btn-sm" onclick="wbReloadFromGame()">↺ Laden</button>
   </div>
 
-  <div style="display:flex;flex:1;overflow:hidden">
-
-    <!-- Canvas: Kartendarstellung -->
-    <div style="flex:1;position:relative;overflow:hidden;background:#0a0c14;border-right:1px solid var(--border)">
-      <div id="wm-editor-canvas" style="position:absolute;inset:0;cursor:crosshair" onclick="wmCanvasClick(event)">
-        <!-- SVG Verbindungslinien -->
-        <svg id="wm-editor-svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></svg>
-        <!-- Nodes werden dynamisch gerendert -->
-        <div id="wm-editor-nodes" style="position:absolute;inset:0"></div>
-        <!-- Leere-Karte-Hinweis -->
-        <div id="wm-empty-hint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--muted);pointer-events:none">
-          <div style="font-size:32px">🗺</div>
-          <div data-i18n="ui.editor.worldmap.emptyHint">Click anywhere on the map to place the first location</div>
+  <!-- Sub-Panel: Orte (Weltenkarte) -->
+  <div id="wb-panel-locations" class="wb-panel" style="flex:1;flex-direction:column;overflow:hidden;display:flex">
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 16px;background:rgba(255,255,255,0.02);border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0">
+      <span style="color:var(--muted);font-size:11px" data-i18n="ui.editor.worldmap.toolbarHelp">Klick auf die Karte um einen Ort zu platzieren.</span>
+      <div style="flex:1"></div>
+      <button class="btn-sm" onclick="addWorldMapLocation()" data-i18n="ui.editor.worldmap.addLocation">+ Ort</button>
+      <button class="btn-sm" onclick="clearWorldMap()" style="border-color:var(--red);color:var(--red)" data-i18n="ui.editor.worldmap.clearMap">Karte leeren</button>
+    </div>
+    <div style="display:flex;flex:1;overflow:hidden">
+      <div style="flex:1;position:relative;overflow:hidden;background:#0a0c14;border-right:1px solid var(--border)">
+        <div id="wm-editor-canvas" style="position:absolute;inset:0;cursor:crosshair" onclick="wmCanvasClick(event)">
+          <svg id="wm-editor-svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></svg>
+          <div id="wm-editor-nodes" style="position:absolute;inset:0"></div>
+          <div id="wm-empty-hint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--muted);pointer-events:none">
+            <div style="font-size:32px">🗺</div>
+            <div data-i18n="ui.editor.worldmap.emptyHint">Klick auf die Karte um den ersten Ort zu platzieren</div>
+          </div>
+        </div>
+      </div>
+      <div style="width:320px;flex-shrink:0;overflow-y:auto;display:flex;flex-direction:column;gap:0">
+        <div id="wm-detail-panel" style="padding:14px;flex:1">
+          <div style="color:var(--muted);font-size:12px;text-align:center;padding:20px 0" data-i18n="ui.editor.worldmap.selectHint">
+            Ort auf der Karte auswählen um ihn zu bearbeiten.
+          </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Rechte Seite: Ort-Detailformular -->
-    <div style="width:320px;flex-shrink:0;overflow-y:auto;display:flex;flex-direction:column;gap:0">
-      <div id="wm-detail-panel" style="padding:14px;flex:1">
-        <div style="color:var(--muted);font-size:12px;text-align:center;padding:20px 0" data-i18n="ui.editor.worldmap.selectHint">
-          Select a location on the map to edit it.
+  <!-- Sub-Panel: Dungeons (Akte) -->
+  <div id="wb-panel-dungeons" class="wb-panel" style="flex:1;flex-direction:column;overflow:hidden;display:none">
+    <div style="padding:10px 16px;background:rgba(255,255,255,0.02);border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:12px;flex-shrink:0">
+      <span style="font-size:11px;color:var(--muted)" data-i18n="ui.editor.acts.description">Akte, Knoten-Struktur und Gegner-Pools konfigurieren.</span>
+      <div class="spacer"></div>
+      <button class="btn-save" onclick="saveActs()" data-i18n="ui.editor.acts.save">Akte speichern</button>
+    </div>
+    <div id="act-editor-area" style="flex:1;overflow-y:auto;padding:20px"></div>
+  </div>
+
+  <!-- Sub-Panel: Quests (No-Code Editor) -->
+  <div id="wb-panel-quests" class="wb-panel" style="flex:1;flex-direction:column;overflow:hidden;display:none">
+    <div style="display:flex;flex:1;overflow:hidden">
+      <!-- Quest Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-hdr">📜 QUESTS <span id="quest-count" style="color:var(--muted);font-weight:400;margin-left:4px"></span></div>
+        <input class="sidebar-search" id="quest-search" type="text" placeholder="Quest suchen…" oninput="wbFilterQuests()">
+        <div class="sidebar-list" id="wb-quest-list"></div>
+        <div class="sidebar-footer">
+          <button onclick="wbNewQuest()">+ Neu</button>
+          <button onclick="wbDeleteQuest()" style="border-color:var(--red);color:var(--red)">🗑</button>
+        </div>
+      </div>
+      <!-- Quest Formular -->
+      <div class="content-area">
+        <div class="form-col" id="wb-quest-form-col">
+          <div style="color:var(--muted);padding:40px;text-align:center">← Quest auswählen oder neu erstellen</div>
         </div>
       </div>
     </div>
+  </div>
 
+  <!-- Sub-Panel: Events (No-Code Editor) -->
+  <div id="wb-panel-events" class="wb-panel" style="flex:1;flex-direction:column;overflow:hidden;display:none">
+    <div style="display:flex;flex:1;overflow:hidden">
+      <!-- Event Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-hdr">💬 EVENTS <span id="event-count" style="color:var(--muted);font-weight:400;margin-left:4px"></span></div>
+        <input class="sidebar-search" id="event-search" type="text" placeholder="Event suchen…" oninput="wbFilterEvents()">
+        <div class="sidebar-list" id="wb-event-list"></div>
+        <div class="sidebar-footer">
+          <button onclick="wbNewEvent()">+ Neu</button>
+          <button onclick="wbDeleteEvent()" style="border-color:var(--red);color:var(--red)">🗑</button>
+        </div>
+      </div>
+      <!-- Event Formular -->
+      <div class="content-area">
+        <div class="form-col" id="wb-event-form-col">
+          <div style="color:var(--muted);padding:40px;text-align:center">← Event auswählen oder neu erstellen</div>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
 
-<!-- ══════════ TAB: STORY / QUESTS / HUBS ══════════ -->
-<div id="tab-storysys" class="tab-panel" style="flex-direction:column;overflow:hidden">
-  <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0">
-    <span style="font-weight:700;color:var(--gold);font-size:12px;letter-spacing:1px">Story System</span>
-    <span style="color:var(--muted);font-size:11px">JSON editor for trigger events, quests and hubs. All texts are stored as translatable content.</span>
-    <div style="flex:1"></div>
-    <button class="btn-sm" onclick="storyJsonFormatAll()">Format JSON</button>
-    <button class="btn-sm" onclick="storyJsonLoadExample()">Load sample content</button>
-  </div>
-  <div style="flex:1;overflow:auto;padding:18px;display:grid;grid-template-columns:1fr;gap:16px">
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
-      <div style="font-weight:700;color:var(--gold)">Events JSON</div>
-      <div style="font-size:11px;color:var(--muted)">Triggers: `game_start`, `enter_hub`, `after_battle`, `quest_progress`, `random`.</div>
-      <textarea id="story-events-json" style="min-height:240px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Consolas,monospace;font-size:12px;resize:vertical"></textarea>
-    </div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
-      <div style="font-weight:700;color:var(--gold)">Quests JSON</div>
-      <div style="font-size:11px;color:var(--muted)">Simple progress quests with goal, reward and optional `enemyIds` filters.</div>
-      <textarea id="story-quests-json" style="min-height:220px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Consolas,monospace;font-size:12px;resize:vertical"></textarea>
-    </div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
-      <div style="font-weight:700;color:var(--gold)">Hubs JSON</div>
-      <div style="font-size:11px;color:var(--muted)">NPCs, quests, tournament series, challenges and feature toggles live here.</div>
-      <textarea id="story-hubs-json" style="min-height:240px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:Consolas,monospace;font-size:12px;resize:vertical"></textarea>
+  <!-- Sub-Panel: Hubs (No-Code Editor) -->
+  <div id="wb-panel-hubs" class="wb-panel" style="flex:1;flex-direction:column;overflow:hidden;display:none">
+    <div style="display:flex;flex:1;overflow:hidden">
+      <!-- Hub Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-hdr">🏘 HUBS <span id="hub-count" style="color:var(--muted);font-weight:400;margin-left:4px"></span></div>
+        <div class="sidebar-list" id="wb-hub-list"></div>
+        <div class="sidebar-footer">
+          <button onclick="wbNewHub()">+ Neu</button>
+          <button onclick="wbDeleteHub()" style="border-color:var(--red);color:var(--red)">🗑</button>
+        </div>
+      </div>
+      <!-- Hub Formular -->
+      <div class="content-area">
+        <div class="form-col" id="wb-hub-form-col">
+          <div style="color:var(--muted);padding:40px;text-align:center">← Hub auswählen oder neu erstellen</div>
+        </div>
+      </div>
     </div>
   </div>
+
 </div>
 
 <!-- ══════════ TAB: DEBUG ══════════ -->
@@ -557,16 +602,20 @@ try {
   if (saved.recipes) editorRecipes = saved.recipes;
   if (saved.config)  editorConfig  = saved.config;
   if (saved.starterDeck) editorStarterDeck = saved.starterDeck;
+  // Story overrides — merge individual items by id
+  if (Array.isArray(saved.events) && saved.events.length > 0) editorEvents = saved.events;
+  if (Array.isArray(saved.quests) && saved.quests.length > 0) editorQuests = saved.quests;
+  if (Array.isArray(saved.hubs)   && saved.hubs.length   > 0) editorHubs   = saved.hubs;
 } catch(e) {}
 
 if (typeof prepareCardLocalization === 'function') editorCards.forEach(prepareCardLocalization);
 if (typeof prepareEnemyLocalization === 'function') Object.values(editorEnemies).forEach(prepareEnemyLocalization);
 
-/* Weltenkarte */
+/* Weltenkarte & Story System – aus DD_CUSTOM vorbelegt */
 let editorWorldMap = [];
-let editorEvents = [];
-let editorQuests = [];
-let editorHubs = [];
+let editorEvents = JSON.parse(JSON.stringify(window.DD_CUSTOM?.events || []));
+let editorQuests = JSON.parse(JSON.stringify(window.DD_CUSTOM?.quests || []));
+let editorHubs   = JSON.parse(JSON.stringify(window.DD_CUSTOM?.hubs   || []));
 function editorActId(act) {
   if (!act || typeof act !== 'object') return '';
   if (typeof act.id === 'string' && act.id.trim()) return act.id.trim();
@@ -1022,19 +1071,468 @@ let _editingCardArt = null;
    TAB SWITCHING
 ═══════════════════════════════════════════════════ */
 function switchTab(name) {
-  const names = ['cards','enemies','drops','acts','fusions','config','synergies','worldmap','storysys','debug'];
-  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', names[i]===name));
+  const names = ['cards_fusions','enemies_drops','worldbuilder','config','debug'];
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.editorTab === name));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   const panel = document.getElementById('tab-'+name);
   if (panel) panel.classList.add('active');
-  if (name==='drops')      initDropTab();
-  if (name==='acts')       renderActEditor();
-  if (name==='fusions')    renderFusionEditor();
-  if (name==='config')     initConfig();
-  if (name==='debug')      initDebugTab();
-  if (name==='synergies')  { if (typeof initSynergyTab === 'function') initSynergyTab(); }
-  if (name==='worldmap')   initWorldMapEditor();
-  if (name==='storysys')   initStorySystemEditor();
+  if (name==='cards_fusions') { initCardTab(); renderFusionEditor(); }
+  if (name==='enemies_drops') { initEnemiesDropsTab(); }
+  if (name==='worldbuilder')  { initWorldBuilderTab(); }
+  if (name==='config')        { initConfig(); if (typeof initSynergyTab === 'function') initSynergyTab(); }
+  if (name==='debug')         { initDebugTab(); }
+}
+
+function switchWbTab(name) {
+  document.querySelectorAll('.wb-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.wbTab === name));
+  document.querySelectorAll('.wb-panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById('wb-panel-'+name);
+  if (panel) panel.classList.add('active');
+  if (name==='locations') initWorldMapEditor();
+  if (name==='dungeons')  renderActEditor();
+  if (name==='quests')    wbRenderQuestList();
+  if (name==='events')    wbRenderEventList();
+  if (name==='hubs')      wbRenderHubList();
+}
+
+function initWorldBuilderTab() {
+  // Show first active sub-tab or default to locations
+  const active = document.querySelector('.wb-tab-btn.active');
+  if (!active) switchWbTab('locations');
+  else switchWbTab(active.dataset.wbTab || 'locations');
+}
+
+function initEnemiesDropsTab() {
+  initEnemyTab();
+  // Drop table will show when an enemy is selected
+  const currentEnemyId = window._currentEnemyId;
+  if (currentEnemyId) {
+    const inlineDrops = document.getElementById('enemy-inline-drops');
+    if (inlineDrops) {
+      inlineDrops.style.display = 'block';
+      renderDropTableForEnemy(currentEnemyId);
+    }
+  }
+}
+
+function wbReloadFromGame() {
+  editorEvents = JSON.parse(JSON.stringify(window.DD_CUSTOM?.events || []));
+  editorQuests = JSON.parse(JSON.stringify(window.DD_CUSTOM?.quests || []));
+  editorHubs   = JSON.parse(JSON.stringify(window.DD_CUSTOM?.hubs   || []));
+  hydrateStoryEditorContent();
+  const active = document.querySelector('.wb-tab-btn.active');
+  if (active) switchWbTab(active.dataset.wbTab || 'quests');
+  showToast('World Builder Daten neu geladen ✓');
+}
+
+/* ═══════════════════════════════════════════════════
+   ████  WORLD BUILDER — QUEST EDITOR  ████
+═══════════════════════════════════════════════════ */
+let _wbQuestId = null;
+
+function wbRenderQuestList() {
+  const list = document.getElementById('wb-quest-list');
+  const countEl = document.getElementById('quest-count');
+  if (!list) return;
+  const fl = (document.getElementById('quest-search')?.value || '').toLowerCase();
+  list.innerHTML = '';
+  let count = 0;
+  (editorQuests || []).forEach(q => {
+    if (fl && !q.id.toLowerCase().includes(fl) && !(q.title || '').toLowerCase().includes(fl)) return;
+    count++;
+    const el = document.createElement('div');
+    el.className = 'list-item' + (q.id === _wbQuestId ? ' active' : '');
+    const isMain = q.type === 'main';
+    el.innerHTML = `<span style="font-size:9px;font-weight:700;color:${isMain?'var(--gold)':'#60a5fa'};border:1px solid ${isMain?'var(--gold)':'#60a5fa'};padding:1px 4px;border-radius:3px;flex-shrink:0">${isMain?'M':'S'}</span><span class="item-name" style="margin-left:6px">${_esc(q.title || q.id)}</span>`;
+    el.onclick = () => wbLoadQuest(q.id);
+    list.appendChild(el);
+  });
+  if (countEl) countEl.textContent = `(${count})`;
+}
+
+function wbFilterQuests() { wbRenderQuestList(); }
+
+function wbLoadQuest(id) {
+  _wbQuestId = id;
+  wbRenderQuestList();
+  const q = (editorQuests || []).find(x => x.id === id);
+  if (!q) return;
+  _wbRenderQuestForm(q);
+}
+
+function wbNewQuest() {
+  _wbQuestId = null;
+  wbRenderQuestList();
+  _wbRenderQuestForm({ id: '', type: 'side', title: '', description: '', goal: 1, reward: {} });
+}
+
+function wbDeleteQuest() {
+  if (!_wbQuestId) return;
+  if (!confirm(`Quest "${_wbQuestId}" löschen?`)) return;
+  editorQuests = (editorQuests || []).filter(q => q.id !== _wbQuestId);
+  _wbQuestId = null;
+  wbRenderQuestList();
+  const col = document.getElementById('wb-quest-form-col');
+  if (col) col.innerHTML = '<div style="color:var(--muted);padding:40px;text-align:center">← Quest auswählen oder neu erstellen</div>';
+  showToast('Quest gelöscht ✓');
+}
+
+function _wbRenderQuestForm(q) {
+  const col = document.getElementById('wb-quest-form-col');
+  if (!col) return;
+  const cardOptions = (editorCards || []).map(c => `<option value="${_esc(c.id)}" ${c.id===(q.reward?.card||'')?'selected':''}>${_esc(c.name||c.id)}</option>`).join('');
+  const enemyStr = (q.enemyIds || []).join(', ');
+  col.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px;padding:20px;max-width:640px">
+      <div style="font-size:14px;font-weight:700;color:var(--gold);margin-bottom:4px">Quest bearbeiten</div>
+      <div style="display:flex;gap:12px">
+        <div class="field-group" style="flex:2">
+          <label>ID</label>
+          <input id="wbqf-id" type="text" value="${_esc(q.id)}" placeholder="quest_my_quest" oninput="document.getElementById('wbqf-title-hint').textContent=this.value?'→ quest.'+this.value+'.title':''">
+        </div>
+        <div class="field-group" style="flex:1">
+          <label>Typ</label>
+          <select id="wbqf-type">
+            <option value="main" ${q.type==='main'?'selected':''}>Hauptquest</option>
+            <option value="side" ${q.type!=='main'?'selected':''}>Nebenquest</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Titel <span id="wbqf-title-hint" style="color:var(--muted);font-size:10px">${q.id?'→ quest.'+q.id+'.title':''}</span></label>
+        <input id="wbqf-title" type="text" value="${_esc(q.title||'')}" placeholder="Quest-Titel">
+      </div>
+      <div class="field-group">
+        <label>Beschreibung</label>
+        <textarea id="wbqf-description" rows="3" style="width:100%">${_esc(q.description||'')}</textarea>
+      </div>
+      <div style="display:flex;gap:12px">
+        <div class="field-group" style="flex:1">
+          <label>Ziel (Anzahl Kämpfe)</label>
+          <input id="wbqf-goal" type="number" min="1" value="${q.goal||1}">
+        </div>
+        <div class="field-group" style="flex:1">
+          <label>Belohnung Gold</label>
+          <input id="wbqf-gold" type="number" min="0" value="${q.reward?.gold||0}">
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Belohnung Karte</label>
+        <select id="wbqf-card"><option value="">— Keine —</option>${cardOptions}</select>
+      </div>
+      <div class="field-group">
+        <label>Gegner-Filter (IDs kommagetrennt, leer = alle)</label>
+        <input id="wbqf-enemies" type="text" value="${_esc(enemyStr)}" placeholder="kobold, wolf_alpha">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn-save" onclick="wbSaveQuest()">Speichern</button>
+      </div>
+    </div>`;
+}
+
+function wbSaveQuest() {
+  const id = (document.getElementById('wbqf-id')?.value || '').trim();
+  if (!id) { alert('ID ist erforderlich.'); return; }
+  const gold = Number(document.getElementById('wbqf-gold')?.value) || 0;
+  const card = document.getElementById('wbqf-card')?.value || '';
+  const enemyStr = document.getElementById('wbqf-enemies')?.value || '';
+  const enemyIds = enemyStr.split(',').map(s => s.trim()).filter(Boolean);
+  const q = {
+    id,
+    type: document.getElementById('wbqf-type')?.value || 'side',
+    title: (document.getElementById('wbqf-title')?.value || '').trim(),
+    description: (document.getElementById('wbqf-description')?.value || '').trim(),
+    goal: Number(document.getElementById('wbqf-goal')?.value) || 1,
+    progress: 0,
+    reward: { ...(gold ? { gold } : {}), ...(card ? { card } : {}) },
+    ...(enemyIds.length ? { enemyIds } : {}),
+  };
+  const idx = (editorQuests || []).findIndex(x => x.id === id);
+  if (!editorQuests) editorQuests = [];
+  if (idx >= 0) editorQuests[idx] = q; else editorQuests.push(q);
+  _wbQuestId = id;
+  wbRenderQuestList();
+  showToast('Quest gespeichert ✓');
+}
+
+/* ═══════════════════════════════════════════════════
+   ████  WORLD BUILDER — EVENT EDITOR  ████
+═══════════════════════════════════════════════════ */
+let _wbEventId = null;
+let _wbEditingEvent = null;
+
+function wbRenderEventList() {
+  const list = document.getElementById('wb-event-list');
+  const countEl = document.getElementById('event-count');
+  if (!list) return;
+  const fl = (document.getElementById('event-search')?.value || '').toLowerCase();
+  list.innerHTML = '';
+  let count = 0;
+  (editorEvents || []).forEach(ev => {
+    if (fl && !ev.id.toLowerCase().includes(fl) && !(ev.title || '').toLowerCase().includes(fl)) return;
+    count++;
+    const el = document.createElement('div');
+    el.className = 'list-item' + (ev.id === _wbEventId ? ' active' : '');
+    el.innerHTML = `<span class="item-name">${_esc(ev.title || ev.id)}</span>`;
+    el.onclick = () => wbLoadEvent(ev.id);
+    list.appendChild(el);
+  });
+  if (countEl) countEl.textContent = `(${count})`;
+}
+
+function wbFilterEvents() { wbRenderEventList(); }
+
+function wbLoadEvent(id) {
+  _wbEventId = id;
+  _wbEditingEvent = _cloneJson((editorEvents || []).find(x => x.id === id) || { id, dialog: [] });
+  wbRenderEventList();
+  _wbRenderEventForm();
+}
+
+function wbNewEvent() {
+  _wbEventId = null;
+  _wbEditingEvent = { id: '', title: '', trigger: '', hubId: '', once: true, dialog: [] };
+  wbRenderEventList();
+  _wbRenderEventForm();
+}
+
+function wbDeleteEvent() {
+  if (!_wbEventId) return;
+  if (!confirm(`Event "${_wbEventId}" löschen?`)) return;
+  editorEvents = (editorEvents || []).filter(e => e.id !== _wbEventId);
+  _wbEventId = null;
+  _wbEditingEvent = null;
+  wbRenderEventList();
+  const col = document.getElementById('wb-event-form-col');
+  if (col) col.innerHTML = '<div style="color:var(--muted);padding:40px;text-align:center">← Event auswählen oder neu erstellen</div>';
+  showToast('Event gelöscht ✓');
+}
+
+const _WB_TRIGGERS = ['enter_hub','leave_hub','quest_complete','battle_win','first_visit','manual'];
+
+function _wbRenderEventForm() {
+  const col = document.getElementById('wb-event-form-col');
+  const ev = _wbEditingEvent;
+  if (!col || !ev) return;
+  const hubOptions = (editorHubs || []).map(h => `<option value="${_esc(h.id)}" ${h.id===ev.hubId?'selected':''}>${_esc(h.name||h.id)}</option>`).join('');
+  const trigOptions = _WB_TRIGGERS.map(t => `<option value="${_esc(t)}" ${t===ev.trigger?'selected':''}>${_esc(t)}</option>`).join('');
+  const stepsHtml = (ev.dialog || []).map((step, si) => `
+    <div style="border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px;background:var(--surface)">
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <div class="field-group" style="flex:1"><label>Sprecher</label>
+          <input type="text" value="${_esc(step.speaker||'')}" onchange="wbEvStepSet(${si},'speaker',this.value)"></div>
+        <button style="align-self:flex-end;height:30px;border:1px solid var(--red);background:transparent;color:var(--red);border-radius:4px;cursor:pointer;padding:0 8px" onclick="wbEvDelStep(${si})">✕</button>
+      </div>
+      <div class="field-group"><label>Text</label>
+        <textarea rows="2" style="width:100%" onchange="wbEvStepSet(${si},'text',this.value)">${_esc(step.text||'')}</textarea></div>
+    </div>`).join('');
+  col.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px;padding:20px;max-width:640px">
+      <div style="font-size:14px;font-weight:700;color:var(--gold);margin-bottom:4px">Event bearbeiten</div>
+      <div style="display:flex;gap:12px">
+        <div class="field-group" style="flex:2"><label>ID</label>
+          <input id="wbevf-id" type="text" value="${_esc(ev.id)}" placeholder="event_intro"></div>
+        <div class="field-group" style="flex:1"><label>Einmalig</label>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:8px">
+            <input id="wbevf-once" type="checkbox" ${ev.once!==false?'checked':''}>
+            <label for="wbevf-once" style="font-size:12px">Einmalig zeigen</label></div></div>
+      </div>
+      <div class="field-group"><label>Titel</label>
+        <input id="wbevf-title" type="text" value="${_esc(ev.title||'')}" placeholder="Event-Titel"></div>
+      <div style="display:flex;gap:12px">
+        <div class="field-group" style="flex:1"><label>Trigger</label>
+          <select id="wbevf-trigger"><option value="">— Kein Trigger —</option>${trigOptions}</select></div>
+        <div class="field-group" style="flex:1"><label>Hub</label>
+          <select id="wbevf-hub"><option value="">— Beliebig —</option>${hubOptions}</select></div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:8px">DIALOG-SCHRITTE</div>
+        <div id="wbev-steps">${stepsHtml}</div>
+        <button class="btn-sm" onclick="wbEvAddStep()">+ Schritt hinzufügen</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn-save" onclick="wbSaveEvent()">Speichern</button>
+      </div>
+    </div>`;
+}
+
+function wbEvStepSet(si, key, val) {
+  if (!_wbEditingEvent?.dialog?.[si]) return;
+  _wbEditingEvent.dialog[si][key] = val;
+}
+
+function wbEvAddStep() {
+  if (!_wbEditingEvent) return;
+  if (!_wbEditingEvent.dialog) _wbEditingEvent.dialog = [];
+  _wbEditingEvent.dialog.push({ speaker: '', text: '' });
+  _wbRenderEventForm();
+}
+
+function wbEvDelStep(si) {
+  if (!_wbEditingEvent?.dialog) return;
+  _wbEditingEvent.dialog.splice(si, 1);
+  _wbRenderEventForm();
+}
+
+function wbSaveEvent() {
+  if (!_wbEditingEvent) return;
+  const id = (document.getElementById('wbevf-id')?.value || '').trim();
+  if (!id) { alert('ID ist erforderlich.'); return; }
+  const ev = {
+    ..._wbEditingEvent,
+    id,
+    title: (document.getElementById('wbevf-title')?.value || '').trim(),
+    trigger: document.getElementById('wbevf-trigger')?.value || '',
+    hubId: document.getElementById('wbevf-hub')?.value || '',
+    once: document.getElementById('wbevf-once')?.checked !== false,
+  };
+  if (!editorEvents) editorEvents = [];
+  const idx = editorEvents.findIndex(x => x.id === id);
+  if (idx >= 0) editorEvents[idx] = ev; else editorEvents.push(ev);
+  _wbEventId = id;
+  _wbEditingEvent = _cloneJson(ev);
+  wbRenderEventList();
+  showToast('Event gespeichert ✓');
+}
+
+/* ═══════════════════════════════════════════════════
+   ████  WORLD BUILDER — HUB EDITOR  ████
+═══════════════════════════════════════════════════ */
+let _wbHubId = null;
+let _wbEditingHub = null;
+
+function wbRenderHubList() {
+  const list = document.getElementById('wb-hub-list');
+  const countEl = document.getElementById('hub-count');
+  if (!list) return;
+  list.innerHTML = '';
+  (editorHubs || []).forEach(hub => {
+    const el = document.createElement('div');
+    el.className = 'list-item' + (hub.id === _wbHubId ? ' active' : '');
+    el.innerHTML = `<span class="item-name">${_esc(hub.name || hub.id)}</span>`;
+    el.onclick = () => wbLoadHub(hub.id);
+    list.appendChild(el);
+  });
+  if (countEl) countEl.textContent = `(${(editorHubs||[]).length})`;
+}
+
+function wbLoadHub(id) {
+  _wbHubId = id;
+  _wbEditingHub = _cloneJson((editorHubs || []).find(x => x.id === id) || { id, npcs: [], tournaments: [], challenges: [] });
+  wbRenderHubList();
+  _wbRenderHubForm();
+}
+
+function wbNewHub() {
+  _wbHubId = null;
+  _wbEditingHub = { id: '', name: '', description: '', npcs: [], quests: [], tournaments: [], challenges: [] };
+  wbRenderHubList();
+  _wbRenderHubForm();
+}
+
+function wbDeleteHub() {
+  if (!_wbHubId) return;
+  if (!confirm(`Hub "${_wbHubId}" löschen?`)) return;
+  editorHubs = (editorHubs || []).filter(h => h.id !== _wbHubId);
+  _wbHubId = null;
+  _wbEditingHub = null;
+  wbRenderHubList();
+  const col = document.getElementById('wb-hub-form-col');
+  if (col) col.innerHTML = '<div style="color:var(--muted);padding:40px;text-align:center">← Hub auswählen oder neu erstellen</div>';
+  showToast('Hub gelöscht ✓');
+}
+
+function _wbRenderHubForm() {
+  const col = document.getElementById('wb-hub-form-col');
+  const hub = _wbEditingHub;
+  if (!col || !hub) return;
+  const questOptions = (editorQuests || []).map(q => {
+    const checked = (hub.quests || []).includes(q.id) ? 'checked' : '';
+    return `<label style="display:flex;gap:6px;align-items:center;font-size:12px"><input type="checkbox" value="${_esc(q.id)}" ${checked} onchange="wbHubQuestToggle(this)"> ${_esc(q.title||q.id)} <span style="color:var(--muted);font-size:10px">(${q.type==='main'?'M':'S'})</span></label>`;
+  }).join('');
+  const npcsHtml = (hub.npcs || []).map((npc, ni) => `
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+      <input type="text" placeholder="Name" value="${_esc(npc.name||'')}" style="flex:1" onchange="wbHubNpcSet(${ni},'name',this.value)">
+      <button style="border:1px solid var(--red);background:transparent;color:var(--red);border-radius:4px;cursor:pointer;padding:0 8px;height:30px" onclick="wbHubNpcDel(${ni})">✕</button>
+    </div>`).join('');
+  col.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px;padding:20px;max-width:640px">
+      <div style="font-size:14px;font-weight:700;color:var(--gold);margin-bottom:4px">Hub bearbeiten</div>
+      <div style="display:flex;gap:12px">
+        <div class="field-group" style="flex:1"><label>ID</label>
+          <input id="wbhf-id" type="text" value="${_esc(hub.id)}" placeholder="hub_dorf"></div>
+        <div class="field-group" style="flex:2"><label>Name</label>
+          <input id="wbhf-name" type="text" value="${_esc(hub.name||'')}" placeholder="Dorfplatz"></div>
+      </div>
+      <div class="field-group"><label>Beschreibung</label>
+        <textarea id="wbhf-description" rows="2" style="width:100%">${_esc(hub.description||'')}</textarea></div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:8px">QUESTS</div>
+        <div style="display:flex;flex-direction:column;gap:4px;max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:8px">
+          ${questOptions || '<div style="color:var(--muted);font-size:12px">Keine Quests definiert.</div>'}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:8px">NPCs</div>
+        <div id="wbhf-npcs">${npcsHtml}</div>
+        <button class="btn-sm" onclick="wbHubNpcAdd()">+ NPC hinzufügen</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn-save" onclick="wbSaveHub()">Speichern</button>
+      </div>
+    </div>`;
+}
+
+function wbHubQuestToggle(checkbox) {
+  if (!_wbEditingHub) return;
+  const id = checkbox.value;
+  if (!_wbEditingHub.quests) _wbEditingHub.quests = [];
+  if (checkbox.checked) { if (!_wbEditingHub.quests.includes(id)) _wbEditingHub.quests.push(id); }
+  else _wbEditingHub.quests = _wbEditingHub.quests.filter(q => q !== id);
+}
+
+function wbHubNpcSet(ni, key, val) {
+  if (!_wbEditingHub?.npcs?.[ni]) return;
+  _wbEditingHub.npcs[ni][key] = val;
+}
+
+function wbHubNpcAdd() {
+  if (!_wbEditingHub) return;
+  if (!_wbEditingHub.npcs) _wbEditingHub.npcs = [];
+  _wbEditingHub.npcs.push({ name: '' });
+  _wbRenderHubForm();
+}
+
+function wbHubNpcDel(ni) {
+  if (!_wbEditingHub?.npcs) return;
+  _wbEditingHub.npcs.splice(ni, 1);
+  _wbRenderHubForm();
+}
+
+function wbSaveHub() {
+  if (!_wbEditingHub) return;
+  const id = (document.getElementById('wbhf-id')?.value || '').trim();
+  if (!id) { alert('ID ist erforderlich.'); return; }
+  const hub = {
+    ..._wbEditingHub,
+    id,
+    name: (document.getElementById('wbhf-name')?.value || '').trim(),
+    description: (document.getElementById('wbhf-description')?.value || '').trim(),
+  };
+  if (!editorHubs) editorHubs = [];
+  const idx = editorHubs.findIndex(x => x.id === id);
+  if (idx >= 0) editorHubs[idx] = hub; else editorHubs.push(hub);
+  _wbHubId = id;
+  _wbEditingHub = _cloneJson(hub);
+  wbRenderHubList();
+  showToast('Hub gespeichert ✓');
+}
+
+/* ═══════════════════════════════════════════════════
+   ████  HELPER — HTML escaping  ████
+═══════════════════════════════════════════════════ */
+function _esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function showToast(msg = _et('ui.common.saved', null, 'Saved ✓')) {
@@ -1348,9 +1846,62 @@ function _portraitThumb(p) {
 }
 
 function selectEnemy(id) {
-  selectedEnemyId=id; initEnemyTab();
+  selectedEnemyId=id;
+  window._currentEnemyId = id;
+  initEnemyTab();
   const enemy = editorEnemies[id];
-  if(enemy) renderEnemyForm(enemy);
+  if(enemy) {
+    renderEnemyForm(enemy);
+    // Show inline drop table
+    const inlineDrops = document.getElementById('enemy-inline-drops');
+    if (inlineDrops) {
+      inlineDrops.style.display = 'block';
+      renderDropTableForEnemy(id);
+    }
+  }
+}
+
+function renderDropTableForEnemy(enemyId) {
+  const enemy = editorEnemies[enemyId];
+  if (!enemy) return;
+  _migrateDropTable(enemy);
+  const area = document.getElementById('drop-table-area');
+  if (!area) return;
+  area.innerHTML = '';
+
+  const pool  = enemy.dropTable.drops;
+  const total = pool.reduce((s,e)=>s+(e.weight||1),0);
+
+  const sec = document.createElement('div');
+  sec.className = 'drop-section';
+  sec.style.cssText = 'min-width:280px;flex:1;max-width:560px';
+  sec.innerHTML = `
+    <div class="drop-section-header">
+      <span style="font-size:12px;color:var(--gold);letter-spacing:2px">Drop Table</span>
+      <span style="font-size:11px;color:var(--muted)">Gesamtgewicht: ${total}</span>
+    </div>
+    <div id="pool-drops-inline-${enemyId}">
+      ${pool.map((entry,i)=>{
+        const pct = total>0 ? (entry.weight/total*100).toFixed(1) : 0;
+        const c   = editorCards.find(x=>x.id===entry.cardId);
+        return `<div class="drop-entry">
+          <div class="de-card rarity-${c?c.rarity:'common'}">${c?c.name:entry.cardId}</div>
+          <input class="de-weight" type="number" min="1" value="${entry.weight}"
+            onchange="updateWeight('${enemyId}',${i},this.value)"
+            style="padding:3px 5px;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text)">
+          <span style="color:var(--muted);font-size:11px;min-width:38px;text-align:right">${pct}%</span>
+          <button onclick="removeDropEntry('${enemyId}',${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">×</button>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:8px;display:flex;gap:8px">
+      <select id="drop-add-card-inline" style="flex:1;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text)">
+        ${editorCards.map(c=>`<option value="${c.id}">${c.name||c.id}</option>`).join('')}
+      </select>
+      <button class="btn-sm" onclick="addDropEntry('${enemyId}',document.getElementById('drop-add-card-inline').value)">+ Hinzufügen</button>
+    </div>
+  `;
+  area.appendChild(sec);
 }
 
 function renderEnemyForm(enemy) {
@@ -1651,9 +2202,8 @@ function deleteEnemy() {
    ████  DROP-TABELLEN-TAB  ████
 ═══════════════════════════════════════════════════ */
 function initDropTab() {
-  const sel = document.getElementById('drop-enemy-select');
-  sel.innerHTML = Object.values(editorEnemies).map(e=>`<option value="${e.id}">${_portraitThumb(e.portrait)} ${e.name}</option>`).join('');
-  renderDropTable();
+  // Legacy: called when navigating to enemies_drops tab - re-renders current enemy's drop table
+  if (window._currentEnemyId) renderDropTableForEnemy(window._currentEnemyId);
 }
 
 /* ── Migration: Legacy-dropTable (S_POW etc.) → drops[] ── */
@@ -1672,12 +2222,14 @@ function _migrateDropTable(enemy) {
 }
 
 function renderDropTable() {
-  const enemyId = document.getElementById('drop-enemy-select').value;
+  const enemyId = window._currentEnemyId || (document.getElementById('drop-enemy-select') ? document.getElementById('drop-enemy-select').value : '');
   const enemy   = editorEnemies[enemyId];
   if(!enemy) return;
   _migrateDropTable(enemy);
-  document.getElementById('drop-enemy-info').textContent = _et('ui.editor.drops.enemyInfo', { hp: enemy.hp, title: enemy.title || enemy.name }, `HP: ${enemy.hp} | ${enemy.title||enemy.name}`);
+  const infoEl = document.getElementById('drop-enemy-info');
+  if (infoEl) infoEl.textContent = _et('ui.editor.drops.enemyInfo', { hp: enemy.hp, title: enemy.title || enemy.name }, `HP: ${enemy.hp} | ${enemy.title||enemy.name}`);
   const area = document.getElementById('drop-table-area');
+  if (!area) { renderDropTableForEnemy(enemyId); return; }
   area.innerHTML='';
 
   const pool  = enemy.dropTable.drops;
@@ -1724,23 +2276,24 @@ function updateWeight(eId,idx,val) {
   const e=editorEnemies[eId];
   if(!e||!e.dropTable||!e.dropTable.drops) return;
   e.dropTable.drops[idx].weight=parseInt(val)||1;
-  renderDropTable();
+  renderDropTableForEnemy(eId);
 }
 function removeDropEntry(eId,idx) {
   const e=editorEnemies[eId];
   if(!e||!e.dropTable||!e.dropTable.drops) return;
   e.dropTable.drops.splice(idx,1);
-  renderDropTable();
+  renderDropTableForEnemy(eId);
 }
-function addDropEntry(eId) {
+function addDropEntry(eId, cardId) {
   const e=editorEnemies[eId];
-  const cId=document.getElementById(`add-card-drops-${eId}`).value;
-  const w=parseInt(document.getElementById(`add-w-drops-${eId}`).value)||10;
+  // Support both inline (cardId param) and legacy (DOM elements)
+  const cId = cardId || (document.getElementById(`add-card-drops-${eId}`) ? document.getElementById(`add-card-drops-${eId}`).value : '');
+  const w = cardId ? 10 : (parseInt((document.getElementById(`add-w-drops-${eId}`)||{}).value)||10);
   if(!e||!cId) return;
   if(!e.dropTable) e.dropTable={};
   if(!Array.isArray(e.dropTable.drops)) e.dropTable.drops=[];
   e.dropTable.drops.push({cardId:cId,weight:w});
-  renderDropTable();
+  renderDropTableForEnemy(eId);
 }
 function quickSim(eId,n) {
   const enemy=editorEnemies[eId];
@@ -3030,13 +3583,14 @@ function syncStoryEditorsFromState() {
 }
 
 function parseStoryEditorsIntoState() {
+  // Form-based editors keep state current. Legacy textarea fallback only if elements exist.
   const eventsEl = document.getElementById('story-events-json');
   const questsEl = document.getElementById('story-quests-json');
-  const hubsEl = document.getElementById('story-hubs-json');
+  const hubsEl   = document.getElementById('story-hubs-json');
   try {
     if (eventsEl) editorEvents = JSON.parse(eventsEl.value || '[]');
     if (questsEl) editorQuests = JSON.parse(questsEl.value || '[]');
-    if (hubsEl) editorHubs = JSON.parse(hubsEl.value || '[]');
+    if (hubsEl)   editorHubs   = JSON.parse(hubsEl.value   || '[]');
     return true;
   } catch (error) {
     alert(`Story JSON error: ${error.message}`);
@@ -3046,10 +3600,13 @@ function parseStoryEditorsIntoState() {
 
 function initStorySystemEditor() {
   syncStoryEditorsFromState();
+  if (typeof wbRenderQuestList === 'function') wbRenderQuestList();
+  if (typeof wbRenderEventList === 'function') wbRenderEventList();
+  if (typeof wbRenderHubList   === 'function') wbRenderHubList();
 }
 
 function storyJsonFormatAll() {
-  if (!parseStoryEditorsIntoState()) return;
+  parseStoryEditorsIntoState();
   syncStoryEditorsFromState();
   showToast('Story JSON formatted ✓');
 }
@@ -3060,6 +3617,10 @@ function storyJsonLoadExample() {
   editorHubs = _cloneJson(window.DD_CUSTOM?.hubs || []);
   hydrateStoryEditorContent();
   syncStoryEditorsFromState();
+  // Refresh form-based list renderers if WB tab is active
+  if (typeof wbRenderQuestList === 'function') wbRenderQuestList();
+  if (typeof wbRenderEventList === 'function') wbRenderEventList();
+  if (typeof wbRenderHubList   === 'function') wbRenderHubList();
   showToast('Sample story content loaded ✓');
 }
 
@@ -3113,7 +3674,7 @@ function hydrateStoryEditorContent() {
    SPEICHERN / EXPORT / IMPORT
 ═══════════════════════════════════════════════════ */
 function saveToGame() {
-  if (!parseStoryEditorsIntoState()) return;
+  parseStoryEditorsIntoState(); // no-op if no legacy textareas; form state is always current
   const data = buildEditorDataPayload();
   window.DD_CUSTOM = data;
   localStorage.setItem('dd_custom', JSON.stringify(data));
@@ -3121,7 +3682,7 @@ function saveToGame() {
 }
 
 function exportJSON() {
-  if (!parseStoryEditorsIntoState()) return;
+  parseStoryEditorsIntoState(); // no-op if no legacy textareas; form state is always current
   const data = buildEditorExportPayload();
   downloadJSONFile(data, `dd_data_${Date.now()}.json`);
   showToast(_et('ui.editor.exportStarted', null, 'Export started ✓'));
@@ -3275,7 +3836,7 @@ function downloadJSONFile(data, filename) {
 }
 
 function exportRuntimeConfig() {
-  if (!parseStoryEditorsIntoState()) return;
+  parseStoryEditorsIntoState();
   if (typeof saveConfig === 'function') saveConfig();
   const runtimeData = buildRuntimeConfigPayload();
   downloadJSONFile(runtimeData, 'runtime-config.json');
@@ -3302,7 +3863,7 @@ function buildTranslationTemplate(language) {
 }
 
 function exportTranslationTemplate(language = 'en') {
-  if (!parseStoryEditorsIntoState()) return;
+  parseStoryEditorsIntoState();
   const template = buildTranslationTemplate(language);
   downloadJSONFile(template, `dd_translation_template_${language}.json`);
   showToast(_et('ui.editor.translationTemplateDone', { language: language.toUpperCase() }, `Translation template for ${language.toUpperCase()} exported ✓`));
