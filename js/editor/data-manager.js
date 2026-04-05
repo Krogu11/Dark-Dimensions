@@ -253,6 +253,7 @@ window.DDEditorDataManager = (function createEditorDataManager() {
       quests: Array.isArray(data.quests) ? data.quests : [],
       hubs: Array.isArray(data.hubs) ? data.hubs : [],
       recipes: Array.isArray(data.recipes) ? data.recipes : [],
+      locales: data.locales || {},
     };
   }
 
@@ -288,6 +289,7 @@ window.DDEditorDataManager = (function createEditorDataManager() {
         events: runtimeConfig.events,
         quests: runtimeConfig.quests,
         hubs: runtimeConfig.hubs,
+        locales: runtimeConfig.locales,
       },
     };
   }
