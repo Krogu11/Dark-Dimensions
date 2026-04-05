@@ -23,6 +23,15 @@
     return target;
   }
 
+  function mergeMissingInto(target, source) {
+    if (!isPlainObject(source)) return target;
+    Object.keys(source).forEach(key => {
+      if (target[key] !== undefined && target[key] !== null && target[key] !== '') return;
+      target[key] = normalizeMojibakeValue(source[key]);
+    });
+    return target;
+  }
+
   function normalizeMojibakeString(value) {
     const raw = String(value || '');
     if (!raw || (!raw.includes('Ã') && !raw.includes('Â') && !raw.includes('â'))) return raw;
@@ -178,7 +187,7 @@
       const namespaces = ddCustom.locales[language];
       if (!isPlainObject(namespaces)) return;
       Object.keys(namespaces).forEach(namespace => {
-        flattenInto(translations[language], namespaces[namespace]);
+        mergeMissingInto(translations[language], namespaces[namespace]);
       });
     });
   }

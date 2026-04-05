@@ -86,6 +86,10 @@
         {
           "type": "gain_item",
           "itemId": "river_village_arrival"
+        },
+        {
+          "type": "complete_quest",
+          "questId": "quest_main_001"
         }
       ]
     },
@@ -109,17 +113,9 @@
             {
               "effects": [
                 {
-                  "type": "claim_quest",
-                  "questId": "quest_main_001"
-                },
-                {
                   "type": "set_flag",
                   "key": "elder_hunt_assigned",
                   "value": "true"
-                },
-                {
-                  "type": "start_quest",
-                  "questId": "quest_main_002"
                 }
               ],
               "textKey": "event.event_elder_intro.step.1.choice.0"
@@ -1066,6 +1062,7 @@
       "reward": {
         "ds": 5
       },
+      "onCompleteQuest": "quest_main_002",
       "titleKey": "quest.quest_main_001.title",
       "descriptionKey": "quest.quest_main_001.description",
       "conditions": [
@@ -1078,7 +1075,8 @@
     {
       "id": "quest_main_002",
       "type": "main",
-      "acceptMode": "dialog",
+      "acceptMode": "auto",
+      "autoComplete": true,
       "goal": {
         "type": "kill",
         "target": "goblin_chief",
@@ -1091,9 +1089,9 @@
       "descriptionKey": "quest.quest_main_002.description",
       "conditions": [
         {
-          "type": "flag",
-          "key": "elder_hunt_assigned",
-          "value": "true"
+          "type": "quest_status",
+          "questId": "quest_main_001",
+          "status": "completed"
         }
       ]
     }

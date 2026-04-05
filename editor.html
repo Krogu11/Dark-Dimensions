@@ -4035,7 +4035,8 @@ function buildRuntimeConfigPayload() {
 }
 
 function downloadJSONFile(data, filename) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const payload = JSON.stringify(data, null, 2);
+  const blob = new Blob([payload], { type: 'application/json;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = filename;

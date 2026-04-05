@@ -218,6 +218,33 @@
     };
   }
 
+  function logQuestState(questId, status, details) {
+    console.log('Quest State:', questId, status, details || '');
+  }
+
+  function refreshQuestViews() {
+    const hubScreen = global.document?.getElementById('screen-hub');
+    const worldmapScreen = global.document?.getElementById('screen-worldmap');
+    if (runtime.currentHubId && hubScreen && hubScreen.style.display !== 'none') {
+      renderHubScreen({ id: runtime.currentHubId, hubId: runtime.currentHubId }, { suppressAutoEvent: true });
+      return;
+    }
+    if (worldmapScreen && worldmapScreen.style.display !== 'none' && typeof renderWorldMap === 'function') {
+      renderWorldMap();
+    }
+  }
+
+  function isQuestReadyToTurnIn(questId) {
+    const state = ensureStoryState();
+    return !!state?.activeQuests?.[questId]?.readyToTurnIn;
+  }
+
+  function shouldAutoCompleteQuest(quest) {
+    if (!quest) return false;
+    if (quest.turnInRequired === true) return false;
+    return quest.autoComplete === true;
+  }
+
   function syncQuestState(questId) {
     const state = ensureStoryState();
     const quest = byId(getQuests(), questId);
@@ -226,7 +253,8 @@
     const progressState = getQuestProgressValue(quest, entry);
     entry.progress = progressState.progress;
     entry.goal = progressState.goal;
-    entry.status = progressState.status;
+    entry.status = 'active';
+    entry.readyToTurnIn = progressState.status === 'claimable';
     return true;
   }
 
@@ -259,7 +287,6 @@
     if (!quest) return 'locked';
     if (!state) return 'available';
     if (state.completedQuests[questId]) return 'completed';
-    if (state.activeQuests[questId]?.status === 'claimable') return 'claimable';
     if (state.activeQuests[questId]) return 'active';
     if (!isQuestUnlocked(quest)) return 'locked';
     return 'available';
@@ -281,14 +308,49 @@
         goal: goal.amount,
         status: 'active',
         goalType: goal.type,
+        readyToTurnIn: false,
       };
       syncQuestState(questId);
       if (typeof saveCurrentSlot === 'function') saveCurrentSlot();
+      logQuestState(questId, 'active', state.activeQuests[questId]);
       emitQuestProgress(questId, state.activeQuests[questId].status);
+      refreshQuestViews();
       return true;
     }
     syncQuestState(questId);
     return false;
+  }
+
+  function completeQuest(questId, options) {
+    const quest = byId(getQuests(), questId);
+    const state = ensureStoryState();
+    if (!quest || !state || state.completedQuests[questId]) return false;
+    if (!state.activeQuests[questId] && !startQuest(questId)) return false;
+    const entry = state.activeQuests[questId];
+    if (!entry) return false;
+    const goal = normalizeQuestGoal(quest);
+    entry.progress = goal.amount;
+    entry.goal = goal.amount;
+    entry.status = 'active';
+    entry.readyToTurnIn = false;
+    if (goal.type === 'deliver' && !removeInventoryItems(goal.item, goal.amount)) return false;
+    applyReward(quest.reward);
+    state.completedQuests[questId] = {
+      id: questId,
+      progress: entry.progress,
+      status: 'completed',
+      completedAt: Date.now(),
+    };
+    delete state.activeQuests[questId];
+    logQuestState(questId, 'completed', state.completedQuests[questId]);
+    emitQuestProgress(questId, 'completed');
+    const completionEffects = [];
+    if (quest.onCompleteQuest) completionEffects.push({ type: 'start_quest', questId: quest.onCompleteQuest });
+    if (Array.isArray(quest.onCompleteEffects)) completionEffects.push(...quest.onCompleteEffects);
+    completionEffects.forEach(effect => applyEffect(effect, options || {}));
+    if (typeof saveCurrentSlot === 'function') saveCurrentSlot();
+    refreshQuestViews();
+    return true;
   }
 
   function addQuestProgress(questId, amount) {
@@ -302,16 +364,16 @@
     }
     if (!state.activeQuests[questId]) startQuest(questId);
     const entry = state.activeQuests[questId];
-    if (!entry || entry.status === 'claimable') return false;
+    if (!entry) return false;
     entry.progress = Math.min(goal.amount, Number(entry.progress || 0) + Math.max(0, Number(amount || 0)));
     entry.goal = goal.amount;
-    if (entry.progress >= goal.amount) {
-      entry.status = 'claimable';
-      emitQuestProgress(questId, 'claimable');
-    } else {
-      emitQuestProgress(questId, 'active');
-    }
+    entry.status = 'active';
+    entry.readyToTurnIn = entry.progress >= goal.amount;
+    if (entry.readyToTurnIn && shouldAutoCompleteQuest(quest)) return completeQuest(questId);
+    logQuestState(questId, 'active', entry);
+    emitQuestProgress(questId, 'active');
     if (typeof saveCurrentSlot === 'function') saveCurrentSlot();
+    refreshQuestViews();
     return true;
   }
 
@@ -338,13 +400,9 @@
     const entry = state.activeQuests[questId];
     const goal = normalizeQuestGoal(quest);
     syncQuestState(questId);
-    if (!entry || entry.status !== 'claimable') return false;
-    if (goal.type === 'deliver' && !removeInventoryItems(goal.item, goal.amount)) return false;
-    applyReward(quest.reward);
-    state.completedQuests[questId] = { id: questId, progress: entry.progress, completedAt: Date.now() };
-    delete state.activeQuests[questId];
-    emitQuestProgress(questId, 'completed');
-    return true;
+    if (!entry || !entry.readyToTurnIn) return false;
+    if (goal.type === 'deliver' && getInventoryItemCount(goal.item) < goal.amount) return false;
+    return completeQuest(questId);
   }
 
   function rewardSummary(reward) {
@@ -583,6 +641,9 @@
       case 'start_quest':
         startQuest(effect.value || effect.questId);
         return false;
+      case 'complete_quest':
+        completeQuest(effect.value || effect.questId, context);
+        return false;
       case 'update_quest':
         addQuestProgress(effect.questId || effect.value, Number(effect.amount || 1));
         return false;
@@ -699,14 +760,13 @@
     const labels = {
       available: translateKey('ui.quest.log.available', 'Verfügbar'),
       active: translateKey('ui.quest.log.active', 'Aktiv'),
-      claimable: translateKey('ui.quest.log.claimable', 'Abschließbar'),
       completed: translateKey('ui.quest.log.completed', 'Abgeschlossen'),
     };
     return labels[status] || status;
   }
 
   function _questStatusColor(status) {
-    return { available: '#98a3d1', active: '#cdd5f7', claimable: '#ffd700', completed: '#6fe29c' }[status] || '#ccc';
+    return { available: '#98a3d1', active: '#cdd5f7', completed: '#6fe29c' }[status] || '#ccc';
   }
 
   function getQuestObjectiveText(quest, entry) {
@@ -765,8 +825,8 @@
       const bucket = quest.type === 'side' ? sideQuests : mainQuests;
       bucket.push({ quest, entry, status });
     });
-    // Sort: active/claimable first, then available, then completed
-    const sortOrder = { claimable: 0, active: 1, available: 2, completed: 3 };
+    // Sort: active first, then available, then completed
+    const sortOrder = { active: 0, available: 1, completed: 2 };
     const sortFn = (a, b) => (sortOrder[a.status] ?? 9) - (sortOrder[b.status] ?? 9);
     mainQuests.sort(sortFn);
     sideQuests.sort(sortFn);
@@ -894,6 +954,7 @@
               const quest = byId(getQuests(), questId);
               if (!quest) return '';
               const status = getQuestStatus(questId);
+              const readyToTurnIn = isQuestReadyToTurnIn(questId);
               if (status === 'locked') return '';
               const acceptMode = quest.acceptMode || 'manual';
               const typeBadge = quest.type === 'main'
@@ -907,8 +968,8 @@
                 <div style="font-size:12px;margin-bottom:8px">${translateKey('ui.common.reward', 'Belohnung')}: ${rewardSummary(quest.reward)}</div>
                 ${status === 'available' && acceptMode === 'manual' ? `<button class="btn-success" data-quest-start="${questId}">${translateKey('ui.quest.accept', 'Annehmen')}</button>` : ''}
                 ${status === 'available' && acceptMode === 'dialog' ? `<div style="font-size:12px;color:#98a3d1">${translateKey('ui.quest.accept.viaDialog', 'Mit einer Person im Dorf sprechen, um diese Quest anzunehmen.')}</div>` : ''}
-                ${status === 'active' ? `<div style="font-size:12px;color:#cdd5f7">${getQuestObjectiveText(quest, state.activeQuests?.[questId])}</div>` : ''}
-                ${status === 'claimable' ? `<button class="btn-success" data-quest-claim="${questId}">${translateKey('ui.quest.turnin', 'Abgeben')}</button>` : ''}
+                ${status === 'active' ? `<div style="font-size:12px;color:${readyToTurnIn ? '#ffd700' : '#cdd5f7'}">${getQuestObjectiveText(quest, state.activeQuests?.[questId])}${readyToTurnIn ? ` - ${translateKey('ui.quest.log.claimable', 'Abschließbar')}` : ''}</div>` : ''}
+                ${status === 'active' && readyToTurnIn ? `<button class="btn-success" data-quest-claim="${questId}">${translateKey('ui.quest.turnin', 'Abgeben')}</button>` : ''}
                 ${status === 'completed' ? `<div style="font-size:12px;color:#6fe29c">${translateKey('ui.quest.log.completed', 'Abgeschlossen')}</div>` : ''}
               </div>`;
             }).join('') || `<div style="color:#8a92b8">${translateKey('ui.quest.log.empty', 'Keine Quests.')}</div>`}
@@ -1228,8 +1289,8 @@
           : activeEntries.map(entry => {
               const quest = byId(allQuests, entry.id);
               if (!quest) return '';
-              const claimable = entry.status === 'claimable';
-              return `<div style="font-size:12px;color:${claimable ? '#ffd700' : '#dce3ff'}"><strong>${quest.title}</strong><br>${entry.progress} / ${entry.goal}${claimable ? ` — <em>${translateKey('ui.quest.log.claimable', 'Abschließbar')}</em>` : ''}</div>`;
+              const readyToTurnIn = !!entry.readyToTurnIn;
+              return `<div style="font-size:12px;color:${readyToTurnIn ? '#ffd700' : '#dce3ff'}"><strong>${quest.title}</strong><br>${entry.progress} / ${entry.goal}${readyToTurnIn ? ` - <em>${translateKey('ui.quest.log.claimable', 'Abschließbar')}</em>` : ''}</div>`;
             }).join('')}
       </div>
       ${availableCount > 0 ? `<div style="margin-top:8px;font-size:11px;color:#7a85b0;border-top:1px solid rgba(255,255,255,0.06);padding-top:7px">${availableCount} ${translateKey('ui.worldmap.questsAvailableInHubs', 'Quest(s) verfügbar — betrete einen Hub zum Annehmen')}</div>` : ''}
@@ -1292,6 +1353,7 @@
     normalizeQuestGoal,
     getQuestStatus,
     startQuest,
+    completeQuest,
     addQuestProgress,
     claimQuest,
     syncQuestState,
