@@ -646,7 +646,8 @@
                          "x":  6.830151003739961,
                          "y":  64.70149310667124,
                          "connections":  [
-                                             "loc_broken_cart"
+                                             "loc_broken_cart",
+                                             "loc_1775407855027"
                                          ],
                          "unlockConditions":  [
 
@@ -678,6 +679,45 @@
                          "isStart":  false,
                          "nameKey":  "world.loc_1775394465406.name",
                          "descriptionKey":  "world.loc_1775394465406.description"
+                     },
+                     {
+                         "id":  "loc_1775407855027",
+                         "type":  "dungeon",
+                         "x":  19.749834227681813,
+                         "y":  73.47014982308914,
+                         "connections":  [
+                                             "loc_1775394465406"
+                                         ],
+                         "unlockConditions":  [
+
+                                              ],
+                         "actId":  "act_0",
+                         "hubFeatures":  [
+                                             "rest",
+                                             "shop",
+                                             "deck",
+                                             "save"
+                                         ],
+                         "storyLines":  [
+
+                                        ],
+                         "bgm":  "",
+                         "battleBgm":  "",
+                         "worldEventConfig":  {
+                                                  "noneWeight":  100,
+                                                  "battleWeight":  0,
+                                                  "eventWeight":  0,
+                                                  "enemyId":  "",
+                                                  "eventId":  "",
+                                                  "enemyPool":  [
+
+                                                                ]
+                                              },
+                         "postStoryBattleEnemyId":  "",
+                         "postStoryGoToLocationId":  "",
+                         "isStart":  false,
+                         "nameKey":  "world.loc_1775407855027.name",
+                         "descriptionKey":  "world.loc_1775407855027.description"
                      }
                  ]
 }
