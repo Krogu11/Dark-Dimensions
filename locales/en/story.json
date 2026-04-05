@@ -1,3 +1,27 @@
 {
-
+    "ui.quest.log.active":  "Active",
+    "ui.quest.accept":  "Accept",
+    "ui.quest.turnin":  "Turn In",
+    "ui.quest.log.side":  "Side Quests",
+    "ui.quest.log.completed":  "Completed",
+    "ui.quest.progress":  "Progress",
+    "ui.quest.type.side":  "SIDE QUEST",
+    "ui.quest.log.available":  "Available",
+    "ui.common.reward":  "Reward",
+    "ui.quest.accepted.toast":  "Quest accepted",
+    "ui.quest.type.main":  "MAIN QUEST",
+    "ui.quest.log.close":  "Close",
+    "ui.worldmap.questsAvailableInHubs":  "Quest(s) available — enter a hub to accept",
+    "ui.worldmap.noActiveQuests":  "No active quests.",
+    "act.act_2.name":  "Small Village",
+    "act.act_0.name":  "River Path",
+    "ui.common.open":  "Open",
+    "ui.quest.log.main":  "Main Quests",
+    "quest.quest_defend_village.description":  "Defeat 2 monster groups on the paths outside the village.",
+    "quest.quest_defend_village.title":  "Defend the Village",
+    "act.act_1.name":  "The Goblin Forest",
+    "ui.quest.log.title":  "Quest Log",
+    "ui.quest.log.empty":  "No quests.",
+    "ui.hub.quests":  "Quests",
+    "ui.quest.log.claimable":  "Ready to Turn In"
 }

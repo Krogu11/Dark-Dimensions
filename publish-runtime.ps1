@@ -36,9 +36,76 @@ function Read-JsonFile([string]$path) {
   }
 }
 
+function Read-JsonFileIfExists([string]$path) {
+  if (-not (Test-Path -LiteralPath $path)) {
+    return $null
+  }
+  return Read-JsonFile $path
+}
+
 function Write-JsonFile([string]$path, $data) {
   $json = $data | ConvertTo-Json -Depth 100
   [System.IO.File]::WriteAllText($path, $json + "`n", (New-Object System.Text.UTF8Encoding($false)))
+}
+
+function ConvertTo-Hashtable($value) {
+  if ($null -eq $value) { return @{} }
+  if ($value -is [System.Collections.IDictionary]) {
+    $hash = @{}
+    foreach ($key in $value.Keys) {
+      $hash[$key] = ConvertTo-Hashtable $value[$key]
+    }
+    return $hash
+  }
+  if ($value -is [System.Management.Automation.PSCustomObject]) {
+    $hash = @{}
+    foreach ($prop in $value.PSObject.Properties) {
+      $hash[$prop.Name] = ConvertTo-Hashtable $prop.Value
+    }
+    return $hash
+  }
+  if ($value -is [System.Collections.IEnumerable] -and -not ($value -is [string])) {
+    $items = @()
+    foreach ($item in $value) {
+      $items += ,(ConvertTo-Hashtable $item)
+    }
+    return $items
+  }
+  return $value
+}
+
+function Merge-HashtableRecursive($base, $override) {
+  $result = @{}
+  if ($base -is [System.Collections.IDictionary]) {
+    foreach ($key in $base.Keys) {
+      $result[$key] = ConvertTo-Hashtable $base[$key]
+    }
+  }
+  if ($override -is [System.Collections.IDictionary]) {
+    foreach ($key in $override.Keys) {
+      $overrideValue = ConvertTo-Hashtable $override[$key]
+      if ($result.ContainsKey($key) -and $result[$key] -is [System.Collections.IDictionary] -and $overrideValue -is [System.Collections.IDictionary]) {
+        $result[$key] = Merge-HashtableRecursive $result[$key] $overrideValue
+      } else {
+        $result[$key] = $overrideValue
+      }
+    }
+  }
+  return $result
+}
+
+function Get-LocaleFallbacks([string]$repoRoot, $existingLocales) {
+  $fallback = ConvertTo-Hashtable $existingLocales
+  foreach ($language in @('de', 'en')) {
+    foreach ($namespace in @('cards', 'story')) {
+      $path = Join-Path $repoRoot ("locales\{0}\{1}.json" -f $language, $namespace)
+      $content = Read-JsonFileIfExists $path
+      if ($null -eq $content) { continue }
+      if (-not $fallback.ContainsKey($language)) { $fallback[$language] = @{} }
+      $fallback[$language][$namespace] = ConvertTo-Hashtable $content
+    }
+  }
+  return $fallback
 }
 
 function Assert-RuntimeConfig($json, [string]$path) {
@@ -107,6 +174,8 @@ if (-not ($runtime.PSObject.Properties.Name -contains 'effects')) {
 if (-not ($runtime.PSObject.Properties.Name -contains 'locales')) {
   $runtime | Add-Member -NotePropertyName locales -NotePropertyValue @{}
 }
+$localeFallbacks = Get-LocaleFallbacks $repoRoot $runtime.locales
+$runtime.locales = Merge-HashtableRecursive $localeFallbacks (ConvertTo-Hashtable $runtime.locales)
 
 Assert-RuntimeConfig $runtime $sourceFile
 
