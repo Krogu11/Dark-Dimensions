@@ -209,10 +209,12 @@ window.DDEditorDataManager = (function createEditorDataManager() {
     const regularCards = context.editorCards.filter(card => card.type !== 'fusion');
     const fusionCards = context.editorCards.filter(card => card.type === 'fusion');
     const locales = collectEditorLocales(context);
+    const effects = cloneJson(window.DD_EFFECTS_CONFIG || {});
 
     return {
       cards: regularCards.map(card => sanitizeCardForI18n(card, context.normalizeRaceId)),
       fusionMonsters: fusionCards.map(card => sanitizeCardForI18n(card, context.normalizeRaceId)),
+      effects,
       synergies: context.ddCustom?.synergies || null,
       enemies: Object.values(context.editorEnemies).map(enemy => sanitizeEnemyForI18n(enemy, context.normalizeRaceId)),
       acts: context.editorActs,
@@ -243,6 +245,7 @@ window.DDEditorDataManager = (function createEditorDataManager() {
       generatedAt: new Date().toISOString(),
       cards: data.cards || [],
       fusionMonsters: data.fusionMonsters || [],
+      effects: data.effects || {},
       enemies: Array.isArray(data.enemies) ? data.enemies : [],
       synergies: data.synergies || null,
       acts: Array.isArray(data.acts) ? data.acts : [],

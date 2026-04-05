@@ -8,7 +8,7 @@
 - `/editor.html`: custom content editor entry point. Must remain usable without a build step.
 - `/css`: shared styling.
 - `/assets/audio`: shipped music assets.
-- `/assets/data/runtime-config.json`: legacy all-in-one runtime export and compatibility fallback.
+- `/assets/data/runtime-config.json`: canonical runtime source of truth for deployed game content.
 - `/assets/data/cards.json`: baseline `cards` and `fusionMonsters`.
 - `/assets/data/enemies.json`: baseline `enemies`.
 - `/assets/data/effects.json`: baseline effect alias/config data.
@@ -28,11 +28,12 @@
 - Do not change how the game starts: `index.html` must still be directly loadable on GitHub Pages.
 - Do not introduce bundlers, frameworks, or module-only loading.
 - `js/utils/runtime-data-loader.js` is the shared boot layer for game and editor.
-- The loader merges deployed JSON files first, then optional local `dd_custom` overrides, and preserves the existing `window.DD_CUSTOM` contract.
-- `runtime-config.json` remains a full fallback for compatibility. Split JSON files override or supply the same sections when present.
+- The loader now treats `assets/data/runtime-config.json` as the default single runtime source and then applies optional local `dd_custom` overrides.
+- Split JSON files are now derived artifacts for tooling/export compatibility and must not override deployed runtime content unless `loadSplitDataFiles: true` is explicitly enabled.
 - `assets/data/runtime-config.js` mirrors `runtime-config.json` as `window.DD_RUNTIME_EMBEDDED_DATA` and is loaded before `runtime-data-loader.js`.
 - On `file://`, the runtime loader now falls back to `window.DD_RUNTIME_EMBEDDED_DATA` instead of failing to load JSON via XHR. This is the parity fallback for local double-click testing.
 - `index.html` explicitly disables local `dd_custom` overrides with `allowLocalOverrides: false`; editor-only local overrides stay enabled in `editor.html`.
+- Runtime boot now logs `Runtime config path`, `Loaded config`, and `Runtime data sources` to the console for deployment diagnostics.
 - Use `serve-local.ps1` or another local HTTP server for closest GitHub Pages parity, but `file://` should no longer hard-fail campaign boot when the embedded runtime file is present.
 
 ## State Architecture
@@ -60,10 +61,20 @@
 ## Editor and Game Interaction
 - The editor writes working data to `localStorage['dd_custom']` via `saveToGame()`.
 - The game reads `dd_custom` only in allowed local/dev override contexts; production GitHub Pages relies on committed JSON files unless overrides are explicitly enabled.
-- The editor also supports export of `runtime-config.json` for legacy deployment workflows.
-- The publish helper also needs to keep `assets/data/runtime-config.js` in sync with `assets/data/runtime-config.json`.
+- The editor runtime export must include `effects` and `locales` so the exported runtime file is self-sufficient.
+- The publish helper must regenerate `assets/data/runtime-config.js`, all split JSON files, and locale files from `assets/data/runtime-config.json`.
 - Editor helper logic belongs in `/js/editor`; avoid adding more large inline utility code to `editor.html` when an external helper is enough.
 - Do not break existing editor globals such as `editorCards`, `editorEnemies`, `editorActs`, `editorRecipes`, `editorConfig`, `editorStarterDeck`, and `editorWorldMap`.
+
+## Deployment Flow
+- Required deployment path:
+  1. Export `runtime-config.json` from `editor.html`.
+  2. Run `publish-runtime.bat` or `publish-runtime.ps1`.
+  3. Let the script sync `runtime-config.json`, `runtime-config.js`, split data files, and locale files.
+  4. Commit and push the generated repo changes.
+- `publish-runtime.ps1` is responsible for keeping derived files in sync. Manual copying between runtime, split JSON files, and locale files is no longer an accepted workflow.
+- `publish-runtime.ps1 -SkipGit` is the safe local validation mode for checking generation without commit/push.
+- If GitHub Pages shows stale data, verify `runtime-config.json` and `world-map.json` online first. A mismatch means derived files were not regenerated before push.
 
 ## Data Contracts
 - `cards.json`:
@@ -82,8 +93,12 @@
   - `{ starterDeck: string[] }`
 - `world-map.json`:
   - `{ worldMap: WorldMapLocation[] }`
+- `story-content.json`:
+  - `{ events: Event[], quests: Quest[], hubs: Hub[], locales: LocaleRoot }`
 - `runtime-config.js`:
   - `window.DD_RUNTIME_EMBEDDED_DATA = <runtime-config-json>`
+- `runtime-config.json`:
+  - self-contained runtime payload including `cards`, `fusionMonsters`, `effects`, `enemies`, `acts`, `recipes`, `config`, `starterDeck`, `worldMap`, `events`, `quests`, `hubs`, and `locales`
 - Keep localization keys in data objects and human-readable text in locale buckets when possible.
 - Preserve backward compatibility for legacy fields like `card.effect` while favoring normalized `card.effects`.
 
@@ -117,7 +132,7 @@
 ## Safe Refactor Checklist
 - Keep `index.html` and `editor.html` script order intentional.
 - Keep `DD_CUSTOM` shape compatible with older code.
-- Keep `runtime-config.json` deployable even when split files exist.
+- Keep `runtime-config.json` complete and deployable on its own even when split files exist.
 - Do not remove old helper APIs unless all callers are migrated in the same change.
 - Smoke-check for syntax errors after edits.
 
@@ -150,3 +165,4 @@
 - 2026-04-04: Added shared runtime data loader, split baseline JSON files, central `gameState` facade, lightweight event bus, and editor data helper module.
 - 2026-04-05: Rebased the structure branch onto the parity fixes. Preserved HTTP-first local dev guidance, file-protocol warnings, normalized audio paths, and deferred music start until user interaction.
 - 2026-04-05: Added `file://` runtime fallback via `assets/data/runtime-config.js`, disabled game-side local overrides by default, hardened mojibake normalization in runtime/i18n loaders, and fixed hub auto-event repeat loops using `seenEvents` plus per-hub auto-trigger gating.
+- 2026-04-05: Fixed recurring local-vs-online drift by making `assets/data/runtime-config.json` the deployed runtime source of truth, preventing split JSON override by default, adding runtime boot diagnostics, and making `publish-runtime.ps1` regenerate all derived data and locale files from the runtime export.

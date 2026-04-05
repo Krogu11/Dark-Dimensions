@@ -3963,6 +3963,7 @@ function importJSON() {
         if(data.events) editorEvents=data.events;
         if(data.quests) editorQuests=data.quests;
         if(data.hubs) editorHubs=data.hubs;
+        if(data.effects) window.DD_EFFECTS_CONFIG = data.effects;
         if(data.locales) {
           const c = window.DD_CUSTOM || {};
           c.locales = data.locales;

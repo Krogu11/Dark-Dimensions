@@ -13,6 +13,7 @@
   };
   const dataBasePath = options.dataBasePath || 'assets/data';
   const runtimeConfigBasePath = options.runtimeConfigBasePath || `${dataBasePath}/runtime-config.json`;
+  const loadSplitDataFiles = options.loadSplitDataFiles === true;
   const cacheSuffix = options.cacheBust ? `?v=${Date.now()}` : '';
   const sectionFiles = [
     'cards.json',
@@ -190,18 +191,20 @@
       error: runtimeConfig.error,
     }];
 
-    sectionFiles.forEach(fileName => {
-      const sectionPath = `${dataBasePath}/${fileName}`;
-      const result = loadJsonFile(sectionPath);
-      sources.push({
-        path: sectionPath,
-        loaded: result.loaded,
-        error: result.error,
+    if (loadSplitDataFiles) {
+      sectionFiles.forEach(fileName => {
+        const sectionPath = `${dataBasePath}/${fileName}`;
+        const result = loadJsonFile(sectionPath);
+        sources.push({
+          path: sectionPath,
+          loaded: result.loaded,
+          error: result.error,
+        });
+        if (result.loaded) {
+          mergedData = mergeRuntimeData(mergedData, result.data || {});
+        }
       });
-      if (result.loaded) {
-        mergedData = mergeRuntimeData(mergedData, result.data || {});
-      }
-    });
+    }
 
     return {
       data: mergedData,
@@ -268,7 +271,12 @@
     localOverrideMode: shouldAllowLocalOverrides() ? 'enabled' : 'disabled',
     playlistFallbacks: cloneValue(fallbackPlaylists),
     dataSources: fileSet.sources,
+    loadSplitDataFiles,
   };
+
+  console.log('Runtime config path:', global.__DD_RUNTIME_BOOT.runtimeConfigPath);
+  console.log('Loaded config:', cloneValue(global.DD_CUSTOM || {}));
+  console.log('Runtime data sources:', cloneValue(global.__DD_RUNTIME_BOOT.dataSources || []));
 
   global.logDDRuntimeDiagnostics = function logDDRuntimeDiagnostics(context) {
     const worldMap = Array.isArray(global.DD_CUSTOM?.worldMap) ? global.DD_CUSTOM.worldMap : [];

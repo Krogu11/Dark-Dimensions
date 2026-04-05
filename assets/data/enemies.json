@@ -1,18 +1,14 @@
-﻿{
+{
     "enemies":  [
                     {
                         "id":  "goblin_chief",
                         "portrait":  "data:image/jpeg;base64,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",
                         "theme":  "kobold",
                         "hp":  4000,
-                        "gold":  [
-                                     10,
-                                     15
-                                 ],
-                        "behavior":  "boss_aggro",
+                        "behavior":  "aggressive",
                         "difficulty":  1,
                         "fieldBonus":  0,
-                        "maxSummons":  3,
+                        "maxSummons":  2,
                         "multiAttack":  false,
                         "startField":  [
                                            "kobold_speertraeger",
@@ -107,7 +103,7 @@
                     },
                     {
                         "id":  "skeleton_mage",
-                        "portrait":  "ðŸ’€",
+                        "portrait":  "💀",
                         "theme":  "undead",
                         "hp":  4500,
                         "gold":  [
@@ -236,7 +232,7 @@
                     },
                     {
                         "id":  "orc_warlord",
-                        "portrait":  "âš”ï¸",
+                        "portrait":  "⚔️",
                         "theme":  "orc",
                         "hp":  5000,
                         "gold":  [
@@ -361,7 +357,7 @@
                     },
                     {
                         "id":  "forest_demon",
-                        "portrait":  "ðŸŒ‘",
+                        "portrait":  "🌑",
                         "theme":  "demon",
                         "hp":  6500,
                         "gold":  [
@@ -491,7 +487,7 @@
                     },
                     {
                         "id":  "shadow_knight",
-                        "portrait":  "ðŸ—¡ï¸",
+                        "portrait":  "🗡️",
                         "theme":  "shadow",
                         "hp":  5200,
                         "gold":  [
@@ -620,7 +616,7 @@
                     },
                     {
                         "id":  "dark_priest",
-                        "portrait":  "ðŸ§¿",
+                        "portrait":  "🧿",
                         "theme":  "undead",
                         "hp":  5800,
                         "gold":  [
@@ -755,7 +751,7 @@
                     },
                     {
                         "id":  "iron_golem_guard",
-                        "portrait":  "ðŸ¤–",
+                        "portrait":  "🤖",
                         "theme":  "machine",
                         "hp":  7500,
                         "gold":  [
@@ -888,7 +884,7 @@
                     },
                     {
                         "id":  "chaos_lord",
-                        "portrait":  "ðŸŒ€",
+                        "portrait":  "🌀",
                         "theme":  "demon",
                         "hp":  9000,
                         "gold":  [
@@ -1026,7 +1022,7 @@
                     },
                     {
                         "id":  "void_reaper",
-                        "portrait":  "ðŸ‰",
+                        "portrait":  "🐉",
                         "theme":  "dragon",
                         "hp":  7000,
                         "gold":  [
@@ -1160,7 +1156,7 @@
                     },
                     {
                         "id":  "soul_devourer",
-                        "portrait":  "ðŸ’ ",
+                        "portrait":  "💠",
                         "theme":  "elemental",
                         "hp":  9500,
                         "gold":  [
@@ -1298,7 +1294,7 @@
                     },
                     {
                         "id":  "dark_dimension_god",
-                        "portrait":  "ðŸ‘ï¸",
+                        "portrait":  "👁️",
                         "theme":  "mixed",
                         "hp":  14000,
                         "gold":  [
@@ -1542,7 +1538,7 @@
                         "titleKey":  "enemy.goblin_gang.title"
                     },
                     {
-                        "id":  "kobold_kÃ¶nig",
+                        "id":  "kobold_könig",
                         "portrait":  "data:image/jpeg;base64,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",
                         "hp":  4000,
                         "gold":  [
@@ -1645,8 +1641,8 @@
                                                     ]
                                       },
                         "startFieldCard":  "feld_koboldwald",
-                        "nameKey":  "enemy.kobold_kÃ¶nig.name",
-                        "titleKey":  "enemy.kobold_kÃ¶nig.title"
+                        "nameKey":  "enemy.kobold_könig.name",
+                        "titleKey":  "enemy.kobold_könig.title"
                     },
                     {
                         "id":  "kobold_reiter",

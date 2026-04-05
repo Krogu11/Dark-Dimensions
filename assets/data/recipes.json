@@ -1,4 +1,4 @@
-﻿{
+{
     "recipes":  [
                     {
                         "mat1":  "kobold_hauptmann",
@@ -58,15 +58,15 @@
                     {
                         "mat1":  "mutiger_dorfbewohner",
                         "mat2":  "Dorfwache",
-                        "result":  "dorfbeschÃ¼tzer"
+                        "result":  "dorfbeschützer"
                     },
                     {
-                        "mat1":  "dorfbeschÃ¼tzer",
+                        "mat1":  "dorfbeschützer",
                         "mat2":  "Dorfwache",
-                        "result":  "dorfbeschÃ¼tze"
+                        "result":  "dorfbeschütze"
                     },
                     {
-                        "mat1":  "dorfbeschÃ¼tze",
+                        "mat1":  "dorfbeschütze",
                         "mat2":  "mutiger_dorfbewohner",
                         "result":  "bannertraeger"
                     },
@@ -97,17 +97,17 @@
                     },
                     {
                         "mat1":  "wolf",
-                        "mat2":  "dorfbeschÃ¼tzer",
+                        "mat2":  "dorfbeschützer",
                         "result":  "Beste Freunde"
                     },
                     {
                         "mat1":  "welpe",
-                        "mat2":  "dorfbeschÃ¼tzer",
+                        "mat2":  "dorfbeschützer",
                         "result":  "Beste Freunde"
                     },
                     {
                         "mat1":  "alphawolf",
-                        "mat2":  "dorfbeschÃ¼tzer",
+                        "mat2":  "dorfbeschützer",
                         "result":  "Beste Freunde"
                     },
                     {

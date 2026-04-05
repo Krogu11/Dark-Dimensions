@@ -1,194 +1,248 @@
 {
-  "events": [
-    {
-      "id": "event_village_arrival",
-      "title": "Willkommen im Dorf",
-      "trigger": "enter_hub",
-      "hubId": "hub_village_01",
-      "once": true,
-      "dialog": [
-        {
-          "speaker": "Mutiger Dorfbewohner",
-          "text": "Gerade rechtzeitig. Ohne dich waeren die Kobolde bis an die Haeuser gekommen.",
-          "choices": [
-            { "text": "Ich brauche einen Ueberblick.", "next": 1 }
-          ]
-        },
-        {
-          "speaker": "Dorfbeschuetzer",
-          "text": "Dann fang hier an. Sprich mit dem Aeltesten, nimm eine Quest an und halte dich fuer das kleine Turnier bereit.",
-          "choices": [
-            { "text": "Ich sehe mich um." }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_elder_intro",
-      "title": "Der Hilferuf",
-      "dialog": [
-        {
-          "speaker": "Dorfaeltester",
-          "text": "Wenn du uns wirklich helfen willst, schalte vor dem Dorf zwei Monstergruppen aus. Dann sehen wir weiter.",
-          "choices": [
-            { "text": "Ich uebernehme das.", "effect": { "type": "start_quest", "questId": "quest_defend_village" } },
-            { "text": "Ich brauche erst noch Informationen.", "next": 1 }
-          ]
-        },
-        {
-          "speaker": "Dorfaeltester",
-          "text": "Nutze die Pfade auf der Weltkarte. Dort passiert nicht immer etwas, aber oft genug das Falsche.",
-          "choices": [
-            { "text": "Verstanden." }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_guard_npc",
-      "title": "Dorfwache",
-      "dialog": [
-        {
-          "speaker": "Dorfwache",
-          "text": "Die Pfade vor dem Dorf sind unberechenbar. Manchmal ist es still, manchmal springt dir sofort etwas an die Kehle.",
-          "choices": [
-            { "text": "Ich bin vorbereitet." }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_villager_npc",
-      "title": "Dorfbewohner",
-      "dialog": [
-        {
-          "speaker": "Mutiger Dorfbewohner",
-          "text": "Der Dorfplatz fuehlt sich seit deiner Ankunft gleich ein bisschen sicherer an.",
-          "choices": [
-            { "text": "Dann sollte ich diesen Vorteil nutzen." }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_merchant_npc",
-      "title": "Haendler",
-      "dialog": [
-        {
-          "speaker": "Wanderhaendler",
-          "text": "Ich habe Karten, Vorrat und eine schlechte Meinung ueber Kobolde. Im Shop kannst du alles bis auf die Meinung kaufen.",
-          "choices": [
-            { "text": "Klingt fair." }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_river_whispers",
-      "title": "Stimmen am Wasser",
-      "dialog": [
-        {
-          "speaker": "",
-          "text": "Zwischen den Schilfbuesche liegen frische Spuren. Irgendjemand beobachtet das Dorf vom anderen Ufer aus.",
-          "choices": [
-            { "text": "Ich merke mir die Stelle." }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_lost_supplies",
-      "title": "Verlorene Vorräte",
-      "dialog": [
-        {
-          "speaker": "",
-          "text": "Im Wrack eines Karrens findest du verstreute Vorratskisten. Die Dorfbewohner koennen so etwas brauchen.",
-          "choices": [
-            { "text": "Ich bringe mit, was ich tragen kann.", "effect": { "type": "gain_gold", "amount": 20 } }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_forest_trail",
-      "title": "Dunkler Pfad",
-      "dialog": [
-        {
-          "speaker": "",
-          "text": "Der Wald ist still, aber nicht friedlich. Zwischen den Baeumen warten neue Feinde.",
-          "choices": [
-            { "text": "Ich gehe weiter." }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "event_village_success",
-      "title": "Die Reaktion des Dorfes",
-      "trigger": "quest_progress",
-      "questId": "quest_defend_village",
-      "status": "claimable",
-      "once": true,
-      "dialog": [
-        {
-          "speaker": "Mutiger Dorfbewohner",
-          "text": "Die Monster werden vorsichtiger. Das Dorf redet schon ueber deinen ersten Sieg.",
-          "choices": [
-            { "text": "Dann hole ich mir meine Belohnung." }
-          ]
-        }
-      ]
-    }
-  ],
-  "quests": [
-    {
-      "id": "quest_defend_village",
-      "type": "main",
-      "title": "Beschuetze das Dorf",
-      "description": "Besiege 2 Monstergruppen auf den Pfaden vor dem Dorf.",
-      "goal": 2,
-      "progress": 0,
-      "reward": {
-        "gold": 100,
-        "card": "mutiger_dorfbewohner"
-      }
-    }
-  ],
-  "hubs": [
-    {
-      "id": "hub_village_01",
-      "name": "Kleines Dorf",
-      "description": "Das erste echte Hub mit NPCs, Questbrett, Shop, Turnier und optionalen Herausforderungen.",
-      "questIds": ["quest_defend_village"],
-      "npcs": [
-        { "name": "Dorfaeltester", "dialogEventId": "event_elder_intro" },
-        { "name": "Dorfwache", "dialogEventId": "event_guard_npc" },
-        { "name": "Mutiger Dorfbewohner", "dialogEventId": "event_villager_npc" },
-        { "name": "Wanderhaendler", "dialogEventId": "event_merchant_npc" }
-      ],
-      "tournaments": [
-        {
-          "id": "tournament_village",
-          "title": "Dorfring",
-          "description": "Zwei kurze Kaempfe als Trainingsserie fuer den neuen Verteidiger des Dorfes.",
-          "enemyIds": ["kobold_waldlaeufer", "Wolfsrudel"],
-          "reward": {
-            "gold": 60,
-            "card": "dorfbewohner"
-          }
-        }
-      ],
-      "challenges": [
-        {
-          "id": "challenge_first_patrol",
-          "title": "Patrouille",
-          "description": "Gewinne 1 Kampf auf einem Pfadknoten der Worldmap.",
-          "goal": 1,
-          "reward": {
-            "gold": 30
-          }
-        }
-      ]
-    }
-  ]
+    "hubs":  [
+                 {
+                     "id":  "hub_village_01",
+                     "questIds":  [
+                                      "quest_defend_village"
+                                  ],
+                     "npcs":  [
+                                  {
+                                      "dialogEventId":  "event_elder_intro",
+                                      "nameKey":  "hub.hub_village_01.npc.0.name"
+                                  },
+                                  {
+                                      "dialogEventId":  "event_guard_npc",
+                                      "nameKey":  "hub.hub_village_01.npc.1.name"
+                                  },
+                                  {
+                                      "dialogEventId":  "event_villager_npc",
+                                      "nameKey":  "hub.hub_village_01.npc.2.name"
+                                  },
+                                  {
+                                      "dialogEventId":  "event_merchant_npc",
+                                      "nameKey":  "hub.hub_village_01.npc.3.name"
+                                  }
+                              ],
+                     "tournaments":  [
+                                         {
+                                             "id":  "tournament_village",
+                                             "enemyIds":  [
+                                                              "kobold_waldlaeufer",
+                                                              "Wolfsrudel"
+                                                          ],
+                                             "reward":  {
+                                                            "gold":  60,
+                                                            "card":  "dorfbewohner"
+                                                        },
+                                             "titleKey":  "hub.hub_village_01.tournament.0.title",
+                                             "descriptionKey":  "hub.hub_village_01.tournament.0.description"
+                                         }
+                                     ],
+                     "challenges":  [
+                                        {
+                                            "id":  "challenge_first_patrol",
+                                            "goal":  1,
+                                            "reward":  {
+                                                           "gold":  30
+                                                       },
+                                            "titleKey":  "hub.hub_village_01.challenge.0.title",
+                                            "descriptionKey":  "hub.hub_village_01.challenge.0.description"
+                                        }
+                                    ],
+                     "nameKey":  "hub.hub_village_01.name",
+                     "descriptionKey":  "hub.hub_village_01.description"
+                 }
+             ],
+    "events":  [
+                   {
+                       "id":  "event_village_arrival",
+                       "trigger":  "enter_hub",
+                       "hubId":  "hub_village_01",
+                       "once":  true,
+                       "dialog":  [
+                                      {
+                                          "choices":  [
+                                                          {
+                                                              "next":  1,
+                                                              "textKey":  "event.event_village_arrival.step.0.choice.0"
+                                                          }
+                                                      ],
+                                          "speakerKey":  "event.event_village_arrival.step.0.speaker",
+                                          "textKey":  "event.event_village_arrival.step.0.text"
+                                      },
+                                      {
+                                          "choices":  [
+                                                          {
+                                                              "textKey":  "event.event_village_arrival.step.1.choice.0"
+                                                          }
+                                                      ],
+                                          "speakerKey":  "event.event_village_arrival.step.1.speaker",
+                                          "textKey":  "event.event_village_arrival.step.1.text"
+                                      }
+                                  ],
+                       "titleKey":  "event.event_village_arrival.title"
+                   },
+                   {
+                       "id":  "event_elder_intro",
+                       "dialog":  [
+                                      {
+                                          "choices":  [
+                                                          {
+                                                              "effect":  {
+                                                                             "type":  "start_quest",
+                                                                             "questId":  "quest_defend_village"
+                                                                         },
+                                                              "textKey":  "event.event_elder_intro.step.0.choice.0"
+                                                          },
+                                                          {
+                                                              "next":  1,
+                                                              "textKey":  "event.event_elder_intro.step.0.choice.1"
+                                                          }
+                                                      ],
+                                          "speakerKey":  "event.event_elder_intro.step.0.speaker",
+                                          "textKey":  "event.event_elder_intro.step.0.text"
+                                      },
+                                      {
+                                          "choices":  [
+                                                          {
+                                                              "textKey":  "event.event_elder_intro.step.1.choice.0"
+                                                          }
+                                                      ],
+                                          "speakerKey":  "event.event_elder_intro.step.1.speaker",
+                                          "textKey":  "event.event_elder_intro.step.1.text"
+                                      }
+                                  ],
+                       "titleKey":  "event.event_elder_intro.title"
+                   },
+                   {
+                       "id":  "event_guard_npc",
+                       "dialog":  [
+                                      {
+                                          "choices":  [
+                                                          {
+                                                              "textKey":  "event.event_guard_npc.step.0.choice.0"
+                                                          }
+                                                      ],
+                                          "speakerKey":  "event.event_guard_npc.step.0.speaker",
+                                          "textKey":  "event.event_guard_npc.step.0.text"
+                                      }
+                                  ],
+                       "titleKey":  "event.event_guard_npc.title"
+                   },
+                   {
+                       "id":  "event_villager_npc",
+                       "dialog":  [
+                                      {
+                                          "choices":  [
+                                                          {
+                                                              "textKey":  "event.event_villager_npc.step.0.choice.0"
+                                                          }
+                                                      ],
+                                          "speakerKey":  "event.event_villager_npc.step.0.speaker",
+                                          "textKey":  "event.event_villager_npc.step.0.text"
+                                      }
+                                  ],
+                       "titleKey":  "event.event_villager_npc.title"
+                   },
+                   {
+                       "id":  "event_merchant_npc",
+                       "dialog":  [
+                                      {
+                                          "choices":  [
+                                                          {
+                                                              "textKey":  "event.event_merchant_npc.step.0.choice.0"
+                                                          }
+                                                      ],
+                                          "speakerKey":  "event.event_merchant_npc.step.0.speaker",
+                                          "textKey":  "event.event_merchant_npc.step.0.text"
+                                      }
+                                  ],
+                       "titleKey":  "event.event_merchant_npc.title"
+                   },
+                   {
+                       "id":  "event_river_whispers",
+                       "dialog":  [
+                                      {
+                                          "choices":  [
+                                                          {
+                                                              "textKey":  "event.event_river_whispers.step.0.choice.0"
+                                                          }
+                                                      ],
+                                          "speakerKey":  "event.event_river_whispers.step.0.speaker",
+                                          "textKey":  "event.event_river_whispers.step.0.text"
+                                      }
+                                  ],
+                       "titleKey":  "event.event_river_whispers.title"
+                   },
+                   {
+                       "id":  "event_lost_supplies",
+                       "dialog":  [
+                                      {
+                                          "choices":  [
+                                                          {
+                                                              "effect":  {
+                                                                             "type":  "gain_gold",
+                                                                             "amount":  20
+                                                                         },
+                                                              "textKey":  "event.event_lost_supplies.step.0.choice.0"
+                                                          }
+                                                      ],
+                                          "speakerKey":  "event.event_lost_supplies.step.0.speaker",
+                                          "textKey":  "event.event_lost_supplies.step.0.text"
+                                      }
+                                  ],
+                       "titleKey":  "event.event_lost_supplies.title"
+                   },
+                   {
+                       "id":  "event_forest_trail",
+                       "dialog":  [
+                                      {
+                                          "choices":  [
+                                                          {
+                                                              "textKey":  "event.event_forest_trail.step.0.choice.0"
+                                                          }
+                                                      ],
+                                          "speakerKey":  "event.event_forest_trail.step.0.speaker",
+                                          "textKey":  "event.event_forest_trail.step.0.text"
+                                      }
+                                  ],
+                       "titleKey":  "event.event_forest_trail.title"
+                   },
+                   {
+                       "id":  "event_village_success",
+                       "trigger":  "quest_progress",
+                       "questId":  "quest_defend_village",
+                       "status":  "claimable",
+                       "once":  true,
+                       "dialog":  [
+                                      {
+                                          "choices":  [
+                                                          {
+                                                              "textKey":  "event.event_village_success.step.0.choice.0"
+                                                          }
+                                                      ],
+                                          "speakerKey":  "event.event_village_success.step.0.speaker",
+                                          "textKey":  "event.event_village_success.step.0.text"
+                                      }
+                                  ],
+                       "titleKey":  "event.event_village_success.title"
+                   }
+               ],
+    "locales":  {
+
+                },
+    "quests":  [
+                   {
+                       "id":  "quest_defend_village",
+                       "type":  "main",
+                       "goal":  2,
+                       "progress":  0,
+                       "reward":  {
+                                      "gold":  100,
+                                      "card":  "mutiger_dorfbewohner"
+                                  },
+                       "titleKey":  "quest.quest_defend_village.title",
+                       "descriptionKey":  "quest.quest_defend_village.description"
+                   }
+               ]
 }
