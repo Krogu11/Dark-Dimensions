@@ -83,6 +83,23 @@ const MONSTER_CARDS = [
   { id:'giant',            name:'Steingigant',        type:'monster', race:'Bestie',       atk:1900, def:2100, effect:null,           rarity:'rare',      flavor:'Ein wandelnder Berg.' },
   { id:'bestienherrscher', name:'Bestien-Herrscher',  type:'monster', race:'Bestie',       atk:2100, def:1400, effect:'destroy1',     rarity:'rare',      flavor:'Alle Bestien gehorchen ihm.' },
 
+  /* ─── GOBLINWALD — Neue Early-Game Karten ─── */
+
+  /* Kobold: Waldläufer & Stammesunterstützung */
+  { id:'kobold_sucher',    name:'Kobold-Kundschafter',type:'monster', race:'Kobold',       atk:450,  def:250,  effect:null,           rarity:'common',    flavor:'Späht lautlos durch den dunklen Wald.' },
+  { id:'kobold_trommler',  name:'Kobold-Trommler',    type:'monster', race:'Kobold',       atk:400,  def:350,  effect:'raceBuffATK150',rarity:'common',    flavor:'Sein Trommelschlag ruft die Horde herbei.' },
+  { id:'goblin_waldlaeufer',name:'Goblin-Waldläufer', type:'monster', race:'Kobold',       atk:750,  def:500,  effect:'burn300',      rarity:'uncommon',  flavor:'Unaufhaltbar in seinem Heimatwald.' },
+
+  /* Mensch: Forstbewohner & Abenteurer */
+  { id:'holzfaeller',      name:'Holzfäller',         type:'monster', race:'Mensch',       atk:600,  def:400,  effect:null,           rarity:'common',    flavor:'Er kam zum Holz schlagen — und blieb zum Kämpfen.' },
+  { id:'waldjaeger',       name:'Waldjäger',           type:'monster', race:'Mensch',       atk:700,  def:450,  effect:'burn300',      rarity:'common',    flavor:'Kennt den Wald besser als die Kobolde.' },
+  { id:'forst_wache',      name:'Forstwächter',        type:'monster', race:'Mensch',       atk:850,  def:750,  effect:null,           rarity:'uncommon',  flavor:'Bewacht die Grenze zwischen Dorf und Wildnis.' },
+
+  /* Bestie: Waldtiere des Goblinwalds */
+  { id:'wildschwein',      name:'Wildschwein',         type:'monster', race:'Bestie',       atk:600,  def:500,  effect:null,           rarity:'common',    flavor:'Niemand läuft schneller auf vier Beinen.' },
+  { id:'waldbaer',         name:'Waldbär',             type:'monster', race:'Bestie',       atk:900,  def:800,  effect:null,           rarity:'common',    flavor:'Sein Brüllen hallt durch den ganzen Wald.' },
+  { id:'riesenadler',      name:'Riesenadler',         type:'monster', race:'Bestie',       atk:800,  def:400,  effect:'burn300',      rarity:'common',    flavor:'Taucht aus den Wolken — zu schnell zum Abwehren.' },
+
   /* ─── MASCHINE — DEF-Fokus, Shield ─── */
   { id:'eisenwachter',     name:'Eisenwächter',       type:'monster', race:'Maschine',     atk:800,  def:1600, effect:'taunt',        rarity:'common',    flavor:'Unzerstörbare Hülle.' },
   { id:'golem',            name:'Eisengolem',         type:'monster', race:'Maschine',     atk:2100, def:2400, effect:null,           rarity:'rare',      flavor:'Uraltes Konstrukt aus verbotenem Stahl.' },
@@ -147,6 +164,11 @@ const FUSION_MONSTERS = [
   { id:'shadowstalker',   name:'Schattenjäger',      type:'fusion', race:'Schattenwesen',atk:2400, def:1200, effect:'destroy1',     rarity:'epic',      flavor:'Erschaffen aus Finsternis.' },
   { id:'twindragon',      name:'Zwillingsdrache',    type:'fusion', race:'Drache',       atk:3500, def:2800, effect:'burn600',      rarity:'legendary', flavor:'Zwei Drachen — ein Wille.' },
   { id:'chaosknight',     name:'Chaosritter',        type:'fusion', race:'Schattenwesen',atk:2600, def:2300, effect:'buff400',      rarity:'legendary', flavor:'Kein Gesetz. Keine Gnade.' },
+
+  /* ─── GOBLINWALD — Neue Fusionen ─── */
+  { id:'goblin_wolfjaeger', name:'Goblin-Wolfsjäger', type:'fusion', race:'Kobold',       atk:1400, def:850,  effect:'burn400',      rarity:'rare',      flavor:'Auf dem Wolf durch den Goblinwald.' },
+  { id:'waldgeist',         name:'Waldgeist',          type:'fusion', race:'Bestie',       atk:1300, def:1100, effect:'weaken200',    rarity:'rare',      flavor:'Halb Mensch, halb Wildnis — ganz Gefahr.' },
+  { id:'waldkoenig',        name:'Waldkönig',          type:'fusion', race:'Bestie',       atk:2000, def:1600, effect:'destroy1',     rarity:'epic',      flavor:'Herrscher über alle Kreaturen des Waldes.' },
 
   /* Neue Evolution-Fusionen */
   { id:'kobold_imperator',name:'Kobold-Imperator',  type:'fusion', race:'Kobold',       atk:2000, def:1400, effect:'raceBuffATK300',rarity:'legendary',flavor:'Der König aller Kobolde.' },
@@ -249,6 +271,20 @@ const FUSION_RECIPES = [
   { mat1:'drachen_hatchling',mat2:'feuer_geist',      result:'dragon',          evoChain:true },
   { mat1:'dragon',           mat2:'eisdrache',        result:'drachen_kaiser',  evoChain:true },
   { mat1:'dragon',           mat2:'dragon',           result:'twindragon',      evoChain:false },
+
+  /* ─── GOBLINWALD EVOLUTION ─── */
+  { mat1:'kobold_sucher',    mat2:'kobold_jung',      result:'goblin_waldlaeufer', evoChain:true  },
+  { mat1:'kobold_trommler',  mat2:'kobold_jung',      result:'goblin_waldlaeufer', evoChain:true  },
+  { mat1:'holzfaeller',      mat2:'dorfbewohner',     result:'waldjaeger',          evoChain:true  },
+  { mat1:'waldjaeger',       mat2:'holzfaeller',      result:'forst_wache',         evoChain:true  },
+  { mat1:'wildschwein',      mat2:'wildschwein',      result:'waldbaer',            evoChain:true  },
+  { mat1:'waldbaer',         mat2:'riesenadler',      result:'waldkoenig',          evoChain:true  },
+
+  /* ─── GOBLINWALD CROSS-RACE ─── */
+  { mat1:'goblin_waldlaeufer',mat2:'wolf',            result:'goblin_wolfjaeger',  evoChain:false },
+  { mat1:'kobold_sucher',    mat2:'wildschwein',      result:'goblin_wolfjaeger',  evoChain:false },
+  { mat1:'waldjaeger',       mat2:'wolf',             result:'waldgeist',           evoChain:false },
+  { mat1:'holzfaeller',      mat2:'wildschwein',      result:'waldgeist',           evoChain:false },
 
   /* ─── CROSS-RACE FUSIONEN ─── */
   { mat1:'dragon',           mat2:'soldier',          result:'wardragon',       evoChain:false },

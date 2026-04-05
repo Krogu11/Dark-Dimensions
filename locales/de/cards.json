@@ -275,5 +275,40 @@
   "enemy.soul_devourer.title": "Herrscher über die Elementare",
   "card.chaos_elementar.name": "Chaos-Elementar",
   "card.unterstuetzung_des_dorfes.name": "Unterst?tzung des Dorfes",
-  "card.unterstuetzung_des_dorfes.flavor": "Die Menschen des Flussdorfs stehen hinter dir. F?r den Moment gen?gt das."
+  "card.unterstuetzung_des_dorfes.flavor": "Die Menschen des Flussdorfs stehen hinter dir. F?r den Moment gen?gt das.",
+
+  "card.kobold_sucher.name": "Kobold-Kundschafter",
+  "card.kobold_sucher.flavor": "Späht lautlos durch den dunklen Wald.",
+  "card.kobold_trommler.name": "Kobold-Trommler",
+  "card.kobold_trommler.flavor": "Sein Trommelschlag ruft die Horde herbei.",
+  "card.goblin_waldlaeufer.name": "Goblin-Waldläufer",
+  "card.goblin_waldlaeufer.flavor": "Unaufhaltbar in seinem Heimatwald.",
+
+  "card.holzfaeller.name": "Holzfäller",
+  "card.holzfaeller.flavor": "Er kam zum Holz schlagen — und blieb zum Kämpfen.",
+  "card.waldjaeger.name": "Waldjäger",
+  "card.waldjaeger.flavor": "Kennt den Wald besser als die Kobolde.",
+  "card.forst_wache.name": "Forstwächter",
+  "card.forst_wache.flavor": "Bewacht die Grenze zwischen Dorf und Wildnis.",
+
+  "card.wildschwein.name": "Wildschwein",
+  "card.wildschwein.flavor": "Niemand läuft schneller auf vier Beinen.",
+  "card.waldbaer.name": "Waldbär",
+  "card.waldbaer.flavor": "Sein Brüllen hallt durch den ganzen Wald.",
+  "card.riesenadler.name": "Riesenadler",
+  "card.riesenadler.flavor": "Taucht aus den Wolken — zu schnell zum Abwehren.",
+
+  "card.goblin_wolfjaeger.name": "Goblin-Wolfsjäger",
+  "card.goblin_wolfjaeger.flavor": "Auf dem Wolf durch den Goblinwald.",
+  "card.waldgeist.name": "Waldgeist",
+  "card.waldgeist.flavor": "Halb Mensch, halb Wildnis — ganz Gefahr.",
+  "card.waldkoenig.name": "Waldkönig",
+  "card.waldkoenig.flavor": "Herrscher über alle Kreaturen des Waldes.",
+
+  "enemy.goblin_hinterhalt.name": "Kobold-Hinterhalt",
+  "enemy.goblin_hinterhalt.title": "Kundschafter des Dunkelwalds",
+  "enemy.waldtier_horde.name": "Waldtier-Horde",
+  "enemy.waldtier_horde.title": "Wildes Rudel des Goblinwalds",
+  "enemy.dorfraeuber.name": "Dorfräuber",
+  "enemy.dorfraeuber.title": "Verkommene Grenzposten-Söldner"
 }

@@ -119,6 +119,56 @@
                         "mat1":  "alphawolf",
                         "mat2":  "mutiger_dorfbewohner",
                         "result":  "Beste Freunde"
+                    },
+                    {
+                        "mat1":  "kobold_sucher",
+                        "mat2":  "kobold_jung",
+                        "result":  "goblin_waldlaeufer"
+                    },
+                    {
+                        "mat1":  "kobold_trommler",
+                        "mat2":  "kobold_jung",
+                        "result":  "goblin_waldlaeufer"
+                    },
+                    {
+                        "mat1":  "holzfaeller",
+                        "mat2":  "dorfbewohner",
+                        "result":  "waldjaeger"
+                    },
+                    {
+                        "mat1":  "waldjaeger",
+                        "mat2":  "holzfaeller",
+                        "result":  "forst_wache"
+                    },
+                    {
+                        "mat1":  "wildschwein",
+                        "mat2":  "wildschwein",
+                        "result":  "waldbaer"
+                    },
+                    {
+                        "mat1":  "waldbaer",
+                        "mat2":  "riesenadler",
+                        "result":  "waldkoenig"
+                    },
+                    {
+                        "mat1":  "goblin_waldlaeufer",
+                        "mat2":  "wolf",
+                        "result":  "goblin_wolfjaeger"
+                    },
+                    {
+                        "mat1":  "kobold_sucher",
+                        "mat2":  "wildschwein",
+                        "result":  "goblin_wolfjaeger"
+                    },
+                    {
+                        "mat1":  "waldjaeger",
+                        "mat2":  "wolf",
+                        "result":  "waldgeist"
+                    },
+                    {
+                        "mat1":  "holzfaeller",
+                        "mat2":  "wildschwein",
+                        "result":  "waldgeist"
                     }
                 ]
 }

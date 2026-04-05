@@ -17,6 +17,108 @@
 const ENEMIES = {
 
   /* ══════════════════════════════════════════
+     GOBLINWALD — Frühe Waldgegner
+     Theme: Kobold-Hinterhalt, Waldtiere, Räuber
+  ══════════════════════════════════════════ */
+
+  goblin_hinterhalt: {
+    id:        'goblin_hinterhalt',
+    name:      'Kobold-Hinterhalt',
+    title:     'Kundschafter des Dunkelwalds',
+    portrait:  '🌿',
+    theme:     'Kobold',
+    hp:        3800,
+    behavior:  'swarm',
+    difficulty: 1,
+    fieldBonus:  0,
+    maxSummons:  3,
+    multiAttack: false,
+    startField:  ['kobold_sucher', 'kobold_jung', 'wolf'],
+    startTraps:  ['sacredwall'],
+    startFieldCard: 'feld_koboldwald',
+    startHandCount: 5,
+    deckIds: [
+      'kobold_sucher','kobold_sucher','kobold_jung','kobold_jung','kobold_jung',
+      'kobold_trommler','kobold_trommler','goblin_waldlaeufer','goblin_waldlaeufer',
+      'wolf','wolf','wildschwein',
+      'kleine_flamme','kleine_flamme','sacredwall','sacredwall',
+    ],
+    dropTable: {
+      S_POW:  [{ cardId:'goblin_waldlaeufer', weight:5  }, { cardId:'kobold_trommler', weight:8  }, { cardId:'wildschwein',    weight:8  }],
+      A_POW:  [{ cardId:'kobold_trommler',    weight:15 }, { cardId:'goblin_waldlaeufer',weight:10}, { cardId:'wolf',           weight:12 }],
+      B_POW:  [{ cardId:'wolf',               weight:25 }, { cardId:'kobold_sucher',    weight:20 }, { cardId:'kleine_flamme',  weight:12 }],
+      C_POW:  [{ cardId:'kobold_sucher',      weight:35 }, { cardId:'kobold_jung',      weight:25 }, { cardId:'sacredwall',     weight:15 }],
+      D_POW:  [{ cardId:'kobold_jung',        weight:50 }, { cardId:'kleine_flamme',    weight:30 }],
+      TEC:    [{ cardId:'sacredwall',         weight:20 }, { cardId:'goblin_waldlaeufer',weight:10}, { cardId:'kobold_trommler',weight:12 }],
+    }
+  },
+
+  waldtier_horde: {
+    id:        'waldtier_horde',
+    name:      'Waldtier-Horde',
+    title:     'Wildes Rudel des Goblinwalds',
+    portrait:  '🐗',
+    theme:     'Bestie',
+    hp:        3500,
+    behavior:  'aggressive',
+    difficulty: 1,
+    fieldBonus:  50,
+    maxSummons:  2,
+    multiAttack: false,
+    startField:  ['wildschwein', 'wolf', 'wolf'],
+    startTraps:  [],
+    startFieldCard: 'feld_bestie',
+    startHandCount: 5,
+    deckIds: [
+      'wildschwein','wildschwein','wildschwein','wolf','wolf','wolf',
+      'waldbaer','waldbaer','riesenadler','riesenadler',
+      'riesenbat','riesenbat',
+      'kleine_flamme','kleine_flamme','sacredwall',
+    ],
+    dropTable: {
+      S_POW:  [{ cardId:'waldbaer',    weight:5  }, { cardId:'riesenadler',  weight:8  }, { cardId:'wolf',       weight:10 }],
+      A_POW:  [{ cardId:'riesenadler', weight:15 }, { cardId:'waldbaer',     weight:10 }, { cardId:'wildschwein',weight:15 }],
+      B_POW:  [{ cardId:'wildschwein', weight:25 }, { cardId:'wolf',         weight:20 }, { cardId:'riesenbat',  weight:12 }],
+      C_POW:  [{ cardId:'wolf',        weight:35 }, { cardId:'riesenbat',    weight:25 }, { cardId:'kleine_flamme',weight:15}],
+      D_POW:  [{ cardId:'wolf',        weight:55 }, { cardId:'wildschwein',  weight:30 }],
+      TEC:    [{ cardId:'riesenadler', weight:15 }, { cardId:'waldbaer',     weight:10 }, { cardId:'wildschwein',weight:15 }],
+    }
+  },
+
+  dorfraeuber: {
+    id:        'dorfraeuber',
+    name:      'Dorfräuber',
+    title:     'Verkommene Grenzposten-Söldner',
+    portrait:  '🗡️',
+    theme:     'Mensch',
+    hp:        4000,
+    behavior:  'aggressive',
+    difficulty: 1,
+    fieldBonus:  0,
+    maxSummons:  2,
+    multiAttack: false,
+    startField:  ['holzfaeller', 'waldjaeger'],
+    startTraps:  ['counterstrike'],
+    startFieldCard: 'feld_koboldwald',
+    startHandCount: 5,
+    deckIds: [
+      'holzfaeller','holzfaeller','holzfaeller','waldjaeger','waldjaeger','waldjaeger',
+      'forst_wache','forst_wache',
+      'dorfbewohner','dorfbewohner','wache',
+      'fireball','kleine_flamme','kleine_flamme','heallight',
+      'counterstrike','counterstrike','sacredwall',
+    ],
+    dropTable: {
+      S_POW:  [{ cardId:'forst_wache',  weight:5  }, { cardId:'waldjaeger',   weight:8  }, { cardId:'holzfaeller', weight:10 }],
+      A_POW:  [{ cardId:'waldjaeger',   weight:15 }, { cardId:'forst_wache',  weight:10 }, { cardId:'wache',        weight:12 }],
+      B_POW:  [{ cardId:'holzfaeller',  weight:25 }, { cardId:'waldjaeger',   weight:18 }, { cardId:'kleine_flamme',weight:12 }],
+      C_POW:  [{ cardId:'wache',        weight:30 }, { cardId:'dorfbewohner', weight:25 }, { cardId:'heallight',    weight:15 }],
+      D_POW:  [{ cardId:'dorfbewohner', weight:50 }, { cardId:'kleine_flamme',weight:30 }],
+      TEC:    [{ cardId:'counterstrike',weight:18 }, { cardId:'forst_wache',  weight:10 }, { cardId:'heallight',    weight:12 }],
+    }
+  },
+
+  /* ══════════════════════════════════════════
      AKT 1 — Einstieg. Aber bereits fordernd.
      Theme: Kobold-Schwarm, Untote, Ork-Gewalt
   ══════════════════════════════════════════ */

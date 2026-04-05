@@ -274,5 +274,40 @@
   "enemy.soul_devourer.title": "Ruler of the Elementals",
   "card.chaos_elementar.name": "Chaos Elemental",
   "card.unterstuetzung_des_dorfes.name": "Support of the Village",
-  "card.unterstuetzung_des_dorfes.flavor": "The people of River Village stand behind you. For now, that is enough."
+  "card.unterstuetzung_des_dorfes.flavor": "The people of River Village stand behind you. For now, that is enough.",
+
+  "card.kobold_sucher.name": "Goblin Scout",
+  "card.kobold_sucher.flavor": "Silently scouts through the dark forest.",
+  "card.kobold_trommler.name": "Goblin Drummer",
+  "card.kobold_trommler.flavor": "His drumbeat summons the horde.",
+  "card.goblin_waldlaeufer.name": "Goblin Forest Runner",
+  "card.goblin_waldlaeufer.flavor": "Unstoppable in his home forest.",
+
+  "card.holzfaeller.name": "Lumberjack",
+  "card.holzfaeller.flavor": "He came to chop wood — and stayed to fight.",
+  "card.waldjaeger.name": "Forest Hunter",
+  "card.waldjaeger.flavor": "Knows the forest better than the goblins.",
+  "card.forst_wache.name": "Forest Warden",
+  "card.forst_wache.flavor": "Guards the border between village and wilderness.",
+
+  "card.wildschwein.name": "Wild Boar",
+  "card.wildschwein.flavor": "Nobody runs faster on four legs.",
+  "card.waldbaer.name": "Forest Bear",
+  "card.waldbaer.flavor": "His roar echoes through the entire forest.",
+  "card.riesenadler.name": "Giant Eagle",
+  "card.riesenadler.flavor": "Dives from the clouds — too fast to deflect.",
+
+  "card.goblin_wolfjaeger.name": "Goblin Wolf Hunter",
+  "card.goblin_wolfjaeger.flavor": "On wolfback through the Goblin Forest.",
+  "card.waldgeist.name": "Forest Spirit",
+  "card.waldgeist.flavor": "Half human, half wilderness — all danger.",
+  "card.waldkoenig.name": "Forest King",
+  "card.waldkoenig.flavor": "Ruler over all creatures of the forest.",
+
+  "enemy.goblin_hinterhalt.name": "Goblin Ambush",
+  "enemy.goblin_hinterhalt.title": "Scouts of the Dark Forest",
+  "enemy.waldtier_horde.name": "Forest Beast Horde",
+  "enemy.waldtier_horde.title": "Wild Pack of the Goblin Forest",
+  "enemy.dorfraeuber.name": "Village Raiders",
+  "enemy.dorfraeuber.title": "Rogue Border Post Mercenaries"
 }
