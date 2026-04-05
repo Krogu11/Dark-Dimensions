@@ -365,8 +365,42 @@
     return rawEffect;
   }
 
+  function ensureStoryBattleDeck() {
+    if (Array.isArray(RUN_STATE.deck) && RUN_STATE.deck.length > 0) return true;
+
+    const cfg = (global.DD_CUSTOM && global.DD_CUSTOM.config) ? global.DD_CUSTOM.config : {};
+    const startLP = Number(cfg['cfg-startlp']) || 4000;
+    let deck = [];
+
+    if (SAVE_STATE?.slot?.baseDeck && SAVE_STATE.slot.baseDeck.length > 0) {
+      deck = SAVE_STATE.slot.baseDeck
+        .map(id => {
+          const card = typeof getCardById === 'function' ? getCardById(id) : null;
+          return card ? cloneCard(card) : null;
+        })
+        .filter(Boolean);
+    }
+
+    if (deck.length === 0 && typeof buildStarterDeck === 'function') {
+      deck = buildStarterDeck();
+    }
+
+    if (deck.length === 0) return false;
+
+    RUN_STATE.active = true;
+    RUN_STATE.playerHP = Number(RUN_STATE.playerHP || startLP);
+    RUN_STATE.maxHP = Number(RUN_STATE.maxHP || startLP);
+    RUN_STATE.deck = deck;
+    RUN_STATE.currentNodeId = null;
+    RUN_STATE.completedNodes = RUN_STATE.completedNodes instanceof Set ? RUN_STATE.completedNodes : new Set();
+    RUN_STATE.availableNodes = RUN_STATE.availableNodes instanceof Set ? RUN_STATE.availableNodes : new Set();
+    RUN_STATE._isFreeDuel = false;
+    return true;
+  }
+
   function startStoryBattle(config) {
     if (!config?.enemyId || typeof startBattle !== 'function') return false;
+    if (!ensureStoryBattleDeck()) return false;
     runtime.pendingBattle = {
       ...config,
       outcome: null,
