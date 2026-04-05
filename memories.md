@@ -30,7 +30,10 @@
 - `js/utils/runtime-data-loader.js` is the shared boot layer for game and editor.
 - The loader merges deployed JSON files first, then optional local `dd_custom` overrides, and preserves the existing `window.DD_CUSTOM` contract.
 - `runtime-config.json` remains a full fallback for compatibility. Split JSON files override or supply the same sections when present.
-- `file://` is tolerated for inspection, but not the supported parity path. Use `serve-local.ps1` or another local HTTP server for testing that matches GitHub Pages.
+- `assets/data/runtime-config.js` mirrors `runtime-config.json` as `window.DD_RUNTIME_EMBEDDED_DATA` and is loaded before `runtime-data-loader.js`.
+- On `file://`, the runtime loader now falls back to `window.DD_RUNTIME_EMBEDDED_DATA` instead of failing to load JSON via XHR. This is the parity fallback for local double-click testing.
+- `index.html` explicitly disables local `dd_custom` overrides with `allowLocalOverrides: false`; editor-only local overrides stay enabled in `editor.html`.
+- Use `serve-local.ps1` or another local HTTP server for closest GitHub Pages parity, but `file://` should no longer hard-fail campaign boot when the embedded runtime file is present.
 
 ## State Architecture
 - Legacy globals remain in place for compatibility: `RUN_STATE`, `BATTLE_STATE`, `SAVE_STATE`.
@@ -58,6 +61,7 @@
 - The editor writes working data to `localStorage['dd_custom']` via `saveToGame()`.
 - The game reads `dd_custom` only in allowed local/dev override contexts; production GitHub Pages relies on committed JSON files unless overrides are explicitly enabled.
 - The editor also supports export of `runtime-config.json` for legacy deployment workflows.
+- The publish helper also needs to keep `assets/data/runtime-config.js` in sync with `assets/data/runtime-config.json`.
 - Editor helper logic belongs in `/js/editor`; avoid adding more large inline utility code to `editor.html` when an external helper is enough.
 - Do not break existing editor globals such as `editorCards`, `editorEnemies`, `editorActs`, `editorRecipes`, `editorConfig`, `editorStarterDeck`, and `editorWorldMap`.
 
@@ -78,8 +82,22 @@
   - `{ starterDeck: string[] }`
 - `world-map.json`:
   - `{ worldMap: WorldMapLocation[] }`
+- `runtime-config.js`:
+  - `window.DD_RUNTIME_EMBEDDED_DATA = <runtime-config-json>`
 - Keep localization keys in data objects and human-readable text in locale buckets when possible.
 - Preserve backward compatibility for legacy fields like `card.effect` while favoring normalized `card.effects`.
+
+## Localization and Encoding
+- Runtime and i18n loaders now normalize common mojibake sequences (`Ã¤`, `Ã¶`, `Ã¼`, `ÃŸ`, `â€¦`, etc.) when reading runtime JSON, locale JSON, and local `dd_custom` overrides.
+- UTF-8 remains the intended source encoding for JSON and JS assets; the normalization layer is only a defensive compatibility guard for older corrupted values.
+- If umlauts regress again, check both committed JSON files and `localStorage['dd_custom']` before assuming the renderer is at fault.
+
+## Story and Hub Event Rules
+- Story runtime state now tracks both `seenEvents` and `completedEvents`.
+- `once: true` events must not auto-trigger again once they have been seen or completed.
+- Hub auto-events are gated per hub entry via a runtime key and must not re-trigger on every hub re-render.
+- Returning to the world map resets the current auto-hub-event gate so legitimate future re-entry events can fire once on the next visit.
+- The village intro softlock was caused by repeated `enter_hub` auto-triggering during hub re-renders; preserve the new gating behavior when extending hub logic.
 
 ## Coding Rules
 - No gameplay rule changes during cleanup/refactor work unless explicitly requested.
@@ -131,3 +149,4 @@
 ## Update Log
 - 2026-04-04: Added shared runtime data loader, split baseline JSON files, central `gameState` facade, lightweight event bus, and editor data helper module.
 - 2026-04-05: Rebased the structure branch onto the parity fixes. Preserved HTTP-first local dev guidance, file-protocol warnings, normalized audio paths, and deferred music start until user interaction.
+- 2026-04-05: Added `file://` runtime fallback via `assets/data/runtime-config.js`, disabled game-side local overrides by default, hardened mojibake normalization in runtime/i18n loaders, and fixed hub auto-event repeat loops using `seenEvents` plus per-hub auto-trigger gating.
