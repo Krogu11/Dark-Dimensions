@@ -1,17 +1,6 @@
 {
     "fusionMonsters":  [
                            {
-                               "id":  "kobold_imperator",
-                               "type":  "fusion",
-                               "race":  "kobold",
-                               "atk":  2000,
-                               "def":  1400,
-                               "effect":  "raceBuffATK300",
-                               "rarity":  "legendary",
-                               "nameKey":  "card.kobold_imperator.name",
-                               "flavorKey":  "card.kobold_imperator.flavor"
-                           },
-                           {
                                "id":  "wardragon",
                                "type":  "fusion",
                                "race":  "dragon",
