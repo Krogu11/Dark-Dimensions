@@ -69,11 +69,13 @@
 ## Deployment Flow
 - Required deployment path:
   1. Export `runtime-config.json` from `editor.html`.
-  2. Run `publish-runtime.bat` or `publish-runtime.ps1`.
-  3. Let the script sync `runtime-config.json`, `runtime-config.js`, split data files, and locale files.
-  4. Commit and push the generated repo changes.
+  2. Run `publish-runtime.bat`.
+  3. In the GUI, either use the newest `runtime-config*.json` from `Downloads` or choose a file manually.
+  4. Click the publish button once.
 - `publish-runtime.ps1` is responsible for keeping derived files in sync. Manual copying between runtime, split JSON files, and locale files is no longer an accepted workflow.
 - `publish-runtime.ps1 -SkipGit` is the safe local validation mode for checking generation without commit/push.
+- `publish-runtime.bat` is now the preferred user-facing entry point. It launches `publish-runtime-gui.ps1` as a one-window publish tool.
+- `publish-runtime-cli.bat` is the legacy console entry point for fallback/debugging.
 - If GitHub Pages shows stale data, verify `runtime-config.json` and `world-map.json` online first. A mismatch means derived files were not regenerated before push.
 
 ## Data Contracts
