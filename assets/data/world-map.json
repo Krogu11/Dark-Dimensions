@@ -1,723 +1,644 @@
 {
-    "worldMap":  [
-                     {
-                         "id":  "loc_intro_river",
-                         "type":  "story",
-                         "isStart":  true,
-                         "x":  6.089532220201892,
-                         "y":  10.41044833055183,
-                         "connections":  [
-                                             "hub_village_01"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-                                            {
-                                                "speakerKey":  "story.loc_intro_river.0.speaker",
-                                                "textKey":  "story.loc_intro_river.0.text"
-                                            },
-                                            {
-                                                "speakerKey":  "story.loc_intro_river.1.speaker",
-                                                "textKey":  "story.loc_intro_river.1.text"
-                                            },
-                                            {
-                                                "speakerKey":  "story.loc_intro_river.2.speaker",
-                                                "textKey":  "story.loc_intro_river.2.text"
-                                            },
-                                            {
-                                                "speakerKey":  "story.loc_intro_river.3.speaker",
-                                                "textKey":  "story.loc_intro_river.3.text"
-                                            },
-                                            {
-                                                "speakerKey":  "story.loc_intro_river.4.speaker",
-                                                "textKey":  "story.loc_intro_river.4.text"
-                                            }
-                                        ],
-                         "postStoryBattleEnemyId":  "goblin_gang",
-                         "postStoryGoToLocationId":  "hub_village_01",
-                         "worldEventConfig":  {
-                                                  "noneWeight":  100,
-                                                  "battleWeight":  0,
-                                                  "eventWeight":  0,
-                                                  "enemyId":  "",
-                                                  "eventId":  "",
-                                                  "enemyPool":  [
-
-                                                                ]
-                                              },
-                         "bgm":  "audio/cursed-data-duel.mp3",
-                         "battleBgm":  "audio/cursed-data-duel.mp3",
-                         "nameKey":  "world.loc_intro_river.name",
-                         "descriptionKey":  "world.loc_intro_river.description"
-                     },
-                     {
-                         "id":  "hub_village_01",
-                         "type":  "hub",
-                         "x":  6.336405148047914,
-                         "y":  26.64179161413392,
-                         "connections":  [
-                                             "loc_intro_river",
-                                             "loc_river_crossing",
-                                             "loc_broken_cart"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "hubId":  "hub_village_01",
-                         "worldEventConfig":  {
-                                                  "noneWeight":  100,
-                                                  "battleWeight":  0,
-                                                  "eventWeight":  0,
-                                                  "enemyId":  "",
-                                                  "eventId":  "",
-                                                  "enemyPool":  [
-
-                                                                ]
-                                              },
-                         "bgm":  "audio/cursed-data-duel.mp3",
-                         "battleBgm":  "",
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.hub_village_01.name",
-                         "descriptionKey":  "world.hub_village_01.description"
-                     },
-                     {
-                         "id":  "loc_river_crossing",
-                         "type":  "path",
-                         "x":  16.705068117580865,
-                         "y":  19.738806539507053,
-                         "connections":  [
-                                             "hub_village_01",
-                                             "loc_1775393366001"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "worldEventConfig":  {
-                                                  "noneWeight":  45,
-                                                  "battleWeight":  35,
-                                                  "eventWeight":  20,
-                                                  "enemyId":  "kobold_waldlaeufer",
-                                                  "eventId":  "event_river_whispers",
-                                                  "enemyPool":  [
-                                                                    {
-                                                                        "enemyId":  "goblin_gang",
-                                                                        "weight":  7
-                                                                    },
-                                                                    {
-                                                                        "enemyId":  "kobold_waldlaeufer",
-                                                                        "weight":  5
-                                                                    }
-                                                                ]
-                                              },
-                         "bgm":  "audio/cursed-data-duel.mp3",
-                         "battleBgm":  "audio/cursed-data-duel.mp3",
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.loc_river_crossing.name",
-                         "descriptionKey":  "world.loc_river_crossing.description"
-                     },
-                     {
-                         "id":  "loc_broken_cart",
-                         "type":  "path",
-                         "x":  6.665569051842611,
-                         "y":  44.55223937532795,
-                         "connections":  [
-                                             "hub_village_01",
-                                             "loc_1775394465406"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "worldEventConfig":  {
-                                                  "noneWeight":  55,
-                                                  "battleWeight":  30,
-                                                  "eventWeight":  15,
-                                                  "enemyId":  "Wolfsrudel",
-                                                  "eventId":  "event_lost_supplies",
-                                                  "enemyPool":  [
-                                                                    {
-                                                                        "enemyId":  "goblin_gang",
-                                                                        "weight":  4
-                                                                    },
-                                                                    {
-                                                                        "enemyId":  "Wolfsrudel",
-                                                                        "weight":  6
-                                                                    }
-                                                                ]
-                                              },
-                         "bgm":  "audio/cursed-data-duel.mp3",
-                         "battleBgm":  "audio/cursed-data-duel.mp3",
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.loc_broken_cart.name",
-                         "descriptionKey":  "world.loc_broken_cart.description"
-                     },
-                     {
-                         "id":  "loc_kobold_camp",
-                         "type":  "dungeon",
-                         "x":  67.56089125386153,
-                         "y":  68.99253788279064,
-                         "connections":  [
-                                             "loc_1775394070114",
-                                             "loc_1775393918879"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "actId":  "act_0",
-                         "worldEventConfig":  {
-                                                  "noneWeight":  100,
-                                                  "battleWeight":  0,
-                                                  "eventWeight":  0,
-                                                  "enemyId":  "",
-                                                  "eventId":  "",
-                                                  "enemyPool":  [
-
-                                                                ]
-                                              },
-                         "bgm":  "audio/cursed-data-duel.mp3",
-                         "battleBgm":  "audio/cursed-data-duel.mp3",
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.loc_kobold_camp.name",
-                         "descriptionKey":  "world.loc_kobold_camp.description"
-                     },
-                     {
-                         "id":  "loc_forest_edge",
-                         "type":  "path",
-                         "x":  53.40684339068956,
-                         "y":  28.320896091745862,
-                         "connections":  [
-                                             "loc_1775393767809",
-                                             "loc_1775393921929",
-                                             "loc_1775393916513"
-                                         ],
-                         "unlockConditions":  [
-                                                  {
-                                                      "type":  "locationCompleted",
-                                                      "locationId":  "loc_kobold_camp"
-                                                  }
-                                              ],
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "worldEventConfig":  {
-                                                  "noneWeight":  40,
-                                                  "battleWeight":  40,
-                                                  "eventWeight":  20,
-                                                  "enemyId":  "kobold_reiter",
-                                                  "eventId":  "event_forest_trail",
-                                                  "enemyPool":  [
-                                                                    {
-                                                                        "enemyId":  "kobold_waldlaeufer",
-                                                                        "weight":  6
-                                                                    },
-                                                                    {
-                                                                        "enemyId":  "kobold_reiter",
-                                                                        "weight":  4
-                                                                    }
-                                                                ]
-                                              },
-                         "bgm":  "audio/cursed-data-duel.mp3",
-                         "battleBgm":  "audio/cursed-data-duel.mp3",
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.loc_forest_edge.name",
-                         "descriptionKey":  "world.loc_forest_edge.description"
-                     },
-                     {
-                         "id":  "loc_1775393366001",
-                         "type":  "dungeon",
-                         "x":  31.105988908598853,
-                         "y":  19.17910504696974,
-                         "connections":  [
-                                             "loc_river_crossing",
-                                             "loc_1775393767809"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "actId":  "act_0",
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "bgm":  "",
-                         "battleBgm":  "",
-                         "worldEventConfig":  {
-                                                  "noneWeight":  100,
-                                                  "battleWeight":  0,
-                                                  "eventWeight":  0,
-                                                  "enemyId":  "",
-                                                  "eventId":  "",
-                                                  "enemyPool":  [
-
-                                                                ]
-                                              },
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.loc_1775393366001.name",
-                         "descriptionKey":  "world.loc_1775393366001.description"
-                     },
-                     {
-                         "id":  "loc_1775393767809",
-                         "type":  "path",
-                         "x":  47.728766050231044,
-                         "y":  18.619403554432427,
-                         "connections":  [
-                                             "loc_1775393366001",
-                                             "loc_forest_edge"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "actId":  "act_0",
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "bgm":  "",
-                         "battleBgm":  "",
-                         "worldEventConfig":  {
-                                                  "noneWeight":  100,
-                                                  "battleWeight":  0,
-                                                  "eventWeight":  0,
-                                                  "enemyId":  "",
-                                                  "eventId":  "",
-                                                  "enemyPool":  [
-
-                                                                ]
-                                              },
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.loc_1775393767809.name",
-                         "descriptionKey":  "world.loc_1775393767809.description"
-                     },
-                     {
-                         "id":  "loc_1775393916513",
-                         "type":  "path",
-                         "x":  51.26727801602404,
-                         "y":  48.84328415144735,
-                         "connections":  [
-                                             "loc_forest_edge",
-                                             "loc_1775394066747"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "actId":  "act_0",
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "bgm":  "",
-                         "battleBgm":  "",
-                         "worldEventConfig":  {
-                                                  "noneWeight":  100,
-                                                  "battleWeight":  0,
-                                                  "eventWeight":  0,
-                                                  "enemyId":  "",
-                                                  "eventId":  "",
-                                                  "enemyPool":  [
-
-                                                                ]
-                                              },
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.loc_1775393916513.name",
-                         "descriptionKey":  "world.loc_1775393916513.description"
-                     },
-                     {
-                         "id":  "loc_1775393918879",
-                         "type":  "path",
-                         "x":  72.74522273862802,
-                         "y":  84.2910453454772,
-                         "connections":  [
-                                             "loc_kobold_camp"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "actId":  "act_0",
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "bgm":  "",
-                         "battleBgm":  "",
-                         "worldEventConfig":  {
-                                                  "noneWeight":  100,
-                                                  "battleWeight":  0,
-                                                  "eventWeight":  0,
-                                                  "enemyId":  "",
-                                                  "eventId":  "",
-                                                  "enemyPool":  [
-
-                                                                ]
-                                              },
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.loc_1775393918879.name",
-                         "descriptionKey":  "world.loc_1775393918879.description"
-                     },
-                     {
-                         "id":  "loc_1775393921929",
-                         "type":  "path",
-                         "x":  63.28176050453047,
-                         "y":  29.813433405178696,
-                         "connections":  [
-                                             "loc_forest_edge",
-                                             "loc_1775394066747"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "actId":  "act_0",
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "bgm":  "",
-                         "battleBgm":  "",
-                         "worldEventConfig":  {
-                                                  "noneWeight":  100,
-                                                  "battleWeight":  0,
-                                                  "eventWeight":  0,
-                                                  "enemyId":  "",
-                                                  "eventId":  "",
-                                                  "enemyPool":  [
-
-                                                                ]
-                                              },
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.loc_1775393921929.name",
-                         "descriptionKey":  "world.loc_1775393921929.description"
-                     },
-                     {
-                         "id":  "loc_1775393925717",
-                         "type":  "path",
-                         "x":  72.82751371457668,
-                         "y":  46.23134385293989,
-                         "connections":  [
-                                             "loc_1775394066747",
-                                             "loc_1775394070114"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "actId":  "act_0",
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "bgm":  "",
-                         "battleBgm":  "",
-                         "worldEventConfig":  {
-                                                  "noneWeight":  100,
-                                                  "battleWeight":  0,
-                                                  "eventWeight":  0,
-                                                  "enemyId":  "",
-                                                  "eventId":  "",
-                                                  "enemyPool":  [
-
-                                                                ]
-                                              },
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.loc_1775393925717.name",
-                         "descriptionKey":  "world.loc_1775393925717.description"
-                     },
-                     {
-                         "id":  "loc_1775394066747",
-                         "type":  "path",
-                         "x":  61.22448610581361,
-                         "y":  51.828358778313024,
-                         "connections":  [
-                                             "loc_1775393921929",
-                                             "loc_1775393916513",
-                                             "loc_1775393925717",
-                                             "loc_1775394073578"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "actId":  "act_0",
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "bgm":  "",
-                         "battleBgm":  "",
-                         "worldEventConfig":  {
-                                                  "noneWeight":  100,
-                                                  "battleWeight":  0,
-                                                  "eventWeight":  0,
-                                                  "enemyId":  "",
-                                                  "eventId":  "",
-                                                  "enemyPool":  [
-
-                                                                ]
-                                              },
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.loc_1775394066747.name",
-                         "descriptionKey":  "world.loc_1775394066747.description"
-                     },
-                     {
-                         "id":  "loc_1775394070114",
-                         "type":  "path",
-                         "x":  78.67017300693256,
-                         "y":  58.73134385293989,
-                         "connections":  [
-                                             "loc_1775393925717",
-                                             "loc_kobold_camp"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "actId":  "act_0",
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "bgm":  "",
-                         "battleBgm":  "",
-                         "worldEventConfig":  {
-                                                  "noneWeight":  100,
-                                                  "battleWeight":  0,
-                                                  "eventWeight":  0,
-                                                  "enemyId":  "",
-                                                  "eventId":  "",
-                                                  "enemyPool":  [
-
-                                                                ]
-                                              },
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.loc_1775394070114.name",
-                         "descriptionKey":  "world.loc_1775394070114.description"
-                     },
-                     {
-                         "id":  "loc_1775394073578",
-                         "type":  "path",
-                         "x":  57.192228284328586,
-                         "y":  69.55223937532796,
-                         "connections":  [
-                                             "loc_1775394066747"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "actId":  "act_0",
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "bgm":  "",
-                         "battleBgm":  "",
-                         "worldEventConfig":  {
-                                                  "noneWeight":  100,
-                                                  "battleWeight":  0,
-                                                  "eventWeight":  0,
-                                                  "enemyId":  "",
-                                                  "eventId":  "",
-                                                  "enemyPool":  [
-
-                                                                ]
-                                              },
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.loc_1775394073578.name",
-                         "descriptionKey":  "world.loc_1775394073578.description"
-                     },
-                     {
-                         "id":  "loc_1775394465406",
-                         "type":  "path",
-                         "x":  6.830151003739961,
-                         "y":  64.70149310667124,
-                         "connections":  [
-                                             "loc_broken_cart",
-                                             "loc_1775407855027"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "actId":  "act_0",
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "bgm":  "",
-                         "battleBgm":  "",
-                         "worldEventConfig":  {
-                                                  "noneWeight":  100,
-                                                  "battleWeight":  0,
-                                                  "eventWeight":  0,
-                                                  "enemyId":  "",
-                                                  "eventId":  "",
-                                                  "enemyPool":  [
-
-                                                                ]
-                                              },
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.loc_1775394465406.name",
-                         "descriptionKey":  "world.loc_1775394465406.description"
-                     },
-                     {
-                         "id":  "loc_1775407855027",
-                         "type":  "dungeon",
-                         "x":  19.749834227681813,
-                         "y":  73.47014982308914,
-                         "connections":  [
-                                             "loc_1775394465406"
-                                         ],
-                         "unlockConditions":  [
-
-                                              ],
-                         "actId":  "act_0",
-                         "hubFeatures":  [
-                                             "rest",
-                                             "shop",
-                                             "deck",
-                                             "save"
-                                         ],
-                         "storyLines":  [
-
-                                        ],
-                         "bgm":  "",
-                         "battleBgm":  "",
-                         "worldEventConfig":  {
-                                                  "noneWeight":  100,
-                                                  "battleWeight":  0,
-                                                  "eventWeight":  0,
-                                                  "enemyId":  "",
-                                                  "eventId":  "",
-                                                  "enemyPool":  [
-
-                                                                ]
-                                              },
-                         "postStoryBattleEnemyId":  "",
-                         "postStoryGoToLocationId":  "",
-                         "isStart":  false,
-                         "nameKey":  "world.loc_1775407855027.name",
-                         "descriptionKey":  "world.loc_1775407855027.description"
-                     }
-                 ]
+  "worldMap": [
+    {
+      "id": "loc_intro_river",
+      "type": "story",
+      "isStart": true,
+      "x": 6.089532220201892,
+      "y": 10.41044833055183,
+      "connections": [
+        "hub_village_01"
+      ],
+      "unlockConditions": [],
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [
+        {
+          "speakerKey": "story.loc_intro_river.0.speaker",
+          "textKey": "story.loc_intro_river.0.text"
+        },
+        {
+          "speakerKey": "story.loc_intro_river.1.speaker",
+          "textKey": "story.loc_intro_river.1.text"
+        },
+        {
+          "speakerKey": "story.loc_intro_river.2.speaker",
+          "textKey": "story.loc_intro_river.2.text"
+        },
+        {
+          "speakerKey": "story.loc_intro_river.3.speaker",
+          "textKey": "story.loc_intro_river.3.text"
+        },
+        {
+          "speakerKey": "story.loc_intro_river.4.speaker",
+          "textKey": "story.loc_intro_river.4.text"
+        },
+        {
+          "speakerKey": "story.loc_intro_river.5.speaker",
+          "textKey": "story.loc_intro_river.5.text"
+        },
+        {
+          "speakerKey": "story.loc_intro_river.6.speaker",
+          "textKey": "story.loc_intro_river.6.text"
+        },
+        {
+          "speakerKey": "story.loc_intro_river.7.speaker",
+          "textKey": "story.loc_intro_river.7.text"
+        },
+        {
+          "speakerKey": "story.loc_intro_river.8.speaker",
+          "textKey": "story.loc_intro_river.8.text"
+        }
+      ],
+      "postStoryBattleEnemyId": "goblin_gang",
+      "postStoryGoToLocationId": "hub_village_01",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": "audio/cursed-data-duel.mp3",
+      "nameKey": "world.loc_intro_river.name",
+      "descriptionKey": "world.loc_intro_river.description",
+      "onCompleteEffects": [
+        {
+          "type": "start_quest",
+          "questId": "quest_main_001"
+        }
+      ]
+    },
+    {
+      "id": "hub_village_01",
+      "type": "hub",
+      "x": 6.336405148047914,
+      "y": 26.64179161413392,
+      "connections": [
+        "loc_intro_river",
+        "loc_river_crossing",
+        "loc_broken_cart"
+      ],
+      "unlockConditions": [],
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "hubId": "hub_village_01",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": "",
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.hub_village_01.name",
+      "descriptionKey": "world.hub_village_01.description"
+    },
+    {
+      "id": "loc_river_crossing",
+      "type": "path",
+      "x": 16.705068117580865,
+      "y": 19.738806539507053,
+      "connections": [
+        "hub_village_01",
+        "loc_1775393366001"
+      ],
+      "unlockConditions": [],
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "worldEventConfig": {
+        "noneWeight": 0,
+        "battleWeight": 100,
+        "eventWeight": 0,
+        "enemyId": "goblin_chief",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": "audio/cursed-data-duel.mp3",
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_river_crossing.name",
+      "descriptionKey": "world.loc_river_crossing.description"
+    },
+    {
+      "id": "loc_broken_cart",
+      "type": "path",
+      "x": 6.665569051842611,
+      "y": 44.55223937532795,
+      "connections": [
+        "hub_village_01",
+        "loc_1775394465406"
+      ],
+      "unlockConditions": [],
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "worldEventConfig": {
+        "noneWeight": 55,
+        "battleWeight": 30,
+        "eventWeight": 15,
+        "enemyId": "Wolfsrudel",
+        "eventId": "event_lost_supplies",
+        "enemyPool": [
+          {
+            "enemyId": "goblin_gang",
+            "weight": 4
+          },
+          {
+            "enemyId": "Wolfsrudel",
+            "weight": 6
+          }
+        ]
+      },
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": "audio/cursed-data-duel.mp3",
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_broken_cart.name",
+      "descriptionKey": "world.loc_broken_cart.description"
+    },
+    {
+      "id": "loc_kobold_camp",
+      "type": "dungeon",
+      "x": 67.56089125386153,
+      "y": 68.99253788279064,
+      "connections": [
+        "loc_1775394070114",
+        "loc_1775393918879"
+      ],
+      "unlockConditions": [],
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "actId": "act_0",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": "audio/cursed-data-duel.mp3",
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_kobold_camp.name",
+      "descriptionKey": "world.loc_kobold_camp.description"
+    },
+    {
+      "id": "loc_forest_edge",
+      "type": "path",
+      "x": 53.40684339068956,
+      "y": 28.320896091745862,
+      "connections": [
+        "loc_1775393767809",
+        "loc_1775393921929",
+        "loc_1775393916513"
+      ],
+      "unlockConditions": [
+        {
+          "type": "locationCompleted",
+          "locationId": "loc_kobold_camp"
+        }
+      ],
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "worldEventConfig": {
+        "noneWeight": 40,
+        "battleWeight": 40,
+        "eventWeight": 20,
+        "enemyId": "kobold_reiter",
+        "eventId": "event_forest_trail",
+        "enemyPool": [
+          {
+            "enemyId": "kobold_waldlaeufer",
+            "weight": 6
+          },
+          {
+            "enemyId": "kobold_reiter",
+            "weight": 4
+          }
+        ]
+      },
+      "bgm": "audio/cursed-data-duel.mp3",
+      "battleBgm": "audio/cursed-data-duel.mp3",
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_forest_edge.name",
+      "descriptionKey": "world.loc_forest_edge.description"
+    },
+    {
+      "id": "loc_1775393366001",
+      "type": "dungeon",
+      "x": 31.105988908598853,
+      "y": 19.17910504696974,
+      "connections": [
+        "loc_river_crossing",
+        "loc_1775393767809"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775393366001.name",
+      "descriptionKey": "world.loc_1775393366001.description"
+    },
+    {
+      "id": "loc_1775393767809",
+      "type": "path",
+      "x": 47.728766050231044,
+      "y": 18.619403554432427,
+      "connections": [
+        "loc_1775393366001",
+        "loc_forest_edge"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775393767809.name",
+      "descriptionKey": "world.loc_1775393767809.description"
+    },
+    {
+      "id": "loc_1775393916513",
+      "type": "path",
+      "x": 51.26727801602404,
+      "y": 48.84328415144735,
+      "connections": [
+        "loc_forest_edge",
+        "loc_1775394066747"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775393916513.name",
+      "descriptionKey": "world.loc_1775393916513.description"
+    },
+    {
+      "id": "loc_1775393918879",
+      "type": "path",
+      "x": 72.74522273862802,
+      "y": 84.2910453454772,
+      "connections": [
+        "loc_kobold_camp"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775393918879.name",
+      "descriptionKey": "world.loc_1775393918879.description"
+    },
+    {
+      "id": "loc_1775393921929",
+      "type": "path",
+      "x": 63.28176050453047,
+      "y": 29.813433405178696,
+      "connections": [
+        "loc_forest_edge",
+        "loc_1775394066747"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775393921929.name",
+      "descriptionKey": "world.loc_1775393921929.description"
+    },
+    {
+      "id": "loc_1775393925717",
+      "type": "path",
+      "x": 72.82751371457668,
+      "y": 46.23134385293989,
+      "connections": [
+        "loc_1775394066747",
+        "loc_1775394070114"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775393925717.name",
+      "descriptionKey": "world.loc_1775393925717.description"
+    },
+    {
+      "id": "loc_1775394066747",
+      "type": "path",
+      "x": 61.22448610581361,
+      "y": 51.828358778313024,
+      "connections": [
+        "loc_1775393921929",
+        "loc_1775393916513",
+        "loc_1775393925717",
+        "loc_1775394073578"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775394066747.name",
+      "descriptionKey": "world.loc_1775394066747.description"
+    },
+    {
+      "id": "loc_1775394070114",
+      "type": "path",
+      "x": 78.67017300693256,
+      "y": 58.73134385293989,
+      "connections": [
+        "loc_1775393925717",
+        "loc_kobold_camp"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775394070114.name",
+      "descriptionKey": "world.loc_1775394070114.description"
+    },
+    {
+      "id": "loc_1775394073578",
+      "type": "path",
+      "x": 57.192228284328586,
+      "y": 69.55223937532796,
+      "connections": [
+        "loc_1775394066747"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775394073578.name",
+      "descriptionKey": "world.loc_1775394073578.description"
+    },
+    {
+      "id": "loc_1775394465406",
+      "type": "path",
+      "x": 6.830151003739961,
+      "y": 64.70149310667124,
+      "connections": [
+        "loc_broken_cart",
+        "loc_1775407855027"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775394465406.name",
+      "descriptionKey": "world.loc_1775394465406.description"
+    },
+    {
+      "id": "loc_1775407855027",
+      "type": "dungeon",
+      "x": 19.749834227681813,
+      "y": 73.47014982308914,
+      "connections": [
+        "loc_1775394465406"
+      ],
+      "unlockConditions": [],
+      "actId": "act_0",
+      "hubFeatures": [
+        "rest",
+        "shop",
+        "deck",
+        "save"
+      ],
+      "storyLines": [],
+      "bgm": "",
+      "battleBgm": "",
+      "worldEventConfig": {
+        "noneWeight": 100,
+        "battleWeight": 0,
+        "eventWeight": 0,
+        "enemyId": "",
+        "eventId": "",
+        "enemyPool": []
+      },
+      "postStoryBattleEnemyId": "",
+      "postStoryGoToLocationId": "",
+      "isStart": false,
+      "nameKey": "world.loc_1775407855027.name",
+      "descriptionKey": "world.loc_1775407855027.description"
+    }
+  ]
 }

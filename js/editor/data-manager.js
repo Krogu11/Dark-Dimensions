@@ -201,6 +201,8 @@ window.DDEditorDataManager = (function createEditorDataManager() {
         delete nextChallenge.description;
         return nextChallenge;
       });
+      next.questIds = Array.isArray(next.questIds) ? next.questIds : Array.isArray(next.quests) ? next.quests : [];
+      delete next.quests;
       return next;
     });
   }
