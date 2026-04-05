@@ -227,6 +227,18 @@
       next.starterDeck = cloneValue(fileData.starterDeck);
     }
 
+    if ((!Array.isArray(next.quests) || next.quests.length === 0) && Array.isArray(fileData?.quests) && fileData.quests.length > 0) {
+      next.quests = cloneValue(fileData.quests);
+    }
+
+    if ((!Array.isArray(next.hubs) || next.hubs.length === 0) && Array.isArray(fileData?.hubs) && fileData.hubs.length > 0) {
+      next.hubs = cloneValue(fileData.hubs);
+    }
+
+    if ((!Array.isArray(next.events) || next.events.length === 0) && Array.isArray(fileData?.events) && fileData.events.length > 0) {
+      next.events = cloneValue(fileData.events);
+    }
+
     next.config = isPlainObject(next.config) ? next.config : {};
     Object.keys(fallbackPlaylists).forEach(key => {
       if (normalizePlaylist(next.config[key]).length === 0 && normalizePlaylist(fileCfg[key]).length > 0) {
