@@ -599,7 +599,13 @@
     runtime.currentHubId = hub.id;
     const screen = global.document.getElementById('screen-hub');
     if (!screen) return true;
-    const state = ensureStoryState();
+    const state = ensureStoryState() || {
+      activeQuests: {},
+      completedQuests: {},
+      activeChallenges: {},
+      completedChallenges: {},
+      completedTournaments: {},
+    };
     const hp = RUN_STATE.playerHP || RUN_STATE.maxHP || 4000;
     const maxHP = RUN_STATE.maxHP || 4000;
 
