@@ -74,6 +74,7 @@ if (-not $SourcePath) {
 $resolvedSource = Resolve-Path -LiteralPath $SourcePath
 $sourceFile = $resolvedSource.Path
 $targetFile = Join-Path $repoRoot "assets\data\runtime-config.json"
+$targetJsFile = Join-Path $repoRoot "assets\data\runtime-config.js"
 
 Write-Step "Quelle: $sourceFile"
 Write-Step "Ziel:   $targetFile"
@@ -90,11 +91,16 @@ if (([System.IO.Path]::GetFullPath($sourceFile)) -ne ([System.IO.Path]::GetFullP
   Write-Step "Quelle ist bereits die Repo-Runtime-Datei."
 }
 
-git add -- "assets/data/runtime-config.json"
+$runtimeJsonRaw = Get-Content -LiteralPath $targetFile -Raw -Encoding UTF8
+$runtimeJs = "window.DD_RUNTIME_EMBEDDED_DATA = $runtimeJsonRaw;`n"
+[System.IO.File]::WriteAllText($targetJsFile, $runtimeJs, (New-Object System.Text.UTF8Encoding($false)))
+Write-Step "Runtime-JS-Fallback aktualisiert."
 
-$status = git status --short -- "assets/data/runtime-config.json"
+git add -- "assets/data/runtime-config.json" "assets/data/runtime-config.js"
+
+$status = git status --short -- "assets/data/runtime-config.json" "assets/data/runtime-config.js"
 if (-not $status) {
-  Write-Step "Keine Aenderungen an assets/data/runtime-config.json vorhanden."
+  Write-Step "Keine Aenderungen an den Runtime-Dateien vorhanden."
   exit 0
 }
 

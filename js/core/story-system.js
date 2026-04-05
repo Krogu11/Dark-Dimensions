@@ -4,6 +4,7 @@
     activeEvent: null,
     pendingBattle: null,
     currentHubId: null,
+    lastAutoHubEventKey: null,
   };
 
   function getWorldMap() {
@@ -115,6 +116,7 @@
     if (!SAVE_STATE.slot.storyState || typeof SAVE_STATE.slot.storyState !== 'object') {
       SAVE_STATE.slot.storyState = {
         started: false,
+        seenEvents: [],
         completedEvents: [],
         activeQuests: {},
         completedQuests: {},
@@ -271,7 +273,7 @@
   function eventMatchesTrigger(event, trigger, payload) {
     const state = ensureStoryState();
     if (!event || event.trigger !== trigger) return false;
-    if (event.once && state?.completedEvents?.includes(event.id)) return false;
+    if (event.once && (state?.completedEvents?.includes(event.id) || state?.seenEvents?.includes(event.id))) return false;
     if (event.hubId && payload?.hubId && event.hubId !== payload.hubId) return false;
     if (event.locationId && payload?.locationId && event.locationId !== payload.locationId) return false;
     if (event.questId && payload?.questId && event.questId !== payload.questId) return false;
@@ -283,7 +285,9 @@
 
   function startEventById(eventId, options) {
     const event = byId(getEvents(), eventId);
+    const state = ensureStoryState();
     if (!event) return false;
+    if (state && event.id && !state.seenEvents.includes(event.id)) state.seenEvents.push(event.id);
     runtime.activeEvent = {
       eventId,
       eventData: event,
@@ -627,7 +631,7 @@
     return true;
   }
 
-  function renderHubScreen(loc) {
+  function renderHubScreen(loc, options) {
     const hub = getHubByLocation(loc);
     if (!hub) return false;
     runtime.currentHubId = hub.id;
@@ -742,7 +746,11 @@
     });
 
     if (typeof showScreen === 'function') showScreen('hub');
-    triggerStoryEvents('enter_hub', { hubId: hub.id, returnMode: 'hub', returnHubId: hub.id });
+    const autoHubKey = `enter_hub:${hub.id}`;
+    if (!options?.suppressAutoEvent && runtime.lastAutoHubEventKey !== autoHubKey) {
+      runtime.lastAutoHubEventKey = autoHubKey;
+      triggerStoryEvents('enter_hub', { hubId: hub.id, returnMode: 'hub', returnHubId: hub.id });
+    }
     return true;
   }
 
@@ -847,6 +855,7 @@
 
   function completeWorldLocation(locationId, goToLocationId) {
     if (typeof WORLD_STATE === 'undefined') return;
+    runtime.lastAutoHubEventKey = null;
     const targetId = goToLocationId || locationId || WORLD_STATE.currentLocationId;
     if (locationId) WORLD_STATE.completedLocations.add(locationId);
     if (targetId) {
@@ -978,7 +987,7 @@
   const legacyShowHubScreen = global.showHubScreen;
   global.showHubScreen = function patchedShowHubScreen(loc) {
     initStorySystem();
-    if (renderHubScreen(loc)) return;
+    if (renderHubScreen(loc, arguments[1])) return;
     if (typeof legacyShowHubScreen === 'function') legacyShowHubScreen(loc);
   };
 
@@ -1002,6 +1011,7 @@
   const legacyRenderWorldMap = global.renderWorldMap;
   global.renderWorldMap = function patchedRenderWorldMap() {
     initStorySystem();
+    runtime.lastAutoHubEventKey = null;
     if (typeof legacyRenderWorldMap === 'function') legacyRenderWorldMap();
     injectWorldmapQuestPanel();
   };

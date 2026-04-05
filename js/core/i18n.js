@@ -18,15 +18,51 @@
   function flattenInto(target, source) {
     if (!isPlainObject(source)) return target;
     Object.keys(source).forEach(key => {
-      target[key] = source[key];
+      target[key] = normalizeMojibakeValue(source[key]);
     });
     return target;
+  }
+
+  function normalizeMojibakeString(value) {
+    const raw = String(value || '');
+    if (!raw || (!raw.includes('Ã') && !raw.includes('Â') && !raw.includes('â'))) return raw;
+    return raw
+      .replace(/Â/g, '')
+      .replace(/Ã¤/g, 'ä')
+      .replace(/Ã„/g, 'Ä')
+      .replace(/Ã¶/g, 'ö')
+      .replace(/Ã–/g, 'Ö')
+      .replace(/Ã¼/g, 'ü')
+      .replace(/Ãœ/g, 'Ü')
+      .replace(/ÃŸ/g, 'ß')
+      .replace(/â€¦/g, '…')
+      .replace(/â€“/g, '–')
+      .replace(/â€”/g, '—')
+      .replace(/â€ž/g, '„')
+      .replace(/â€œ/g, '“')
+      .replace(/â€�/g, '”')
+      .replace(/â€˜/g, '‘')
+      .replace(/â€™/g, '’')
+      .replace(/â‚¬/g, '€')
+      .replace(/â€¢/g, '•');
+  }
+
+  function normalizeMojibakeValue(value) {
+    if (Array.isArray(value)) return value.map(normalizeMojibakeValue);
+    if (isPlainObject(value)) {
+      const out = {};
+      Object.keys(value).forEach(key => {
+        out[key] = normalizeMojibakeValue(value[key]);
+      });
+      return out;
+    }
+    return typeof value === 'string' ? normalizeMojibakeString(value) : value;
   }
 
   function safeReadLocalOverrides() {
     if (typeof window === 'undefined' || !window.localStorage) return {};
     try {
-      return JSON.parse(localStorage.getItem('dd_custom') || '{}');
+      return normalizeMojibakeValue(JSON.parse(localStorage.getItem('dd_custom') || '{}'));
     } catch (_error) {
       return {};
     }
@@ -73,7 +109,7 @@
       if (!ok || !xhr.responseText) {
         return window.DD_EMBEDDED_LOCALES?.[language]?.[namespace] || {};
       }
-      return JSON.parse(xhr.responseText);
+      return normalizeMojibakeValue(JSON.parse(xhr.responseText));
     } catch (_error) {
       return window.DD_EMBEDDED_LOCALES?.[language]?.[namespace] || {};
     }

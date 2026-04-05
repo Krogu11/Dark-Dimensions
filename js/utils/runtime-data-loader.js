@@ -25,6 +25,7 @@
     'world-map.json',
     'story-content.json',
   ];
+  const embeddedRuntimeGlobal = options.embeddedRuntimeGlobal || 'DD_RUNTIME_EMBEDDED_DATA';
 
   function isPlainObject(value) {
     return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -38,6 +39,42 @@
       return out;
     }
     return value;
+  }
+
+  function normalizeMojibakeString(value) {
+    const raw = String(value || '');
+    if (!raw || (!raw.includes('Ã') && !raw.includes('Â') && !raw.includes('â'))) return raw;
+    return raw
+      .replace(/Â/g, '')
+      .replace(/Ã¤/g, 'ä')
+      .replace(/Ã„/g, 'Ä')
+      .replace(/Ã¶/g, 'ö')
+      .replace(/Ã–/g, 'Ö')
+      .replace(/Ã¼/g, 'ü')
+      .replace(/Ãœ/g, 'Ü')
+      .replace(/ÃŸ/g, 'ß')
+      .replace(/â€¦/g, '…')
+      .replace(/â€“/g, '–')
+      .replace(/â€”/g, '—')
+      .replace(/â€ž/g, '„')
+      .replace(/â€œ/g, '“')
+      .replace(/â€�/g, '”')
+      .replace(/â€˜/g, '‘')
+      .replace(/â€™/g, '’')
+      .replace(/â‚¬/g, '€')
+      .replace(/â€¢/g, '•');
+  }
+
+  function normalizeMojibakeDeep(value) {
+    if (Array.isArray(value)) return value.map(normalizeMojibakeDeep);
+    if (isPlainObject(value)) {
+      const out = {};
+      Object.keys(value).forEach(key => {
+        out[key] = normalizeMojibakeDeep(value[key]);
+      });
+      return out;
+    }
+    return typeof value === 'string' ? normalizeMojibakeString(value) : value;
   }
 
   function mergeRuntimeData(baseValue, overrideValue) {
@@ -82,11 +119,21 @@
   function readLocalOverrides() {
     if (!shouldAllowLocalOverrides()) return {};
     try {
-      return JSON.parse(global.localStorage.getItem('dd_custom') || '{}');
+      return normalizeMojibakeDeep(JSON.parse(global.localStorage.getItem('dd_custom') || '{}'));
     } catch (error) {
       console.warn('[RuntimeData] localStorage dd_custom konnte nicht gelesen werden:', error);
       return {};
     }
+  }
+
+  function loadEmbeddedRuntimeData() {
+    const embedded = global[embeddedRuntimeGlobal];
+    if (!isPlainObject(embedded)) return { loaded: false, error: 'embedded-runtime-missing', data: {} };
+    return {
+      loaded: true,
+      error: null,
+      data: normalizeMojibakeDeep(cloneValue(embedded)),
+    };
   }
 
   function loadJsonFile(basePath) {
@@ -108,7 +155,7 @@
         return { loaded: false, error: `HTTP ${xhr.status || 0}`, data: {} };
       }
 
-      return { loaded: true, error: null, data: JSON.parse(xhr.responseText) };
+      return { loaded: true, error: null, data: normalizeMojibakeDeep(JSON.parse(xhr.responseText)) };
     } catch (error) {
       return {
         loaded: false,
@@ -119,6 +166,19 @@
   }
 
   function loadFileSet() {
+    if (global.location.protocol === 'file:') {
+      const embeddedRuntime = loadEmbeddedRuntimeData();
+      return {
+        data: embeddedRuntime.data || {},
+        runtimeConfigLoaded: embeddedRuntime.loaded,
+        runtimeConfigError: embeddedRuntime.error,
+        sources: [{
+          path: `${embeddedRuntimeGlobal}`,
+          loaded: embeddedRuntime.loaded,
+          error: embeddedRuntime.error,
+        }],
+      };
+    }
     if (global.location.protocol === 'file:') {
       console.warn('[RuntimeData] file:// detected. Runtime JSON is not loaded via XHR in this mode. Use serve-local.ps1 or a local HTTP server for full parity with GitHub Pages.');
     }
