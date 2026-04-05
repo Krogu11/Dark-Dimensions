@@ -137,7 +137,17 @@
         completedTournaments: {},
       };
     }
-    return SAVE_STATE.slot.storyState;
+    const state = SAVE_STATE.slot.storyState;
+    if (!Array.isArray(state.seenEvents)) state.seenEvents = [];
+    if (!Array.isArray(state.completedEvents)) state.completedEvents = [];
+    if (!state.activeQuests || typeof state.activeQuests !== 'object') state.activeQuests = {};
+    if (!state.completedQuests || typeof state.completedQuests !== 'object') state.completedQuests = {};
+    if (!Array.isArray(state.inventory)) state.inventory = [];
+    if (!state.flags || typeof state.flags !== 'object') state.flags = {};
+    if (!state.activeChallenges || typeof state.activeChallenges !== 'object') state.activeChallenges = {};
+    if (!state.completedChallenges || typeof state.completedChallenges !== 'object') state.completedChallenges = {};
+    if (!state.completedTournaments || typeof state.completedTournaments !== 'object') state.completedTournaments = {};
+    return state;
   }
 
   function getQuestSave(questId) {
@@ -243,6 +253,89 @@
     if (!quest) return false;
     if (quest.turnInRequired === true) return false;
     return quest.autoComplete === true;
+  }
+
+  function getWorldProgressIds(kind) {
+    const source = SAVE_STATE?.slot?.worldProgress?.[kind];
+    if (typeof Set !== 'undefined' && source instanceof Set) return source;
+    return new Set(Array.isArray(source) ? source : []);
+  }
+
+  function hasReachedVillageHub() {
+    const currentLocationId = typeof WORLD_STATE !== 'undefined' ? WORLD_STATE?.currentLocationId : SAVE_STATE?.slot?.worldProgress?.currentLocationId;
+    if (currentLocationId === 'hub_village_01') return true;
+    const visited = typeof WORLD_STATE !== 'undefined' && WORLD_STATE?.visitedLocations instanceof Set
+      ? WORLD_STATE.visitedLocations
+      : getWorldProgressIds('visitedLocations');
+    const completed = typeof WORLD_STATE !== 'undefined' && WORLD_STATE?.completedLocations instanceof Set
+      ? WORLD_STATE.completedLocations
+      : getWorldProgressIds('completedLocations');
+    return visited.has('hub_village_01') || completed.has('hub_village_01');
+  }
+
+  function reconcileStoryQuestState() {
+    const state = ensureStoryState();
+    if (!state || !SAVE_STATE?.slot) return false;
+    let changed = false;
+
+    Object.keys(state.activeQuests || {}).forEach(questId => {
+      const quest = byId(getQuests(), questId);
+      if (!quest || state.completedQuests[questId]) {
+        delete state.activeQuests[questId];
+        changed = true;
+        return;
+      }
+      const beforeProgress = Number(state.activeQuests[questId].progress || 0);
+      const beforeGoal = Number(state.activeQuests[questId].goal || 0);
+      const beforeReady = !!state.activeQuests[questId].readyToTurnIn;
+      syncQuestState(questId);
+      if (
+        beforeProgress !== Number(state.activeQuests[questId].progress || 0) ||
+        beforeGoal !== Number(state.activeQuests[questId].goal || 0) ||
+        beforeReady !== !!state.activeQuests[questId].readyToTurnIn ||
+        state.activeQuests[questId].status !== 'active'
+      ) {
+        changed = true;
+      }
+    });
+
+    const villageReached = hasReachedVillageHub();
+    if (villageReached && !state.completedEvents.includes('world_story_loc_intro_river')) {
+      state.completedEvents.push('world_story_loc_intro_river');
+      changed = true;
+    }
+
+    if (state.completedEvents.includes('world_story_loc_intro_river') && getQuestStatus('quest_main_001') === 'available') {
+      changed = startQuest('quest_main_001') || changed;
+    }
+
+    if (villageReached && getQuestStatus('quest_main_001') !== 'completed') {
+      if (getQuestStatus('quest_main_001') === 'locked') {
+        if (!state.completedEvents.includes('world_story_loc_intro_river')) state.completedEvents.push('world_story_loc_intro_river');
+        changed = true;
+        startQuest('quest_main_001');
+      }
+      changed = completeQuest('quest_main_001', { returnMode: 'hub', returnHubId: 'hub_village_01' }) || changed;
+      if (!state.completedEvents.includes('event_village_arrival')) {
+        state.completedEvents.push('event_village_arrival');
+        changed = true;
+      }
+    }
+
+    if (state.completedQuests.quest_main_001 && getQuestStatus('quest_main_002') === 'available') {
+      changed = startQuest('quest_main_002') || changed;
+    }
+
+    const defeatedEnemies = Array.isArray(SAVE_STATE.slot.defeatedEnemies) ? SAVE_STATE.slot.defeatedEnemies : [];
+    if (defeatedEnemies.includes('goblin_chief') && getQuestStatus('quest_main_002') !== 'completed') {
+      if (getQuestStatus('quest_main_002') === 'locked' && state.completedQuests.quest_main_001) {
+        startQuest('quest_main_002');
+      }
+      changed = completeQuest('quest_main_002', { returnMode: 'worldmap', returnLocationId: 'loc_river_crossing' }) || changed;
+    }
+
+    if (changed && typeof saveCurrentSlot === 'function') saveCurrentSlot();
+    return changed;
   }
 
   function syncQuestState(questId) {
@@ -1304,6 +1397,7 @@
     ensureStoryState();
     prepareLocalizedContent();
     attachBattleHooks();
+    reconcileStoryQuestState();
     maybeStartAutoQuests();
     runtime.initialized = true;
     return true;
@@ -1360,5 +1454,6 @@
     updateObjectivesFromBattle,
     canStartEvent,
     maybeStartAutoQuests,
+    reconcileStoryQuestState,
   };
 })(window);
