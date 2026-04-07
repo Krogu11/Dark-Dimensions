@@ -1243,6 +1243,9 @@ function _wbQuestGoalValue(q) {
     target: (q?.enemyIds || [])[0] || '',
     amount: Number(q?.goal || 1) || 1,
     item: '',
+    cardId: '',
+    locationId: '',
+    locationMode: 'visit',
     targetNpc: '',
   };
 }
@@ -1256,15 +1259,21 @@ function wbQuestRefreshGoalFields() {
   const killEl = document.getElementById('wbqf-goal-kill-fields');
   const collectEl = document.getElementById('wbqf-goal-collect-fields');
   const deliverEl = document.getElementById('wbqf-goal-deliver-fields');
+  const cardEl = document.getElementById('wbqf-goal-card-fields');
+  const locationEl = document.getElementById('wbqf-goal-location-fields');
   if (killEl) killEl.style.display = mode === 'kill' ? 'flex' : 'none';
   if (collectEl) collectEl.style.display = mode === 'collect' ? 'flex' : 'none';
   if (deliverEl) deliverEl.style.display = mode === 'deliver' ? 'flex' : 'none';
+  if (cardEl) cardEl.style.display = mode === 'card' ? 'flex' : 'none';
+  if (locationEl) locationEl.style.display = mode === 'location' ? 'flex' : 'none';
 }
 
 function _wbRenderQuestForm(q) {
   const col = document.getElementById('wb-quest-form-col');
   if (!col) return;
   const cardOptions = (editorCards || []).map(c => `<option value="${_esc(c.id)}" ${c.id===(q.reward?.card||'')?'selected':''}>${_esc(c.name||c.id)}</option>`).join('');
+  const questGoalCardOptions = (editorCards || []).map(c => `<option value="${_esc(c.id)}" ${c.id===(q.goal?.cardId||'')?'selected':''}>${_esc(c.name||c.id)}</option>`).join('');
+  const worldLocationOptions = (editorWorldMap || []).map(loc => `<option value="${_esc(loc.id)}" ${loc.id===((q.goal?.locationId)||(q.goal?.target)||'')?'selected':''}>${_esc(loc.name||loc.id)}</option>`).join('');
   const goal = _wbQuestGoalValue(q);
   const conditions = _wbQuestConditions(q);
   const conditionQuestId = conditions.find(cond => cond?.type === 'quest_status')?.questId || '';
@@ -1272,6 +1281,7 @@ function _wbRenderQuestForm(q) {
   const conditionEventId = conditions.find(cond => cond?.type === 'event_completed')?.eventId || '';
   const conditionFlagKey = conditions.find(cond => cond?.type === 'flag')?.key || '';
   const conditionFlagValue = conditions.find(cond => cond?.type === 'flag')?.value || '';
+  const manualTurnIn = q.turnInRequired !== false && q.autoComplete !== true;
   col.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px;padding:20px;max-width:640px">
       <div style="font-size:14px;font-weight:700;color:var(--gold);margin-bottom:4px">Quest bearbeiten</div>
@@ -1311,6 +1321,8 @@ function _wbRenderQuestForm(q) {
             <option value="kill" ${goal.type==='kill'?'selected':''}>Kill</option>
             <option value="collect" ${goal.type==='collect'?'selected':''}>Collect</option>
             <option value="deliver" ${goal.type==='deliver'?'selected':''}>Deliver</option>
+            <option value="location" ${goal.type==='location'?'selected':''}>Location</option>
+            <option value="card" ${goal.type==='card'?'selected':''}>Card</option>
           </select>
         </div>
         <div class="field-group" style="flex:1">
@@ -1318,6 +1330,10 @@ function _wbRenderQuestForm(q) {
           <input id="wbqf-ds" type="number" min="0" value="${q.reward?.ds ?? q.reward?.gold ?? 0}">
         </div>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text)">
+        <input id="wbqf-turnin-required" type="checkbox" ${manualTurnIn ? 'checked' : ''}>
+        Quest im Questbuch manuell abschließen
+      </label>
       <div id="wbqf-goal-kill-fields" style="display:${goal.type==='kill'?'flex':'none'};gap:12px">
         <div class="field-group" style="flex:2">
           <label>Ziel-Gegner ID</label>
@@ -1346,6 +1362,35 @@ function _wbRenderQuestForm(q) {
         <div class="field-group" style="flex:1">
           <label>Ziel NPC / Event ID</label>
           <input id="wbqf-goal-target-npc" type="text" value="${_esc(goal.targetNpc||'')}" placeholder="event_elder_intro">
+        </div>
+      </div>
+      <div id="wbqf-goal-location-fields" style="display:${goal.type==='location'?'flex':'none'};gap:12px">
+        <div class="field-group" style="flex:2">
+          <label>Ort</label>
+          <select id="wbqf-goal-location-id">
+            <option value="">-- Ort wählen --</option>
+            ${worldLocationOptions}
+          </select>
+        </div>
+        <div class="field-group" style="flex:1">
+          <label>Fortschritt zählt bei</label>
+          <select id="wbqf-goal-location-mode">
+            <option value="visit" ${(goal.locationMode||'visit')==='visit'?'selected':''}>Besucht</option>
+            <option value="complete" ${(goal.locationMode||'visit')==='complete'?'selected':''}>Abgeschlossen</option>
+          </select>
+        </div>
+      </div>
+      <div id="wbqf-goal-card-fields" style="display:${goal.type==='card'?'flex':'none'};gap:12px">
+        <div class="field-group" style="flex:2">
+          <label>Karte</label>
+          <select id="wbqf-goal-card-id">
+            <option value="">-- Karte wählen --</option>
+            ${questGoalCardOptions}
+          </select>
+        </div>
+        <div class="field-group" style="flex:1">
+          <label>Anzahl</label>
+          <input id="wbqf-goal-amount-card" type="number" min="1" value="${goal.amount||1}">
         </div>
       </div>
       <div class="field-group">
@@ -1396,6 +1441,7 @@ function wbSaveQuest() {
   const ds = Number(document.getElementById('wbqf-ds')?.value) || 0;
   const card = document.getElementById('wbqf-card')?.value || '';
   const goalType = document.getElementById('wbqf-goal-type')?.value || 'kill';
+  const existing = (editorQuests || []).find(x => x.id === id) || {};
   const goal = { type: goalType, amount: 1 };
   if (goalType === 'kill') {
     goal.target = (document.getElementById('wbqf-goal-target')?.value || '').trim();
@@ -1403,10 +1449,17 @@ function wbSaveQuest() {
   } else if (goalType === 'collect') {
     goal.item = (document.getElementById('wbqf-goal-item-collect')?.value || '').trim();
     goal.amount = Number(document.getElementById('wbqf-goal-amount-collect')?.value) || 1;
-  } else {
+  } else if (goalType === 'deliver') {
     goal.item = (document.getElementById('wbqf-goal-item-deliver')?.value || '').trim();
     goal.targetNpc = (document.getElementById('wbqf-goal-target-npc')?.value || '').trim();
     goal.amount = 1;
+  } else if (goalType === 'location') {
+    goal.locationId = (document.getElementById('wbqf-goal-location-id')?.value || '').trim();
+    goal.locationMode = (document.getElementById('wbqf-goal-location-mode')?.value || 'visit').trim();
+    goal.amount = 1;
+  } else if (goalType === 'card') {
+    goal.cardId = (document.getElementById('wbqf-goal-card-id')?.value || '').trim();
+    goal.amount = Number(document.getElementById('wbqf-goal-amount-card')?.value) || 1;
   }
   const conditions = [];
   const conditionEventId = (document.getElementById('wbqf-cond-event')?.value || '').trim();
@@ -1414,10 +1467,12 @@ function wbSaveQuest() {
   const conditionQuestStatus = (document.getElementById('wbqf-cond-quest-status')?.value || 'completed').trim();
   const conditionFlagKey = (document.getElementById('wbqf-cond-flag-key')?.value || '').trim();
   const conditionFlagValue = (document.getElementById('wbqf-cond-flag-value')?.value || '').trim();
+  const turnInRequired = !!document.getElementById('wbqf-turnin-required')?.checked;
   if (conditionEventId) conditions.push({ type: 'event_completed', eventId: conditionEventId });
   if (conditionQuestId) conditions.push({ type: 'quest_status', questId: conditionQuestId, status: conditionQuestStatus });
   if (conditionFlagKey) conditions.push({ type: 'flag', key: conditionFlagKey, value: conditionFlagValue || true });
   const q = {
+    ...existing,
     id,
     type: document.getElementById('wbqf-type')?.value || 'side',
     acceptMode: document.getElementById('wbqf-accept-mode')?.value || 'manual',
@@ -1425,8 +1480,10 @@ function wbSaveQuest() {
     description: (document.getElementById('wbqf-description')?.value || '').trim(),
     goal,
     progress: 0,
+    turnInRequired,
+    autoComplete: !turnInRequired,
     reward: { ...(ds ? { ds } : {}), ...(card ? { card } : {}) },
-    ...(conditions.length ? { conditions } : {}),
+    conditions,
   };
   const idx = (editorQuests || []).findIndex(x => x.id === id);
   if (!editorQuests) editorQuests = [];

@@ -168,6 +168,12 @@
     return getInventoryItems().filter(entry => entry === itemId).length;
   }
 
+  function getOwnedCardCount(cardId) {
+    if (!cardId) return 0;
+    const cards = Array.isArray(SAVE_STATE?.slot?.cardCollection) ? SAVE_STATE.slot.cardCollection : [];
+    return cards.filter(entry => entry === cardId).length;
+  }
+
   function removeInventoryItems(itemId, amount) {
     const items = getInventoryItems();
     let remaining = Math.max(0, Number(amount || 0));
@@ -189,6 +195,9 @@
         target: rawGoal.target || rawGoal.kill || rawGoal.enemyId || null,
         amount: Math.max(1, Number(rawGoal.amount || 1)),
         item: rawGoal.item || null,
+        cardId: rawGoal.cardId || rawGoal.card || null,
+        locationId: rawGoal.locationId || rawGoal.location || rawGoal.target || null,
+        locationMode: String(rawGoal.locationMode || rawGoal.mode || 'visit').trim().toLowerCase(),
         targetNpc: rawGoal.targetNpc || null,
       };
     }
@@ -197,6 +206,9 @@
       target: Array.isArray(quest?.enemyIds) && quest.enemyIds.length === 1 ? quest.enemyIds[0] : null,
       amount: Math.max(1, Number(rawGoal || 1)),
       item: null,
+      cardId: null,
+      locationId: null,
+      locationMode: 'visit',
       targetNpc: null,
     };
   }
@@ -219,6 +231,27 @@
         status: progress >= goal.amount ? 'claimable' : 'active',
       };
     }
+    if (goal.type === 'card') {
+      const progress = Math.min(goal.amount, getOwnedCardCount(goal.cardId));
+      return {
+        progress,
+        goal: goal.amount,
+        status: progress >= goal.amount ? 'claimable' : 'active',
+      };
+    }
+    if (goal.type === 'location') {
+      const locationId = goal.locationId || goal.target;
+      const progressSource = goal.locationMode === 'complete'
+        ? WORLD_STATE?.completedLocations
+        : WORLD_STATE?.visitedLocations;
+      const reached = !!(locationId && progressSource?.has?.(locationId));
+      const progress = reached ? goal.amount : 0;
+      return {
+        progress,
+        goal: goal.amount,
+        status: progress >= goal.amount ? 'claimable' : 'active',
+      };
+    }
     const goalAmount = Math.max(1, Number(entry?.goal || goal.amount || 1));
     const progress = Math.min(goalAmount, Math.max(0, Number(entry?.progress || 0)));
     return {
@@ -226,6 +259,99 @@
       goal: goalAmount,
       status: progress >= goalAmount ? 'claimable' : 'active',
     };
+  }
+
+  function normalizeQuestStatusValue(status) {
+    const raw = String(status || '').trim().toLowerCase();
+    switch (raw) {
+      case 'started':
+      case 'begin':
+      case 'begun':
+      case 'begonnen':
+      case 'in_progress':
+      case 'ongoing':
+      case 'active':
+        return 'active';
+      case 'claimable':
+      case 'ready':
+      case 'ready_to_turn_in':
+      case 'turnin':
+      case 'turn_in':
+      case 'abschliessbar':
+      case 'abschließbar':
+        return 'claimable';
+      case 'complete':
+      case 'completed':
+      case 'done':
+      case 'finished':
+      case 'abgeschlossen':
+        return 'completed';
+      case 'available':
+      case 'verfuegbar':
+      case 'verfügbar':
+        return 'available';
+      case 'locked':
+      case 'gesperrt':
+        return 'locked';
+      default:
+        return raw || 'locked';
+    }
+  }
+
+  function getDerivedQuestStatus(questId) {
+    const quest = byId(getQuests(), questId);
+    const state = ensureStoryState();
+    if (!quest) return 'locked';
+    if (!state) return 'available';
+    if (state.completedQuests[questId]) return 'completed';
+    const entry = state.activeQuests[questId];
+    if (entry) {
+      return normalizeQuestStatusValue(entry.status || 'active') === 'claimable' ? 'active' : normalizeQuestStatusValue(entry.status || 'active');
+    }
+    if (!isQuestUnlocked(quest)) return 'locked';
+    return 'available';
+  }
+
+  function getQuestConditionStatus(questId) {
+    const quest = byId(getQuests(), questId);
+    const state = ensureStoryState();
+    if (!quest) return 'locked';
+    if (!state) return 'available';
+    if (state.completedQuests[questId]) return 'completed';
+    const entry = state.activeQuests[questId];
+    if (entry) return normalizeQuestStatusValue(entry.readyToTurnIn ? 'claimable' : (entry.status || 'active'));
+    if (!isQuestUnlocked(quest)) return 'locked';
+    return 'available';
+  }
+
+  function syncAllQuestStates() {
+    const state = ensureStoryState();
+    if (!state) return false;
+    let changed = false;
+    Object.keys(state.activeQuests || {}).forEach(questId => {
+      const entry = state.activeQuests[questId];
+      if (!entry) return;
+      const quest = byId(getQuests(), questId);
+      const beforeStatus = normalizeQuestStatusValue(entry.status || 'active');
+      const beforeProgress = Number(entry.progress || 0);
+      const beforeReady = !!entry.readyToTurnIn;
+      syncQuestState(questId);
+      const nextEntry = state.activeQuests[questId];
+      if (!nextEntry) return;
+      if (nextEntry.readyToTurnIn && shouldAutoCompleteQuest(quest)) {
+        completeQuest(questId);
+        changed = true;
+        return;
+      }
+      const afterStatus = normalizeQuestStatusValue(nextEntry.status || 'active');
+      if (beforeStatus !== afterStatus || beforeProgress !== Number(nextEntry.progress || 0) || beforeReady !== !!nextEntry.readyToTurnIn) {
+        logQuestState(questId, nextEntry.status, nextEntry);
+        emitQuestProgress(questId, nextEntry.status);
+        changed = true;
+      }
+    });
+    if (changed && typeof saveCurrentSlot === 'function') saveCurrentSlot();
+    return changed;
   }
 
   function logQuestState(questId, status, details) {
@@ -288,12 +414,13 @@
       const beforeProgress = Number(state.activeQuests[questId].progress || 0);
       const beforeGoal = Number(state.activeQuests[questId].goal || 0);
       const beforeReady = !!state.activeQuests[questId].readyToTurnIn;
+      const beforeStatus = normalizeQuestStatusValue(state.activeQuests[questId].status || 'active');
       syncQuestState(questId);
       if (
         beforeProgress !== Number(state.activeQuests[questId].progress || 0) ||
         beforeGoal !== Number(state.activeQuests[questId].goal || 0) ||
         beforeReady !== !!state.activeQuests[questId].readyToTurnIn ||
-        state.activeQuests[questId].status !== 'active'
+        beforeStatus !== normalizeQuestStatusValue(state.activeQuests[questId].status || 'active')
       ) {
         changed = true;
       }
@@ -346,7 +473,7 @@
     const progressState = getQuestProgressValue(quest, entry);
     entry.progress = progressState.progress;
     entry.goal = progressState.goal;
-    entry.status = 'active';
+    entry.status = progressState.status;
     entry.readyToTurnIn = progressState.status === 'claimable';
     return true;
   }
@@ -375,14 +502,7 @@
   }
 
   function getQuestStatus(questId) {
-    const quest = byId(getQuests(), questId);
-    const state = ensureStoryState();
-    if (!quest) return 'locked';
-    if (!state) return 'available';
-    if (state.completedQuests[questId]) return 'completed';
-    if (state.activeQuests[questId]) return 'active';
-    if (!isQuestUnlocked(quest)) return 'locked';
-    return 'available';
+    return getDerivedQuestStatus(questId);
   }
 
   function emitQuestProgress(questId, status) {
@@ -405,7 +525,7 @@
       };
       syncQuestState(questId);
       if (typeof saveCurrentSlot === 'function') saveCurrentSlot();
-      logQuestState(questId, 'active', state.activeQuests[questId]);
+      logQuestState(questId, state.activeQuests[questId].status, state.activeQuests[questId]);
       emitQuestProgress(questId, state.activeQuests[questId].status);
       refreshQuestViews();
       return true;
@@ -460,11 +580,11 @@
     if (!entry) return false;
     entry.progress = Math.min(goal.amount, Number(entry.progress || 0) + Math.max(0, Number(amount || 0)));
     entry.goal = goal.amount;
-    entry.status = 'active';
     entry.readyToTurnIn = entry.progress >= goal.amount;
+    entry.status = entry.readyToTurnIn ? 'claimable' : 'active';
     if (entry.readyToTurnIn && shouldAutoCompleteQuest(quest)) return completeQuest(questId);
-    logQuestState(questId, 'active', entry);
-    emitQuestProgress(questId, 'active');
+    logQuestState(questId, entry.status, entry);
+    emitQuestProgress(questId, entry.status);
     if (typeof saveCurrentSlot === 'function') saveCurrentSlot();
     refreshQuestViews();
     return true;
@@ -482,6 +602,7 @@
       SAVE_STATE.slot.cardCollection.push(reward.card);
     }
     if (reward.item) state.inventory.push(reward.item);
+    syncAllQuestStates();
     if (typeof saveCurrentSlotWithFeedback === 'function') saveCurrentSlotWithFeedback(translateKey('ui.worldmap.save.saved', 'Game saved'));
     else if (typeof saveCurrentSlot === 'function') saveCurrentSlot();
   }
@@ -542,7 +663,7 @@
     const state = ensureStoryState();
     switch (condition?.type) {
       case 'quest_status':
-        return getQuestStatus(condition.questId) === condition.status;
+        return getQuestConditionStatus(condition.questId) === normalizeQuestStatusValue(condition.status);
       case 'event_completed':
         return !!state && state.completedEvents.includes(condition.eventId);
       case 'flag':
@@ -565,7 +686,7 @@
     if (event.hubId && payload?.hubId && event.hubId !== payload.hubId) return false;
     if (event.locationId && payload?.locationId && event.locationId !== payload.locationId) return false;
     if (event.questId && payload?.questId && event.questId !== payload.questId) return false;
-    if (event.status && payload?.status && event.status !== payload.status) return false;
+    if (event.status && payload?.status && normalizeQuestStatusValue(event.status) !== normalizeQuestStatusValue(payload.status)) return false;
     if (event.enemyId && payload?.enemyId && event.enemyId !== payload.enemyId) return false;
     if (Number(event.chance || 1) < 1 && Math.random() > Number(event.chance || 1)) return false;
     return (event.conditions || []).every(condition => conditionMatches(condition, payload));
@@ -853,13 +974,14 @@
     const labels = {
       available: translateKey('ui.quest.log.available', 'Verfügbar'),
       active: translateKey('ui.quest.log.active', 'Aktiv'),
+      claimable: translateKey('ui.quest.log.claimable', 'Abschliessbar'),
       completed: translateKey('ui.quest.log.completed', 'Abgeschlossen'),
     };
     return labels[status] || status;
   }
 
   function _questStatusColor(status) {
-    return { available: '#98a3d1', active: '#cdd5f7', completed: '#6fe29c' }[status] || '#ccc';
+    return { available: '#98a3d1', active: '#cdd5f7', claimable: '#ffd700', completed: '#6fe29c' }[status] || '#ccc';
   }
 
   function getQuestObjectiveText(quest, entry) {
@@ -870,6 +992,19 @@
         return `${translateKey('ui.quest.objective.collect', 'Sammeln')}: ${progressState.progress} / ${progressState.goal}`;
       case 'deliver':
         return `${translateKey('ui.quest.objective.deliver', 'Abgeben')}: ${progressState.progress} / ${progressState.goal}`;
+      case 'card': {
+        const card = typeof getCardById === 'function' ? getCardById(goal.cardId) : null;
+        const cardName = card?.name || goal.cardId || '?';
+        return `${translateKey('ui.quest.objective.card', 'Karte finden')}: ${cardName} (${progressState.progress} / ${progressState.goal})`;
+      }
+      case 'location': {
+        const worldMap = typeof _getWorldMapData === 'function' ? (_getWorldMapData() || []) : [];
+        const location = worldMap.find(loc => loc?.id === (goal.locationId || goal.target));
+        const locationName = location?.name || goal.locationId || goal.target || '?';
+        const modeKey = goal.locationMode === 'complete' ? 'ui.quest.objective.locationComplete' : 'ui.quest.objective.locationVisit';
+        const modeFallback = goal.locationMode === 'complete' ? 'Ort abschliessen' : 'Ort erreichen';
+        return `${translateKey(modeKey, modeFallback)}: ${locationName}`;
+      }
       case 'kill':
       default:
         return `${translateKey('ui.quest.progress', 'Fortschritt')}: ${progressState.progress} / ${progressState.goal}`;
@@ -883,6 +1018,9 @@
         ? `<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(150,150,200,0.18);color:#b0b8e0;font-weight:700;letter-spacing:1px">${translateKey('ui.quest.type.side', 'NEBENQUEST')}</span>`
         : '';
     const progress = entry ? `<div style="margin-top:8px;font-size:12px;color:#cdd5f7">${getQuestObjectiveText(quest, entry)}</div>` : '';
+    const claimButton = entry?.readyToTurnIn
+      ? `<button class="btn-success" data-quest-log-claim="${quest.id}" style="margin-top:10px">${translateKey('ui.quest.turnin', 'Abgeben')}</button>`
+      : '';
     const statusLabel = `<div style="margin-top:4px;font-size:12px;color:${_questStatusColor(status)}">${_questStatusLabel(status)}</div>`;
     return `<div style="padding:14px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06)">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">${typeBadge}<div style="font-size:15px;font-weight:700">${quest.title}</div></div>
@@ -890,6 +1028,7 @@
       ${progress}
       <div style="margin-top:6px;font-size:12px;color:#8a92b8">${translateKey('ui.common.reward', 'Belohnung')}: ${rewardSummary(quest.reward)}</div>
       ${statusLabel}
+      ${claimButton}
     </div>`;
   }
 
@@ -901,6 +1040,7 @@
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(5,8,18,0.72);backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
       global.document.body.appendChild(overlay);
     }
+    syncAllQuestStates();
     const state = ensureStoryState();
     const allQuests = getQuests();
     // Collect all quest IDs visible via hubs
@@ -912,14 +1052,14 @@
     knownQuestIds.forEach(questId => {
       const quest = byId(allQuests, questId);
       if (!quest) return;
-      const status = getQuestStatus(questId);
+      const status = getQuestConditionStatus(questId);
       if (status === 'locked') return;
       const entry = state?.activeQuests?.[questId] || null;
       const bucket = quest.type === 'side' ? sideQuests : mainQuests;
       bucket.push({ quest, entry, status });
     });
     // Sort: active first, then available, then completed
-    const sortOrder = { active: 0, available: 1, completed: 2 };
+    const sortOrder = { claimable: 0, active: 1, available: 2, completed: 3 };
     const sortFn = (a, b) => (sortOrder[a.status] ?? 9) - (sortOrder[b.status] ?? 9);
     mainQuests.sort(sortFn);
     sideQuests.sort(sortFn);
@@ -951,6 +1091,14 @@
       if (event.target === overlay) overlay.remove();
     };
     overlay.querySelector('#btn-close-quest-log')?.addEventListener('click', () => overlay.remove());
+    overlay.querySelectorAll('[data-quest-log-claim]').forEach(button => {
+      button.addEventListener('click', () => {
+        const questId = button.dataset.questLogClaim;
+        if (!questId) return;
+        claimQuest(questId);
+        openQuestLog();
+      });
+    });
   }
 
   function startChallenge(hubId, challengeId) {
@@ -1008,6 +1156,7 @@
     const hub = getHubByLocation(loc);
     if (!hub) return false;
     maybeStartAutoQuests({ hubId: hub.id, locationId: loc?.id || hub.id });
+    syncAllQuestStates();
     runtime.currentHubId = hub.id;
     const screen = global.document.getElementById('screen-hub');
     if (!screen) return true;
@@ -1266,6 +1415,7 @@
       WORLD_STATE.lastVisitedNodeId = targetId;
     }
     if (typeof saveWorldProgress === 'function') saveWorldProgress();
+    syncAllQuestStates();
     if (typeof renderWorldMap === 'function') renderWorldMap();
     if (typeof showScreen === 'function') showScreen('worldmap');
   }
@@ -1356,6 +1506,7 @@
   function injectWorldmapQuestPanel() {
     const screen = global.document.getElementById('screen-worldmap');
     if (!screen || screen.querySelector('[data-quest-summary-panel]')) return;
+    syncAllQuestStates();
     const state = ensureStoryState();
     const activeEntries = Object.values(state?.activeQuests || {}).slice(0, 3);
 
@@ -1430,9 +1581,17 @@
   const legacyRenderWorldMap = global.renderWorldMap;
   global.renderWorldMap = function patchedRenderWorldMap() {
     initStorySystem();
+    syncAllQuestStates();
     runtime.lastAutoHubEventKey = null;
     if (typeof legacyRenderWorldMap === 'function') legacyRenderWorldMap();
     injectWorldmapQuestPanel();
+  };
+
+  const legacyTravelToLocation = global.travelToLocation;
+  global.travelToLocation = function patchedTravelToLocation() {
+    const result = typeof legacyTravelToLocation === 'function' ? legacyTravelToLocation.apply(this, arguments) : undefined;
+    syncAllQuestStates();
+    return result;
   };
 
   global.initStorySystem = initStorySystem;
