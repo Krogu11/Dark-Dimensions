@@ -41,6 +41,7 @@ function startBattle(enemyId) {
 
 /* �?��?� DOMContentLoaded �?��?� */
 document.addEventListener('DOMContentLoaded', () => {
+  if (typeof CloudSave !== 'undefined') CloudSave.init();
 
   /* �"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"�
      TITLE SCREEN EVENTS

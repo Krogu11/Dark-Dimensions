@@ -130,7 +130,9 @@ function _deserializeSlot(data) {
 
 function _saveSlotToDisk(slotData) {
   try {
-    localStorage.setItem(_slotKey(slotData.slotId), JSON.stringify(_serializeSlot(slotData)));
+    const serialized = _serializeSlot(slotData);
+    localStorage.setItem(_slotKey(slotData.slotId), JSON.stringify(serialized));
+    if (typeof CloudSave !== 'undefined') CloudSave.afterSave(slotData.slotId, serialized);
   } catch(e) {
     console.error('[SaveSystem] Speichern fehlgeschlagen:', e);
   }
@@ -271,6 +273,7 @@ function spendDimensionsSeelen(amount, saveImmediately = true) {
 /** Slot-Daten löschen. */
 function deleteSlot(id) {
   try { localStorage.removeItem(_slotKey(id)); } catch(e) {}
+  if (typeof CloudSave !== 'undefined') CloudSave.afterDelete(id);
   if (SAVE_STATE.activeSlotId === id) {
     SAVE_STATE.activeSlotId = null;
     SAVE_STATE.slot = null;
