@@ -1,4 +1,4 @@
-﻿{
+{
     "starterDeck":  [
                         "heallight",
                         "mutiger_dorfbewohner",
@@ -7,8 +7,11 @@
                         "Dorfwache",
                         "Dorfwache",
                         "Dorfwache",
-                        "dorfbeschÃ¼tzer",
-                        "dorfbeschÃ¼tzer",
-                        "dorfbeschÃ¼tzer"
+                        "dorfbeschützer",
+                        "dorfbeschützer",
+                        "dorfbeschützer",
+                        "untdorf",
+                        "untdorf",
+                        "untdorf"
                     ]
 }

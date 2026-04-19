@@ -582,8 +582,16 @@ function checkWinCondition() {
       else if (typeof saveCurrentSlot === 'function') saveCurrentSlot();
     }
 
+    if (typeof emit === 'function') {
+      emit('battle:won', {
+        enemyId: bs.enemy?.id || null,
+        enemyName: bs.enemy?.name || null,
+        playerLP: bs.playerLP,
+      });
+    }
+
     setTimeout(() => {
-      if (!RUN_STATE._freeDuelReturn) {
+      if (!RUN_STATE._freeDuelReturn && RUN_STATE.currentNodeId != null) {
         completeNode(RUN_STATE.currentNodeId);
       }
       /* Victory-Hook (letzter Boss) */
@@ -596,6 +604,12 @@ function checkWinCondition() {
   } else if (bs.playerLP <= 0) {
     bs.gameOver = true;
     battleLog('💀 NIEDERLAGE!', 'damage');
+    if (typeof emit === 'function') {
+      emit('battle:lost', {
+        enemyId: bs.enemy?.id || null,
+        enemyName: bs.enemy?.name || null,
+      });
+    }
     /* ── Freies Duell: Niederlage aufzeichnen (kein Permadeath) ── */
     if (RUN_STATE._isFreeDuel && bs.enemy && bs.enemy.id
         && typeof recordFreeDuelResult === 'function') {
@@ -609,6 +623,10 @@ function checkWinCondition() {
         if (typeof renderFreeDuelScreen === 'function') renderFreeDuelScreen();
         showScreen('freeduel');
       }, 1200);
+      return;
+    }
+    if (RUN_STATE._storyBattleSafeReturn && typeof handleSafeStoryBattleLoss === 'function') {
+      setTimeout(() => handleSafeStoryBattleLoss(), 1200);
       return;
     }
     /* Kampagne: Permadeath: Run verwerfen */

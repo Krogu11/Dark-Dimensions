@@ -13,6 +13,7 @@
   };
   const dataBasePath = options.dataBasePath || 'assets/data';
   const runtimeConfigBasePath = options.runtimeConfigBasePath || `${dataBasePath}/runtime-config.json`;
+  const loadSplitDataFiles = options.loadSplitDataFiles === true;
   const cacheSuffix = options.cacheBust ? `?v=${Date.now()}` : '';
   const sectionFiles = [
     'cards.json',
@@ -23,7 +24,9 @@
     'config.json',
     'starter-deck.json',
     'world-map.json',
+    'story-content.json',
   ];
+  const embeddedRuntimeGlobal = options.embeddedRuntimeGlobal || 'DD_RUNTIME_EMBEDDED_DATA';
 
   function isPlainObject(value) {
     return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -37,6 +40,42 @@
       return out;
     }
     return value;
+  }
+
+  function normalizeMojibakeString(value) {
+    const raw = String(value || '');
+    if (!raw || (!raw.includes('Ã') && !raw.includes('Â') && !raw.includes('â'))) return raw;
+    return raw
+      .replace(/Â/g, '')
+      .replace(/Ã¤/g, 'ä')
+      .replace(/Ã„/g, 'Ä')
+      .replace(/Ã¶/g, 'ö')
+      .replace(/Ã–/g, 'Ö')
+      .replace(/Ã¼/g, 'ü')
+      .replace(/Ãœ/g, 'Ü')
+      .replace(/ÃŸ/g, 'ß')
+      .replace(/â€¦/g, '…')
+      .replace(/â€“/g, '–')
+      .replace(/â€”/g, '—')
+      .replace(/â€ž/g, '„')
+      .replace(/â€œ/g, '“')
+      .replace(/â€�/g, '”')
+      .replace(/â€˜/g, '‘')
+      .replace(/â€™/g, '’')
+      .replace(/â‚¬/g, '€')
+      .replace(/â€¢/g, '•');
+  }
+
+  function normalizeMojibakeDeep(value) {
+    if (Array.isArray(value)) return value.map(normalizeMojibakeDeep);
+    if (isPlainObject(value)) {
+      const out = {};
+      Object.keys(value).forEach(key => {
+        out[key] = normalizeMojibakeDeep(value[key]);
+      });
+      return out;
+    }
+    return typeof value === 'string' ? normalizeMojibakeString(value) : value;
   }
 
   function mergeRuntimeData(baseValue, overrideValue) {
@@ -81,11 +120,21 @@
   function readLocalOverrides() {
     if (!shouldAllowLocalOverrides()) return {};
     try {
-      return JSON.parse(global.localStorage.getItem('dd_custom') || '{}');
+      return normalizeMojibakeDeep(JSON.parse(global.localStorage.getItem('dd_custom') || '{}'));
     } catch (error) {
       console.warn('[RuntimeData] localStorage dd_custom konnte nicht gelesen werden:', error);
       return {};
     }
+  }
+
+  function loadEmbeddedRuntimeData() {
+    const embedded = global[embeddedRuntimeGlobal];
+    if (!isPlainObject(embedded)) return { loaded: false, error: 'embedded-runtime-missing', data: {} };
+    return {
+      loaded: true,
+      error: null,
+      data: normalizeMojibakeDeep(cloneValue(embedded)),
+    };
   }
 
   function loadJsonFile(basePath) {
@@ -107,7 +156,7 @@
         return { loaded: false, error: `HTTP ${xhr.status || 0}`, data: {} };
       }
 
-      return { loaded: true, error: null, data: JSON.parse(xhr.responseText) };
+      return { loaded: true, error: null, data: normalizeMojibakeDeep(JSON.parse(xhr.responseText)) };
     } catch (error) {
       return {
         loaded: false,
@@ -119,6 +168,19 @@
 
   function loadFileSet() {
     if (global.location.protocol === 'file:') {
+      const embeddedRuntime = loadEmbeddedRuntimeData();
+      return {
+        data: embeddedRuntime.data || {},
+        runtimeConfigLoaded: embeddedRuntime.loaded,
+        runtimeConfigError: embeddedRuntime.error,
+        sources: [{
+          path: `${embeddedRuntimeGlobal}`,
+          loaded: embeddedRuntime.loaded,
+          error: embeddedRuntime.error,
+        }],
+      };
+    }
+    if (global.location.protocol === 'file:') {
       console.warn('[RuntimeData] file:// detected. Runtime JSON is not loaded via XHR in this mode. Use serve-local.ps1 or a local HTTP server for full parity with GitHub Pages.');
     }
     const runtimeConfig = loadJsonFile(runtimeConfigBasePath);
@@ -129,18 +191,20 @@
       error: runtimeConfig.error,
     }];
 
-    sectionFiles.forEach(fileName => {
-      const sectionPath = `${dataBasePath}/${fileName}`;
-      const result = loadJsonFile(sectionPath);
-      sources.push({
-        path: sectionPath,
-        loaded: result.loaded,
-        error: result.error,
+    if (loadSplitDataFiles) {
+      sectionFiles.forEach(fileName => {
+        const sectionPath = `${dataBasePath}/${fileName}`;
+        const result = loadJsonFile(sectionPath);
+        sources.push({
+          path: sectionPath,
+          loaded: result.loaded,
+          error: result.error,
+        });
+        if (result.loaded) {
+          mergedData = mergeRuntimeData(mergedData, result.data || {});
+        }
       });
-      if (result.loaded) {
-        mergedData = mergeRuntimeData(mergedData, result.data || {});
-      }
-    });
+    }
 
     return {
       data: mergedData,
@@ -164,6 +228,18 @@
 
     if ((!Array.isArray(next.starterDeck) || next.starterDeck.length === 0) && Array.isArray(fileData?.starterDeck) && fileData.starterDeck.length > 0) {
       next.starterDeck = cloneValue(fileData.starterDeck);
+    }
+
+    if ((!Array.isArray(next.quests) || next.quests.length === 0) && Array.isArray(fileData?.quests) && fileData.quests.length > 0) {
+      next.quests = cloneValue(fileData.quests);
+    }
+
+    if ((!Array.isArray(next.hubs) || next.hubs.length === 0) && Array.isArray(fileData?.hubs) && fileData.hubs.length > 0) {
+      next.hubs = cloneValue(fileData.hubs);
+    }
+
+    if ((!Array.isArray(next.events) || next.events.length === 0) && Array.isArray(fileData?.events) && fileData.events.length > 0) {
+      next.events = cloneValue(fileData.events);
     }
 
     next.config = isPlainObject(next.config) ? next.config : {};
@@ -195,7 +271,12 @@
     localOverrideMode: shouldAllowLocalOverrides() ? 'enabled' : 'disabled',
     playlistFallbacks: cloneValue(fallbackPlaylists),
     dataSources: fileSet.sources,
+    loadSplitDataFiles,
   };
+
+  console.log('Runtime config path:', global.__DD_RUNTIME_BOOT.runtimeConfigPath);
+  console.log('Loaded config:', cloneValue(global.DD_CUSTOM || {}));
+  console.log('Runtime data sources:', cloneValue(global.__DD_RUNTIME_BOOT.dataSources || []));
 
   global.logDDRuntimeDiagnostics = function logDDRuntimeDiagnostics(context) {
     const worldMap = Array.isArray(global.DD_CUSTOM?.worldMap) ? global.DD_CUSTOM.worldMap : [];

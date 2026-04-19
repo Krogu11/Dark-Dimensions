@@ -444,7 +444,9 @@
     page: 'game',
     runtimeConfigBasePath: 'assets/data/runtime-config.json',
     dataBasePath: 'assets/data',
+    loadSplitDataFiles: true,
     cacheBust: true,
+    allowLocalOverrides: false,
     fallbackPlaylists: {
       'cfg-music-menu': ['assets/audio/shadow-sigil-title.mp3'],
       'cfg-music-campaign': ['assets/audio/cursed-data-duel.mp3'],
@@ -452,10 +454,14 @@
     },
   };
 </script>
+<script src="assets/data/runtime-config.js"></script>
 <script src="js/utils/runtime-data-loader.js"></script>
 
 <!-- CDN: GSAP -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+<!-- Neon cloud config (cloud saves — optional, no SDK required) -->
+<script src="js/core/cloud-config.js"></script>
 
 <!-- 0. i18n -->
 <script src="js/core/embedded-locales.js"></script>
@@ -472,6 +478,7 @@
 <script src="js/core/game-state.js"></script>
 <script src="js/core/actgenerator.js"></script>
 <script src="js/core/savesystem.js"></script>
+<script src="js/core/cloud-save.js"></script>
 <script src="js/core/audio.js"></script>
 <script src="js/core/synergies.js"></script>
 <script src="js/core/fieldcards.js"></script>
@@ -489,6 +496,7 @@
 <script src="js/ui/reward.js"></script>
 <script src="js/ui/titlescreen.js"></script>
 <script src="js/ui/worldmap.js"></script>
+<script src="js/core/story-system.js"></script>
 
 <!-- 4. Einstiegspunkt -->
 <script src="js/main.js"></script>

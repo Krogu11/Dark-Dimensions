@@ -41,6 +41,7 @@ function startBattle(enemyId) {
 
 /* �?��?� DOMContentLoaded �?��?� */
 document.addEventListener('DOMContentLoaded', () => {
+  if (typeof CloudSave !== 'undefined') CloudSave.init();
 
   /* �"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"��"�
      TITLE SCREEN EVENTS
@@ -227,6 +228,14 @@ window.addEventListener('dd-language-changed', () => {
   }
   if (typeof renderWorldMap === 'function' && document.getElementById('screen-worldmap')?.classList.contains('active')) {
     renderWorldMap();
+  }
+  if (typeof showHubScreen === 'function' && document.getElementById('screen-hub')?.classList.contains('active')) {
+    const worldMap = typeof _getWorldMapData === 'function' ? _getWorldMapData() : [];
+    const currentLoc = Array.isArray(worldMap) ? worldMap.find(loc => loc.id === WORLD_STATE.currentLocationId) : null;
+    if (currentLoc) showHubScreen(currentLoc);
+  }
+  if (typeof showStoryScreen === 'function' && document.getElementById('screen-story')?.classList.contains('active')) {
+    showStoryScreen();
   }
   if (typeof renderBattle === 'function' && document.getElementById('screen-battle')?.classList.contains('active')) {
     renderBattle();

@@ -61,7 +61,7 @@ function _getLocationActId(loc) {
 
 /** Erster Story-Ort ohne Unlock-Bedingungen, sonst erster freier Ort. */
 function _getStartLocationId(worldMap) {
-  const start = worldMap.find(loc =>
+  const start = worldMap.find(loc => loc.isStart) || worldMap.find(loc =>
     loc.type === 'story' &&
     (!loc.unlockConditions || loc.unlockConditions.length === 0)
   ) || worldMap.find(loc => !loc.unlockConditions || loc.unlockConditions.length === 0);
@@ -74,6 +74,7 @@ function _getTypeLabel(type) {
     dungeon: _wmUi('ui.worldmap.type.dungeon', null, '&#9876; Dungeon'),
     hub: _wmUi('ui.worldmap.type.hub', null, '&#127957; Hub'),
     story: _wmUi('ui.worldmap.type.story', null, '&#128220; Story'),
+    path: _wmUi('ui.worldmap.type.path', null, '&#10022; Path'),
   };
   return labels[type] || type || _wmUi('ui.worldmap.type.location', null, 'Location');
 }
@@ -166,8 +167,12 @@ function initWorldState() {
   saveWorldProgress();
 
   const currentLoc = worldMap.find(loc => loc.id === WORLD_STATE.currentLocationId) || null;
-  if (!saved && currentLoc && currentLoc.type === 'story') {
-    showStoryScreen(currentLoc);
+  if (!saved && currentLoc && Array.isArray(currentLoc.storyLines) && currentLoc.storyLines.length > 0) {
+    if (typeof startWorldMapLocationStory === 'function') {
+      startWorldMapLocationStory(currentLoc);
+    } else {
+      showStoryScreen(currentLoc);
+    }
     return;
   }
 
@@ -333,7 +338,7 @@ function renderWorldMap() {
     else if (isVisited && isUnlocked) stateClass = 'wm-node-visited';
     if (isReentryBlocked) stateClass += ' wm-node-blocked';
 
-    const typeIcon  = { dungeon:'&#9876;', hub:'&#127957;', story:'&#128220;' }[loc.type] || '&bull;';
+    const typeIcon  = { dungeon:'&#9876;', hub:'&#127957;', story:'&#128220;', path:'&#10022;' }[loc.type] || '&bull;';
     const typeClass = `wm-node-type-${loc.type || 'dungeon'}`;
     const displayName = _getLocationDisplayName(loc, isCurrent, isVisited);
 
@@ -349,6 +354,7 @@ function renderWorldMap() {
       <div class="wm-node-icon">${isCompleted ? '&#10003;' : typeIcon}</div>
       <div class="wm-node-label">${displayName}</div>
       ${loc.type === 'dungeon' ? `<div class="wm-node-note">${isReentryBlocked ? _wmUi('ui.worldmap.locked', null, 'Locked') : _wmUi('ui.worldmap.requiredDungeon', null, 'Required dungeon')}</div>` : ''}
+      ${loc.type === 'path' ? `<div class="wm-node-note">${_wmUi('ui.worldmap.type.path', null, 'Path')}</div>` : ''}
     `;
 
     /* Klick-Handler */
@@ -464,6 +470,11 @@ function travelToLocation(locationId) {
   _markVisitedLocation(loc);
   saveWorldProgress();
 
+  if (loc.type === 'path') {
+    if (typeof resolveWorldMapNodeEncounter === 'function' && resolveWorldMapNodeEncounter(loc)) return;
+    renderWorldMap();
+    return;
+  }
   if (loc.type === 'dungeon') {
     enterDungeon(loc);
     return;
@@ -473,6 +484,10 @@ function travelToLocation(locationId) {
     return;
   }
   if (loc.type === 'story') {
+    if (typeof startWorldMapLocationStory === 'function' && Array.isArray(loc.storyLines) && loc.storyLines.length > 0) {
+      startWorldMapLocationStory(loc);
+      return;
+    }
     showStoryScreen(loc);
     return;
   }
@@ -492,9 +507,16 @@ function enterCurrentLocation() {
   }
 
   switch (loc.type) {
+    case 'path':
+      if (typeof resolveWorldMapNodeEncounter === 'function' && resolveWorldMapNodeEncounter(loc)) break;
+      renderWorldMap();
+      break;
     case 'dungeon': enterDungeon(loc);    break;
     case 'hub':     showHubScreen(loc);  break;
-    case 'story':   showStoryScreen(loc); break;
+    case 'story':
+      if (typeof startWorldMapLocationStory === 'function' && Array.isArray(loc.storyLines) && loc.storyLines.length > 0) startWorldMapLocationStory(loc);
+      else showStoryScreen(loc);
+      break;
     default:        enterDungeon(loc);    break;
   }
 }
@@ -669,7 +691,7 @@ function _showNewLocationNotification(locations) {
       <div class="wm-unlock-title">${_wmUi('ui.worldmap.newLocationsUnlocked', null, '&#128506; New locations unlocked!')}</div>
       <div class="wm-unlock-list">
         ${locations.map(l => `<div class="wm-unlock-item">
-          ${({ dungeon:'&#9876;', hub:'&#127957;', story:'&#128220;' }[l.type] || '&bull;')} ${l.name}
+          ${({ dungeon:'&#9876;', hub:'&#127957;', story:'&#128220;', path:'&#10022;' }[l.type] || '&bull;')} ${l.name}
         </div>`).join('')}
       </div>
       <button class="btn-success wm-unlock-close">${_wmUi('ui.worldmap.continueExploring', null, 'Continue exploring &#9654;')}</button>

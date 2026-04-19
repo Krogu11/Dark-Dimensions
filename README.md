@@ -118,7 +118,8 @@ The main idea is that the community should be able to actively help shape and ex
 The long-term goal is for **Dark Dimensions** to become more than just my own hobby project. It is meant to grow into an open, community-driven project shaped by ideas, content, and feedback from the people who play it and build for it.
 
 The exported runtime file lives at [`assets/data/runtime-config.json`](./assets/data/runtime-config.json).  
-There is also a helper script at [`publish-runtime.ps1`](./publish-runtime.ps1) for importing and committing runtime updates.
+For publishing, use [`publish-runtime.bat`](./publish-runtime.bat). It opens a small Windows GUI that can automatically pick the newest `runtime-config*.json` from `Downloads` or let you choose a file manually, then sync and publish in one step.  
+If you still want the old console workflow, use [`publish-runtime-cli.bat`](./publish-runtime-cli.bat) or [`publish-runtime.ps1`](./publish-runtime.ps1).
 
 ## Tech Stack
 

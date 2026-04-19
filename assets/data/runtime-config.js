@@ -1,4 +1,4 @@
-{
+window.DD_RUNTIME_EMBEDDED_DATA = {
   "version": "runtime-config-v2",
   "generatedFrom": "split-data-sync",
   "generatedAt": "2026-04-05T18:02:46.567Z",
@@ -6009,4 +6009,4 @@
       ]
     }
   ]
-}
+};
