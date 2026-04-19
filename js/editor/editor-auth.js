@@ -64,10 +64,13 @@ const EditorAuth = (() => {
       return;
     }
 
-    /* Wait for CloudSave to restore session (it calls init on DOMContentLoaded) */
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    const user = CloudSave.getUser();
+    /* Wait for session restore: auth:changed fires on success, timeout means no session */
+    const user = await new Promise(resolve => {
+      if (CloudSave.isLoggedIn()) { resolve(CloudSave.getUser()); return; }
+      const t = setTimeout(() => { CloudSave.off('auth:changed', h); resolve(null); }, 1500);
+      function h(p) { clearTimeout(t); CloudSave.off('auth:changed', h); resolve(p.user); }
+      CloudSave.on('auth:changed', h);
+    });
     if (user) {
       const admin = await CloudSave.isAdmin();
       if (admin) {
