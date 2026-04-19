@@ -19,19 +19,21 @@ const CloudEditor = (() => {
   async function _dataFetch(path, options = {}) {
     const c     = window.DD_CLOUD_CONFIG;
     const token = typeof CloudSave !== 'undefined' ? CloudSave.getToken() : null;
+    const { headers: optHeaders, ...rest } = options;
     const headers = {
       'Content-Type': 'application/json',
       'Accept':       'application/json',
-      ...(options.headers || {}),
+      ...(optHeaders || {}),
     };
     if (token) headers['Authorization'] = 'Bearer ' + token;
-    const res = await fetch(c.dataApiUrl + path, { ...options, headers });
+    const res = await fetch(c.dataApiUrl + path, { ...rest, headers });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       throw new Error(`Data API ${res.status}: ${text}`);
     }
-    const ct = res.headers.get('content-type') || '';
-    return ct.includes('json') ? res.json() : null;
+    if (res.status === 204) return null;
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
   }
 
   function _buildPayload() {
@@ -69,6 +71,7 @@ const CloudEditor = (() => {
     try {
       await _dataFetch('/runtime_drafts', {
         method: 'POST',
+        headers: { 'Prefer': 'return=minimal' },
         body: JSON.stringify({
           user_id:    userId,
           label:      `Entwurf ${new Date().toLocaleString('de-DE')}`,
@@ -102,6 +105,7 @@ const CloudEditor = (() => {
       /* Insert as published draft */
       await _dataFetch('/runtime_drafts', {
         method: 'POST',
+        headers: { 'Prefer': 'return=minimal' },
         body: JSON.stringify({
           user_id:    userId,
           label:      `Veröffentlicht ${new Date().toLocaleString('de-DE')}`,

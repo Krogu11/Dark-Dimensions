@@ -30,28 +30,33 @@ const CloudSave = (() => {
 
   async function _authFetch(path, options = {}) {
     const c = _cfg();
+    const { headers: optHeaders, ...rest } = options;
     const res = await fetch(c.authUrl + path, {
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-      ...options,
+      ...rest,
+      headers: { 'Content-Type': 'application/json', ...(optHeaders || {}) },
     });
     return res;
   }
 
   async function _dataFetch(path, options = {}) {
     const c = _cfg();
+    const { headers: optHeaders, ...rest } = options;
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      ...(options.headers || {}),
+      ...(optHeaders || {}),
     };
     if (_token) headers['Authorization'] = 'Bearer ' + _token;
-    const res = await fetch(c.dataApiUrl + path, { ...options, headers });
+    const res = await fetch(c.dataApiUrl + path, { ...rest, headers });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       throw new Error(`Data API ${res.status}: ${text}`);
     }
-    return res.json();
+    /* DELETE and some upserts return 204 No Content */
+    if (res.status === 204) return null;
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
   }
 
   /* ── Init ── */
@@ -133,7 +138,7 @@ const CloudSave = (() => {
     try {
       await _dataFetch('/save_slots', {
         method: 'POST',
-        headers: { 'Prefer': 'resolution=merge-duplicates' },
+        headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
         body: JSON.stringify({
           user_id:    _user.id,
           slot_index: slotIndex,
