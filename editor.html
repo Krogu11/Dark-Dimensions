@@ -191,9 +191,34 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 .info-hint{display:inline-block;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.12);color:var(--muted);font-size:9px;text-align:center;line-height:14px;cursor:help;margin-left:4px;flex-shrink:0;}
 /* ── Active filter indicator ── */
 .filter-active{border-color:var(--accent)!important;color:var(--accent)!important;}
+/* ── Auth guard overlay ── */
+#editor-auth-overlay{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0;}
+#editor-auth-overlay.hidden{display:none;}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:36px 40px;width:360px;display:flex;flex-direction:column;gap:16px;}
+.auth-box h2{color:var(--gold);font-size:1.1rem;letter-spacing:1px;margin-bottom:4px;}
+.auth-box p{color:var(--muted);font-size:12px;line-height:1.5;}
+.auth-box input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;width:100%;outline:none;}
+.auth-box input:focus{border-color:var(--accent);}
+.auth-box button{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:9px 0;font-size:13px;font-weight:700;cursor:pointer;width:100%;}
+.auth-box button:hover{filter:brightness(1.15);}
+.auth-box .auth-error{color:var(--red);font-size:12px;min-height:16px;}
+.auth-box .auth-local-note{color:var(--muted);font-size:11px;text-align:center;margin-top:4px;}
 </style>
 </head>
 <body>
+
+<!-- Auth guard overlay — hidden immediately when local or already authed -->
+<div id="editor-auth-overlay">
+  <div class="auth-box">
+    <h2>DARK DIMENSIONS</h2>
+    <p>Developer Editor — Admin-Zugang erforderlich.</p>
+    <input type="email" id="auth-email" placeholder="E-Mail" autocomplete="username" />
+    <input type="password" id="auth-password" placeholder="Passwort" autocomplete="current-password" />
+    <div class="auth-error" id="auth-error"></div>
+    <button id="auth-login-btn" onclick="EditorAuth.login()">Anmelden</button>
+    <div class="auth-local-note" id="auth-local-note"></div>
+  </div>
+</div>
 
 <header>
   <div><div class="logo">DARK DIMENSIONS</div><div class="sub" id="editor-subtitle">DEVELOPER EDITOR v2.0</div></div>
@@ -205,6 +230,8 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
   <button class="hdr-btn" id="btn-editor-export-en" onclick="exportTranslationTemplate('en')">🌍 EN Template</button>
   <button class="hdr-btn primary" id="btn-editor-save" onclick="saveToGame()">✓ Im Spiel speichern</button>
   <button class="hdr-btn" id="btn-editor-open-game" onclick="window.open('index.html','_blank')">🎮 Spiel öffnen</button>
+  <span id="editor-auth-user" style="font-size:11px;color:var(--muted);display:none"></span>
+  <button class="hdr-btn" id="btn-editor-logout" onclick="EditorAuth.logout()" style="display:none">Abmelden</button>
 </header>
 
 <div class="tabs">
@@ -566,6 +593,10 @@ window.DD_RUNTIME_OPTIONS = {
   allowLocalOverrides: true,
 };
 </script>
+<!-- CDN: Supabase (editor auth + cloud saves) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/core/cloud-config.js"></script>
+<script src="js/editor/editor-auth.js"></script>
 <script src="assets/data/runtime-config.js"></script>
 <script src="js/utils/runtime-data-loader.js"></script>
 <script src="js/core/embedded-locales.js"></script>
