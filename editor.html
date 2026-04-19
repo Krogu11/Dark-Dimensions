@@ -227,6 +227,8 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
   <button class="hdr-btn" id="btn-editor-import" onclick="importJSON()">📂 Import</button>
   <button class="hdr-btn" id="btn-editor-export" onclick="exportJSON()">💾 Export</button>
   <button class="hdr-btn" id="btn-editor-export-runtime" onclick="exportRuntimeConfig()">🌐 Runtime-Export</button>
+  <button class="hdr-btn" id="btn-editor-cloud-draft" onclick="CloudEditor.saveDraft()" title="Entwurf in Cloud speichern">☁ Entwurf</button>
+  <button class="hdr-btn" id="btn-editor-cloud-publish" onclick="CloudEditor.publish()" title="Runtime-Config in Cloud veröffentlichen">🚀 Publish</button>
   <button class="hdr-btn" id="btn-editor-export-en" onclick="exportTranslationTemplate('en')">🌍 EN Template</button>
   <button class="hdr-btn primary" id="btn-editor-save" onclick="saveToGame()">✓ Im Spiel speichern</button>
   <button class="hdr-btn" id="btn-editor-open-game" onclick="window.open('index.html','_blank')">🎮 Spiel öffnen</button>
@@ -597,6 +599,7 @@ window.DD_RUNTIME_OPTIONS = {
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/core/cloud-config.js"></script>
 <script src="js/editor/editor-auth.js"></script>
+<script src="js/editor/cloud-editor.js"></script>
 <script src="assets/data/runtime-config.js"></script>
 <script src="js/utils/runtime-data-loader.js"></script>
 <script src="js/core/embedded-locales.js"></script>

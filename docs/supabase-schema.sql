@@ -48,3 +48,39 @@ $$;
 
 -- Grant a user admin access (run manually for each admin):
 -- insert into public.user_roles (user_id, role) values ('<user-uuid>', 'admin');
+
+-- Runtime drafts table (Phase 4 — cloud editor)
+create table if not exists public.runtime_drafts (
+  id          uuid        primary key default gen_random_uuid(),
+  user_id     uuid        not null references auth.users on delete cascade,
+  label       text        not null default '',
+  data        jsonb       not null,
+  published   boolean     not null default false,
+  created_at  timestamptz not null default now()
+);
+
+alter table public.runtime_drafts enable row level security;
+
+-- Only admins can read/write drafts
+create policy "Admins manage drafts"
+  on public.runtime_drafts
+  for all
+  using  (public.is_admin())
+  with check (public.is_admin());
+
+-- Storage bucket setup (run in Supabase dashboard → Storage → New bucket):
+--   Bucket name: runtime-configs
+--   Public: true  (so the game can fetch runtime-config.json without auth)
+--   File size limit: 10 MB
+--
+-- Then add this storage policy in the SQL editor:
+create policy "Admins upload runtime configs"
+  on storage.objects
+  for insert
+  to authenticated
+  with check (bucket_id = 'runtime-configs' and public.is_admin());
+
+create policy "Public read runtime configs"
+  on storage.objects
+  for select
+  using (bucket_id = 'runtime-configs');
