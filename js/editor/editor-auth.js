@@ -26,7 +26,10 @@ const EditorAuth = (() => {
 
   function _setLoading(loading) {
     const btn = _loginBtn();
-    if (btn) { btn.disabled = loading; btn.textContent = loading ? 'Bitte warten…' : 'Anmelden'; }
+    if (!btn) return;
+    btn.disabled = loading;
+    if (loading) { btn.textContent = 'Bitte warten…'; return; }
+    btn.textContent = _isRegisterMode() ? 'Registrieren' : 'Anmelden';
   }
 
   function _grantAccess(user) {
@@ -84,51 +87,66 @@ const EditorAuth = (() => {
     /* Enter key submits */
     ['auth-email', 'auth-password'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+      if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') _isRegisterMode() ? register() : login(); });
     });
   }
 
-  async function login() {
+  function _isRegisterMode() {
+    return document.getElementById('auth-login-btn')?.dataset.mode === 'register';
+  }
+
+  function toggleRegister() {
+    const btn     = _loginBtn();
+    const toggle  = document.getElementById('auth-toggle-link');
+    const heading = document.getElementById('auth-heading');
+    if (!btn) return;
+    const toRegister = btn.dataset.mode !== 'register';
+    btn.dataset.mode  = toRegister ? 'register' : '';
+    btn.textContent   = toRegister ? 'Registrieren' : 'Anmelden';
+    btn.onclick       = toRegister ? register : login;
+    if (toggle)  toggle.textContent = toRegister ? '← Zurück zum Login' : 'Noch kein Konto? Registrieren';
+    if (heading) heading.textContent = toRegister ? 'KONTO ERSTELLEN' : 'DARK DIMENSIONS';
     _setError('');
-    _setLoading(true);
+  }
 
-    const email    = (document.getElementById('auth-email')?.value    || '').trim();
-    const password = (document.getElementById('auth-password')?.value || '').trim();
-
-    if (!email || !password) {
-      _setError('E-Mail und Passwort erforderlich.');
-      _setLoading(false);
-      return;
-    }
-
-    if (typeof CloudSave === 'undefined') {
-      _setError('CloudSave nicht verfügbar.');
-      _setLoading(false);
-      return;
-    }
-
-    const result = await CloudSave.login(email, password);
+  async function _handleAuthResult(result) {
     if (result.error) {
       _setError(result.error);
       _setLoading(false);
       return;
     }
-
     let admin = await CloudSave.isAdmin();
-
-    /* First-run bootstrap: if no admin exists yet, promote this user */
     if (!admin) {
       const promoted = await CloudSave.bootstrapFirstAdmin(result.user.id);
-      if (promoted) {
-        admin = true;
-      } else {
-        _denyAccess('Kein Admin-Zugang für diesen Account.');
-        return;
-      }
+      if (promoted) admin = true;
+      else { _denyAccess('Kein Admin-Zugang für diesen Account.'); return; }
     }
-
     _setLoading(false);
     _grantAccess(result.user);
+  }
+
+  function _getCredentials() {
+    const email    = (document.getElementById('auth-email')?.value    || '').trim();
+    const password = (document.getElementById('auth-password')?.value || '').trim();
+    return { email, password };
+  }
+
+  async function login() {
+    _setError('');
+    _setLoading(true);
+    const { email, password } = _getCredentials();
+    if (!email || !password) { _setError('E-Mail und Passwort erforderlich.'); _setLoading(false); return; }
+    if (typeof CloudSave === 'undefined') { _setError('CloudSave nicht verfügbar.'); _setLoading(false); return; }
+    await _handleAuthResult(await CloudSave.login(email, password));
+  }
+
+  async function register() {
+    _setError('');
+    _setLoading(true);
+    const { email, password } = _getCredentials();
+    if (!email || !password) { _setError('E-Mail und Passwort erforderlich.'); _setLoading(false); return; }
+    if (typeof CloudSave === 'undefined') { _setError('CloudSave nicht verfügbar.'); _setLoading(false); return; }
+    await _handleAuthResult(await CloudSave.register(email, password));
   }
 
   async function logout() {
@@ -152,5 +170,5 @@ const EditorAuth = (() => {
     _init();
   }
 
-  return { login, logout, getUser };
+  return { login, register, logout, toggleRegister, getUser };
 })();

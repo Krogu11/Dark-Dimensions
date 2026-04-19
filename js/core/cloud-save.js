@@ -105,6 +105,25 @@ const CloudSave = (() => {
     }
   }
 
+  async function register(email, password) {
+    if (!_isConfigured()) return { error: 'Cloud save not configured' };
+    try {
+      const res = await _authFetch('/api/auth/sign-up/email', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, name: email.split('@')[0] }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.user) return { error: data?.message || 'Registrierung fehlgeschlagen' };
+      _user  = { id: data.user.id, email: data.user.email };
+      _token = data.token ?? data.session?.token ?? null;
+      _ready = true;
+      _emit('auth:changed', { user: _user });
+      return { user: _user };
+    } catch (e) {
+      return { error: e.message };
+    }
+  }
+
   async function logout() {
     if (!_isConfigured()) return;
     try { await _authFetch('/api/auth/sign-out', { method: 'POST' }); } catch (e) {}
@@ -262,6 +281,7 @@ const CloudSave = (() => {
   return {
     init,
     login,
+    register,
     logout,
     getUser,
     getToken,
