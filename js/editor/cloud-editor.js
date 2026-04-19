@@ -54,7 +54,7 @@ const CloudEditor = (() => {
   function _userId() {
     if (typeof CloudSave === 'undefined') return null;
     const u = CloudSave.getUser();
-    return u ? u.id : null;
+    return u ? u.id : null;  /* editorLogin sets id = 'editor' */
   }
 
   /* ── Save Draft ── */

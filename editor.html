@@ -210,14 +210,12 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:8
 <!-- Auth guard overlay — hidden immediately when local or already authed -->
 <div id="editor-auth-overlay">
   <div class="auth-box">
-    <h2 id="auth-heading">DARK DIMENSIONS</h2>
-    <p>Developer Editor — Admin-Zugang erforderlich.</p>
-    <input type="email" id="auth-email" placeholder="E-Mail" autocomplete="username" />
-    <input type="password" id="auth-password" placeholder="Passwort" autocomplete="current-password" />
+    <h2>DARK DIMENSIONS</h2>
+    <p>Developer Editor — Admin-Passwort erforderlich.</p>
+    <input type="password" id="auth-password" placeholder="Editor-Passwort" autocomplete="current-password" />
     <div class="auth-error" id="auth-error"></div>
     <button id="auth-login-btn" onclick="EditorAuth.login()">Anmelden</button>
     <div class="auth-local-note" id="auth-local-note"></div>
-    <a id="auth-toggle-link" href="#" onclick="event.preventDefault();EditorAuth.toggleRegister()" style="font-size:11px;color:var(--muted);text-align:center;text-decoration:none;margin-top:4px;display:block">Noch kein Konto? Registrieren</a>
   </div>
 </div>
 

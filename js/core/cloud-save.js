@@ -83,6 +83,33 @@ const CloudSave = (() => {
     }
   }
 
+  /* ── Editor auth via Data API (bypasses Neon Auth CORS) ── */
+
+  async function editorLogin(password) {
+    if (!_isConfigured()) return { error: 'Cloud save not configured' };
+    const c = _cfg();
+    try {
+      const res = await fetch(c.dataApiUrl + '/rpc/editor_login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ pw: password }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        return { error: 'Data API Fehler: ' + (text || res.status) };
+      }
+      const ok = await res.json();
+      if (!ok) return { error: 'Falsches Passwort.' };
+      _user  = { id: 'editor', email: 'editor@local' };
+      _ready = true;
+      _emit('auth:changed', { user: _user });
+      return { user: _user };
+    } catch (e) {
+      const isCors = e instanceof TypeError && e.message.includes('fetch');
+      return { error: isCors ? 'Netzwerkfehler — Data API nicht erreichbar.' : e.message };
+    }
+  }
+
   /* ── Auth ── */
 
   async function login(email, password) {
@@ -280,6 +307,7 @@ const CloudSave = (() => {
 
   return {
     init,
+    editorLogin,
     login,
     register,
     logout,
