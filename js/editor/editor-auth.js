@@ -111,10 +111,17 @@ const EditorAuth = (() => {
       return;
     }
 
-    const admin = await CloudSave.isAdmin();
+    let admin = await CloudSave.isAdmin();
+
+    /* First-run bootstrap: if no admin exists yet, promote this user */
     if (!admin) {
-      _denyAccess('Kein Admin-Zugang für diesen Account.');
-      return;
+      const promoted = await CloudSave.bootstrapFirstAdmin(result.user.id);
+      if (promoted) {
+        admin = true;
+      } else {
+        _denyAccess('Kein Admin-Zugang für diesen Account.');
+        return;
+      }
     }
 
     _setLoading(false);

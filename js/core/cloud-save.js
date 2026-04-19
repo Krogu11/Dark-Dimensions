@@ -219,6 +219,21 @@ const CloudSave = (() => {
     }
   }
 
+  /* First-run: promote caller to admin only if no admin exists yet. */
+  async function bootstrapFirstAdmin(userId) {
+    if (!_isConfigured() || !_user) return false;
+    try {
+      const rows = await _dataFetch('/rpc/bootstrap_first_admin', {
+        method: 'POST',
+        body: JSON.stringify({ target_user_id: userId }),
+      });
+      return rows === true || rows === 'true';
+    } catch (e) {
+      console.warn('[CloudSave] Bootstrap failed:', e.message);
+      return false;
+    }
+  }
+
   /* ── Minimal event emitter ── */
 
   const _listeners = {};
@@ -247,6 +262,7 @@ const CloudSave = (() => {
     getToken,
     isLoggedIn,
     isAdmin,
+    bootstrapFirstAdmin,
     syncSlot,
     syncAll: _syncAllFromCloud,
     afterSave,
