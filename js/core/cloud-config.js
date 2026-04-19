@@ -1,14 +1,17 @@
 /* ============================================================
-   core/cloud-config.js — Supabase connection config
+   core/cloud-config.js — Neon cloud connection config
    ============================================================
-   Fill in your project URL and anon key from:
-     https://app.supabase.com → Project Settings → API
+   Neon project: Dark Dimensions (proud-tree-83940290)
+   Region: us-east-1 | Endpoint: ep-soft-surf-amvxla93
 
-   This file is loaded before cloud-save.js.
-   The anon key is safe to commit (protected by Row Level Security).
+   authUrl:    Neon Auth endpoint (Better Auth compatible)
+   dataApiUrl: Neon Data API endpoint (PostgREST-style, JWT-gated)
+
+   Both URLs are safe to expose client-side — access is enforced
+   by Row Level Security and JWT validation on the Neon side.
    ============================================================ */
 
 window.DD_CLOUD_CONFIG = {
-  supabaseUrl:     'https://YOUR_PROJECT_ID.supabase.co',
-  supabaseAnonKey: 'YOUR_ANON_KEY',
+  authUrl:    'https://ep-soft-surf-amvxla93.auth.c-5.us-east-1.aws.neon.tech',
+  dataApiUrl: 'https://ep-soft-surf-amvxla93.apirest.c-5.us-east-1.aws.neon.tech/neondb/rest/v1',
 };

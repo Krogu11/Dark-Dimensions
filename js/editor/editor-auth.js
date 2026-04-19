@@ -1,32 +1,27 @@
 /* ============================================================
-   editor/editor-auth.js — Editor Admin Auth Guard
+   editor/editor-auth.js — Editor Admin Auth Guard (Neon Auth)
    ============================================================
    Blocks editor access unless the user is logged in as admin.
+   Uses Neon Auth (Better Auth API) via CloudSave.
 
-   Behavior by context:
-   - No DD_CLOUD_CONFIG (local dev without Supabase): bypass, show local note.
-   - DD_CLOUD_CONFIG present but user not logged in: show login overlay.
-   - Logged in but not admin role: show error, force logout.
-   - Logged in as admin: hide overlay, show user email in header.
-
-   The overlay is shown by default in HTML; this script hides it
-   as soon as access is confirmed so there is no flash.
+   - No DD_CLOUD_CONFIG: bypass, show local-mode note.
+   - Config present but no session: show login overlay.
+   - Logged in but not admin: error + sign out.
+   - Logged in as admin: hide overlay, show email in header.
    ============================================================ */
 
 const EditorAuth = (() => {
-  let _client = null;
-  let _user   = null;
+  let _user = null;
 
-  const _overlay    = () => document.getElementById('editor-auth-overlay');
-  const _errorEl    = () => document.getElementById('auth-error');
-  const _noteEl     = () => document.getElementById('auth-local-note');
-  const _loginBtn   = () => document.getElementById('auth-login-btn');
-  const _userBadge  = () => document.getElementById('editor-auth-user');
-  const _logoutBtn  = () => document.getElementById('btn-editor-logout');
+  const _overlay   = () => document.getElementById('editor-auth-overlay');
+  const _errorEl   = () => document.getElementById('auth-error');
+  const _noteEl    = () => document.getElementById('auth-local-note');
+  const _loginBtn  = () => document.getElementById('auth-login-btn');
+  const _badge     = () => document.getElementById('editor-auth-user');
+  const _logoutBtn = () => document.getElementById('btn-editor-logout');
 
   function _setError(msg) {
-    const el = _errorEl();
-    if (el) el.textContent = msg || '';
+    const el = _errorEl(); if (el) el.textContent = msg || '';
   }
 
   function _setLoading(loading) {
@@ -38,68 +33,52 @@ const EditorAuth = (() => {
     _user = user;
     const overlay = _overlay();
     if (overlay) overlay.classList.add('hidden');
-
-    const badge = _userBadge();
+    const badge = _badge();
     if (badge && user) { badge.textContent = user.email; badge.style.display = 'inline'; }
-
-    const logoutBtn = _logoutBtn();
-    if (logoutBtn) logoutBtn.style.display = 'inline-block';
+    const btn = _logoutBtn();
+    if (btn) btn.style.display = 'inline-block';
   }
 
   function _denyAccess(reason) {
     _setError(reason || 'Zugriff verweigert.');
     _setLoading(false);
-    if (_client) _client.auth.signOut().catch(() => {});
-  }
-
-  async function _checkAdminRole(client) {
-    try {
-      const { data, error } = await client
-        .from('user_roles')
-        .select('role')
-        .maybeSingle();
-      if (error || !data) return false;
-      return data.role === 'admin';
-    } catch (e) {
-      return false;
-    }
+    if (typeof CloudSave !== 'undefined') CloudSave.logout().catch(() => {});
   }
 
   async function _init() {
     const cfg = window.DD_CLOUD_CONFIG;
 
-    /* Local dev bypass — no Supabase config present */
-    if (!cfg || !cfg.supabaseUrl || cfg.supabaseUrl.includes('YOUR_PROJECT_ID')) {
+    /* Local dev bypass — config absent or not filled in */
+    if (!cfg || !cfg.authUrl) {
       const note = _noteEl();
-      if (note) note.textContent = 'Lokaler Modus — kein Supabase konfiguriert.';
+      if (note) note.textContent = 'Lokaler Modus — kein Neon konfiguriert.';
       _grantAccess(null);
       return;
     }
 
-    /* Supabase not loaded (CDN failure) — bypass with warning */
-    if (typeof window.supabase === 'undefined') {
+    /* CloudSave must be loaded */
+    if (typeof CloudSave === 'undefined') {
       const note = _noteEl();
-      if (note) note.textContent = 'Supabase CDN nicht geladen — lokaler Modus aktiv.';
-      console.warn('[EditorAuth] Supabase CDN missing, bypassing auth.');
+      if (note) note.textContent = 'CloudSave nicht geladen — lokaler Modus.';
       _grantAccess(null);
       return;
     }
 
-    _client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+    /* Wait for CloudSave to restore session (it calls init on DOMContentLoaded) */
+    await new Promise(resolve => setTimeout(resolve, 800));
 
-    /* Check for existing session */
-    const { data: { session } } = await _client.auth.getSession();
-    if (session?.user) {
-      const isAdmin = await _checkAdminRole(_client);
-      if (isAdmin) {
-        _grantAccess(session.user);
+    const user = CloudSave.getUser();
+    if (user) {
+      const admin = await CloudSave.isAdmin();
+      if (admin) {
+        _grantAccess(user);
       } else {
-        _denyAccess('Kein Admin-Zugang. Bitte einen Administrator kontaktieren.');
+        _denyAccess('Kein Admin-Zugang für diesen Account.');
       }
+      return;
     }
-    /* Else: overlay stays visible, user must log in */
 
-    /* Enter key submits login form */
+    /* Enter key submits */
     ['auth-email', 'auth-password'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
@@ -107,7 +86,6 @@ const EditorAuth = (() => {
   }
 
   async function login() {
-    if (!_client) return;
     _setError('');
     _setLoading(true);
 
@@ -120,44 +98,44 @@ const EditorAuth = (() => {
       return;
     }
 
-    const { data, error } = await _client.auth.signInWithPassword({ email, password });
-    if (error || !data.user) {
-      _setError(error?.message || 'Anmeldung fehlgeschlagen.');
+    if (typeof CloudSave === 'undefined') {
+      _setError('CloudSave nicht verfügbar.');
       _setLoading(false);
       return;
     }
 
-    const isAdmin = await _checkAdminRole(_client);
-    if (!isAdmin) {
+    const result = await CloudSave.login(email, password);
+    if (result.error) {
+      _setError(result.error);
+      _setLoading(false);
+      return;
+    }
+
+    const admin = await CloudSave.isAdmin();
+    if (!admin) {
       _denyAccess('Kein Admin-Zugang für diesen Account.');
       return;
     }
 
     _setLoading(false);
-    _grantAccess(data.user);
+    _grantAccess(result.user);
   }
 
   async function logout() {
-    if (_client) await _client.auth.signOut().catch(() => {});
+    if (typeof CloudSave !== 'undefined') await CloudSave.logout();
     _user = null;
-
-    const badge     = _userBadge();
-    const logoutBtn = _logoutBtn();
-    if (badge)     { badge.textContent = ''; badge.style.display = 'none'; }
-    if (logoutBtn) logoutBtn.style.display = 'none';
-
-    /* Show overlay again */
+    const badge = _badge(), btn = _logoutBtn();
+    if (badge)  { badge.textContent = ''; badge.style.display = 'none'; }
+    if (btn)    btn.style.display = 'none';
     const overlay = _overlay();
     if (overlay) overlay.classList.remove('hidden');
     _setError('');
-
-    const pwEl = document.getElementById('auth-password');
-    if (pwEl) pwEl.value = '';
+    const pw = document.getElementById('auth-password');
+    if (pw) pw.value = '';
   }
 
   function getUser() { return _user; }
 
-  /* Run on DOM ready */
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', _init);
   } else {
