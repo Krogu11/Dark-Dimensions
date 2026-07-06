@@ -1,0 +1,74 @@
+import { describe, expect, it } from "vitest";
+import { cardsById, contentPack } from "./content";
+
+describe("unit upgrade trees", () => {
+  it("references existing source and target cards", () => {
+    for (const upgrade of contentPack.unitUpgrades) {
+      expect(cardsById.has(upgrade.fromCardId)).toBe(true);
+      for (const option of upgrade.options) {
+        expect(cardsById.has(option)).toBe(true);
+      }
+    }
+  });
+
+  it("gives every recruit and enemy unit an upgrade path or terminal tier", () => {
+    const obtainableIds = new Set<string>();
+    for (const card of contentPack.cards) {
+      if (card.recruitCost) obtainableIds.add(card.id);
+    }
+    for (const enemy of contentPack.enemies) {
+      enemy.deck.forEach((cardId) => obtainableIds.add(cardId));
+      enemy.dropTable.forEach(({ cardId }) => obtainableIds.add(cardId));
+    }
+
+    const terminalIds = new Set([
+      "kobold_koenig",
+      "ork_kriegsherr",
+      "lich",
+      "knight",
+      "shieldguard",
+      "sniper",
+      "crusader",
+      "high_priest",
+      "phoenix",
+      "nightwing",
+      "golem",
+      "siege_golem",
+      "ash_warlord",
+      "death_paladin",
+    ]);
+    const upgradeSources = new Set(
+      contentPack.unitUpgrades.map(({ fromCardId }) => fromCardId),
+    );
+
+    for (const cardId of obtainableIds) {
+      expect(upgradeSources.has(cardId) || terminalIds.has(cardId)).toBe(true);
+    }
+  });
+
+  it("references valid items in recipes and enemy loot tables", () => {
+    const itemIds = new Set(contentPack.items.map((item) => item.id));
+    for (const recipe of contentPack.tradeRecipes) {
+      expect(itemIds.has(recipe.inputItemId)).toBe(true);
+      expect(itemIds.has(recipe.outputItemId)).toBe(true);
+    }
+    for (const enemy of contentPack.enemies) {
+      for (const drop of enemy.itemDropTable) {
+        expect(itemIds.has(drop.itemId)).toBe(true);
+        expect(drop.maximum).toBeGreaterThanOrEqual(drop.minimum);
+      }
+    }
+  });
+
+  it("uses standardized economic goods instead of legacy fantasy resources", () => {
+    const itemIds = new Set(contentPack.items.map((item) => item.id));
+
+    expect(
+      ["wood", "iron", "copper", "wheat", "bread", "cattle", "leather"].every(
+        (itemId) => itemIds.has(itemId),
+      ),
+    ).toBe(true);
+    expect(itemIds.has("darkwood")).toBe(false);
+    expect(itemIds.has("moon_herbs")).toBe(false);
+  });
+});

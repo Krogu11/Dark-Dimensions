@@ -1,0 +1,63 @@
+import { cardsById } from "../../content/content";
+import type { CardDefinition } from "../content/schemas";
+
+export interface CardInstance {
+  uid: string;
+  cardId: string;
+  currentHp: number;
+  level: number;
+  xp: number;
+  isHero?: boolean;
+}
+
+export function createCardInstance(
+  cardId: string,
+  options?: { isHero?: boolean },
+): CardInstance {
+  const definition = getCardDefinition(cardId);
+  return {
+    uid: crypto.randomUUID(),
+    cardId,
+    currentHp: definition.maxHp,
+    level: 1,
+    xp: 0,
+    isHero: options?.isHero,
+  };
+}
+
+export function normalizeCardInstance(card: CardInstance): CardInstance {
+  return {
+    ...card,
+    level: card.level ?? 1,
+    xp: card.xp ?? 0,
+  };
+}
+
+export function getCardDefinition(cardId: string): CardDefinition {
+  const definition = cardsById.get(cardId);
+  if (!definition) throw new Error(`Unknown card: ${cardId}`);
+  return definition;
+}
+
+export function createPlayerCard(): CardInstance {
+  return createCardInstance("player_wanderer", { isHero: true });
+}
+
+export function createCardInstances(cardIds: string[]): CardInstance[] {
+  return cardIds.map((cardId) => createCardInstance(cardId));
+}
+
+export function xpNeededForNextLevel(level: number): number {
+  return 50 + level * 50;
+}
+
+export function awardXp(card: CardInstance, amount: number): boolean {
+  card.xp += amount;
+  let leveledUp = false;
+  while (card.xp >= xpNeededForNextLevel(card.level)) {
+    card.xp -= xpNeededForNextLevel(card.level);
+    card.level += 1;
+    leveledUp = true;
+  }
+  return leveledUp;
+}
