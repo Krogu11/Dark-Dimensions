@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { contentPack } from "../../content/content";
 import { generateWorldMap } from "./WorldGenerator";
+import { isWorldPositionTraversable } from "./WorldTerrain";
 
 describe("WorldGenerator", () => {
   it("recreates the same world from the same seed", () => {
@@ -45,5 +46,40 @@ describe("WorldGenerator", () => {
       x: world.start.x,
       y: world.start.y,
     });
+  });
+
+  it("generates varied terrain and keeps important positions traversable", () => {
+    const world = generateWorldMap(24680, contentPack.enemies);
+    const terrainTypes = world.terrainZones.map((zone) => zone.type);
+
+    expect(terrainTypes).toEqual(
+      expect.arrayContaining([
+        "forest",
+        "swamp",
+        "desert",
+        "mountain",
+        "lake",
+      ]),
+    );
+    expect(world.terrainRivers).toHaveLength(3);
+    expect(world.boundaryInset).toBeGreaterThan(100);
+    for (let seed = 1; seed <= 20; seed += 1) {
+      const generatedWorld = generateWorldMap(seed * 7919, contentPack.enemies);
+      for (const location of generatedWorld.locations) {
+        expect(
+          isWorldPositionTraversable(
+            generatedWorld,
+            location.x,
+            location.y,
+            30,
+          ),
+        ).toBe(true);
+      }
+      for (const enemy of generatedWorld.enemies) {
+        expect(
+          isWorldPositionTraversable(generatedWorld, enemy.x, enemy.y, 24),
+        ).toBe(true);
+      }
+    }
   });
 });

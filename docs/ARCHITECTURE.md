@@ -22,6 +22,11 @@ Each new game creates a seed-based world containing cities, villages, castles,
 dungeons, landmarks, wild regions, roads, encounter zones, and hostile patrols.
 The seed is stored in city saves so loading recreates exactly the same map.
 
+The same seed generates plains, forests, swamps, deserts, mountains, lakes,
+rivers, and a coastal sea boundary. `WorldTerrain.ts` owns terrain lookup,
+future movement modifiers, and shared collision rules so players and patrols
+cannot cross impassable terrain while Phaser remains a rendering layer.
+
 The world map is freely traversable. Hostile warbands are represented by red
 markers, wander around generated spawn regions, and pursue the player inside
 their aggro radius. Cities are safe zones. Contact with a hostile warband starts

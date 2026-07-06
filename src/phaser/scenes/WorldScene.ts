@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { enemiesById } from "../../content/content";
 import { gameSession } from "../../domain/session/GameSession";
+import type { TerrainZone } from "../../domain/content/schemas";
 import type { FactionId } from "../../domain/quests/Factions";
 import { getTouchMovement } from "../input/WorldInput";
 
@@ -18,6 +19,17 @@ const FACTION_COLORS: Record<FactionId, number> = {
   gloam_compact: 0x7862a3,
   iron_concord: 0x6d98a5,
 };
+
+const TERRAIN_COLORS = {
+  sea: 0x172b31,
+  plains: 0x303a2b,
+  forest: 0x1c3424,
+  swamp: 0x28352f,
+  desert: 0x665b39,
+  mountain: 0x454944,
+  lake: 0x23434a,
+  river: 0x2b5156,
+} as const;
 
 export class WorldScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Container;
@@ -100,7 +112,42 @@ export class WorldScene extends Phaser.Scene {
   private drawTerrain(): void {
     const map = gameSession.world.map;
     const graphics = this.add.graphics();
-    graphics.fillStyle(0x20291f).fillRect(0, 0, map.width, map.height);
+    const inset = map.boundaryInset;
+    graphics.fillStyle(TERRAIN_COLORS.sea).fillRect(0, 0, map.width, map.height);
+    graphics
+      .fillStyle(TERRAIN_COLORS.plains)
+      .fillRect(inset, inset, map.width - inset * 2, map.height - inset * 2);
+    graphics
+      .lineStyle(28, 0x9c8b5c, 0.24)
+      .strokeRect(inset, inset, map.width - inset * 2, map.height - inset * 2);
+    graphics
+      .lineStyle(7, 0x111b1c, 0.92)
+      .strokeRect(inset - 9, inset - 9, map.width - inset * 2 + 18, map.height - inset * 2 + 18);
+
+    for (const zone of map.terrainZones) {
+      graphics
+        .fillStyle(TERRAIN_COLORS[zone.type], zone.type === "lake" ? 0.98 : 0.88)
+        .fillEllipse(zone.x, zone.y, zone.radiusX * 2, zone.radiusY * 2);
+      if (zone.type === "lake") {
+        graphics
+          .lineStyle(8, 0x78908a, 0.22)
+          .strokeEllipse(zone.x, zone.y, zone.radiusX * 2, zone.radiusY * 2);
+      } else if (zone.type === "mountain") {
+        graphics
+          .lineStyle(10, 0x191c1a, 0.34)
+          .strokeEllipse(zone.x, zone.y, zone.radiusX * 2, zone.radiusY * 2);
+      }
+      this.drawTerrainZoneDetails(graphics, zone);
+    }
+
+    for (const river of map.terrainRivers) {
+      graphics.lineStyle(river.width + 18, 0x14272a, 0.72);
+      this.strokeTerrainPath(graphics, river.points);
+      graphics.lineStyle(river.width, TERRAIN_COLORS.river, 0.94);
+      this.strokeTerrainPath(graphics, river.points);
+      graphics.lineStyle(5, 0x8aa29a, 0.15);
+      this.strokeTerrainPath(graphics, river.points);
+    }
 
     for (const location of map.locations) {
       if (location.type === "wilds") {
@@ -137,16 +184,96 @@ export class WorldScene extends Phaser.Scene {
       graphics.strokePath();
     });
 
-    for (let index = 0; index < 900; index += 1) {
-      const x = (index * 83 + gameSession.worldSeed % 997) % map.width;
-      const y = (index * 151 + gameSession.worldSeed % 631) % map.height;
+    for (let index = 0; index < 1100; index += 1) {
+      const x =
+        inset +
+        ((index * 83 + gameSession.worldSeed % 997) % (map.width - inset * 2));
+      const y =
+        inset +
+        ((index * 151 + gameSession.worldSeed % 631) % (map.height - inset * 2));
       const radius = 2 + (index % 4);
       graphics.fillStyle(index % 5 === 0 ? 0x84906c : 0x111711, 0.42);
       graphics.fillCircle(x, y, radius);
     }
 
-    graphics.lineStyle(6, 0x0a0c0b, 0.85);
-    graphics.strokeRect(4, 4, map.width - 8, map.height - 8);
+    graphics.lineStyle(3, 0x759498, 0.2);
+    for (let index = 0; index < 70; index += 1) {
+      const horizontal = inset / 2 + ((index * 113) % (map.width - inset));
+      const vertical = inset / 2 + ((index * 97) % (map.height - inset));
+      graphics.beginPath();
+      graphics.moveTo(horizontal - 18, 62 + (index % 4) * 24);
+      graphics.lineTo(horizontal + 18, 62 + (index % 4) * 24);
+      graphics.strokePath();
+      graphics.beginPath();
+      graphics.moveTo(62 + (index % 4) * 24, vertical - 18);
+      graphics.lineTo(62 + (index % 4) * 24, vertical + 18);
+      graphics.strokePath();
+    }
+  }
+
+  private drawTerrainZoneDetails(
+    graphics: Phaser.GameObjects.Graphics,
+    zone: TerrainZone,
+  ): void {
+    const detailCount =
+      zone.type === "forest" ? 48 : zone.type === "mountain" ? 30 : 22;
+    for (let index = 0; index < detailCount; index += 1) {
+      const angle =
+        ((index * 137 + zone.x * 0.01 + zone.y * 0.02) % 360) *
+        (Math.PI / 180);
+      const spread = 0.18 + (((index * 47 + zone.id.length * 13) % 73) / 100);
+      const x = zone.x + Math.cos(angle) * zone.radiusX * spread;
+      const y = zone.y + Math.sin(angle) * zone.radiusY * spread;
+
+      if (zone.type === "forest") {
+        graphics.fillStyle(0x0c1c13, 0.72).fillCircle(x, y + 5, 7);
+        graphics.fillStyle(0x486044, 0.86).fillTriangle(
+          x,
+          y - 13,
+          x - 10,
+          y + 8,
+          x + 10,
+          y + 8,
+        );
+      } else if (zone.type === "swamp") {
+        graphics
+          .fillStyle(index % 3 === 0 ? 0x192d2d : 0x53604a, 0.42)
+          .fillEllipse(x, y, 24 + (index % 4) * 6, 8 + (index % 3) * 4);
+      } else if (zone.type === "desert") {
+        graphics.lineStyle(3, 0xa3935c, 0.34);
+        graphics.beginPath();
+        graphics.moveTo(x - 13, y);
+        graphics.lineTo(x, y - 5);
+        graphics.lineTo(x + 13, y);
+        graphics.strokePath();
+      } else if (zone.type === "mountain") {
+        const size = 18 + (index % 5) * 4;
+        graphics
+          .fillStyle(index % 3 === 0 ? 0x687069 : 0x2c302d, 0.94)
+          .fillTriangle(x, y - size, x - size * 0.72, y + size * 0.55, x + size * 0.72, y + size * 0.55);
+        graphics
+          .fillStyle(0xc1c2b7, 0.52)
+          .fillTriangle(x, y - size, x - size * 0.22, y - size * 0.48, x + size * 0.26, y - size * 0.45);
+      } else if (zone.type === "lake") {
+        graphics
+          .fillStyle(0x77969a, 0.2)
+          .fillEllipse(x, y, 28 + (index % 3) * 8, 4);
+      }
+    }
+  }
+
+  private strokeTerrainPath(
+    graphics: Phaser.GameObjects.Graphics,
+    points: Array<{ x: number; y: number }>,
+  ): void {
+    const [firstPoint, ...remainingPoints] = points;
+    if (!firstPoint) return;
+    graphics.beginPath();
+    graphics.moveTo(firstPoint.x, firstPoint.y);
+    for (const point of remainingPoints) {
+      graphics.lineTo(point.x, point.y);
+    }
+    graphics.strokePath();
   }
 
   private drawLocations(): void {

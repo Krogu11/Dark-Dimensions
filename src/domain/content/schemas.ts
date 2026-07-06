@@ -45,11 +45,44 @@ export const worldEnemySpawnSchema = z.object({
   threat: z.number().int().min(1).max(5),
 });
 
+export const terrainZoneTypeSchema = z.enum([
+  "forest",
+  "swamp",
+  "desert",
+  "mountain",
+  "lake",
+]);
+
+export const terrainZoneSchema = z.object({
+  id: z.string().min(1),
+  type: terrainZoneTypeSchema,
+  x: z.number().nonnegative(),
+  y: z.number().nonnegative(),
+  radiusX: z.number().positive(),
+  radiusY: z.number().positive(),
+});
+
+export const terrainRiverSchema = z.object({
+  id: z.string().min(1),
+  width: z.number().positive(),
+  points: z
+    .array(
+      z.object({
+        x: z.number().nonnegative(),
+        y: z.number().nonnegative(),
+      }),
+    )
+    .min(2),
+});
+
 export const worldMapSchema = z.object({
   id: z.string().min(1),
   width: z.number().positive(),
   height: z.number().positive(),
+  boundaryInset: z.number().positive(),
   start: z.object({ x: z.number(), y: z.number() }),
+  terrainZones: z.array(terrainZoneSchema),
+  terrainRivers: z.array(terrainRiverSchema),
   locations: z.array(mapLocationSchema),
   encounterZones: z.array(encounterZoneSchema),
   enemies: z.array(worldEnemySpawnSchema),
@@ -150,3 +183,6 @@ export type ItemDefinition = z.infer<typeof itemDefinitionSchema>;
 export type TradeRecipe = z.infer<typeof tradeRecipeSchema>;
 export type EnemyArchetype = z.infer<typeof enemyArchetypeSchema>;
 export type WorldEnemySpawn = z.infer<typeof worldEnemySpawnSchema>;
+export type TerrainZoneType = z.infer<typeof terrainZoneTypeSchema>;
+export type TerrainZone = z.infer<typeof terrainZoneSchema>;
+export type TerrainRiver = z.infer<typeof terrainRiverSchema>;

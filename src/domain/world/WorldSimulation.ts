@@ -3,6 +3,12 @@ import type {
   WorldEnemySpawn,
   WorldMapDefinition,
 } from "../content/schemas";
+import {
+  findNearestTraversablePosition,
+  getTerrainAt,
+  isWorldPositionTraversable,
+  type TerrainType,
+} from "./WorldTerrain";
 
 export interface WorldEnemyState extends WorldEnemySpawn {
   spawnX: number;
@@ -27,10 +33,16 @@ export class WorldSimulation {
     readonly map: WorldMapDefinition,
     initial?: Partial<WorldState>,
   ) {
+    const initialPosition = findNearestTraversablePosition(
+      map,
+      initial?.x ?? map.start.x,
+      initial?.y ?? map.start.y,
+      30,
+    );
     this.state = {
       mapId: map.id,
-      x: initial?.x ?? map.start.x,
-      y: initial?.y ?? map.start.y,
+      x: initialPosition.x,
+      y: initialPosition.y,
       nearbyLocationId: initial?.nearbyLocationId ?? null,
       enemies: map.enemies.map((enemy) => ({
         ...enemy,
@@ -92,8 +104,11 @@ export class WorldSimulation {
           enemy.speed * (shouldFlee ? 1.08 : 1) * deltaHours,
           distanceToTarget,
         );
-        enemy.x += ((targetX - enemy.x) / distanceToTarget) * travel;
-        enemy.y += ((targetY - enemy.y) / distanceToTarget) * travel;
+        const travelX = ((targetX - enemy.x) / distanceToTarget) * travel;
+        const travelY = ((targetY - enemy.y) / distanceToTarget) * travel;
+        const nextPosition = this.moveEnemy(enemy.x, enemy.y, travelX, travelY);
+        enemy.x = nextPosition.x;
+        enemy.y = nextPosition.y;
       }
 
       const finalDistanceToPlayer = Math.hypot(
@@ -127,10 +142,24 @@ export class WorldSimulation {
     const nextY =
       this.state.y + (vertical / magnitude) * speed * deltaSeconds;
 
-    this.state.x = Math.min(Math.max(nextX, 30), this.map.width - 30);
-    this.state.y = Math.min(Math.max(nextY, 30), this.map.height - 30);
+    if (isWorldPositionTraversable(this.map, nextX, nextY, 30)) {
+      this.state.x = nextX;
+      this.state.y = nextY;
+    } else if (
+      isWorldPositionTraversable(this.map, nextX, this.state.y, 30)
+    ) {
+      this.state.x = nextX;
+    } else if (
+      isWorldPositionTraversable(this.map, this.state.x, nextY, 30)
+    ) {
+      this.state.y = nextY;
+    }
     this.updateNearbyLocation();
     return Math.hypot(this.state.x - previousX, this.state.y - previousY);
+  }
+
+  get currentTerrain(): TerrainType {
+    return getTerrainAt(this.map, this.state.x, this.state.y);
   }
 
   get nearbyLocation(): MapLocation | null {
@@ -150,6 +179,33 @@ export class WorldSimulation {
         );
         return distance <= location.radius;
       })?.id ?? null;
+  }
+
+  private moveEnemy(
+    x: number,
+    y: number,
+    travelX: number,
+    travelY: number,
+  ): { x: number; y: number } {
+    const detourAngles = [
+      0,
+      Math.PI / 6,
+      -Math.PI / 6,
+      Math.PI / 3,
+      -Math.PI / 3,
+      Math.PI / 2,
+      -Math.PI / 2,
+    ];
+    for (const angle of detourAngles) {
+      const cosine = Math.cos(angle);
+      const sine = Math.sin(angle);
+      const candidateX = x + travelX * cosine - travelY * sine;
+      const candidateY = y + travelX * sine + travelY * cosine;
+      if (isWorldPositionTraversable(this.map, candidateX, candidateY, 24)) {
+        return { x: candidateX, y: candidateY };
+      }
+    }
+    return { x, y };
   }
 
   private hash(value: string): number {

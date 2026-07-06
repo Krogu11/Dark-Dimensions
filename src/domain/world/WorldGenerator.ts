@@ -1,6 +1,8 @@
 import type {
   EnemyArchetype,
   MapLocation,
+  TerrainRiver,
+  TerrainZone,
   WorldMapDefinition,
 } from "../content/schemas";
 
@@ -46,6 +48,8 @@ const LOCATION_RADII: Record<GeneratedLocationType, number> = {
   wilds: 220,
 };
 
+const WORLD_BOUNDARY_INSET = 210;
+
 export function createWorldSeed(): number {
   return Math.floor(Math.random() * 0x7fffffff);
 }
@@ -73,13 +77,23 @@ export function generateWorldMap(
     }
   }
 
+  const terrainRandom = createRandom(seed ^ 0x5f3759df);
+  const terrainZones = createTerrainZones(
+    terrainRandom,
+    width,
+    height,
+    locations,
+  );
+  const terrainRivers = createTerrainRivers(terrainRandom, width, height);
   const enemies = createEnemySpawns(
     random,
+    createRandom(seed ^ 0x1b873593),
     width,
     height,
     start,
     locations,
     enemyArchetypes,
+    terrainZones,
   );
   const encounterZones = locations
     .filter((location) => location.type === "dungeon" || location.type === "wilds")
@@ -109,11 +123,120 @@ export function generateWorldMap(
     id: `generated_${seed}`,
     width,
     height,
+    boundaryInset: WORLD_BOUNDARY_INSET,
     start,
+    terrainZones,
+    terrainRivers,
     locations,
     encounterZones,
     enemies,
   };
+}
+
+function createTerrainZones(
+  random: () => number,
+  width: number,
+  height: number,
+  locations: MapLocation[],
+): TerrainZone[] {
+  const specifications = [
+    { type: "forest", count: 7, minimum: 280, maximum: 560 },
+    { type: "swamp", count: 4, minimum: 250, maximum: 460 },
+    { type: "desert", count: 3, minimum: 380, maximum: 680 },
+    { type: "mountain", count: 6, minimum: 230, maximum: 460 },
+    { type: "lake", count: 5, minimum: 150, maximum: 330 },
+  ] as const;
+  const zones: TerrainZone[] = [];
+
+  for (const specification of specifications) {
+    for (let index = 0; index < specification.count; index += 1) {
+      for (let attempt = 0; attempt < 160; attempt += 1) {
+        const radiusX = randomInteger(
+          random,
+          specification.minimum,
+          specification.maximum,
+        );
+        const radiusY = randomInteger(
+          random,
+          Math.round(specification.minimum * 0.65),
+          Math.round(specification.maximum * 0.78),
+        );
+        const candidate: TerrainZone = {
+          id: `${specification.type}_${index}`,
+          type: specification.type,
+          x: randomInteger(
+            random,
+            WORLD_BOUNDARY_INSET + radiusX + 90,
+            width - WORLD_BOUNDARY_INSET - radiusX - 90,
+          ),
+          y: randomInteger(
+            random,
+            WORLD_BOUNDARY_INSET + radiusY + 90,
+            height - WORLD_BOUNDARY_INSET - radiusY - 90,
+          ),
+          radiusX,
+          radiusY,
+        };
+        const blocksTravel =
+          candidate.type === "mountain" || candidate.type === "lake";
+        const clearsLocations =
+          !blocksTravel ||
+          locations.every(
+            (location) =>
+              ellipseDistance(candidate, location.x, location.y) >
+              1 + (location.radius + 120) / Math.min(radiusX, radiusY),
+          );
+        const clearsBlockingZones = zones
+          .filter((zone) => zone.type === "mountain" || zone.type === "lake")
+          .every(
+            (zone) =>
+              Math.hypot(zone.x - candidate.x, zone.y - candidate.y) >
+              Math.min(zone.radiusX, zone.radiusY) +
+                Math.min(candidate.radiusX, candidate.radiusY) +
+                140,
+          );
+        if (!clearsLocations || (blocksTravel && !clearsBlockingZones)) continue;
+        zones.push(candidate);
+        break;
+      }
+    }
+  }
+
+  return zones;
+}
+
+function createTerrainRivers(
+  random: () => number,
+  width: number,
+  height: number,
+): TerrainRiver[] {
+  return Array.from({ length: 3 }, (_, riverIndex) => {
+    const horizontal = riverIndex % 2 === 1;
+    const points = Array.from({ length: 7 }, (_, pointIndex) => {
+      const progress = pointIndex / 6;
+      if (horizontal) {
+        return {
+          x: WORLD_BOUNDARY_INSET + progress * (width - WORLD_BOUNDARY_INSET * 2),
+          y:
+            height * (0.25 + riverIndex * 0.2) +
+            Math.sin(progress * Math.PI * 3 + riverIndex) * 240 +
+            randomInteger(random, -90, 90),
+        };
+      }
+      return {
+        x:
+          width * (0.28 + riverIndex * 0.19) +
+          Math.sin(progress * Math.PI * 3.5 + riverIndex) * 260 +
+          randomInteger(random, -80, 80),
+        y: WORLD_BOUNDARY_INSET + progress * (height - WORLD_BOUNDARY_INSET * 2),
+      };
+    });
+    return {
+      id: `river_${riverIndex}`,
+      width: randomInteger(random, 54, 86),
+      points,
+    };
+  });
 }
 
 function createLocation(
@@ -161,20 +284,38 @@ function findLocationPosition(
 
 function createEnemySpawns(
   random: () => number,
+  fallbackRandom: () => number,
   width: number,
   height: number,
   start: { x: number; y: number },
   locations: MapLocation[],
   archetypes: EnemyArchetype[],
+  terrainZones: TerrainZone[],
 ) {
   const weakest = [...archetypes].sort((left, right) => left.threat - right.threat)[0];
+  const fixedStartPosition = {
+    x: Math.min(width - WORLD_BOUNDARY_INSET - 40, start.x + 520),
+    y: Math.max(WORLD_BOUNDARY_INSET + 40, start.y - 180),
+  };
+  const startPatrolPosition = isEnemyPositionBlocked(
+    fixedStartPosition,
+    terrainZones,
+  )
+    ? findEnemyPosition(
+        fallbackRandom,
+        width,
+        height,
+        locations[0],
+        terrainZones,
+      )
+    : fixedStartPosition;
   const spawns = weakest
     ? [
         {
           id: "patrol_start",
           archetypeId: weakest.id,
-          x: Math.min(width - 100, start.x + 520),
-          y: Math.max(100, start.y - 180),
+          x: startPatrolPosition!.x,
+          y: startPatrolPosition!.y,
           aggroRadius: 380,
           ...createPatrolBurden(random, weakest),
         },
@@ -185,8 +326,28 @@ function createEnemySpawns(
     const anchor = locations[randomInteger(random, 1, locations.length - 1)];
     const angle = random() * Math.PI * 2;
     const distance = randomInteger(random, 220, 560);
-    const x = clamp(anchor.x + Math.cos(angle) * distance, 100, width - 100);
-    const y = clamp(anchor.y + Math.sin(angle) * distance, 100, height - 100);
+    const originalPosition = {
+      x: clamp(
+        anchor.x + Math.cos(angle) * distance,
+        WORLD_BOUNDARY_INSET + 40,
+        width - WORLD_BOUNDARY_INSET - 40,
+      ),
+      y: clamp(
+        anchor.y + Math.sin(angle) * distance,
+        WORLD_BOUNDARY_INSET + 40,
+        height - WORLD_BOUNDARY_INSET - 40,
+      ),
+    };
+    const position = isEnemyPositionBlocked(originalPosition, terrainZones)
+      ? findEnemyPosition(
+          fallbackRandom,
+          width,
+          height,
+          anchor,
+          terrainZones,
+        )
+      : originalPosition;
+    const { x, y } = position;
     const distanceRatio = Math.hypot(x - start.x, y - start.y) / Math.hypot(width, height);
     const maximumThreat = Math.max(1, Math.min(5, 1 + Math.floor(distanceRatio * 7)));
     const candidates = archetypes.filter((enemy) => enemy.threat <= maximumThreat);
@@ -206,6 +367,56 @@ function createEnemySpawns(
   }
 
   return spawns;
+}
+
+function findEnemyPosition(
+  random: () => number,
+  width: number,
+  height: number,
+  anchor: MapLocation,
+  terrainZones: TerrainZone[],
+): { x: number; y: number } {
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    const angle = random() * Math.PI * 2;
+    const distance = randomInteger(random, 220, 560);
+    const position = {
+      x: clamp(
+        anchor.x + Math.cos(angle) * distance,
+        WORLD_BOUNDARY_INSET + 40,
+        width - WORLD_BOUNDARY_INSET - 40,
+      ),
+      y: clamp(
+        anchor.y + Math.sin(angle) * distance,
+        WORLD_BOUNDARY_INSET + 40,
+        height - WORLD_BOUNDARY_INSET - 40,
+      ),
+    };
+    if (!isEnemyPositionBlocked(position, terrainZones)) return position;
+  }
+
+  return { x: anchor.x, y: anchor.y };
+}
+
+function isEnemyPositionBlocked(
+  position: { x: number; y: number },
+  terrainZones: TerrainZone[],
+): boolean {
+  return terrainZones.some(
+    (zone) =>
+      (zone.type === "mountain" || zone.type === "lake") &&
+      ellipseDistance(zone, position.x, position.y, 30) <= 1,
+  );
+}
+
+function ellipseDistance(
+  zone: TerrainZone,
+  x: number,
+  y: number,
+  padding = 0,
+): number {
+  const normalizedX = (x - zone.x) / (zone.radiusX + padding);
+  const normalizedY = (y - zone.y) / (zone.radiusY + padding);
+  return Math.hypot(normalizedX, normalizedY);
 }
 
 function createPatrolBurden(
