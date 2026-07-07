@@ -26,6 +26,7 @@ import {
   normalizeCardInstance,
   type CardInstance,
 } from "../cards/CardInstance";
+import { getWeeklyRosterWage } from "../cards/UnitUpkeep";
 import { WorldSimulation } from "../world/WorldSimulation";
 import { createWorldSeed, generateWorldMap } from "../world/WorldGenerator";
 import { findWorldPath, type WorldPoint } from "../world/WorldPathfinder";
@@ -74,7 +75,6 @@ import {
   clampMorale,
   createSurvivalState,
   getDailyFoodRequirement,
-  getDailyWageCost,
   type SurvivalState,
 } from "../survival/Survival";
 
@@ -92,6 +92,7 @@ export type TradeActionResult =
   | "invalid"
   | "notEnoughGold"
   | "notEnoughItems"
+  | "tooHeavy"
   | "noEffect";
 export type EquipmentSlot = "rightHand" | "leftHand" | "accessory";
 export type LocationEventResult =
@@ -99,6 +100,12 @@ export type LocationEventResult =
   | { kind: "danger"; amount: number }
   | { kind: "alreadyVisited"; amount: 0 }
   | { kind: "invalid"; amount: 0 };
+
+export interface VictoryClaimSelection {
+  takeCard: boolean;
+  itemIds: string[];
+  continueDungeon: boolean;
+}
 
 export interface DungeonRun {
   locationId: string;
@@ -136,6 +143,7 @@ export class GameSession {
   private pursuedEnemyPosition: WorldPoint | null = null;
   private currentEnemySpawnId: string | null = null;
   private currentLocationBattleId: string | null = null;
+  private pendingVictoryReward: BattleReward | null = null;
   private listeners = new Set<SessionListener>();
 
   constructor(seed = createWorldSeed()) {
@@ -207,6 +215,15 @@ export class GameSession {
     );
   }
 
+  get maxCargoWeight(): number {
+    return (
+      90 +
+      this.characterState.attributes.strength * 10 +
+      this.characterState.skills.athletics * 8 +
+      this.characterState.skills.leadership * 5
+    );
+  }
+
   get partyMovementSpeed(): number {
     const troopPenalty = this.allUnits.length * 12;
     const cargoPenalty = this.cargoWeight * 1.8;
@@ -234,7 +251,11 @@ export class GameSession {
   }
 
   get dailyWageCost(): number {
-    return getDailyWageCost(this.allUnits.length);
+    return Math.ceil(this.weeklyWageCost / 7);
+  }
+
+  get weeklyWageCost(): number {
+    return getWeeklyRosterWage(this.allUnits);
   }
 
   get dailyFoodRequirement(): number {
@@ -482,6 +503,7 @@ export class GameSession {
     };
     this.currentEnemySpawnId = null;
     this.currentLocationBattleId = null;
+    this.pendingVictoryReward = null;
     this.notify();
   }
 
@@ -520,6 +542,7 @@ export class GameSession {
     this.hero.currentHp = this.heroMaxHp;
     this.currentEnemySpawnId = null;
     this.currentLocationBattleId = null;
+    this.pendingVictoryReward = null;
     this.notify();
   }
 
@@ -588,6 +611,7 @@ export class GameSession {
     this.currentEnemySpawnId = enemySpawnId;
     this.currentLocationBattleId = null;
     this.dungeonRun = null;
+    this.pendingVictoryReward = null;
     this.battle = new BattleSimulation(
       this.warband,
       archetype,
@@ -601,11 +625,19 @@ export class GameSession {
 
   enterDungeon(locationId: string): boolean {
     const location = this.getNearbyLocation(locationId, "dungeon");
-    if (!location || this.mode !== "world") return false;
+    if (!location || this.mode !== "world" || !this.world.isDungeonActive(locationId)) {
+      return false;
+    }
 
-    const enemyIds = [0, 1, 2].map((stage) =>
-      this.selectLocationEnemy(location, stage - 1).id,
-    );
+    const enemyIds = location.spawnProfile
+      ? [
+          this.selectLocationEnemy(location, 0).id,
+          this.selectLocationEnemy(location, 1).id,
+          location.spawnProfile.bossEnemyId,
+        ]
+      : [0, 1, 2].map((stage) =>
+          this.selectLocationEnemy(location, stage - 1).id,
+        );
     this.dungeonRun = {
       locationId,
       stage: 1,
@@ -672,6 +704,7 @@ export class GameSession {
     if (!profile || !offer || offer.stock <= 0) return "invalid";
     const price = this.getBuyPrice(itemId);
     if (this.gold < price) return "notEnoughGold";
+    if (!this.canCarryItem(itemId, 1)) return "tooHeavy";
     const stock = marketStock(this.economyState, profile);
     const stockEntry = stock.find((entry) => entry.itemId === itemId);
     if (!stockEntry || stockEntry.quantity <= 0) return "invalid";
@@ -811,15 +844,40 @@ export class GameSession {
     return true;
   }
 
-  finishVictory(continueDungeon = true): BattleReward | null {
+  prepareVictoryReward(): BattleReward | null {
     if (!this.battle || this.battle.outcome !== "victory") return null;
+    if (this.pendingVictoryReward) return structuredClone(this.pendingVictoryReward);
     const reward = this.battle.rollReward();
-    const completedBattle = this.battle;
     const dungeonStage = this.dungeonRun?.stage ?? 0;
     if (dungeonStage > 0) reward.gold += dungeonStage * 8;
+    this.pendingVictoryReward = reward;
+    return structuredClone(reward);
+  }
+
+  finishVictory(continueDungeon = true): BattleReward | null {
+    const reward = this.prepareVictoryReward();
+    if (!reward) return null;
+    return this.claimVictoryReward({
+      continueDungeon,
+      takeCard: Boolean(reward.cardId),
+      itemIds: reward.items.map((item) => item.itemId),
+    });
+  }
+
+  claimVictoryReward(selection: VictoryClaimSelection): BattleReward | null {
+    if (!this.battle || this.battle.outcome !== "victory") return null;
+    const reward = this.pendingVictoryReward ?? this.prepareVictoryReward();
+    if (!reward) return null;
+    const completedBattle = this.battle;
+    const dungeonStage = this.dungeonRun?.stage ?? 0;
+    const claimedReward: BattleReward = {
+      gold: reward.gold,
+      cardId: selection.takeCard ? reward.cardId : null,
+      items: reward.items.filter((item) => selection.itemIds.includes(item.itemId)),
+    };
     this.gold += reward.gold;
     this.progressBountyQuests(completedBattle.enemy.id);
-    for (const item of reward.items) {
+    for (const item of claimedReward.items) {
       addToInventory(this.inventory, item.itemId, item.quantity);
     }
 
@@ -834,13 +892,13 @@ export class GameSession {
     }
     awardCharacterXp(this.characterState, 70 + completedBattle.enemy.threat * 25);
 
-    if (reward.cardId) {
+    if (claimedReward.cardId) {
       if (this.reserve.length < this.reserveCapacity) {
-        this.reserve.push(createCardInstance(reward.cardId));
+        this.reserve.push(createCardInstance(claimedReward.cardId));
       } else if (this.warband.length < this.warbandCapacity) {
-        this.warband.push(createCardInstance(reward.cardId));
+        this.warband.push(createCardInstance(claimedReward.cardId));
       } else {
-        reward.cardId = null;
+        claimedReward.cardId = null;
       }
     }
 
@@ -849,28 +907,30 @@ export class GameSession {
     }
 
     if (this.dungeonRun) {
-      if (continueDungeon && this.canContinueDungeon) {
+      if (selection.continueDungeon && this.canContinueDungeon) {
         this.dungeonRun.stage += 1;
         const nextEnemyId = this.dungeonRun.enemyIds[this.dungeonRun.stage - 1];
+        this.pendingVictoryReward = null;
         this.startArchetypeBattle(enemiesById.get(nextEnemyId)!);
         this.advanceTime(45);
         this.notify();
-        return reward;
+        return claimedReward;
       }
 
       if (this.dungeonRun.stage === this.dungeonRun.totalStages) {
         if (!this.completedLocationIds.has(this.dungeonRun.locationId)) {
           const completionGold = 45 + this.dungeonRun.totalStages * 10;
           this.gold += completionGold;
-          reward.gold += completionGold;
+          claimedReward.gold += completionGold;
         }
         this.completedLocationIds.add(this.dungeonRun.locationId);
+        this.world.defeatDungeon(this.dungeonRun.locationId);
       }
     } else if (this.currentLocationBattleId) {
       if (!this.completedLocationIds.has(this.currentLocationBattleId)) {
         const castleBonus = 35;
         this.gold += castleBonus;
-        reward.gold += castleBonus;
+        claimedReward.gold += castleBonus;
       }
       this.completedLocationIds.add(this.currentLocationBattleId);
     }
@@ -881,9 +941,26 @@ export class GameSession {
     this.dungeonRun = null;
     this.currentEnemySpawnId = null;
     this.currentLocationBattleId = null;
+    this.pendingVictoryReward = null;
     this.advanceTime(45);
     this.notify();
-    return reward;
+    return claimedReward;
+  }
+
+  dismissUnit(uid: string): RosterActionResult {
+    const warbandIndex = this.warband.findIndex((card) => card.uid === uid);
+    if (warbandIndex >= 0) {
+      this.warband.splice(warbandIndex, 1);
+      this.notify();
+      return "success";
+    }
+    const reserveIndex = this.reserve.findIndex((card) => card.uid === uid);
+    if (reserveIndex >= 0) {
+      this.reserve.splice(reserveIndex, 1);
+      this.notify();
+      return "success";
+    }
+    return "invalid";
   }
 
   get healCost(): number {
@@ -1115,7 +1192,7 @@ export class GameSession {
     ) {
       this.processDailyUpkeep(dayIndex + 1);
     }
-    this.applyWoundTreatment(minutes);
+    this.applyWorldMapHealing(minutes);
     const deltaHours = minutes / 60;
     const collidedEnemyId = this.world.updateEnemies(
       deltaHours,
@@ -1129,7 +1206,7 @@ export class GameSession {
   }
 
   private processDailyUpkeep(day: number): void {
-    const wagesDue = this.dailyWageCost;
+    const wagesDue = day % 7 === 1 ? this.weeklyWageCost : 0;
     const wagesPaid = Math.min(this.gold, wagesDue);
     this.gold -= wagesPaid;
 
@@ -1158,6 +1235,12 @@ export class GameSession {
       foodConsumed,
       moraleChange: this.survivalState.morale - previousMorale,
     };
+  }
+
+  private canCarryItem(itemId: string, quantity: number): boolean {
+    const item = itemsById.get(itemId);
+    if (!item) return false;
+    return this.cargoWeight + item.weight * quantity <= this.maxCargoWeight;
   }
 
   private applyTerrainTravelFoodCost(minutes: number): void {
@@ -1242,6 +1325,10 @@ export class GameSession {
     );
   }
 
+  canBuyItem(itemId: string, quantity = 1): boolean {
+    return this.canCarryItem(itemId, quantity);
+  }
+
   spendAttribute(attribute: CharacterAttribute): boolean {
     const beforeMaxHp = this.heroMaxHp;
     const spent = spendAttributePoint(this.characterState, attribute);
@@ -1316,6 +1403,21 @@ export class GameSession {
     location: MapLocation,
     threatOffset: number,
   ): EnemyArchetype {
+    if (location.spawnProfile) {
+      const enemyIds =
+        threatOffset >= 2
+          ? [location.spawnProfile.bossEnemyId]
+          : location.spawnProfile.enemyIds;
+      const candidates = enemyIds
+        .map((enemyId) => enemiesById.get(enemyId))
+        .filter((enemy): enemy is EnemyArchetype => Boolean(enemy));
+      if (candidates.length > 0) {
+        return candidates[
+          hashValue(`${this.worldSeed}:${location.id}:${threatOffset}`) %
+            candidates.length
+        ];
+      }
+    }
     const distanceRatio =
       Math.hypot(
         location.x - this.world.map.start.x,
@@ -1337,6 +1439,7 @@ export class GameSession {
   }
 
   private startArchetypeBattle(archetype: EnemyArchetype): void {
+    this.pendingVictoryReward = null;
     this.battle = new BattleSimulation(
       this.warband,
       archetype,
@@ -1364,10 +1467,10 @@ export class GameSession {
     }
   }
 
-  private applyWoundTreatment(minutes: number): void {
+  private applyWorldMapHealing(minutes: number): void {
+    if (minutes <= 0) return;
     const rank = this.characterState.skills.woundTreatment;
-    if (rank <= 0 || minutes <= 0) return;
-    const healing = Math.floor((minutes / 60) * rank * 6);
+    const healing = Math.floor((minutes / 60) * (4 + rank * 8));
     if (healing <= 0) return;
     for (const card of this.allUnits) {
       if (card.currentHp <= 0) continue;

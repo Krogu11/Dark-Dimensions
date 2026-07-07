@@ -14,9 +14,16 @@ export type TerrainType =
 export const TERRAIN_MOVEMENT_MULTIPLIERS: Record<TerrainType, number> = {
   plains: 1,
   forest: 0.82,
+  darkForest: 0.76,
+  pineForest: 0.86,
   swamp: 0.65,
+  bog: 0.58,
   desert: 0.88,
+  badlands: 0.78,
+  grassland: 1.04,
+  heath: 0.94,
   mountain: 0.42,
+  hills: 0.72,
   lake: 0,
   river: 0.42,
   road: 1.22,
@@ -26,9 +33,16 @@ export const TERRAIN_MOVEMENT_MULTIPLIERS: Record<TerrainType, number> = {
 export const TERRAIN_VISIBILITY_MULTIPLIERS: Record<TerrainType, number> = {
   plains: 1,
   forest: 0.68,
+  darkForest: 0.56,
+  pineForest: 0.74,
   swamp: 0.78,
+  bog: 0.7,
   desert: 1.15,
+  badlands: 1.04,
+  grassland: 1.12,
+  heath: 1.02,
   mountain: 0.72,
+  hills: 0.88,
   lake: 1.08,
   river: 0.9,
   road: 1.05,
@@ -38,9 +52,16 @@ export const TERRAIN_VISIBILITY_MULTIPLIERS: Record<TerrainType, number> = {
 export const TERRAIN_ENCOUNTER_MULTIPLIERS: Record<TerrainType, number> = {
   plains: 1,
   forest: 1.35,
+  darkForest: 1.55,
+  pineForest: 1.18,
   swamp: 1.25,
+  bog: 1.42,
   desert: 1.12,
+  badlands: 1.22,
+  grassland: 0.92,
+  heath: 1.05,
   mountain: 1.15,
+  hills: 1.08,
   lake: 0.8,
   river: 1.1,
   road: 0.65,
@@ -50,9 +71,16 @@ export const TERRAIN_ENCOUNTER_MULTIPLIERS: Record<TerrainType, number> = {
 export const TERRAIN_FOOD_MULTIPLIERS: Record<TerrainType, number> = {
   plains: 1,
   forest: 1.05,
+  darkForest: 1.14,
+  pineForest: 1.02,
   swamp: 1.25,
+  bog: 1.35,
   desert: 1.2,
+  badlands: 1.16,
+  grassland: 0.92,
+  heath: 1.04,
   mountain: 1.2,
+  hills: 1.08,
   lake: 1,
   river: 1.1,
   road: 0.9,
@@ -132,7 +160,7 @@ export function getTerrainFoodMultiplier(
 export function getTerrainBattleModifiers(
   terrain: TerrainType,
 ): TerrainBattleModifiers {
-  if (terrain === "forest") {
+  if (terrain === "forest" || terrain === "darkForest" || terrain === "pineForest") {
     return {
       terrain,
       playerAttack: 0.96,
@@ -141,7 +169,7 @@ export function getTerrainBattleModifiers(
       enemyDefense: 1.14,
     };
   }
-  if (terrain === "swamp") {
+  if (terrain === "swamp" || terrain === "bog") {
     return {
       terrain,
       playerAttack: 0.86,
@@ -150,7 +178,7 @@ export function getTerrainBattleModifiers(
       enemyDefense: 0.9,
     };
   }
-  if (terrain === "desert") {
+  if (terrain === "desert" || terrain === "badlands") {
     return {
       terrain,
       playerAttack: 1.06,

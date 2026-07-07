@@ -21,10 +21,6 @@ export function createSurvivalState(): SurvivalState {
   };
 }
 
-export function getDailyWageCost(troopCount: number): number {
-  return troopCount * 3;
-}
-
 export function getDailyFoodRequirement(troopCount: number): number {
   return 1 + troopCount;
 }

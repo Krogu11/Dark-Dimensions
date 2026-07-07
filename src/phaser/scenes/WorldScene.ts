@@ -27,9 +27,16 @@ const TERRAIN_COLORS = {
   sea: 0x172b31,
   plains: 0x303a2b,
   forest: 0x1c3424,
+  darkForest: 0x112219,
+  pineForest: 0x1b3028,
   swamp: 0x28352f,
+  bog: 0x202b2d,
   desert: 0x665b39,
+  badlands: 0x5a3d31,
+  grassland: 0x3d4a2d,
+  heath: 0x3a3530,
   mountain: 0x454944,
+  hills: 0x4a513a,
   lake: 0x23434a,
   river: 0x2b5156,
 } as const;
@@ -156,6 +163,14 @@ export class WorldScene extends Phaser.Scene {
       .strokeRect(inset - 9, inset - 9, map.width - inset * 2 + 18, map.height - inset * 2 + 18);
 
     for (const zone of map.terrainZones) {
+      if (zone.type !== "lake") {
+        graphics
+          .fillStyle(TERRAIN_COLORS[zone.type], 0.16)
+          .fillEllipse(zone.x, zone.y, zone.radiusX * 2.36, zone.radiusY * 2.36);
+        graphics
+          .fillStyle(TERRAIN_COLORS[zone.type], 0.28)
+          .fillEllipse(zone.x, zone.y, zone.radiusX * 2.16, zone.radiusY * 2.16);
+      }
       graphics
         .fillStyle(TERRAIN_COLORS[zone.type], zone.type === "lake" ? 0.98 : 0.88)
         .fillEllipse(zone.x, zone.y, zone.radiusX * 2, zone.radiusY * 2);
@@ -234,7 +249,11 @@ export class WorldScene extends Phaser.Scene {
     zone: TerrainZone,
   ): void {
     const detailCount =
-      zone.type === "forest" ? 48 : zone.type === "mountain" ? 30 : 22;
+      ["forest", "darkForest", "pineForest"].includes(zone.type)
+        ? 54
+        : ["mountain", "hills"].includes(zone.type)
+          ? 32
+          : 24;
     for (let index = 0; index < detailCount; index += 1) {
       const angle =
         ((index * 137 + zone.x * 0.01 + zone.y * 0.02) % 360) *
@@ -243,9 +262,16 @@ export class WorldScene extends Phaser.Scene {
       const x = zone.x + Math.cos(angle) * zone.radiusX * spread;
       const y = zone.y + Math.sin(angle) * zone.radiusY * spread;
 
-      if (zone.type === "forest") {
+      if (["forest", "darkForest", "pineForest"].includes(zone.type)) {
         graphics.fillStyle(0x0c1c13, 0.72).fillCircle(x, y + 5, 7);
-        graphics.fillStyle(0x486044, 0.86).fillTriangle(
+        graphics.fillStyle(
+          zone.type === "darkForest"
+            ? 0x263d2e
+            : zone.type === "pineForest"
+              ? 0x3d5b4e
+              : 0x486044,
+          0.86,
+        ).fillTriangle(
           x,
           y - 13,
           x - 10,
@@ -253,29 +279,43 @@ export class WorldScene extends Phaser.Scene {
           x + 10,
           y + 8,
         );
-      } else if (zone.type === "swamp") {
+      } else if (zone.type === "swamp" || zone.type === "bog") {
         graphics
-          .fillStyle(index % 3 === 0 ? 0x192d2d : 0x53604a, 0.42)
+          .fillStyle(index % 3 === 0 ? 0x192d2d : 0x53604a, zone.type === "bog" ? 0.5 : 0.42)
           .fillEllipse(x, y, 24 + (index % 4) * 6, 8 + (index % 3) * 4);
-      } else if (zone.type === "desert") {
+      } else if (zone.type === "desert" || zone.type === "badlands") {
         graphics.lineStyle(3, 0xa3935c, 0.34);
         graphics.beginPath();
         graphics.moveTo(x - 13, y);
         graphics.lineTo(x, y - 5);
         graphics.lineTo(x + 13, y);
         graphics.strokePath();
-      } else if (zone.type === "mountain") {
+      } else if (zone.type === "mountain" || zone.type === "hills") {
         const size = 18 + (index % 5) * 4;
         graphics
-          .fillStyle(index % 3 === 0 ? 0x687069 : 0x2c302d, 0.94)
+          .fillStyle(
+            zone.type === "hills"
+              ? index % 3 === 0 ? 0x65704d : 0x303829
+              : index % 3 === 0 ? 0x687069 : 0x2c302d,
+            zone.type === "hills" ? 0.66 : 0.94,
+          )
           .fillTriangle(x, y - size, x - size * 0.72, y + size * 0.55, x + size * 0.72, y + size * 0.55);
-        graphics
-          .fillStyle(0xc1c2b7, 0.52)
-          .fillTriangle(x, y - size, x - size * 0.22, y - size * 0.48, x + size * 0.26, y - size * 0.45);
+        if (zone.type === "mountain") {
+          graphics
+            .fillStyle(0xc1c2b7, 0.52)
+            .fillTriangle(x, y - size, x - size * 0.22, y - size * 0.48, x + size * 0.26, y - size * 0.45);
+        }
       } else if (zone.type === "lake") {
         graphics
           .fillStyle(0x77969a, 0.2)
           .fillEllipse(x, y, 28 + (index % 3) * 8, 4);
+      } else if (zone.type === "grassland" || zone.type === "heath") {
+        graphics.lineStyle(2, zone.type === "grassland" ? 0x70814d : 0x675b50, 0.36);
+        graphics.beginPath();
+        graphics.moveTo(x - 8, y + 5);
+        graphics.lineTo(x, y - 7);
+        graphics.lineTo(x + 8, y + 5);
+        graphics.strokePath();
       }
     }
   }
@@ -296,6 +336,12 @@ export class WorldScene extends Phaser.Scene {
 
   private drawLocations(): void {
     for (const location of gameSession.world.map.locations) {
+      if (
+        location.type === "dungeon" &&
+        !gameSession.world.isDungeonActive(location.id)
+      ) {
+        continue;
+      }
       const color = LOCATION_COLORS[location.type];
       const marker = this.add.container(location.x, location.y);
       const glow = this.add.circle(0, 0, 25, color, 0.12);
@@ -601,9 +647,12 @@ export class WorldScene extends Phaser.Scene {
 
   private updateMarkerVisibility(): void {
     for (const location of gameSession.world.map.locations) {
+      const inactiveDungeon =
+        location.type === "dungeon" &&
+        !gameSession.world.isDungeonActive(location.id);
       this.locationMarkers
         .get(location.id)
-        ?.setVisible(this.isWithinSight(location.x, location.y, 80));
+        ?.setVisible(!inactiveDungeon && this.isWithinSight(location.x, location.y, 80));
     }
   }
 

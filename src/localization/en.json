@@ -42,8 +42,8 @@
     "morale": "Morale",
     "food": "Food",
     "dayShort": "day",
-    "wages": "Daily pay",
-    "lastUpkeep": "Last upkeep: -{{gold}}g · -{{food}} rations · {{morale}} morale",
+    "wages": "Weekly pay",
+    "lastUpkeep": "Last upkeep: -{{gold}}g wages · -{{food}} rations · {{morale}} morale",
     "worldSeed": "World",
     "heal": "Heal deck",
     "healed": "The city healers restored your surviving monsters.",
@@ -92,17 +92,45 @@
       "name": "Forest",
       "battle": "Dense cover raises DEF and lowers ATK."
     },
+    "darkForest": {
+      "name": "Darkwood",
+      "battle": "Ancient cover favors ambushes and defensive beasts."
+    },
+    "pineForest": {
+      "name": "Pinewood",
+      "battle": "Tall pines offer light cover and narrow sightlines."
+    },
     "swamp": {
       "name": "Swamp",
       "battle": "Deep mud reduces ATK and DEF."
+    },
+    "bog": {
+      "name": "Bog",
+      "battle": "Rotten ground slows every formation."
     },
     "desert": {
       "name": "Desert",
       "battle": "Open heat raises ATK but weakens DEF."
     },
+    "badlands": {
+      "name": "Badlands",
+      "battle": "Broken earth rewards aggressive raiders."
+    },
+    "grassland": {
+      "name": "Grassland",
+      "battle": "Open fields offer clear movement and fair footing."
+    },
+    "heath": {
+      "name": "Heath",
+      "battle": "Lonely scrubland hides small threats."
+    },
     "mountain": {
       "name": "Mountains",
       "battle": "The mountain paths are too steep for battle."
+    },
+    "hills": {
+      "name": "Hills",
+      "battle": "Rolling ground slows armies but favors scouts."
     },
     "lake": {
       "name": "Lake",
@@ -161,6 +189,10 @@
     "upgradeAt": "Upgrade available at level {{level}}",
     "chooseUpgrade": "Choose an upgrade path",
     "terminal": "Final tier reached",
+    "tier": "Tier {{tier}}",
+    "tierLabel": "Tier",
+    "weeklyWage": "{{wage}}g/week",
+    "weeklyWageLabel": "Weekly wage",
     "inspect": "Unit Details",
     "selectUnit": "Select a creature to inspect its stats and upgrade branches.",
     "currentHp": "Current HP",
@@ -172,6 +204,8 @@
     "poor": "Not enough gold.",
     "recruited": "{{unit}} joined your reserve.",
     "upgraded": "{{unit}} joined a new unit tier.",
+    "dismiss": "Dismiss",
+    "dismissed": "{{unit}} left your warband.",
     "level": "Level {{level}}",
     "xp": "{{xp}} / {{needed}} XP",
     "heroNote": "Your hero always enters battle and never occupies a Warband slot."
@@ -272,12 +306,56 @@
     "recall": "Return to hand",
     "resolveRound": "Resolve round",
     "threat": "Threat {{level}}",
-    "autoInstructions": "Prepare your formation. DEF passively reduces incoming damage when both warbands attack.",
+    "initiativeAttack": "Initiative {{initiative}} strikes.",
+    "simultaneousAttack": "Initiative {{initiative}}: simultaneous strike.",
+    "animation": {
+      "draw": "{{card}} is drawn.",
+      "summon": "{{card}} enters the field.",
+      "recall": "{{card}} returns to hand.",
+      "destroyed": "{{card}} is destroyed."
+    },
     "fieldFull": "Your field is full.",
     "victory": "Victory",
     "defeat": "Defeat",
     "victoryText": "The enemy warband breaks and scatters.",
     "defeatText": "Your surviving memory returns to the last city save.",
+    "aftermathEyebrow": "Battle Report",
+    "yourWarbandReport": "Your Warband",
+    "afterReportHint": "Review losses and performance, then choose the spoils you actually want to carry.",
+    "collectRewards": "Continue to spoils",
+    "unitsEyebrow": "Warband Decisions",
+    "unitsTitle": "Units & Prisoners",
+    "unitsInstruction": "Recruit captured enemies if there is room, upgrade veterans, or dismiss units before carrying loot.",
+    "continueToLoot": "Continue to loot",
+    "availableUnits": "Available Units",
+    "yourUnits": "Your Units",
+    "pendingRecruit": "Joining your warband",
+    "recruit": "Recruit",
+    "returnToRewards": "Return",
+    "noCapturedUnits": "No recruitable enemies.",
+    "releasedUnit": "Leaving after battle",
+    "releasedUnitHint": "Will leave permanently when you continue to loot.",
+    "lootInstruction": "Move items from the loot pile into your inventory. Gold is collected automatically.",
+    "lootPile": "Loot",
+    "carriedLoot": "Taking With You",
+    "returnToLoot": "Return",
+    "noCarriedLoot": "No items chosen yet.",
+    "damageDone": "Damage",
+    "healthLost": "HP lost",
+    "loss": "Loss",
+    "yes": "Yes",
+    "no": "No",
+    "spoilsEyebrow": "Spoils",
+    "spoilsTitle": "Choose Rewards",
+    "battleRewards": "Battle Rewards",
+    "capturedUnit": "Captured Unit",
+    "capturedUnitHint": "Can join your reserve or active warband.",
+    "noRosterSpace": "No roster space. Dismiss a unit first.",
+    "take": "Take",
+    "noLoot": "No spoils worth carrying.",
+    "rosterSpace": "Roster Space",
+    "dismiss": "Dismiss",
+    "dismissUnit": "Dismiss {{unit}}",
     "continue": "Return to world",
     "retreat": "Return to last save",
     "goldReward": "+{{gold}} gold",
@@ -332,6 +410,23 @@
     "accessory": "Accessory",
     "emptyEquipment": "No equipment worn",
     "emptyInventory": "Your packs are empty.",
+    "emptyFiltered": "No goods match this filter.",
+    "weight": "Weight",
+    "totalWeight": "Total",
+    "sortBy": "Sort by",
+    "filter": {
+      "all": "All",
+      "consumable": "Consumables",
+      "resource": "Resources",
+      "tradeGood": "Items",
+      "equipment": "Equipment"
+    },
+    "sort": {
+      "name": "Name",
+      "price": "Price",
+      "quantity": "Quantity",
+      "weight": "Weight"
+    },
     "localMarket": "Local market",
     "noMarket": "No market nearby",
     "marketHint": "Travel to a village or city to buy and sell goods.",
@@ -356,6 +451,7 @@
     "invalid": "That action is not available here.",
     "notEnoughGold": "Not enough gold.",
     "notEnoughItems": "Required goods are missing.",
+    "tooHeavy": "Your packs are too heavy.",
     "noEffect": "No surviving unit needs treatment.",
     "lootAlmanac": "Loot almanac — exact drop chances",
     "cardChance": "{{name}} card · {{chance}}%",

@@ -36,8 +36,16 @@ describe("WorldGenerator", () => {
         "wilds",
       ]),
     );
-    expect(world.enemies).toHaveLength(38);
+    expect(world.enemies.length).toBeGreaterThanOrEqual(36);
+    const dungeons = world.locations.filter(
+      (location) => location.type === "dungeon",
+    );
+    expect(dungeons.length).toBeGreaterThanOrEqual(14);
+    expect(dungeons.every((dungeon) => dungeon.spawnProfile)).toBe(true);
+    const dungeonIds = new Set(dungeons.map((dungeon) => dungeon.id));
     for (const enemy of world.enemies) {
+      expect(enemy.sourceLocationId).toBeDefined();
+      expect(dungeonIds.has(enemy.sourceLocationId!)).toBe(true);
       expect(enemy.partySize).toBeGreaterThan(0);
       expect(enemy.inventoryWeight).toBeGreaterThan(0);
       expect(enemy.speed).toBeLessThan(200);
@@ -61,8 +69,10 @@ describe("WorldGenerator", () => {
     expect(terrainTypes).toEqual(
       expect.arrayContaining([
         "forest",
+        "darkForest",
+        "grassland",
+        "hills",
         "swamp",
-        "desert",
         "mountain",
         "lake",
       ]),

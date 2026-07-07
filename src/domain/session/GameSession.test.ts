@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { contentPack, enemiesById } from "../../content/content";
 import {
   createCardInstance,
   getCardDefinition,
 } from "../cards/CardInstance";
+import { getWeeklyUnitWage } from "../cards/UnitUpkeep";
 import { addToInventory, inventoryQuantity } from "../economy/Economy";
 import type {
   SaveGame,
@@ -148,13 +149,14 @@ describe("GameSession roster", () => {
     expect(session.gold).toBeGreaterThan(goldBefore);
     expect(session.resolveLocationEvent(village.id).kind).toBe("alreadyVisited");
 
-    const castle = session.world.map.locations.find(
+    const castleSession = new GameSession(13579);
+    const castle = castleSession.world.map.locations.find(
       (location) => location.type === "castle",
     )!;
-    session.world.state.nearbyLocationId = castle.id;
-    expect(session.challengeCastle(castle.id)).toBe(true);
-    expect(session.battleContext).toBe("castle");
-    expect(session.mode).toBe("battle");
+    castleSession.world.state.nearbyLocationId = castle.id;
+    expect(castleSession.challengeCastle(castle.id)).toBe(true);
+    expect(castleSession.battleContext).toBe("castle");
+    expect(castleSession.mode).toBe("battle");
   });
 
   it("buys goods and processes demanded resources in city workshops", () => {
@@ -493,7 +495,7 @@ describe("GameSession roster", () => {
     expect(session.visibilityRadius).toBeLessThan(daylightVisibility);
   });
 
-  it("pays daily wages, consumes food, and rewards supplied troops", () => {
+  it("pays weekly wages but still consumes food daily", () => {
     const session = new GameSession(818181);
     session.gold = 1_000;
     session.recruit("village_levy");
@@ -502,19 +504,55 @@ describe("GameSession roster", () => {
 
     session.advanceTime(16 * 60);
 
-    expect(session.gold).toBe(goldBefore - 3);
+    expect(session.gold).toBe(goldBefore);
     expect(session.rationCount).toBe(foodBefore - 2);
-    expect(session.morale).toBe(75);
+    expect(session.morale).toBe(73);
     expect(session.survivalState.lastUpkeep).toMatchObject({
       day: 2,
-      wagesDue: 3,
-      wagesPaid: 3,
+      wagesDue: 0,
+      wagesPaid: 0,
       foodRequired: 2,
       foodConsumed: 2,
     });
+
+    session.advanceTime(6 * 24 * 60);
+
+    expect(session.gold).toBe(goldBefore - 1);
+    expect(session.survivalState.lastUpkeep).toMatchObject({
+      day: 8,
+      wagesDue: 1,
+      wagesPaid: 1,
+    });
   });
 
-  it("loses morale and travel speed when wages and food are missing", () => {
+  it("scales weekly wages by unit tier and level", () => {
+    const levy = createCardInstance("village_levy");
+    const spearman = createCardInstance("levy_spearman");
+    const soldier = createCardInstance("soldier");
+    const crusader = createCardInstance("crusader");
+
+    spearman.level = 2;
+    soldier.level = 3;
+
+    expect(getWeeklyUnitWage(levy)).toBe(1);
+    expect(getWeeklyUnitWage(spearman)).toBe(3);
+    expect(getWeeklyUnitWage(soldier)).toBe(8);
+    expect(getWeeklyUnitWage(crusader)).toBe(16);
+  });
+
+  it("naturally regenerates surviving troops while time passes", () => {
+    const session = new GameSession(343434);
+    session.gold = 1_000;
+    session.recruit("village_levy");
+    const recruit = session.reserve[0];
+    recruit.currentHp = 100;
+
+    session.advanceTime(60);
+
+    expect(recruit.currentHp).toBe(104);
+  });
+
+  it("loses morale and travel speed when weekly wages and food are missing", () => {
     const session = new GameSession(919191);
     session.gold = 1_000;
     session.recruit("village_levy");
@@ -522,10 +560,57 @@ describe("GameSession roster", () => {
     session.inventory = [];
     const speedBefore = session.partyMovementSpeed;
 
-    session.advanceTime(16 * 60);
+    session.advanceTime(7 * 24 * 60);
 
-    expect(session.morale).toBe(28);
+    expect(session.morale).toBe(0);
     expect(session.partyMovementSpeed).toBeLessThan(speedBefore);
+  });
+
+  it("blocks buying when the inventory would exceed max weight", () => {
+    const session = new GameSession(101010);
+    session.gold = 10_000;
+    addToInventory(session.inventory, "stone", 30);
+    const heavyOffer = session.marketProfile!.offers.find(
+      (offer) => offer.itemId === "stone",
+    );
+    if (!heavyOffer) {
+      addToInventory(session.economyState.markets[session.world.nearbyLocation!.id], "stone", 1);
+    }
+
+    expect(session.cargoWeight).toBeGreaterThan(session.maxCargoWeight);
+    expect(session.canBuyItem("stone")).toBe(false);
+    expect(session.buyItem("stone")).toBe("tooHeavy");
+  });
+
+  it("only claims selected victory spoils", () => {
+    const session = new GameSession(202020);
+    session.beginBattle(session.world.state.enemies[0].id);
+    if (!session.battle) throw new Error("Expected battle");
+    vi.spyOn(session.battle, "rollReward").mockReturnValue({
+      gold: 7,
+      cardId: "ork_rekrut",
+      items: [
+        { itemId: "iron", quantity: 1 },
+        { itemId: "wood", quantity: 1 },
+      ],
+    });
+    session.battle.outcome = "victory";
+    const reward = session.prepareVictoryReward();
+    if (!reward) throw new Error("Expected reward");
+
+    const goldBefore = session.gold;
+    const ironBefore = inventoryQuantity(session.inventory, "iron");
+    const woodBefore = inventoryQuantity(session.inventory, "wood");
+    const claimed = session.claimVictoryReward({
+      continueDungeon: true,
+      takeCard: false,
+      itemIds: ["iron"],
+    });
+
+    expect(claimed?.cardId).toBeNull();
+    expect(session.gold).toBeGreaterThanOrEqual(goldBefore + reward.gold);
+    expect(inventoryQuantity(session.inventory, "iron")).toBe(ironBefore + 1);
+    expect(inventoryQuantity(session.inventory, "wood")).toBe(woodBefore);
   });
 
   it("consumes food from partially filled Mount-and-Blade-style stacks", () => {

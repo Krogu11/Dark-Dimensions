@@ -106,18 +106,14 @@ export function App() {
     window.setTimeout(() => setSaveMessage(null), 2600);
   }
 
-  function finishVictory(): ReturnType<typeof gameSession.finishVictory> {
-    return processVictory(true);
+  function prepareVictory(): ReturnType<typeof gameSession.prepareVictoryReward> {
+    return gameSession.prepareVictoryReward();
   }
 
-  function retreatAfterVictory(): ReturnType<typeof gameSession.finishVictory> {
-    return processVictory(false);
-  }
-
-  function processVictory(
-    continueDungeon: boolean,
-  ): ReturnType<typeof gameSession.finishVictory> {
-    const reward = gameSession.finishVictory(continueDungeon);
+  function claimVictory(
+    selection: Parameters<typeof gameSession.claimVictoryReward>[0],
+  ): ReturnType<typeof gameSession.claimVictoryReward> {
+    const reward = gameSession.claimVictoryReward(selection);
     if (reward) {
       const cardName = reward.cardId
         ? t(getCardDefinition(reward.cardId).nameKey)
@@ -310,7 +306,7 @@ export function App() {
             {t("hud.terrainFood")} ×{gameSession.terrainFoodMultiplier.toFixed(2)}
           </span>
           <span>
-            {t("hud.cargo")} {gameSession.cargoWeight.toFixed(1)}
+            {t("hud.cargo")} {gameSession.cargoWeight.toFixed(1)}/{gameSession.maxCargoWeight}
           </span>
           <span>
             {t("hud.morale")} {gameSession.morale}
@@ -320,7 +316,7 @@ export function App() {
             {" · "}-{gameSession.dailyFoodRequirement}/{t("hud.dayShort")}
           </span>
           <span>
-            {t("hud.wages")} {gameSession.dailyWageCost}g
+            {t("hud.wages")} {gameSession.weeklyWageCost}g
           </span>
         </div>
         {gameSession.survivalState.lastUpkeep ? (
@@ -477,7 +473,8 @@ export function App() {
       {gameSession.mode === "battle" && gameSession.battle ? (
         <BattleScreen
           battle={gameSession.battle}
-          onVictory={finishVictory}
+          onPrepareVictory={prepareVictory}
+          onClaimVictory={claimVictory}
           onDefeat={finishDefeat}
           encounterLabel={
             gameSession.dungeonRun
@@ -498,9 +495,6 @@ export function App() {
             gameSession.canContinueDungeon
               ? t("locationActions.retreatDungeon")
               : undefined
-          }
-          onVictorySecondary={
-            gameSession.canContinueDungeon ? retreatAfterVictory : undefined
           }
         />
       ) : null}

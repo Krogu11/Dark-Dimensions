@@ -17,6 +17,14 @@ export const mapLocationSchema = z.object({
   x: z.number().nonnegative(),
   y: z.number().nonnegative(),
   radius: z.number().positive(),
+  spawnProfile: z
+    .object({
+      biome: z.string().min(1),
+      enemyIds: z.array(z.string().min(1)).min(1),
+      bossEnemyId: z.string().min(1),
+      respawnHours: z.number().positive(),
+    })
+    .optional(),
 });
 
 export const encounterEntrySchema = z.object({
@@ -36,6 +44,7 @@ export const encounterZoneSchema = z.object({
 export const worldEnemySpawnSchema = z.object({
   id: z.string().min(1),
   archetypeId: z.string().min(1),
+  sourceLocationId: z.string().min(1).optional(),
   x: z.number().nonnegative(),
   y: z.number().nonnegative(),
   aggroRadius: z.number().positive(),
@@ -47,9 +56,16 @@ export const worldEnemySpawnSchema = z.object({
 
 export const terrainZoneTypeSchema = z.enum([
   "forest",
+  "darkForest",
+  "pineForest",
   "swamp",
+  "bog",
   "desert",
+  "badlands",
+  "grassland",
+  "heath",
   "mountain",
+  "hills",
   "lake",
 ]);
 
@@ -113,6 +129,8 @@ export const cardDefinitionSchema = z.object({
   nameKey: z.string().min(1),
   race: z.string().min(1),
   rarity: z.enum(["common", "uncommon", "rare", "epic", "legendary"]),
+  tier: z.number().int().min(1).max(6),
+  initiative: z.number().int().min(1).max(12),
   atk: z.number().nonnegative(),
   def: z.number().nonnegative(),
   maxHp: z.number().positive(),

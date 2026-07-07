@@ -1206,6 +1206,34 @@ h2 {
   transition: 130ms ease;
 }
 
+.battle-card.attacking {
+  z-index: 3;
+  border-color: rgba(223, 122, 104, 0.86);
+  animation: battle-lunge-player 520ms ease both;
+}
+
+.battle-row.enemy .battle-card.attacking {
+  animation-name: battle-lunge-enemy;
+}
+
+.battle-card.targeted {
+  border-color: rgba(255, 238, 178, 0.86);
+  animation: battle-impact 520ms ease both;
+}
+
+.battle-card.summoned,
+.battle-card.drawn {
+  animation: battle-enter-card 520ms cubic-bezier(0.2, 0.85, 0.2, 1.15) both;
+}
+
+.battle-card.recalled {
+  animation: battle-recall-card 520ms ease both;
+}
+
+.battle-card.destroyed {
+  animation: battle-destroy-card 520ms ease both;
+}
+
 .battle-card:disabled {
   cursor: default;
   opacity: 1;
@@ -1228,6 +1256,30 @@ h2 {
 .battle-card strong {
   margin: 6px 0 2px;
   font: 600 14px/1.15 "Cinzel", serif;
+}
+
+.rarity-name.common {
+  color: #ded8c9;
+}
+
+.rarity-name.uncommon {
+  color: #84c98a;
+  text-shadow: 0 0 14px rgba(132, 201, 138, 0.18);
+}
+
+.rarity-name.rare {
+  color: #77aee8;
+  text-shadow: 0 0 15px rgba(119, 174, 232, 0.22);
+}
+
+.rarity-name.epic {
+  color: #b88cff;
+  text-shadow: 0 0 16px rgba(184, 140, 255, 0.28);
+}
+
+.rarity-name.legendary {
+  color: #f0b85a;
+  text-shadow: 0 0 18px rgba(240, 184, 90, 0.32);
 }
 
 .card-rarity,
@@ -1262,6 +1314,7 @@ h2 {
   width: 100%;
   margin-top: 9px;
   font-size: 9px;
+  gap: 5px;
 }
 
 .card-stats b:first-child {
@@ -1269,6 +1322,10 @@ h2 {
 }
 
 .card-stats b:last-child {
+  color: #d9bb70;
+}
+
+.card-stats b:nth-child(2) {
   color: #86a9c4;
 }
 
@@ -1296,6 +1353,56 @@ h2 {
   font-size: 10px;
   letter-spacing: 0.04em;
   text-align: center;
+  transition: 180ms ease;
+}
+
+.battle-divider span {
+  display: inline-flex;
+  min-height: 16px;
+  align-items: center;
+  color: #d6b66d;
+  animation: battle-event-pulse 520ms ease both;
+}
+
+@keyframes battle-lunge-player {
+  0% { transform: translateY(0) scale(1); }
+  42% { transform: translateY(-30px) scale(1.04); box-shadow: 0 0 28px rgba(223, 122, 104, 0.35); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes battle-lunge-enemy {
+  0% { transform: translateY(0) scale(1); }
+  42% { transform: translateY(30px) scale(1.04); box-shadow: 0 0 28px rgba(223, 122, 104, 0.35); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes battle-impact {
+  0%, 100% { transform: translateX(0); filter: brightness(1); }
+  18% { transform: translateX(-6px); filter: brightness(1.8); }
+  36% { transform: translateX(6px); }
+  54% { transform: translateX(-3px); }
+}
+
+@keyframes battle-enter-card {
+  0% { transform: translateY(26px) scale(0.9); opacity: 0; }
+  70% { transform: translateY(-5px) scale(1.03); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes battle-recall-card {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(28px) scale(0.88); opacity: 0.55; }
+}
+
+@keyframes battle-destroy-card {
+  0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+  35% { transform: scale(1.06) rotate(-1deg); filter: brightness(2); }
+  100% { transform: scale(0.72) rotate(4deg); opacity: 0; filter: brightness(0.3); }
+}
+
+@keyframes battle-event-pulse {
+  0% { opacity: 0; transform: translateY(5px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 .empty-slot {
@@ -1351,6 +1458,221 @@ h2 {
 
 .battle-result .button + .button {
   margin-left: 8px;
+}
+
+.aftermath-board {
+  width: min(1180px, 100%);
+  height: min(820px, calc(100vh - 36px));
+  min-height: 640px;
+  padding: 20px 24px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(135deg, rgba(24, 27, 24, 0.98), rgba(10, 13, 12, 0.98));
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.55);
+}
+
+.aftermath-grid {
+  display: grid;
+  margin-top: 18px;
+}
+
+.aftermath-unit-list,
+.loot-inventory-preview,
+.loot-roster-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.aftermath-unit {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) 1.4fr;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #2b312d;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.aftermath-right {
+  display: none;
+}
+
+.aftermath-unit.lost {
+  border-color: rgba(201, 84, 72, 0.4);
+  background: rgba(89, 35, 30, 0.18);
+}
+
+.aftermath-unit strong,
+.aftermath-unit span {
+  display: block;
+}
+
+.aftermath-unit dl {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 0;
+}
+
+.aftermath-unit dt {
+  color: #858b83;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.aftermath-unit dd {
+  margin: 2px 0 0;
+  color: #ded8c9;
+  font-weight: 700;
+}
+
+.loot-board .battle-header {
+  margin-bottom: 18px;
+}
+
+.units-board .battle-header p,
+.loot-board .battle-header p {
+  max-width: 620px;
+  color: #9da096;
+  font-family: Georgia, serif;
+}
+
+.loot-exchange {
+  align-items: start;
+}
+
+.loot-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #2b312d;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.loot-choice span,
+.loot-choice small,
+.loot-roster-card span {
+  color: #858b83;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.loot-choice strong,
+.loot-choice small {
+  display: block;
+}
+
+.loot-roster-actions {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #2b312d;
+}
+
+.unit-management {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.carried-loot-preview {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #2b312d;
+}
+
+.carried-loot-preview > header {
+  display: flex;
+  justify-content: space-between;
+  color: var(--gold);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.loot-roster-card {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #2b312d;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.loot-roster-card > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.unit-transfer-card,
+.loot-roster-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.unit-identity {
+  display: grid;
+  gap: 3px;
+}
+
+.unit-identity strong,
+.unit-identity span {
+  display: block;
+}
+
+.unit-identity span {
+  color: #858b83;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+}
+
+.transfer-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(214, 182, 109, 0.34);
+  color: var(--gold);
+  background: rgba(214, 182, 109, 0.06);
+  cursor: pointer;
+  font: 700 30px/1 "Cinzel", serif;
+  transition: 140ms ease;
+}
+
+.transfer-chevron:hover:not(:disabled) {
+  border-color: rgba(214, 182, 109, 0.68);
+  background: rgba(214, 182, 109, 0.14);
+  transform: translateX(2px);
+}
+
+.transfer-chevron:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.mini-action.danger {
+  border-color: rgba(201, 84, 72, 0.42);
+  color: #df7a68;
+}
+
+.upgrade-sigil {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  border: 1px solid rgba(214, 182, 109, 0.55);
+  border-radius: 50%;
+  color: var(--gold);
+  font: 800 12px/1 "Inter", sans-serif;
+  box-shadow: 0 0 16px rgba(214, 182, 109, 0.22);
 }
 
 .warband-overlay {
@@ -1974,6 +2296,7 @@ h2 {
 
 .trade-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 7px;
   margin-top: 18px;
   padding-bottom: 12px;
@@ -1994,6 +2317,56 @@ h2 {
   border-color: #b79757;
   color: #e1ca8e;
   background: rgba(70, 57, 31, 0.45);
+}
+
+.trade-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 10px 0 0;
+}
+
+.trade-controls > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.trade-controls button,
+.trade-controls select {
+  border: 1px solid #30352f;
+  color: #aeb2aa;
+  background: #101410;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.trade-controls button {
+  padding: 7px 10px;
+  cursor: pointer;
+}
+
+.trade-controls button.active {
+  border-color: #b79757;
+  color: #e1ca8e;
+  background: rgba(70, 57, 31, 0.45);
+}
+
+.trade-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #777d75;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.trade-controls select {
+  padding: 7px 9px;
 }
 
 .trade-grid.tabbed {
@@ -2075,6 +2448,10 @@ h2 {
   margin: 12px;
 }
 
+.equipment-slots.expanded {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
 .equipped-slot,
 .market-note,
 .workshop-card {
@@ -2113,6 +2490,10 @@ h2 {
   margin-top: 6px;
   color: #6f746e;
   font-style: normal;
+}
+
+.cargo-limit.warning {
+  color: #ff9c8f;
 }
 
 .inventory-list,

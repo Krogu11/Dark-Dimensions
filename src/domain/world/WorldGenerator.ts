@@ -4,6 +4,7 @@ import type {
   TerrainRiver,
   TerrainRoad,
   TerrainZone,
+  WorldEnemySpawn,
   WorldMapDefinition,
 } from "../content/schemas";
 import { distanceToSegment, isPositionNearPath } from "./WorldTerrain";
@@ -36,7 +37,7 @@ const LOCATION_COUNTS: Record<GeneratedLocationType, number> = {
   city: 4,
   village: 0,
   castle: 6,
-  dungeon: 10,
+  dungeon: 0,
   landmark: 8,
   wilds: 10,
 };
@@ -51,6 +52,84 @@ const LOCATION_RADII: Record<GeneratedLocationType, number> = {
 };
 
 const WORLD_BOUNDARY_INSET = 210;
+
+const DUNGEON_RESPAWN_HOURS = 96;
+
+interface DungeonSpawnProfile {
+  id: string;
+  biome: string;
+  terrainTypes: TerrainZone["type"][];
+  enemyIds: string[];
+  bossEnemyId: string;
+  patrolCount: [number, number];
+}
+
+const DUNGEON_SPAWN_PROFILES: DungeonSpawnProfile[] = [
+  {
+    id: "kobold",
+    biome: "Kobold Warren",
+    terrainTypes: ["darkForest", "forest"],
+    enemyIds: ["kobold_foragers", "kobold_ambushers", "gloam_stalkers"],
+    bossEnemyId: "kobold_ambushers",
+    patrolCount: [3, 5],
+  },
+  {
+    id: "beast",
+    biome: "Beast Den",
+    terrainTypes: ["forest", "pineForest", "heath"],
+    enemyIds: ["hungry_wolves", "gloam_stalkers", "troll_den"],
+    bossEnemyId: "troll_den",
+    patrolCount: [2, 4],
+  },
+  {
+    id: "swamp",
+    biome: "Sunken Nest",
+    terrainTypes: ["swamp", "bog"],
+    enemyIds: ["swamp_lurkers", "gloam_stalkers", "troll_den"],
+    bossEnemyId: "troll_den",
+    patrolCount: [2, 4],
+  },
+  {
+    id: "undead",
+    biome: "Bone Crypt",
+    terrainTypes: ["bog", "swamp", "heath"],
+    enemyIds: ["grave_procession", "vault_scavengers", "necromancer_cabal"],
+    bossEnemyId: "necromancer_cabal",
+    patrolCount: [2, 4],
+  },
+  {
+    id: "orc",
+    biome: "Orc Warcamp",
+    terrainTypes: ["badlands", "hills", "mountain"],
+    enemyIds: ["road_reavers", "orc_hunters", "ash_brood"],
+    bossEnemyId: "black_banner_knights",
+    patrolCount: [3, 5],
+  },
+  {
+    id: "elemental",
+    biome: "Ash Rift",
+    terrainTypes: ["desert", "badlands", "hills"],
+    enemyIds: ["ash_brood", "storm_callers", "wyvern_kin"],
+    bossEnemyId: "wyvern_kin",
+    patrolCount: [2, 3],
+  },
+  {
+    id: "machine",
+    biome: "Rusted Vault",
+    terrainTypes: ["mountain", "hills", "badlands"],
+    enemyIds: ["vault_scavengers", "rusted_sentinels", "iron_colossus_guard"],
+    bossEnemyId: "iron_colossus_guard",
+    patrolCount: [2, 3],
+  },
+  {
+    id: "outlaw",
+    biome: "Outlaw Hideout",
+    terrainTypes: ["grassland", "heath", "plains" as TerrainZone["type"]],
+    enemyIds: ["desperate_militia", "road_reavers", "black_banner_knights"],
+    bossEnemyId: "black_banner_knights",
+    patrolCount: [2, 4],
+  },
+];
 
 export function createWorldSeed(): number {
   return Math.floor(Math.random() * 0x7fffffff);
@@ -129,8 +208,19 @@ export function generateWorldMap(
     }
   }
 
+  const dungeonCamps = createDungeonCamps(
+    random,
+    width,
+    height,
+    locations,
+    terrainZones,
+    terrainRivers,
+    enemyArchetypes,
+  );
+  locations.push(...dungeonCamps);
+
   for (const type of Object.keys(LOCATION_COUNTS) as GeneratedLocationType[]) {
-    if (type === "city" || type === "village") continue;
+    if (type === "city" || type === "village" || type === "dungeon") continue;
     for (let index = 0; index < LOCATION_COUNTS[type]; index += 1) {
       const position = findLocationPosition(
         random,
@@ -163,9 +253,13 @@ export function generateWorldMap(
       const distanceRatio =
         Math.hypot(location.x - start.x, location.y - start.y) /
         Math.hypot(width, height);
-      const candidates = enemyArchetypes.filter(
-        (enemy) => enemy.threat <= Math.max(1, Math.ceil(distanceRatio * 6)),
-      );
+      const maximumThreat = Math.max(1, Math.ceil(distanceRatio * 6));
+      const profileEnemyIds = location.spawnProfile?.enemyIds;
+      const candidates = profileEnemyIds
+        ? profileEnemyIds
+            .map((enemyId) => enemyArchetypes.find((enemy) => enemy.id === enemyId))
+            .filter((enemy): enemy is EnemyArchetype => Boolean(enemy))
+        : enemyArchetypes.filter((enemy) => enemy.threat <= maximumThreat);
       const selected = shuffle(random, candidates).slice(0, 3);
       return {
         id: `zone_${index}`,
@@ -322,17 +416,24 @@ function createTerrainZones(
   locations: MapLocation[],
 ): TerrainZone[] {
   const specifications = [
-    { type: "forest", count: 12, minimum: 320, maximum: 720 },
-    { type: "swamp", count: 7, minimum: 280, maximum: 560 },
-    { type: "desert", count: 6, minimum: 420, maximum: 820 },
-    { type: "mountain", count: 11, minimum: 280, maximum: 620 },
-    { type: "lake", count: 8, minimum: 180, maximum: 420 },
+    { type: "grassland", count: 7, minimum: 650, maximum: 1180 },
+    { type: "heath", count: 6, minimum: 560, maximum: 980 },
+    { type: "forest", count: 8, minimum: 520, maximum: 1050 },
+    { type: "darkForest", count: 5, minimum: 460, maximum: 880 },
+    { type: "pineForest", count: 5, minimum: 500, maximum: 920 },
+    { type: "swamp", count: 5, minimum: 420, maximum: 780 },
+    { type: "bog", count: 4, minimum: 380, maximum: 700 },
+    { type: "desert", count: 4, minimum: 620, maximum: 1180 },
+    { type: "badlands", count: 5, minimum: 520, maximum: 940 },
+    { type: "hills", count: 8, minimum: 430, maximum: 860 },
+    { type: "mountain", count: 8, minimum: 360, maximum: 780 },
+    { type: "lake", count: 9, minimum: 180, maximum: 460 },
   ] as const;
   const zones: TerrainZone[] = [];
 
   for (const specification of specifications) {
     for (let index = 0; index < specification.count; index += 1) {
-      for (let attempt = 0; attempt < 160; attempt += 1) {
+      for (let attempt = 0; attempt < 260; attempt += 1) {
         const radiusX = randomInteger(
           random,
           specification.minimum,
@@ -368,15 +469,15 @@ function createTerrainZones(
               1 + (location.radius + 120) / Math.min(radiusX, radiusY),
           );
         const clearsBlockingZones = zones
-          .filter((zone) => zone.type === "lake")
           .every(
             (zone) =>
               Math.hypot(zone.x - candidate.x, zone.y - candidate.y) >
-              Math.min(zone.radiusX, zone.radiusY) +
-                Math.min(candidate.radiusX, candidate.radiusY) +
-                140,
+              Math.max(zone.radiusX, zone.radiusY) * 0.72 +
+                Math.max(candidate.radiusX, candidate.radiusY) * 0.72 +
+                (candidate.type === "lake" || zone.type === "lake" ? 170 : 80),
           );
         if (!clearsLocations || (blocksTravel && !clearsBlockingZones)) continue;
+        if (!blocksTravel && !clearsBlockingZones) continue;
         zones.push(candidate);
         break;
       }
@@ -426,6 +527,7 @@ function createLocation(
   x: number,
   y: number,
   random: () => number,
+  spawnProfile?: MapLocation["spawnProfile"],
 ): MapLocation {
   const names = LOCATION_NAMES[type];
   const name = names[(index + randomInteger(random, 0, names.length - 1)) % names.length];
@@ -437,7 +539,135 @@ function createLocation(
     x,
     y,
     radius: LOCATION_RADII[type],
+    spawnProfile,
   };
+}
+
+function createDungeonCamps(
+  random: () => number,
+  width: number,
+  height: number,
+  existing: MapLocation[],
+  terrainZones: TerrainZone[],
+  terrainRivers: TerrainRiver[],
+  archetypes: EnemyArchetype[],
+): MapLocation[] {
+  const archetypeIds = new Set(archetypes.map((enemy) => enemy.id));
+  const candidates = shuffle(
+    random,
+    terrainZones.filter((zone) => zone.type !== "lake"),
+  );
+  const camps: MapLocation[] = [];
+  const minimumCampCount = 14;
+  const maximumCampCount = 20;
+
+  for (const zone of candidates) {
+    if (camps.length >= maximumCampCount) break;
+    const matchingProfiles = DUNGEON_SPAWN_PROFILES.filter((profile) =>
+      profile.terrainTypes.includes(zone.type),
+    ).filter(
+      (profile) =>
+        profile.enemyIds.every((enemyId) => archetypeIds.has(enemyId)) &&
+        archetypeIds.has(profile.bossEnemyId),
+    );
+    const profile =
+      matchingProfiles[randomInteger(random, 0, Math.max(0, matchingProfiles.length - 1))];
+    if (!profile) continue;
+    const position = findCampPosition(
+      random,
+      width,
+      height,
+      zone,
+      [...existing, ...camps],
+      terrainZones,
+      terrainRivers,
+    );
+    if (!position) continue;
+    camps.push(
+      createLocation(
+        "dungeon",
+        camps.length,
+        position.x,
+        position.y,
+        random,
+        {
+          biome: profile.biome,
+          enemyIds: profile.enemyIds,
+          bossEnemyId: profile.bossEnemyId,
+          respawnHours: DUNGEON_RESPAWN_HOURS,
+        },
+      ),
+    );
+  }
+
+  while (camps.length < minimumCampCount) {
+    const profile = DUNGEON_SPAWN_PROFILES[camps.length % DUNGEON_SPAWN_PROFILES.length];
+    const position = findLocationPosition(
+      random,
+      width,
+      height,
+      [...existing, ...camps],
+      terrainZones,
+      terrainRivers,
+      520,
+    );
+    camps.push(
+      createLocation(
+        "dungeon",
+        camps.length,
+        position.x,
+        position.y,
+        random,
+        {
+          biome: profile.biome,
+          enemyIds: profile.enemyIds.filter((enemyId) => archetypeIds.has(enemyId)),
+          bossEnemyId: archetypeIds.has(profile.bossEnemyId)
+            ? profile.bossEnemyId
+            : profile.enemyIds.find((enemyId) => archetypeIds.has(enemyId))!,
+          respawnHours: DUNGEON_RESPAWN_HOURS,
+        },
+      ),
+    );
+  }
+
+  return camps;
+}
+
+function findCampPosition(
+  random: () => number,
+  width: number,
+  height: number,
+  zone: TerrainZone,
+  existing: MapLocation[],
+  terrainZones: TerrainZone[],
+  terrainRivers: TerrainRiver[],
+): { x: number; y: number } | null {
+  for (let attempt = 0; attempt < 140; attempt += 1) {
+    const angle = random() * Math.PI * 2;
+    const spread = Math.sqrt(random()) * 0.82;
+    const position = {
+      x: clamp(
+        zone.x + Math.cos(angle) * zone.radiusX * spread,
+        WORLD_BOUNDARY_INSET + 160,
+        width - WORLD_BOUNDARY_INSET - 160,
+      ),
+      y: clamp(
+        zone.y + Math.sin(angle) * zone.radiusY * spread,
+        WORLD_BOUNDARY_INSET + 160,
+        height - WORLD_BOUNDARY_INSET - 160,
+      ),
+    };
+    if (
+      existing.every(
+        (location) =>
+          Math.hypot(position.x - location.x, position.y - location.y) > 430,
+      ) &&
+      isLocationPositionSafe(position, terrainZones, terrainRivers, false)
+    ) {
+      return position;
+    }
+  }
+  return null;
 }
 
 function findLocationPosition(
@@ -641,89 +871,61 @@ function createEnemySpawns(
   terrainRivers: TerrainRiver[],
   terrainRoads: TerrainRoad[],
 ) {
-  const weakest = [...archetypes].sort((left, right) => left.threat - right.threat)[0];
-  const fixedStartPosition = {
-    x: Math.min(width - WORLD_BOUNDARY_INSET - 40, start.x + 520),
-    y: Math.max(WORLD_BOUNDARY_INSET + 40, start.y - 180),
-  };
-  const startPatrolPosition = isEnemyPositionBlocked(
-    fixedStartPosition,
-    terrainZones,
-    terrainRivers,
-    terrainRoads,
-  )
-    ? findEnemyPosition(
+  const archetypesById = new Map(archetypes.map((enemy) => [enemy.id, enemy]));
+  const camps = locations.filter(
+    (location) => location.type === "dungeon" && location.spawnProfile,
+  );
+  const spawns: WorldEnemySpawn[] = [];
+
+  for (const camp of camps) {
+    const profile = DUNGEON_SPAWN_PROFILES.find(
+      (candidate) => candidate.biome === camp.spawnProfile?.biome,
+    );
+    const patrolCount = profile
+      ? randomInteger(random, profile.patrolCount[0], profile.patrolCount[1])
+      : randomInteger(random, 2, 4);
+
+    for (let localIndex = 0; localIndex < patrolCount; localIndex += 1) {
+      const position = findEnemyPosition(
         fallbackRandom,
         width,
         height,
-        locations[0],
+        camp,
         terrainZones,
         terrainRivers,
         terrainRoads,
-      )
-    : fixedStartPosition;
-  const spawns = weakest
-    ? [
-        {
-          id: "patrol_start",
-          archetypeId: weakest.id,
-          x: startPatrolPosition!.x,
-          y: startPatrolPosition!.y,
-          aggroRadius: 380,
-          ...createPatrolBurden(random, weakest),
-        },
-      ]
-    : [];
+      );
+      const distanceRatio =
+        Math.hypot(position.x - start.x, position.y - start.y) /
+        Math.hypot(width, height);
+      const maximumThreat = Math.max(
+        1,
+        Math.min(5, 1 + Math.floor(distanceRatio * 7)),
+      );
+      const themedCandidates = (camp.spawnProfile?.enemyIds ?? [])
+        .map((enemyId) => archetypesById.get(enemyId))
+        .filter((enemy): enemy is EnemyArchetype =>
+          Boolean(enemy && enemy.threat <= maximumThreat + 1),
+        );
+      const fallbackCandidates = (camp.spawnProfile?.enemyIds ?? [])
+        .map((enemyId) => archetypesById.get(enemyId))
+        .filter((enemy): enemy is EnemyArchetype => Boolean(enemy));
+      const candidates =
+        themedCandidates.length > 0 ? themedCandidates : fallbackCandidates;
+      const archetype =
+        candidates[randomInteger(random, 0, Math.max(0, candidates.length - 1))];
+      if (!archetype) continue;
 
-  for (let index = spawns.length; index < 38; index += 1) {
-    const anchor = locations[randomInteger(random, 1, locations.length - 1)];
-    const angle = random() * Math.PI * 2;
-    const distance = randomInteger(random, 220, 560);
-    const originalPosition = {
-      x: clamp(
-        anchor.x + Math.cos(angle) * distance,
-        WORLD_BOUNDARY_INSET + 40,
-        width - WORLD_BOUNDARY_INSET - 40,
-      ),
-      y: clamp(
-        anchor.y + Math.sin(angle) * distance,
-        WORLD_BOUNDARY_INSET + 40,
-        height - WORLD_BOUNDARY_INSET - 40,
-      ),
-    };
-    const position = isEnemyPositionBlocked(
-      originalPosition,
-      terrainZones,
-      terrainRivers,
-      terrainRoads,
-    )
-      ? findEnemyPosition(
-          fallbackRandom,
-          width,
-          height,
-          anchor,
-          terrainZones,
-          terrainRivers,
-          terrainRoads,
-        )
-      : originalPosition;
-    const { x, y } = position;
-    const distanceRatio = Math.hypot(x - start.x, y - start.y) / Math.hypot(width, height);
-    const maximumThreat = Math.max(1, Math.min(5, 1 + Math.floor(distanceRatio * 7)));
-    const candidates = archetypes.filter((enemy) => enemy.threat <= maximumThreat);
-    const archetype =
-      candidates[randomInteger(random, 0, Math.max(0, candidates.length - 1))] ??
-      archetypes[0];
-    if (!archetype) continue;
-
-    spawns.push({
-      id: `patrol_${index}`,
-      archetypeId: archetype.id,
-      x,
-      y,
-      aggroRadius: 320 + archetype.threat * 35,
-      ...createPatrolBurden(random, archetype),
-    });
+      spawns.push({
+        id: `patrol_${camp.id}_${localIndex}`,
+        archetypeId: archetype.id,
+        sourceLocationId: camp.id,
+        x: position.x,
+        y: position.y,
+        aggroRadius: 320 + archetype.threat * 35,
+        ...createPatrolBurden(random, archetype),
+      });
+    }
   }
 
   return spawns;

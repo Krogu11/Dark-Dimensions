@@ -8,12 +8,18 @@ import {
 import type { TerrainBattleModifiers } from "../world/WorldTerrain";
 
 export type BattleOutcome = "active" | "victory" | "defeat";
-type BattleSide = "player" | "enemy";
+export type BattleSide = "player" | "enemy";
 
 export interface BattleReward {
   gold: number;
   cardId: string | null;
   items: Array<{ itemId: string; quantity: number }>;
+}
+
+export interface BattleUnitStats {
+  damageDealt: number;
+  hpLost: number;
+  destroyed: boolean;
 }
 
 export interface CombatBonuses {
@@ -33,7 +39,29 @@ const DEFAULT_TERRAIN_MODIFIERS: TerrainBattleModifiers = {
 interface PlannedAttack {
   attacker: CardInstance;
   defender: CardInstance;
+  initiative: number;
 }
+
+export type BattleAnimationEvent =
+  | {
+      type: "draw" | "summon" | "recall";
+      side: BattleSide;
+      cardUid: string;
+      cardId: string;
+    }
+  | {
+      type: "attack";
+      attackerUids: string[];
+      defenderUids: string[];
+      simultaneous: boolean;
+      initiative: number;
+    }
+  | {
+      type: "destroyed";
+      side: BattleSide;
+      cardUid: string;
+      cardId: string;
+    };
 
 export class BattleSimulation {
   readonly hand: CardInstance[] = [];
@@ -44,6 +72,8 @@ export class BattleSimulation {
   readonly enemyDrawPile: CardInstance[];
   readonly deployedUnitUids = new Set<string>();
   readonly combatLog: string[] = [];
+  readonly animationEvents: BattleAnimationEvent[] = [];
+  readonly unitStats = new Map<string, BattleUnitStats>();
   private readonly attackBonuses = new Map<string, number>();
   private readonly shields = new Map<string, number>();
   turn = 1;
@@ -62,14 +92,16 @@ export class BattleSimulation {
     this.drawPile = [...playerDeck.filter((card) => card.currentHp > 0)];
     this.enemyDrawPile = enemy.deck.map((cardId) => createCardInstance(cardId));
     this.playerField.push(hero);
+    this.ensureUnitStats(hero);
     this.initializeUnit(hero, "player");
-    this.drawToFive();
-    this.drawEnemyToFive();
-    this.enemySummonPhase(2);
+    this.drawToFive(false);
+    this.drawEnemyToFive(false);
+    this.enemySummonPhase(2, false);
   }
 
   summon(handUid: string): boolean {
     this.message = null;
+    this.setAnimationEvents([]);
     if (this.outcome !== "active" || this.summonsRemaining <= 0) return false;
     if (this.summonedFieldCount >= 3) {
       this.message = "fieldFull";
@@ -81,14 +113,19 @@ export class BattleSimulation {
 
     this.removeFromHand(card);
     this.playerField.push(card);
+    this.ensureUnitStats(card);
     this.deployedUnitUids.add(card.uid);
     this.initializeUnit(card, "player");
     this.summonsRemaining -= 1;
+    this.setAnimationEvents([
+      { type: "summon", side: "player", cardUid: card.uid, cardId: card.cardId },
+    ]);
     return true;
   }
 
   recall(fieldUid: string): boolean {
     this.message = null;
+    this.setAnimationEvents([]);
     if (this.outcome !== "active" || this.summonsRemaining <= 0) return false;
     const card = this.playerField.find((candidate) => candidate.uid === fieldUid);
     if (!card || card.isHero) return false;
@@ -96,6 +133,9 @@ export class BattleSimulation {
     this.removeFromField(card);
     this.hand.push(card);
     this.summonsRemaining -= 1;
+    this.setAnimationEvents([
+      { type: "recall", side: "player", cardUid: card.uid, cardId: card.cardId },
+    ]);
     return true;
   }
 
@@ -127,21 +167,51 @@ export class BattleSimulation {
     );
   }
 
+  getInitiative(card: CardInstance): number {
+    return getCardDefinition(card.cardId).initiative + Math.floor((card.level - 1) / 2);
+  }
+
   resolveRound(): void {
     if (this.outcome !== "active") return;
 
     this.message = null;
+    this.animationEvents.length = 0;
     this.enemySummonPhase(contentPack.combatRules.summonsPerTurn);
 
     const attacks = [
       ...this.planAttacks(this.playerField, this.enemyField),
       ...this.planAttacks(this.enemyField, this.playerField),
-    ];
-    for (const attack of attacks) this.applyAttack(attack);
+    ].sort((left, right) => right.initiative - left.initiative);
 
-    this.removeAllDead();
-    this.checkOutcome();
-    if (this.outcome !== "active") return;
+    const initiativeGroups = new Map<number, PlannedAttack[]>();
+    for (const attack of attacks) {
+      const group = initiativeGroups.get(attack.initiative) ?? [];
+      group.push(attack);
+      initiativeGroups.set(attack.initiative, group);
+    }
+
+    for (const [initiative, group] of initiativeGroups) {
+      const activeGroup = group.filter(
+        ({ attacker, defender }) =>
+          attacker.currentHp > 0 &&
+          defender.currentHp > 0 &&
+          this.isCardOnField(attacker) &&
+          this.isCardOnField(defender),
+      );
+      if (activeGroup.length === 0) continue;
+      this.animationEvents.push({
+        type: "attack",
+        attackerUids: activeGroup.map((attack) => attack.attacker.uid),
+        defenderUids: activeGroup.map((attack) => attack.defender.uid),
+        simultaneous: activeGroup.length > 1,
+        initiative,
+      });
+      for (const attack of activeGroup) this.applyAttack(attack);
+      this.collectDestroyedEvents();
+      this.removeAllDead();
+      this.checkOutcome();
+      if (this.outcome !== "active") return;
+    }
 
     this.turn += 1;
     this.summonsRemaining = contentPack.combatRules.summonsPerTurn;
@@ -175,6 +245,7 @@ export class BattleSimulation {
     return attackers.map((attacker, index) => ({
       attacker,
       defender: defenders[index % defenders.length],
+      initiative: this.getInitiative(attacker),
     }));
   }
 
@@ -189,10 +260,13 @@ export class BattleSimulation {
     const shield = this.shields.get(defender.uid) ?? 0;
     const absorbed = Math.min(shield, damage);
     if (absorbed > 0) this.shields.set(defender.uid, shield - absorbed);
-    defender.currentHp = Math.max(0, defender.currentHp - (damage - absorbed));
+    const hpDamage = Math.min(defender.currentHp, damage - absorbed);
+    defender.currentHp = Math.max(0, defender.currentHp - hpDamage);
+    this.ensureUnitStats(attacker).damageDealt += hpDamage;
+    this.ensureUnitStats(defender).hpLost += hpDamage;
   }
 
-  private enemySummonPhase(maxActions: number): void {
+  private enemySummonPhase(maxActions: number, animate = true): void {
     let actions = 0;
     while (
       actions < maxActions &&
@@ -201,7 +275,16 @@ export class BattleSimulation {
     ) {
       const card = this.enemyHand.shift()!;
       this.enemyField.push(card);
+      this.ensureUnitStats(card);
       this.initializeUnit(card, "enemy");
+      if (animate) {
+        this.animationEvents.push({
+          type: "summon",
+          side: "enemy",
+          cardUid: card.uid,
+          cardId: card.cardId,
+        });
+      }
       actions += 1;
     }
   }
@@ -234,21 +317,12 @@ export class BattleSimulation {
   }
 
   private checkOutcome(): void {
-    const enemyLiving =
-      this.enemyField.length + this.enemyHand.length + this.enemyDrawPile.length;
-    if (enemyLiving === 0) {
+    if (this.enemyField.length === 0) {
       this.outcome = "victory";
       return;
     }
 
-    if (!this.playerField.some((card) => card.isHero)) {
-      this.outcome = "defeat";
-      return;
-    }
-
-    const playerLiving =
-      this.playerField.length + this.hand.length + this.drawPile.length;
-    if (playerLiving === 0) this.outcome = "defeat";
+    if (this.playerField.length === 0) this.outcome = "defeat";
   }
 
   private removeAllDead(): void {
@@ -260,15 +334,33 @@ export class BattleSimulation {
     this.removeDead(this.enemyDrawPile);
   }
 
-  private drawToFive(): void {
+  private drawToFive(animate = true): void {
     while (this.hand.length < 5 && this.drawPile.length > 0) {
-      this.hand.push(this.drawPile.shift()!);
+      const card = this.drawPile.shift()!;
+      this.hand.push(card);
+      if (animate) {
+        this.animationEvents.push({
+          type: "draw",
+          side: "player",
+          cardUid: card.uid,
+          cardId: card.cardId,
+        });
+      }
     }
   }
 
-  private drawEnemyToFive(): void {
+  private drawEnemyToFive(animate = true): void {
     while (this.enemyHand.length < 5 && this.enemyDrawPile.length > 0) {
-      this.enemyHand.push(this.enemyDrawPile.shift()!);
+      const card = this.enemyDrawPile.shift()!;
+      this.enemyHand.push(card);
+      if (animate) {
+        this.animationEvents.push({
+          type: "draw",
+          side: "enemy",
+          cardUid: card.uid,
+          cardId: card.cardId,
+        });
+      }
     }
   }
 
@@ -288,6 +380,36 @@ export class BattleSimulation {
     for (let index = cards.length - 1; index >= 0; index -= 1) {
       if (cards[index].currentHp <= 0) cards.splice(index, 1);
     }
+  }
+
+  private collectDestroyedEvents(): void {
+    for (const card of [...this.playerField, ...this.enemyField]) {
+      if (card.currentHp > 0) continue;
+      this.animationEvents.push({
+        type: "destroyed",
+        side: this.enemyField.includes(card) ? "enemy" : "player",
+        cardUid: card.uid,
+        cardId: card.cardId,
+      });
+      this.ensureUnitStats(card).destroyed = true;
+    }
+  }
+
+  private ensureUnitStats(card: CardInstance): BattleUnitStats {
+    const existing = this.unitStats.get(card.uid);
+    if (existing) return existing;
+    const stats = { damageDealt: 0, hpLost: 0, destroyed: false };
+    this.unitStats.set(card.uid, stats);
+    return stats;
+  }
+
+  private isCardOnField(card: CardInstance): boolean {
+    return this.playerField.includes(card) || this.enemyField.includes(card);
+  }
+
+  private setAnimationEvents(events: BattleAnimationEvent[]): void {
+    this.animationEvents.length = 0;
+    this.animationEvents.push(...events);
   }
 
   private getMaxHp(card: CardInstance): number {

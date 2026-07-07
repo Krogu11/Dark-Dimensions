@@ -9,6 +9,7 @@ import {
   xpNeededForNextLevel,
   type CardInstance,
 } from "../domain/cards/CardInstance";
+import { getWeeklyUnitWage } from "../domain/cards/UnitUpkeep";
 import {
   gameSession,
   type RosterActionResult,
@@ -81,7 +82,9 @@ export default function WarbandManager({
           <span className="hero-sigil">I</span>
           <span className="hero-copy">
             <small>Immortal Hero</small>
-            <strong>{t(getCardDefinition(gameSession.hero.cardId).nameKey)}</strong>
+            <strong className={`rarity-name ${getCardDefinition(gameSession.hero.cardId).rarity}`}>
+              {t(getCardDefinition(gameSession.hero.cardId).nameKey)}
+            </strong>
           </span>
           <span>ATK {getCardDefinition(gameSession.hero.cardId).atk}</span>
           <span>DEF {getCardDefinition(gameSession.hero.cardId).def}</span>
@@ -102,6 +105,14 @@ export default function WarbandManager({
             onAction={(card) =>
               resultMessage(gameSession.moveToReserve(card.uid))
             }
+            onDismiss={(card) =>
+              resultMessage(
+                gameSession.dismissUnit(card.uid),
+                t("warband.dismissed", {
+                  unit: t(getCardDefinition(card.cardId).nameKey),
+                }),
+              )
+            }
           />
           <RosterSection
             title={t("warband.reserve")}
@@ -116,6 +127,14 @@ export default function WarbandManager({
             onSelect={setSelectedUid}
             onAction={(card) =>
               resultMessage(gameSession.moveToWarband(card.uid))
+            }
+            onDismiss={(card) =>
+              resultMessage(
+                gameSession.dismissUnit(card.uid),
+                t("warband.dismissed", {
+                  unit: t(getCardDefinition(card.cardId).nameKey),
+                }),
+              )
             }
           />
         </div>
@@ -137,8 +156,11 @@ export default function WarbandManager({
               return (
                 <article className="recruit-card" key={definition.id}>
                   <small>{definition.race}</small>
-                  <h3>{t(definition.nameKey)}</h3>
+                  <h3 className={`rarity-name ${definition.rarity}`}>
+                    {t(definition.nameKey)}
+                  </h3>
                   <div>
+                    <span>{t("warband.tier", { tier: definition.tier })}</span>
                     <span>ATK {definition.atk}</span>
                     <span>DEF {definition.def}</span>
                     <span>HP {definition.maxHp}</span>
@@ -198,12 +220,19 @@ function UnitInspector({
     <section className="unit-inspector">
       <div className="inspector-identity">
         <p className="eyebrow">{t("warband.inspect")}</p>
-        <h2>{t(definition.nameKey)}</h2>
+        <h2 className={`rarity-name ${definition.rarity}`}>
+          {t(definition.nameKey)}
+        </h2>
         <span>{definition.race} · {definition.rarity}</span>
       </div>
       <dl>
         <div><dt>ATK</dt><dd>{definition.atk}</dd></div>
         <div><dt>DEF</dt><dd>{definition.def}</dd></div>
+        <div><dt>{t("warband.tierLabel")}</dt><dd>{definition.tier}</dd></div>
+        <div>
+          <dt>{t("warband.weeklyWageLabel")}</dt>
+          <dd>{getWeeklyUnitWage(card, definition)}g</dd>
+        </div>
         <div>
           <dt>{t("warband.currentHp")}</dt>
           <dd>{card.currentHp} / {definition.maxHp}</dd>
@@ -228,8 +257,12 @@ function UnitInspector({
               disabled={!upgradeReady || card.isHero}
               onClick={() => onUpgrade(card, targetCardId)}
             >
-              <span>{t(target.nameKey)}</span>
-              <small>ATK {target.atk} · DEF {target.def} · HP {target.maxHp}</small>
+              <span className={`rarity-name ${target.rarity}`}>
+                {t(target.nameKey)}
+              </span>
+              <small>
+                {t("warband.tier", { tier: target.tier })} · ATK {target.atk} · DEF {target.def} · HP {target.maxHp}
+              </small>
               {!upgradeReady ? (
                 <em>{t("warband.upgradeAt", { level: upgrade.requiredLevel })}</em>
               ) : null}
@@ -250,6 +283,7 @@ interface RosterSectionProps {
   selectedUid: string;
   onSelect: (uid: string) => void;
   onAction: (card: CardInstance) => void;
+  onDismiss: (card: CardInstance) => void;
 }
 
 function RosterSection({
@@ -261,6 +295,7 @@ function RosterSection({
   selectedUid,
   onSelect,
   onAction,
+  onDismiss,
 }: RosterSectionProps) {
   return (
     <section className="roster-section">
@@ -277,6 +312,7 @@ function RosterSection({
             actionLabel={actionLabel}
             onSelect={() => onSelect(card.uid)}
             onAction={() => onAction(card)}
+            onDismiss={() => onDismiss(card)}
           />
         ))}
         {cards.length === 0 ? <p className="roster-empty">{emptyText}</p> : null}
@@ -291,16 +327,20 @@ function RosterCard({
   actionLabel,
   onSelect,
   onAction,
+  onDismiss,
 }: {
   card: CardInstance;
   selected: boolean;
   actionLabel: string;
   onSelect: () => void;
   onAction: () => void;
+  onDismiss: () => void;
 }) {
   const { t } = useTranslation();
   const definition = getCardDefinition(card.cardId);
   const neededXp = xpNeededForNextLevel(card.level);
+  const upgrade = upgradesByCardId.get(card.cardId);
+  const upgradeReady = Boolean(upgrade && card.level >= upgrade.requiredLevel);
 
   return (
     <article
@@ -309,18 +349,37 @@ function RosterCard({
     >
       <div>
         <small>{t("warband.level", { level: card.level })}</small>
-        <strong>{t(definition.nameKey)}</strong>
+        <strong className={`rarity-name ${definition.rarity}`}>
+          {t(definition.nameKey)}
+          {upgradeReady ? <span className="upgrade-sigil">↑</span> : null}
+        </strong>
+        <span>
+          {t("warband.tier", { tier: definition.tier })} · {t("warband.weeklyWage", {
+            wage: getWeeklyUnitWage(card, definition),
+          })}
+        </span>
         <span>{t("warband.xp", { xp: card.xp, needed: neededXp })}</span>
       </div>
-      <button
-        className="mini-action"
-        onClick={(event) => {
-          event.stopPropagation();
-          onAction();
-        }}
-      >
-        {actionLabel}
-      </button>
+      <div className="roster-card-actions">
+        <button
+          className="mini-action"
+          onClick={(event) => {
+            event.stopPropagation();
+            onAction();
+          }}
+        >
+          {actionLabel}
+        </button>
+        <button
+          className="mini-action danger"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDismiss();
+          }}
+        >
+          {t("warband.dismiss")}
+        </button>
+      </div>
     </article>
   );
 }

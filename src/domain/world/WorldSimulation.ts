@@ -21,12 +21,19 @@ export interface WorldEnemyState extends WorldEnemySpawn {
   respawnHours: number;
 }
 
+export interface DungeonSiteState {
+  locationId: string;
+  active: boolean;
+  respawnHours: number;
+}
+
 export interface WorldState {
   mapId: string;
   x: number;
   y: number;
   nearbyLocationId: string | null;
   enemies: WorldEnemyState[];
+  dungeonSites: DungeonSiteState[];
   exploredSectors: string[];
 }
 
@@ -50,6 +57,15 @@ export class WorldSimulation {
       y: initialPosition.y,
       nearbyLocationId: initial?.nearbyLocationId ?? null,
       exploredSectors: [...(initial?.exploredSectors ?? [])],
+      dungeonSites:
+        initial?.dungeonSites ??
+        map.locations
+          .filter((location) => location.type === "dungeon" && location.spawnProfile)
+          .map((location) => ({
+            locationId: location.id,
+            active: true,
+            respawnHours: 0,
+          })),
       enemies: map.enemies.map((enemy) => ({
         ...enemy,
         spawnX: enemy.x,
@@ -65,15 +81,24 @@ export class WorldSimulation {
   updateEnemies(deltaHours: number, playerThreat = 1): string | null {
     this.elapsedHours += deltaHours;
     const playerIsSafe = this.nearbyLocation?.type === "city";
+    this.updateDungeonSites(deltaHours);
 
     for (const enemy of this.state.enemies) {
+      const sourceIsActive = enemy.sourceLocationId
+        ? this.isDungeonActive(enemy.sourceLocationId)
+        : true;
       if (!enemy.active) {
         enemy.respawnHours -= deltaHours;
-        if (enemy.respawnHours <= 0) {
+        if (enemy.respawnHours <= 0 && sourceIsActive) {
           enemy.active = true;
           enemy.x = enemy.spawnX;
           enemy.y = enemy.spawnY;
         }
+        continue;
+      }
+      if (!sourceIsActive) {
+        enemy.active = false;
+        enemy.respawnHours = Number.POSITIVE_INFINITY;
         continue;
       }
 
@@ -138,7 +163,28 @@ export class WorldSimulation {
     const enemy = this.state.enemies.find((candidate) => candidate.id === enemyId);
     if (!enemy) return;
     enemy.active = false;
-    enemy.respawnHours = 12;
+    const source = enemy.sourceLocationId
+      ? this.getDungeonSite(enemy.sourceLocationId)
+      : null;
+    enemy.respawnHours = source?.active ? 18 : Number.POSITIVE_INFINITY;
+  }
+
+  defeatDungeon(locationId: string): void {
+    const site = this.getDungeonSite(locationId);
+    const location = this.map.locations.find((candidate) => candidate.id === locationId);
+    if (!site || !location?.spawnProfile) return;
+    site.active = false;
+    site.respawnHours = location.spawnProfile.respawnHours;
+    for (const enemy of this.state.enemies) {
+      if (enemy.sourceLocationId !== locationId) continue;
+      enemy.active = false;
+      enemy.respawnHours = Number.POSITIVE_INFINITY;
+    }
+    this.updateNearbyLocation();
+  }
+
+  isDungeonActive(locationId: string): boolean {
+    return this.getDungeonSite(locationId)?.active ?? true;
   }
 
   move(
@@ -221,12 +267,39 @@ export class WorldSimulation {
   private updateNearbyLocation(): void {
     this.state.nearbyLocationId =
       this.map.locations.find((location) => {
+        if (location.type === "dungeon" && !this.isDungeonActive(location.id)) {
+          return false;
+        }
         const distance = Math.hypot(
           this.state.x - location.x,
           this.state.y - location.y,
         );
         return distance <= location.radius;
       })?.id ?? null;
+  }
+
+  private updateDungeonSites(deltaHours: number): void {
+    for (const site of this.state.dungeonSites) {
+      if (site.active) continue;
+      site.respawnHours -= deltaHours;
+      if (site.respawnHours > 0) continue;
+      site.active = true;
+      site.respawnHours = 0;
+      for (const enemy of this.state.enemies) {
+        if (enemy.sourceLocationId !== site.locationId) continue;
+        enemy.active = true;
+        enemy.x = enemy.spawnX;
+        enemy.y = enemy.spawnY;
+        enemy.respawnHours = 0;
+      }
+    }
+  }
+
+  private getDungeonSite(locationId: string): DungeonSiteState | null {
+    return (
+      this.state.dungeonSites.find((site) => site.locationId === locationId) ??
+      null
+    );
   }
 
   private moveEnemy(

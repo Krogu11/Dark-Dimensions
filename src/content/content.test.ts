@@ -55,6 +55,24 @@ describe("unit upgrade trees", () => {
     }
   });
 
+  it("keeps unit tiers aligned with upgrade levels", () => {
+    for (const card of contentPack.cards) {
+      expect(card.tier).toBeGreaterThanOrEqual(1);
+      expect(card.tier).toBeLessThanOrEqual(6);
+      expect(card.initiative).toBeGreaterThanOrEqual(1);
+      expect(card.initiative).toBeLessThanOrEqual(12);
+    }
+
+    for (const upgrade of contentPack.unitUpgrades) {
+      const source = cardsById.get(upgrade.fromCardId)!;
+      expect(upgrade.requiredLevel).toBe(source.tier + 1);
+      for (const option of upgrade.options) {
+        const target = cardsById.get(option)!;
+        expect(target.tier).toBeGreaterThanOrEqual(source.tier + 1);
+      }
+    }
+  });
+
   it("references valid items in recipes and enemy loot tables", () => {
     const itemIds = new Set(contentPack.items.map((item) => item.id));
     for (const recipe of contentPack.tradeRecipes) {
