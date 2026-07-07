@@ -15,6 +15,7 @@ const WarbandManager = lazy(() => import("./WarbandManager"));
 const InventoryMarket = lazy(() => import("./InventoryMarket"));
 const QuestBoard = lazy(() => import("./QuestBoard"));
 const StrategicMap = lazy(() => import("./StrategicMap"));
+const CharacterSheet = lazy(() => import("./CharacterSheet"));
 const saveRepository = new IndexedDbSaveRepository();
 
 export function App() {
@@ -22,6 +23,7 @@ export function App() {
   const [warbandOpen, setWarbandOpen] = useState(false);
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [questOpen, setQuestOpen] = useState(false);
+  const [characterOpen, setCharacterOpen] = useState(false);
   const [cityMenuOpen, setCityMenuOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const [startMenuOpen, setStartMenuOpen] = useState(true);
@@ -40,6 +42,7 @@ export function App() {
           setWarbandOpen(false);
           setInventoryOpen(false);
           setQuestOpen(false);
+          setCharacterOpen(false);
           setCityMenuOpen(false);
           setMapOpen(false);
         }
@@ -54,6 +57,7 @@ export function App() {
       warbandOpen ||
       inventoryOpen ||
       questOpen ||
+      characterOpen ||
       cityMenuOpen ||
       mapOpen;
     return () => {
@@ -64,6 +68,7 @@ export function App() {
     warbandOpen,
     inventoryOpen,
     questOpen,
+    characterOpen,
     cityMenuOpen,
     mapOpen,
   ]);
@@ -406,6 +411,7 @@ export function App() {
       !warbandOpen &&
       !inventoryOpen &&
       !questOpen &&
+      !characterOpen &&
       !cityMenuOpen &&
       !mapOpen ? (
         <WorldMapControls onOpenMap={() => setMapOpen(true)} />
@@ -445,6 +451,13 @@ export function App() {
         >
           {t("warband.open")}
         </button>
+        <button
+          className="button ghost"
+          disabled={!ready}
+          onClick={() => setCharacterOpen(true)}
+        >
+          {t("character.open")}
+        </button>
         {saveMessage ? <span className="toast">{saveMessage}</span> : null}
       </div>
       ) : null}
@@ -454,6 +467,7 @@ export function App() {
           message={saveMessage}
           onMarket={() => openCityService(setInventoryOpen)}
           onWarband={() => openCityService(setWarbandOpen)}
+          onCharacter={() => openCityService(setCharacterOpen)}
           onQuests={() => openCityService(setQuestOpen)}
           onHeal={healDeck}
           onSave={() => void saveGame()}
@@ -503,6 +517,14 @@ export function App() {
           <InventoryMarket
             returnToCity={gameSession.isInCity}
             onClose={() => closeCityService(setInventoryOpen)}
+          />
+        </Suspense>
+      ) : null}
+      {characterOpen ? (
+        <Suspense fallback={<div className="loading">{t("app.loading")}</div>}>
+          <CharacterSheet
+            returnToCity={gameSession.isInCity}
+            onClose={() => closeCityService(setCharacterOpen)}
           />
         </Suspense>
       ) : null}

@@ -6,6 +6,7 @@ import type {
 import type { FactionState } from "../../domain/quests/Factions";
 import type { GameTimeState } from "../../domain/time/GameClock";
 import type { SurvivalState } from "../../domain/survival/Survival";
+import type { CharacterState } from "../../domain/character/CharacterProgression";
 
 export interface SaveGame {
   version: 1;
@@ -27,6 +28,7 @@ export interface SaveGame {
   reserve?: CardInstance[];
   hero?: CardInstance;
   leadershipLevel?: number;
+  characterState?: CharacterState;
   completedLocationIds?: string[];
   equippedItemId?: string | null;
   economyState?: EconomyState;

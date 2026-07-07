@@ -131,6 +131,9 @@
     "recruitEyebrow": "Barracks and taverns",
     "recruit": "Recruit & manage",
     "recruitDescription": "Hire weak human troops and organize the Warband.",
+    "characterEyebrow": "Training yard",
+    "character": "Character",
+    "characterDescription": "Spend attribute and skill points to shape the Wanderer.",
     "contractEyebrow": "Guild hall",
     "contracts": "Ask for contracts",
     "contractDescription": "Accept local work and claim completed faction rewards.",
@@ -172,6 +175,91 @@
     "level": "Level {{level}}",
     "xp": "{{xp}} / {{needed}} XP",
     "heroNote": "Your hero always enters battle and never occupies a Warband slot."
+  },
+  "character": {
+    "open": "Character",
+    "close": "Return to world",
+    "eyebrow": "Wanderer's Chronicle",
+    "title": "Character",
+    "subtitle": "Grow the Wanderer through attributes and Mount-and-Blade-style skills.",
+    "level": "Level {{level}}",
+    "xp": "{{xp}} / {{needed}} XP",
+    "attributePoints": "{{count}} attribute points",
+    "skillPoints": "{{count}} skill points",
+    "derived": {
+      "heroHp": "Hero HP",
+      "mapSpeed": "Map Speed",
+      "visibility": "Sight",
+      "partySize": "Party Size"
+    },
+    "attribute": {
+      "strength": {
+        "name": "Strength",
+        "effect": "+80 hero HP and minor hero damage"
+      },
+      "agility": {
+        "name": "Agility",
+        "effect": "Improves campaign speed"
+      },
+      "intelligence": {
+        "name": "Intelligence",
+        "effect": "Grants an extra skill point"
+      },
+      "charisma": {
+        "name": "Charisma",
+        "effect": "Supports larger parties through skills"
+      }
+    },
+    "skill": {
+      "ironflesh": {
+        "name": "Ironflesh",
+        "description": "+140 hero HP per rank."
+      },
+      "powerStrike": {
+        "name": "Power Strike",
+        "description": "+70 hero ATK per rank."
+      },
+      "weaponMaster": {
+        "name": "Weapon Master",
+        "description": "Later unlocks advanced weapon training."
+      },
+      "pathfinding": {
+        "name": "Pathfinding",
+        "description": "+8 campaign speed per rank."
+      },
+      "spotting": {
+        "name": "Spotting",
+        "description": "+7% sight range per rank."
+      },
+      "athletics": {
+        "name": "Athletics",
+        "description": "+5 campaign speed per rank."
+      },
+      "woundTreatment": {
+        "name": "Wound Treatment",
+        "description": "Slowly heals surviving units while time passes."
+      },
+      "trainer": {
+        "name": "Trainer",
+        "description": "Deployed survivors gain extra battle XP."
+      },
+      "tactics": {
+        "name": "Tactics",
+        "description": "+35 hero DEF per rank."
+      },
+      "leadership": {
+        "name": "Leadership",
+        "description": "+1 active Warband slot per rank."
+      },
+      "trade": {
+        "name": "Trade",
+        "description": "Improves buy and sell prices."
+      },
+      "persuasion": {
+        "name": "Persuasion",
+        "description": "Later improves quests, recruitment, and diplomacy."
+      }
+    }
   },
   "battle": {
     "title": "Card Battle",

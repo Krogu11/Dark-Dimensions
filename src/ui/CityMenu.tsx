@@ -7,6 +7,7 @@ interface CityMenuProps {
   message: string | null;
   onMarket: () => void;
   onWarband: () => void;
+  onCharacter: () => void;
   onQuests: () => void;
   onHeal: () => void;
   onSave: () => void;
@@ -18,6 +19,7 @@ export function CityMenu({
   message,
   onMarket,
   onWarband,
+  onCharacter,
   onQuests,
   onHeal,
   onSave,
@@ -60,6 +62,11 @@ export function CityMenu({
             <span>{t("city.recruitEyebrow")}</span>
             <strong>{t("city.recruit")}</strong>
             <small>{t("city.recruitDescription")}</small>
+          </button>
+          <button className="city-service character" onClick={onCharacter}>
+            <span>{t("city.characterEyebrow")}</span>
+            <strong>{t("city.character")}</strong>
+            <small>{t("city.characterDescription")}</small>
           </button>
           <button className="city-service contracts" onClick={onQuests}>
             <span>{t("city.contractEyebrow")}</span>

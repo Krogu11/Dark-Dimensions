@@ -19,6 +19,7 @@ export interface BattleReward {
 export interface CombatBonuses {
   heroAtk: number;
   heroDef: number;
+  heroMaxHp?: number;
 }
 
 const DEFAULT_TERRAIN_MODIFIERS: TerrainBattleModifiers = {
@@ -216,7 +217,7 @@ export class BattleSimulation {
       const target = allies.reduce((lowest, candidate) =>
         candidate.currentHp < lowest.currentHp ? candidate : lowest,
       );
-      const maxHp = getCardDefinition(target.cardId).maxHp;
+      const maxHp = this.getMaxHp(target);
       target.currentHp = Math.min(maxHp, target.currentHp + 300);
     } else if (effect === "burn_weakest_300" && enemies.length > 0) {
       const target = enemies.reduce((lowest, candidate) =>
@@ -287,6 +288,12 @@ export class BattleSimulation {
     for (let index = cards.length - 1; index >= 0; index -= 1) {
       if (cards[index].currentHp <= 0) cards.splice(index, 1);
     }
+  }
+
+  private getMaxHp(card: CardInstance): number {
+    return card.isHero
+      ? (this.combatBonuses.heroMaxHp ?? getCardDefinition(card.cardId).maxHp)
+      : getCardDefinition(card.cardId).maxHp;
   }
 
   private isEnemyCard(card: CardInstance): boolean {

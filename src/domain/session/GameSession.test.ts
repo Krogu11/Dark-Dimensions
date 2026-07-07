@@ -87,9 +87,7 @@ describe("GameSession roster", () => {
     session.finishVictory();
 
     expect(recruit.xp).toBe(60);
-    expect(session.hero.currentHp).toBe(
-      getCardDefinition(session.hero.cardId).maxHp,
-    );
+    expect(session.hero.currentHp).toBe(session.heroMaxHp);
   });
 
   it("continues a dungeon through three persistent battle stages", () => {
@@ -268,10 +266,57 @@ describe("GameSession roster", () => {
 
     expect(session.battle!.getAttack(session.hero)).toBe(
       Math.round(
-        (getCardDefinition(session.hero.cardId).atk + 100) *
+        (getCardDefinition(session.hero.cardId).atk +
+          session.heroCombatBonuses.heroAtk) *
           session.battle!.terrainModifiers.playerAttack,
       ),
     );
+  });
+
+  it("levels the Wanderer and spends attribute and skill points", () => {
+    const session = new GameSession(123123);
+    const baseHp = session.heroMaxHp;
+    const baseSpeed = session.partyMovementSpeed;
+
+    session.characterState.attributePoints = 2;
+    session.characterState.skillPoints = 3;
+
+    expect(session.spendAttribute("strength")).toBe(true);
+    expect(session.heroMaxHp).toBeGreaterThan(baseHp);
+    expect(session.hero.currentHp).toBe(session.heroMaxHp);
+    expect(session.spendAttribute("intelligence")).toBe(true);
+    expect(session.characterState.skillPoints).toBe(4);
+
+    expect(session.spendSkill("pathfinding")).toBe(true);
+    expect(session.spendSkill("leadership")).toBe(true);
+    expect(session.partyMovementSpeed).toBeGreaterThan(baseSpeed);
+    expect(session.warbandCapacity).toBe(6);
+  });
+
+  it("persists character progression in city saves", async () => {
+    const session = new GameSession(321321);
+    session.characterState.attributePoints = 1;
+    session.characterState.skillPoints = 1;
+    session.spendAttribute("charisma");
+    session.spendSkill("leadership");
+    let storedSave: SaveGame | null = null;
+    const repository: SaveRepository = {
+      read: async () => storedSave,
+      write: async (save) => {
+        storedSave = structuredClone(save);
+      },
+      delete: async () => {
+        storedSave = null;
+      },
+    };
+
+    expect(await session.save(repository)).toBe(true);
+    const restored = new GameSession(1);
+    restored.restore(storedSave!);
+
+    expect(restored.characterState.attributes.charisma).toBe(2);
+    expect(restored.characterState.skills.leadership).toBe(1);
+    expect(restored.warbandCapacity).toBe(6);
   });
 
   it("completes delivery quests and awards faction reputation", () => {

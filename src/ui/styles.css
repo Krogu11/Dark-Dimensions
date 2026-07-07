@@ -976,10 +976,8 @@ h2 {
 }
 
 .city-service.market,
-.city-service.recruits {
-  grid-column: span 3;
-}
-
+.city-service.recruits,
+.city-service.character,
 .city-service.contracts,
 .city-service.healers,
 .city-service.save {
@@ -1731,6 +1729,179 @@ h2 {
   color: var(--gold);
 }
 
+.character-overlay {
+  position: absolute;
+  z-index: 25;
+  inset: 0;
+  padding: 20px;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 84% 0%, rgba(92, 55, 43, 0.24), transparent 34%),
+    rgba(7, 9, 8, 0.97);
+  backdrop-filter: blur(12px);
+}
+
+.character-sheet {
+  width: min(1180px, 100%);
+  margin: auto;
+  padding: 24px;
+  border: 1px solid var(--line);
+  background: rgba(15, 18, 16, 0.96);
+}
+
+.character-header,
+.character-summary,
+.attribute-panel header,
+.character-derived {
+  display: flex;
+  align-items: center;
+}
+
+.character-header {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #282d29;
+}
+
+.character-header h1 {
+  margin: 6px 0;
+  font-size: clamp(30px, 5vw, 52px);
+  font-weight: 500;
+}
+
+.character-header p:not(.eyebrow) {
+  margin: 0;
+  color: #888d85;
+  font-size: 12px;
+}
+
+.character-summary {
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 8px;
+  color: #8d9189;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.character-summary strong {
+  color: var(--gold);
+  font: 600 16px "Cinzel", serif;
+}
+
+.character-derived {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin: 18px 0;
+  background: #2b302c;
+}
+
+.character-derived div {
+  padding: 14px 16px;
+  background: #141916;
+}
+
+.character-derived span,
+.skill-row small,
+.attribute-panel header small {
+  color: #777c75;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.character-derived strong {
+  display: block;
+  margin-top: 5px;
+  color: #ddd6c6;
+  font: 600 18px "Cinzel", serif;
+}
+
+.character-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.attribute-panel {
+  min-width: 0;
+  border: 1px solid #282d29;
+  background:
+    linear-gradient(160deg, rgba(76, 62, 35, 0.18), transparent 42%),
+    #121614;
+}
+
+.attribute-panel header {
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 82px;
+  padding: 14px;
+  border-bottom: 1px solid #282d29;
+}
+
+.attribute-panel h2 {
+  margin: 4px 0 0;
+  font-size: 19px;
+  font-weight: 500;
+}
+
+.attribute-value {
+  display: block;
+  padding: 16px 14px 4px;
+  color: var(--gold);
+  font: 600 40px/1 "Cinzel", serif;
+}
+
+.skill-list {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.skill-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 86px;
+  padding: 11px;
+  border: 1px solid rgba(214, 182, 109, 0.24);
+  color: #d8d1c1;
+  background: rgba(8, 10, 9, 0.36);
+  cursor: pointer;
+  text-align: left;
+}
+
+.skill-row:hover:not(:disabled) {
+  border-color: rgba(214, 182, 109, 0.58);
+  background: rgba(55, 45, 26, 0.28);
+}
+
+.skill-row:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.skill-row strong,
+.skill-row small {
+  display: block;
+}
+
+.skill-row strong {
+  margin-bottom: 6px;
+  font: 500 12px "Cinzel", serif;
+}
+
+.skill-row em {
+  color: var(--gold);
+  font-size: 11px;
+  font-style: normal;
+  white-space: nowrap;
+}
+
 .ledger-overlay {
   position: absolute;
   z-index: 32;
@@ -2271,6 +2442,7 @@ h2 {
 
   .city-service.market,
   .city-service.recruits,
+  .city-service.character,
   .city-service.contracts,
   .city-service.healers,
   .city-service.save {

@@ -9,6 +9,16 @@ import {
 import type { SaveGame, SaveRepository } from "../../infrastructure/save/SaveRepository";
 import { BattleSimulation, type BattleReward } from "../battle/BattleSimulation";
 import {
+  awardCharacterXp,
+  createCharacterState,
+  normalizeCharacterState,
+  spendAttributePoint,
+  spendSkillPoint,
+  type CharacterAttribute,
+  type CharacterSkill,
+  type CharacterState,
+} from "../character/CharacterProgression";
+import {
   awardXp,
   createCardInstance,
   createPlayerCard,
@@ -103,6 +113,7 @@ export class GameSession {
   warband: CardInstance[] = [];
   reserve: CardInstance[] = [];
   leadershipLevel = 1;
+  characterState: CharacterState = createCharacterState();
   gold = 80;
   mode: GameMode = "world";
   battle: BattleSimulation | null = null;
@@ -135,11 +146,12 @@ export class GameSession {
       contentPack.enemies,
     );
     this.hero = createPlayerCard();
+    this.hero.currentHp = this.heroMaxHp;
     addToInventory(this.inventory, "travel_rations", 1);
   }
 
   get warbandCapacity(): number {
-    return 4 + this.leadershipLevel;
+    return 4 + this.leadershipLevel + this.characterState.skills.leadership;
   }
 
   get reserveCapacity(): number {
@@ -195,9 +207,13 @@ export class GameSession {
     const troopPenalty = this.allUnits.length * 12;
     const cargoPenalty = this.cargoWeight * 1.8;
     const moraleMultiplier = 0.72 + this.survivalState.morale * 0.004;
+    const characterBonus =
+      this.characterState.attributes.agility * 3 +
+      this.characterState.skills.pathfinding * 8 +
+      this.characterState.skills.athletics * 5;
     return Math.max(
       80,
-      Math.round((285 - troopPenalty - cargoPenalty) * moraleMultiplier),
+      Math.round((285 + characterBonus - troopPenalty - cargoPenalty) * moraleMultiplier),
     );
   }
 
@@ -241,7 +257,8 @@ export class GameSession {
           this.world.map,
           this.world.state.x,
           this.world.state.y,
-        ),
+        ) *
+        (1 + this.characterState.skills.spotting * 0.07),
     );
   }
 
@@ -290,9 +307,26 @@ export class GameSession {
       ? itemsById.get(this.equippedItemId)
       : null;
     return {
-      heroAtk: equipment?.statBonus?.atk ?? 0,
-      heroDef: equipment?.statBonus?.def ?? 0,
+      heroAtk:
+        (equipment?.statBonus?.atk ?? 0) +
+        this.characterState.attributes.strength * 20 +
+        this.characterState.skills.powerStrike * 70,
+      heroDef:
+        (equipment?.statBonus?.def ?? 0) +
+        this.characterState.skills.tactics * 35,
     };
+  }
+
+  get heroMaxHp(): number {
+    return (
+      getCardDefinition(this.hero.cardId).maxHp +
+      this.characterState.attributes.strength * 80 +
+      this.characterState.skills.ironflesh * 140
+    );
+  }
+
+  get characterLevelLabel(): string {
+    return `${this.characterState.level}`;
   }
 
   get marketProfile(): MarketProfile | null {
@@ -406,6 +440,12 @@ export class GameSession {
       ? (save.reserve ?? []).map(normalizeCardInstance)
       : [];
     this.leadershipLevel = hasCurrentRoster ? (save.leadershipLevel ?? 1) : 1;
+    this.characterState = normalizeCharacterState(save.characterState);
+    const baseHeroMaxHp = getCardDefinition(this.hero.cardId).maxHp;
+    this.hero.currentHp =
+      !save.characterState && this.hero.currentHp >= baseHeroMaxHp
+        ? this.heroMaxHp
+        : Math.min(this.hero.currentHp, this.heroMaxHp);
     this.gold = save.gold ?? 80;
     this.mode = "world";
     this.battle = null;
@@ -443,6 +483,7 @@ export class GameSession {
     this.warband = [];
     this.reserve = [];
     this.leadershipLevel = 1;
+    this.characterState = createCharacterState();
     this.gold = 80;
     this.mode = "world";
     this.battle = null;
@@ -453,6 +494,7 @@ export class GameSession {
     this.equippedItemId = null;
     this.timeState = createGameTimeState();
     this.survivalState = createSurvivalState();
+    this.hero.currentHp = this.heroMaxHp;
     this.currentEnemySpawnId = null;
     this.currentLocationBattleId = null;
     this.notify();
@@ -527,7 +569,7 @@ export class GameSession {
       this.warband,
       archetype,
       this.hero,
-      this.heroCombatBonuses,
+      { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp },
       getTerrainBattleModifiers(this.currentTerrain),
     );
     this.mode = "battle";
@@ -758,9 +800,13 @@ export class GameSession {
     this.warband = this.warband.filter((card) => card.currentHp > 0);
     for (const card of this.warband) {
       if (completedBattle.deployedUnitUids.has(card.uid)) {
-        awardXp(card, 60 + dungeonStage * 15);
+        awardXp(
+          card,
+          60 + dungeonStage * 15 + this.characterState.skills.trainer * 8,
+        );
       }
     }
+    awardCharacterXp(this.characterState, 70 + completedBattle.enemy.threat * 25);
 
     if (reward.cardId) {
       if (this.reserve.length < this.reserveCapacity) {
@@ -803,7 +849,7 @@ export class GameSession {
       this.completedLocationIds.add(this.currentLocationBattleId);
     }
 
-    this.hero.currentHp = getCardDefinition(this.hero.cardId).maxHp;
+    this.hero.currentHp = this.heroMaxHp;
     this.mode = "world";
     this.battle = null;
     this.dungeonRun = null;
@@ -857,6 +903,7 @@ export class GameSession {
       warband: this.warband,
       reserve: this.reserve,
       leadershipLevel: this.leadershipLevel,
+      characterState: this.characterState,
       completedLocationIds: [...this.completedLocationIds],
       equippedItemId: this.equippedItemId,
       economyState: this.economyState,
@@ -1040,6 +1087,7 @@ export class GameSession {
     ) {
       this.processDailyUpkeep(dayIndex + 1);
     }
+    this.applyWoundTreatment(minutes);
     const deltaHours = minutes / 60;
     const collidedEnemyId = this.world.updateEnemies(
       deltaHours,
@@ -1133,6 +1181,7 @@ export class GameSession {
       inventoryQuantity(stock, itemId),
     );
     const reputationBonus = Math.max(0, this.currentFactionReputation) * 0.003;
+    const tradeBonus = this.characterState.skills.trade * 0.025;
     const stack = this.inventory.find((entry) => entry.itemId === itemId);
     const foodUnits = itemsById.get(itemId)?.foodUnits;
     const fillRatio =
@@ -1143,7 +1192,7 @@ export class GameSession {
       1,
       Math.floor(
         basePrice *
-          (1 + Math.min(0.15, reputationBonus)) *
+          (1 + Math.min(0.15, reputationBonus) + tradeBonus) *
           fillRatio,
       ),
     );
@@ -1155,10 +1204,36 @@ export class GameSession {
     );
     if (!offer) return 0;
     const reputationDiscount = Math.max(0, this.currentFactionReputation) * 0.004;
+    const tradeDiscount = this.characterState.skills.trade * 0.025;
     return Math.max(
       1,
-      Math.ceil(offer.buyPrice * (1 - Math.min(0.2, reputationDiscount))),
+      Math.ceil(
+        offer.buyPrice *
+          (1 - Math.min(0.2, reputationDiscount) - Math.min(0.15, tradeDiscount)),
+      ),
     );
+  }
+
+  spendAttribute(attribute: CharacterAttribute): boolean {
+    const beforeMaxHp = this.heroMaxHp;
+    const spent = spendAttributePoint(this.characterState, attribute);
+    if (!spent) return false;
+    if (attribute === "strength") {
+      this.hero.currentHp += this.heroMaxHp - beforeMaxHp;
+    }
+    this.notify();
+    return true;
+  }
+
+  spendSkill(skill: CharacterSkill): boolean {
+    const beforeMaxHp = this.heroMaxHp;
+    const spent = spendSkillPoint(this.characterState, skill);
+    if (!spent) return false;
+    if (skill === "ironflesh") {
+      this.hero.currentHp += this.heroMaxHp - beforeMaxHp;
+    }
+    this.notify();
+    return true;
   }
 
   private progressBountyQuests(enemyId: string): void {
@@ -1238,11 +1313,23 @@ export class GameSession {
       this.warband,
       archetype,
       this.hero,
-      this.heroCombatBonuses,
+      { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp },
       getTerrainBattleModifiers(this.currentTerrain),
     );
     this.mode = "battle";
     this.notify();
+  }
+
+  private applyWoundTreatment(minutes: number): void {
+    const rank = this.characterState.skills.woundTreatment;
+    if (rank <= 0 || minutes <= 0) return;
+    const healing = Math.floor((minutes / 60) * rank * 6);
+    if (healing <= 0) return;
+    for (const card of this.allUnits) {
+      if (card.currentHp <= 0) continue;
+      const maxHp = getCardDefinition(card.cardId).maxHp;
+      card.currentHp = Math.min(maxHp, card.currentHp + healing);
+    }
   }
 }
 
