@@ -31,6 +31,8 @@ export interface SaveGame {
   characterState?: CharacterState;
   completedLocationIds?: string[];
   equippedItemId?: string | null;
+  rightHandItemId?: string | null;
+  leftHandItemId?: string | null;
   economyState?: EconomyState;
   factionState?: FactionState;
   timeState?: GameTimeState;

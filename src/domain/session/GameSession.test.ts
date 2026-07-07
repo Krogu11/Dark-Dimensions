@@ -432,8 +432,51 @@ describe("GameSession roster", () => {
     session.recruit("village_levy");
     addToInventory(session.inventory, "wood", 20);
 
-    expect(session.cargoWeight).toBe(61);
+    expect(session.cargoWeight).toBe(63);
     expect(session.partyMovementSpeed).toBeLessThan(unburdenedSpeed);
+  });
+
+  it("starts with a wooden club and equips hand slot gear", () => {
+    const session = new GameSession(242424);
+    const baseAttack = session.heroCombatBonuses.heroAtk;
+    const baseDefense = session.heroCombatBonuses.heroDef;
+    addToInventory(session.inventory, "steel_sword", 1);
+    addToInventory(session.inventory, "kite_shield", 1);
+
+    expect(session.rightHandItemId).toBe("wooden_club");
+    expect(session.equipItem("steel_sword")).toBe("success");
+    expect(session.equipItem("kite_shield")).toBe("success");
+
+    expect(session.rightHandItemId).toBe("steel_sword");
+    expect(session.leftHandItemId).toBe("kite_shield");
+    expect(inventoryQuantity(session.inventory, "wooden_club")).toBe(1);
+    expect(session.heroCombatBonuses.heroAtk).toBeGreaterThan(baseAttack);
+    expect(session.heroCombatBonuses.heroDef).toBeGreaterThan(baseDefense);
+  });
+
+  it("persists hand slot equipment in city saves", async () => {
+    const session = new GameSession(252525);
+    addToInventory(session.inventory, "steel_sword", 1);
+    addToInventory(session.inventory, "simple_shield", 1);
+    session.equipItem("steel_sword");
+    session.equipItem("simple_shield");
+    let storedSave: SaveGame | null = null;
+    const repository: SaveRepository = {
+      read: async () => storedSave,
+      write: async (save) => {
+        storedSave = structuredClone(save);
+      },
+      delete: async () => {
+        storedSave = null;
+      },
+    };
+
+    expect(await session.save(repository)).toBe(true);
+    const restored = new GameSession(1);
+    restored.restore(storedSave!);
+
+    expect(restored.rightHandItemId).toBe("steel_sword");
+    expect(restored.leftHandItemId).toBe("simple_shield");
   });
 
   it("uses action time and reduces visibility after dark", () => {

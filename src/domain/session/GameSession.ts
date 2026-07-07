@@ -93,6 +93,7 @@ export type TradeActionResult =
   | "notEnoughGold"
   | "notEnoughItems"
   | "noEffect";
+export type EquipmentSlot = "rightHand" | "leftHand" | "accessory";
 export type LocationEventResult =
   | { kind: "gold"; amount: number }
   | { kind: "danger"; amount: number }
@@ -121,6 +122,8 @@ export class GameSession {
   completedLocationIds = new Set<string>();
   inventory: InventoryStack[] = [];
   equippedItemId: string | null = null;
+  rightHandItemId: string | null = "wooden_club";
+  leftHandItemId: string | null = null;
   economyState: EconomyState;
   factionState: FactionState;
   timeState: GameTimeState = createGameTimeState();
@@ -198,9 +201,10 @@ export class GameSession {
           : stack.quantity;
       return total + item.weight * units;
     }, 0);
-    return inventoryWeight + (this.equippedItemId
-      ? (itemsById.get(this.equippedItemId)?.weight ?? 0)
-      : 0);
+    return inventoryWeight + this.equippedItemIds.reduce(
+      (total, itemId) => total + (itemsById.get(itemId)?.weight ?? 0),
+      0,
+    );
   }
 
   get partyMovementSpeed(): number {
@@ -303,18 +307,33 @@ export class GameSession {
   }
 
   get heroCombatBonuses(): { heroAtk: number; heroDef: number } {
-    const equipment = this.equippedItemId
-      ? itemsById.get(this.equippedItemId)
-      : null;
+    const equipmentBonuses = this.equippedItemIds.reduce(
+      (total, itemId) => {
+        const item = itemsById.get(itemId);
+        return {
+          atk: total.atk + (item?.statBonus?.atk ?? 0),
+          def: total.def + (item?.statBonus?.def ?? 0),
+        };
+      },
+      { atk: 0, def: 0 },
+    );
     return {
       heroAtk:
-        (equipment?.statBonus?.atk ?? 0) +
+        equipmentBonuses.atk +
         this.characterState.attributes.strength * 20 +
         this.characterState.skills.powerStrike * 70,
       heroDef:
-        (equipment?.statBonus?.def ?? 0) +
+        equipmentBonuses.def +
         this.characterState.skills.tactics * 35,
     };
+  }
+
+  get equippedItemIds(): string[] {
+    return [
+      this.rightHandItemId,
+      this.leftHandItemId,
+      this.equippedItemId,
+    ].filter((itemId): itemId is string => Boolean(itemId));
   }
 
   get heroMaxHp(): number {
@@ -453,6 +472,8 @@ export class GameSession {
     this.completedLocationIds = new Set(save.completedLocationIds ?? []);
     this.inventory = normalizeInventory(save.inventory);
     this.equippedItemId = save.equippedItemId ?? null;
+    this.rightHandItemId = save.rightHandItemId ?? "wooden_club";
+    this.leftHandItemId = save.leftHandItemId ?? null;
     this.timeState = save.timeState ?? createGameTimeState();
     this.survivalState = {
       ...createSurvivalState(),
@@ -492,6 +513,8 @@ export class GameSession {
     this.inventory = [];
     addToInventory(this.inventory, "travel_rations", 1);
     this.equippedItemId = null;
+    this.rightHandItemId = "wooden_club";
+    this.leftHandItemId = null;
     this.timeState = createGameTimeState();
     this.survivalState = createSurvivalState();
     this.hero.currentHp = this.heroMaxHp;
@@ -722,18 +745,21 @@ export class GameSession {
   equipItem(itemId: string): TradeActionResult {
     const item = itemsById.get(itemId);
     if (!item || item.type !== "equipment") return "invalid";
+    const slot = item.equipmentSlot ?? "accessory";
     if (!removeFromInventory(this.inventory, itemId, 1)) return "notEnoughItems";
-    if (this.equippedItemId) addToInventory(this.inventory, this.equippedItemId, 1);
-    this.equippedItemId = itemId;
+    const previousItemId = this.getEquippedItemId(slot);
+    if (previousItemId) addToInventory(this.inventory, previousItemId, 1);
+    this.setEquippedItemId(slot, itemId);
     this.advanceTime(5);
     this.notify();
     return "success";
   }
 
-  unequipItem(): TradeActionResult {
-    if (!this.equippedItemId) return "invalid";
-    addToInventory(this.inventory, this.equippedItemId, 1);
-    this.equippedItemId = null;
+  unequipItem(slot: EquipmentSlot = "accessory"): TradeActionResult {
+    const itemId = this.getEquippedItemId(slot);
+    if (!itemId) return "invalid";
+    addToInventory(this.inventory, itemId, 1);
+    this.setEquippedItemId(slot, null);
     this.advanceTime(5);
     this.notify();
     return "success";
@@ -906,6 +932,8 @@ export class GameSession {
       characterState: this.characterState,
       completedLocationIds: [...this.completedLocationIds],
       equippedItemId: this.equippedItemId,
+      rightHandItemId: this.rightHandItemId,
+      leftHandItemId: this.leftHandItemId,
       economyState: this.economyState,
       factionState: this.factionState,
       timeState: this.timeState,
@@ -1318,6 +1346,22 @@ export class GameSession {
     );
     this.mode = "battle";
     this.notify();
+  }
+
+  private getEquippedItemId(slot: EquipmentSlot): string | null {
+    if (slot === "rightHand") return this.rightHandItemId;
+    if (slot === "leftHand") return this.leftHandItemId;
+    return this.equippedItemId;
+  }
+
+  private setEquippedItemId(slot: EquipmentSlot, itemId: string | null): void {
+    if (slot === "rightHand") {
+      this.rightHandItemId = itemId;
+    } else if (slot === "leftHand") {
+      this.leftHandItemId = itemId;
+    } else {
+      this.equippedItemId = itemId;
+    }
   }
 
   private applyWoundTreatment(minutes: number): void {

@@ -107,8 +107,21 @@
     { "id": "pottery", "nameKey": "item.pottery.name", "descriptionKey": "item.pottery.description", "type": "tradeGood", "baseValue": 18, "weight": 2 },
     { "id": "travel_rations", "nameKey": "item.travelRations.name", "descriptionKey": "item.travelRations.description", "type": "consumable", "baseValue": 18, "weight": 1, "foodUnits": 50 },
     { "id": "healing_poultice", "nameKey": "item.healingPoultice.name", "descriptionKey": "item.healingPoultice.description", "type": "consumable", "baseValue": 22, "weight": 0.5, "effect": "heal_300" },
-    { "id": "iron_talisman", "nameKey": "item.ironTalisman.name", "descriptionKey": "item.ironTalisman.description", "type": "equipment", "baseValue": 74, "weight": 1, "statBonus": { "atk": 100 } },
-    { "id": "warding_charm", "nameKey": "item.wardingCharm.name", "descriptionKey": "item.wardingCharm.description", "type": "equipment", "baseValue": 78, "weight": 0.8, "statBonus": { "def": 120 } }
+    { "id": "wooden_club", "nameKey": "item.woodenClub.name", "descriptionKey": "item.woodenClub.description", "type": "equipment", "baseValue": 10, "weight": 2, "equipmentSlot": "rightHand", "weaponType": "club", "statBonus": { "atk": 45 } },
+    { "id": "rusty_sword", "nameKey": "item.rustySword.name", "descriptionKey": "item.rustySword.description", "type": "equipment", "baseValue": 48, "weight": 2.2, "equipmentSlot": "rightHand", "weaponType": "sword", "statBonus": { "atk": 95 } },
+    { "id": "militia_spear", "nameKey": "item.militiaSpear.name", "descriptionKey": "item.militiaSpear.description", "type": "equipment", "baseValue": 72, "weight": 2.6, "equipmentSlot": "rightHand", "weaponType": "spear", "statBonus": { "atk": 125 } },
+    { "id": "hunting_bow", "nameKey": "item.huntingBow.name", "descriptionKey": "item.huntingBow.description", "type": "equipment", "baseValue": 92, "weight": 1.7, "equipmentSlot": "rightHand", "weaponType": "bow", "statBonus": { "atk": 140 } },
+    { "id": "iron_mace", "nameKey": "item.ironMace.name", "descriptionKey": "item.ironMace.description", "type": "equipment", "baseValue": 155, "weight": 3.3, "equipmentSlot": "rightHand", "weaponType": "mace", "statBonus": { "atk": 210 } },
+    { "id": "steel_sword", "nameKey": "item.steelSword.name", "descriptionKey": "item.steelSword.description", "type": "equipment", "baseValue": 360, "weight": 2.7, "equipmentSlot": "rightHand", "weaponType": "sword", "statBonus": { "atk": 330 } },
+    { "id": "war_axe", "nameKey": "item.warAxe.name", "descriptionKey": "item.warAxe.description", "type": "equipment", "baseValue": 520, "weight": 3.8, "equipmentSlot": "rightHand", "weaponType": "axe", "statBonus": { "atk": 430 } },
+    { "id": "knightly_longsword", "nameKey": "item.knightlyLongsword.name", "descriptionKey": "item.knightlyLongsword.description", "type": "equipment", "baseValue": 960, "weight": 3, "equipmentSlot": "rightHand", "weaponType": "sword", "statBonus": { "atk": 620 } },
+    { "id": "obsidian_blade", "nameKey": "item.obsidianBlade.name", "descriptionKey": "item.obsidianBlade.description", "type": "equipment", "baseValue": 1900, "weight": 2.4, "equipmentSlot": "rightHand", "weaponType": "sword", "statBonus": { "atk": 920 } },
+    { "id": "simple_shield", "nameKey": "item.simpleShield.name", "descriptionKey": "item.simpleShield.description", "type": "equipment", "baseValue": 42, "weight": 3, "equipmentSlot": "leftHand", "weaponType": "shield", "statBonus": { "def": 100 } },
+    { "id": "kite_shield", "nameKey": "item.kiteShield.name", "descriptionKey": "item.kiteShield.description", "type": "equipment", "baseValue": 180, "weight": 4.5, "equipmentSlot": "leftHand", "weaponType": "shield", "statBonus": { "def": 260 } },
+    { "id": "tower_shield", "nameKey": "item.towerShield.name", "descriptionKey": "item.towerShield.description", "type": "equipment", "baseValue": 420, "weight": 7, "equipmentSlot": "leftHand", "weaponType": "shield", "statBonus": { "def": 460 } },
+    { "id": "runed_aegis", "nameKey": "item.runedAegis.name", "descriptionKey": "item.runedAegis.description", "type": "equipment", "baseValue": 1400, "weight": 5.5, "equipmentSlot": "leftHand", "weaponType": "shield", "statBonus": { "def": 760 } },
+    { "id": "iron_talisman", "nameKey": "item.ironTalisman.name", "descriptionKey": "item.ironTalisman.description", "type": "equipment", "baseValue": 74, "weight": 1, "equipmentSlot": "accessory", "statBonus": { "atk": 100 } },
+    { "id": "warding_charm", "nameKey": "item.wardingCharm.name", "descriptionKey": "item.wardingCharm.description", "type": "equipment", "baseValue": 78, "weight": 0.8, "equipmentSlot": "accessory", "statBonus": { "def": 120 } }
   ],
   "tradeRecipes": [
     { "id": "mill_flour", "inputItemId": "wheat", "inputQuantity": 3, "goldCost": 3, "outputItemId": "flour", "outputQuantity": 2 },
@@ -189,6 +202,7 @@
       ],
       "itemDropTable": [
         { "itemId": "iron", "chance": 0.28, "minimum": 1, "maximum": 2 },
+        { "itemId": "rusty_sword", "chance": 0.035, "minimum": 1, "maximum": 1 },
         { "itemId": "healing_poultice", "chance": 0.06, "minimum": 1, "maximum": 1 }
       ]
     },
@@ -204,7 +218,8 @@
         { "cardId": "goblin", "chance": 0.14 }
       ],
       "itemDropTable": [
-        { "itemId": "leather", "chance": 0.35, "minimum": 1, "maximum": 2 }
+        { "itemId": "leather", "chance": 0.35, "minimum": 1, "maximum": 2 },
+        { "itemId": "simple_shield", "chance": 0.025, "minimum": 1, "maximum": 1 }
       ]
     },
     {
@@ -234,6 +249,7 @@
       ],
       "itemDropTable": [
         { "itemId": "bread", "chance": 0.22, "minimum": 1, "maximum": 2 },
+        { "itemId": "wooden_club", "chance": 0.08, "minimum": 1, "maximum": 1 },
         { "itemId": "travel_rations", "chance": 0.12, "minimum": 1, "maximum": 1 }
       ]
     },
@@ -298,6 +314,7 @@
       ],
       "itemDropTable": [
         { "itemId": "copper", "chance": 0.24, "minimum": 1, "maximum": 2 },
+        { "itemId": "militia_spear", "chance": 0.04, "minimum": 1, "maximum": 1 },
         { "itemId": "leather", "chance": 0.26, "minimum": 1, "maximum": 2 }
       ]
     },
@@ -315,6 +332,7 @@
       ],
       "itemDropTable": [
         { "itemId": "iron", "chance": 0.45, "minimum": 1, "maximum": 3 },
+        { "itemId": "iron_mace", "chance": 0.035, "minimum": 1, "maximum": 1 },
         { "itemId": "iron_talisman", "chance": 0.03, "minimum": 1, "maximum": 1 }
       ]
     },
@@ -347,6 +365,7 @@
       ],
       "itemDropTable": [
         { "itemId": "meat", "chance": 0.32, "minimum": 1, "maximum": 3 },
+        { "itemId": "war_axe", "chance": 0.025, "minimum": 1, "maximum": 1 },
         { "itemId": "iron", "chance": 0.25, "minimum": 1, "maximum": 2 }
       ]
     },
@@ -379,6 +398,7 @@
       ],
       "itemDropTable": [
         { "itemId": "silver", "chance": 0.18, "minimum": 1, "maximum": 2 },
+        { "itemId": "tower_shield", "chance": 0.025, "minimum": 1, "maximum": 1 },
         { "itemId": "iron_talisman", "chance": 0.05, "minimum": 1, "maximum": 1 }
       ]
     },
@@ -395,6 +415,8 @@
       ],
       "itemDropTable": [
         { "itemId": "gold_ore", "chance": 0.08, "minimum": 1, "maximum": 1 },
+        { "itemId": "knightly_longsword", "chance": 0.02, "minimum": 1, "maximum": 1 },
+        { "itemId": "kite_shield", "chance": 0.035, "minimum": 1, "maximum": 1 },
         { "itemId": "iron_talisman", "chance": 0.05, "minimum": 1, "maximum": 1 }
       ]
     },
@@ -444,6 +466,7 @@
       ],
       "itemDropTable": [
         { "itemId": "gold_ore", "chance": 0.1, "minimum": 1, "maximum": 2 },
+        { "itemId": "obsidian_blade", "chance": 0.012, "minimum": 1, "maximum": 1 },
         { "itemId": "healing_poultice", "chance": 0.12, "minimum": 1, "maximum": 2 }
       ]
     },
@@ -461,6 +484,7 @@
       "itemDropTable": [
         { "itemId": "iron", "chance": 0.5, "minimum": 2, "maximum": 5 },
         { "itemId": "gold_ore", "chance": 0.08, "minimum": 1, "maximum": 1 },
+        { "itemId": "runed_aegis", "chance": 0.014, "minimum": 1, "maximum": 1 },
         { "itemId": "iron_talisman", "chance": 0.075, "minimum": 1, "maximum": 1 }
       ]
     }

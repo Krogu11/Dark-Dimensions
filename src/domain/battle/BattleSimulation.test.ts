@@ -114,6 +114,7 @@ describe("BattleSimulation", () => {
     expect(reward.cardId).toBe("ork_rekrut");
     expect(reward.items).toEqual([
       { itemId: "iron", quantity: 1 },
+      { itemId: "rusty_sword", quantity: 1 },
       { itemId: "healing_poultice", quantity: 1 },
     ]);
   });

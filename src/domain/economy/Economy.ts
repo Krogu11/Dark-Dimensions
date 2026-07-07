@@ -91,6 +91,22 @@ const CITY_STOCK_IDS = [
   "iron_talisman",
   "warding_charm",
 ];
+const CITY_COMMON_EQUIPMENT_IDS = [
+  "wooden_club",
+  "rusty_sword",
+  "militia_spear",
+  "hunting_bow",
+  "simple_shield",
+];
+const CITY_RARE_EQUIPMENT_IDS = [
+  "iron_mace",
+  "steel_sword",
+  "war_axe",
+  "kite_shield",
+  "tower_shield",
+  "knightly_longsword",
+  "runed_aegis",
+];
 
 export function createEconomyState(
   seed: number,
@@ -520,11 +536,28 @@ function createInitialStock(
     `imports:${location.id}`,
     5,
   );
-  return [...CITY_STOCK_IDS, ...importedResources].map((itemId, index) => ({
+  const commonEquipment = selectSeededItems(
+    CITY_COMMON_EQUIPMENT_IDS,
+    seed,
+    `commonEquipment:${location.id}`,
+    3,
+  );
+  const rareEquipment = selectSeededItems(
+    CITY_RARE_EQUIPMENT_IDS,
+    seed,
+    `rareEquipment:${location.id}`,
+    2,
+  );
+  return [
+    ...CITY_STOCK_IDS,
+    ...commonEquipment,
+    ...rareEquipment,
+    ...importedResources,
+  ].map((itemId, index) => ({
     itemId,
     quantity:
       itemsById.get(itemId)?.type === "equipment"
-        ? 1 + ((locationHash >>> 4) % 2)
+        ? 1 + (CITY_COMMON_EQUIPMENT_IDS.includes(itemId) ? ((locationHash >>> 4) % 2) : 0)
         : 6 + ((locationHash + index * 7) % 13),
   }));
 }
@@ -546,6 +579,16 @@ function restockMarkets(
       addToInventory(stock, "bread", 2);
       addToInventory(stock, "flour", 1);
       addToInventory(stock, "healing_poultice", 1);
+      if ((hashValue(`${seed}:${location.id}:equipmentRestock`) + stock.length) % 3 === 0) {
+        addToInventory(
+          stock,
+          CITY_COMMON_EQUIPMENT_IDS[
+            hashValue(`${seed}:${location.id}:commonEquipmentRestock`) %
+              CITY_COMMON_EQUIPMENT_IDS.length
+          ],
+          1,
+        );
+      }
     }
   }
 }

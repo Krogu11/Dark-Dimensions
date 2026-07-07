@@ -2068,13 +2068,24 @@ h2 {
   text-transform: uppercase;
 }
 
+.equipment-slots {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 12px;
+}
+
 .equipped-slot,
 .market-note,
 .workshop-card {
-  margin: 12px;
   padding: 13px;
   border: 1px solid rgba(210, 177, 105, 0.25);
   background: rgba(54, 45, 28, 0.3);
+}
+
+.market-note,
+.workshop-card {
+  margin: 12px;
 }
 
 .equipped-slot span,

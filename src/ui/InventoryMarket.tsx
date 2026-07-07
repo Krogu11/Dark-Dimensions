@@ -7,7 +7,11 @@ import {
 } from "../content/content";
 import { getCardDefinition } from "../domain/cards/CardInstance";
 import type { InventoryStack } from "../domain/economy/Economy";
-import { gameSession, type TradeActionResult } from "../domain/session/GameSession";
+import {
+  gameSession,
+  type EquipmentSlot,
+  type TradeActionResult,
+} from "../domain/session/GameSession";
 
 interface InventoryMarketProps {
   onClose: () => void;
@@ -38,9 +42,11 @@ export default function InventoryMarket({
   const recipes = (profile?.recipeIds ?? [])
     .map((recipeId) => tradeRecipesById.get(recipeId))
     .filter((recipe) => recipe !== undefined);
-  const equipped = gameSession.equippedItemId
-    ? itemsById.get(gameSession.equippedItemId)
-    : null;
+  const equipmentSlots: Array<{ slot: EquipmentSlot; labelKey: string }> = [
+    { slot: "rightHand", labelKey: "trade.rightHand" },
+    { slot: "leftHand", labelKey: "trade.leftHand" },
+    { slot: "accessory", labelKey: "trade.accessory" },
+  ];
 
   function act(result: TradeActionResult, successKey: string): void {
     setMessage(t(result === "success" ? successKey : `trade.${result}`));
@@ -117,23 +123,38 @@ export default function InventoryMarket({
               <span>{gameSession.inventory.reduce((sum, stack) => sum + stack.quantity, 0)}</span>
             </div>
 
-            <article className="equipped-slot">
-              <span>{t("trade.equipped")}</span>
-              {equipped ? (
-                <>
-                  <strong>{t(equipped.nameKey)}</strong>
-                  <small>{t(equipped.descriptionKey)}</small>
-                  <button
-                    className="button ghost compact"
-                    onClick={() => act(gameSession.unequipItem(), "trade.unequipped")}
-                  >
-                    {t("trade.unequip")}
-                  </button>
-                </>
-              ) : (
-                <em>{t("trade.emptyEquipment")}</em>
-              )}
-            </article>
+            <div className="equipment-slots">
+              {equipmentSlots.map(({ slot, labelKey }) => {
+                const itemId =
+                  slot === "rightHand"
+                    ? gameSession.rightHandItemId
+                    : slot === "leftHand"
+                      ? gameSession.leftHandItemId
+                      : gameSession.equippedItemId;
+                const equipped = itemId ? itemsById.get(itemId) : null;
+                return (
+                  <article className="equipped-slot" key={slot}>
+                    <span>{t(labelKey)}</span>
+                    {equipped ? (
+                      <>
+                        <strong>{t(equipped.nameKey)}</strong>
+                        <small>{t(equipped.descriptionKey)}</small>
+                        <button
+                          className="button ghost compact"
+                          onClick={() =>
+                            act(gameSession.unequipItem(slot), "trade.unequipped")
+                          }
+                        >
+                          {t("trade.unequip")}
+                        </button>
+                      </>
+                    ) : (
+                      <em>{t("trade.emptyEquipment")}</em>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
 
             <div className="inventory-list">
               {gameSession.inventory.map((stack) => {
@@ -163,7 +184,15 @@ export default function InventoryMarket({
                           className="button ghost compact"
                           onClick={() => act(gameSession.equipItem(item.id), "trade.equippedResult")}
                         >
-                          {t("trade.equip")}
+                          {t("trade.equipSlot", {
+                            slot: t(
+                              item.equipmentSlot === "rightHand"
+                                ? "trade.rightHand"
+                                : item.equipmentSlot === "leftHand"
+                                  ? "trade.leftHand"
+                                  : "trade.accessory",
+                            ),
+                          })}
                         </button>
                       ) : null}
                       {profile ? (

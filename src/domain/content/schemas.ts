@@ -142,6 +142,10 @@ export const itemDefinitionSchema = z.object({
   weight: z.number().nonnegative(),
   foodUnits: z.number().int().positive().optional(),
   effect: z.enum(["heal_300"]).optional(),
+  equipmentSlot: z.enum(["rightHand", "leftHand", "accessory"]).optional(),
+  weaponType: z
+    .enum(["club", "sword", "axe", "mace", "spear", "bow", "shield"])
+    .optional(),
   statBonus: z
     .object({
       atk: z.number().int().nonnegative().optional(),
