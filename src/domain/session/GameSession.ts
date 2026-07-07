@@ -18,6 +18,15 @@ import {
 } from "../cards/CardInstance";
 import { WorldSimulation } from "../world/WorldSimulation";
 import { createWorldSeed, generateWorldMap } from "../world/WorldGenerator";
+import { findWorldPath, type WorldPoint } from "../world/WorldPathfinder";
+import {
+  findNearestTraversablePosition,
+  getTerrainBattleModifiers,
+  getTerrainFoodMultiplier,
+  getTerrainMovementMultiplier,
+  getTerrainVisibilityMultiplier,
+  type TerrainType,
+} from "../world/WorldTerrain";
 import type { EnemyArchetype, MapLocation } from "../content/schemas";
 import {
   addToInventory,
@@ -106,7 +115,11 @@ export class GameSession {
   timeState: GameTimeState = createGameTimeState();
   survivalState: SurvivalState = createSurvivalState();
   nearbyCaravanId: string | null = null;
+  waypoint: { x: number; y: number; labelKey?: string } | null = null;
   uiBlocked = false;
+  pursuedEnemyId: string | null = null;
+  private navigationPath: WorldPoint[] = [];
+  private pursuedEnemyPosition: WorldPoint | null = null;
   private currentEnemySpawnId: string | null = null;
   private currentLocationBattleId: string | null = null;
   private listeners = new Set<SessionListener>();
@@ -134,13 +147,29 @@ export class GameSession {
   }
 
   get warbandThreatRating(): number {
-    const cards = [this.hero, ...this.warband];
-    const power = cards.reduce((sum, card) => {
+    const unitPower = (card: CardInstance): number => {
       const definition = getCardDefinition(card.cardId);
-      return sum + definition.atk + definition.def + definition.maxHp / 2;
-    }, 0);
+      const healthRatio = Math.max(
+        0,
+        Math.min(1, card.currentHp / definition.maxHp),
+      );
+      const levelMultiplier = 1 + Math.max(0, card.level - 1) * 0.08;
+      return (
+        (definition.atk + definition.def + definition.maxHp * 0.45) *
+        levelMultiplier *
+        (0.35 + healthRatio * 0.65)
+      );
+    };
+    const power =
+      unitPower(this.hero) * 0.65 +
+      this.warband.reduce((sum, card) => sum + unitPower(card), 0);
     const equipmentPower = this.heroCombatBonuses.heroAtk + this.heroCombatBonuses.heroDef;
-    return Math.max(1, Math.min(5, Math.round((power + equipmentPower) / 2500)));
+    const totalPower = power + equipmentPower;
+    if (totalPower < 9_000) return 1;
+    if (totalPower < 18_000) return 2;
+    if (totalPower < 29_000) return 3;
+    if (totalPower < 42_000) return 4;
+    return 5;
   }
 
   get allUnits(): CardInstance[] {
@@ -205,7 +234,39 @@ export class GameSession {
   }
 
   get visibilityRadius(): number {
-    return this.isNight ? 300 : 520;
+    const baseRadius = this.isNight ? 300 : 520;
+    return Math.round(
+      baseRadius *
+        getTerrainVisibilityMultiplier(
+          this.world.map,
+          this.world.state.x,
+          this.world.state.y,
+        ),
+    );
+  }
+
+  get currentTerrain(): TerrainType {
+    return this.world.currentTerrain;
+  }
+
+  get terrainMovementMultiplier(): number {
+    return getTerrainMovementMultiplier(
+      this.world.map,
+      this.world.state.x,
+      this.world.state.y,
+    );
+  }
+
+  get terrainFoodMultiplier(): number {
+    return getTerrainFoodMultiplier(
+      this.world.map,
+      this.world.state.x,
+      this.world.state.y,
+    );
+  }
+
+  get effectiveMovementSpeed(): number {
+    return Math.round(this.partyMovementSpeed * this.terrainMovementMultiplier);
   }
 
   get isInCity(): boolean {
@@ -237,7 +298,12 @@ export class GameSession {
   get marketProfile(): MarketProfile | null {
     const location = this.world.nearbyLocation;
     if (location) {
-      return createMarketProfile(this.worldSeed, location, this.economyState);
+      return createMarketProfile(
+        this.worldSeed,
+        location,
+        this.economyState,
+        this.world.map,
+      );
     }
     return this.nearbyCaravan
       ? createCaravanMarketProfile(this.worldSeed, this.nearbyCaravan)
@@ -292,7 +358,7 @@ export class GameSession {
     this.worldSeed = save.worldSeed ?? hashLegacySeed(save.savedAt);
     this.world = new WorldSimulation(
       generateWorldMap(this.worldSeed, contentPack.enemies),
-      save.worldRevision === 3 ? save.player : undefined,
+      save.worldRevision === 5 ? save.player : undefined,
     );
     this.economyState = normalizeEconomyState(
       save.economyState,
@@ -323,6 +389,12 @@ export class GameSession {
       if (quest.itemId) quest.itemId = migrateItemId(quest.itemId);
     }
     this.nearbyCaravanId = null;
+    this.waypoint = save.player.waypoint ?? null;
+    this.pursuedEnemyId = null;
+    this.navigationPath = this.waypoint
+      ? findWorldPath(this.world.map, this.world.state, this.waypoint)
+      : [];
+    this.pursuedEnemyPosition = null;
     const hasCurrentRoster = save.rosterRevision === ROSTER_REVISION;
     this.hero = hasCurrentRoster && save.hero
       ? normalizeCardInstance(save.hero)
@@ -342,7 +414,11 @@ export class GameSession {
     this.inventory = normalizeInventory(save.inventory);
     this.equippedItemId = save.equippedItemId ?? null;
     this.timeState = save.timeState ?? createGameTimeState();
-    this.survivalState = save.survivalState ?? createSurvivalState();
+    this.survivalState = {
+      ...createSurvivalState(),
+      ...save.survivalState,
+      travelFoodDebt: save.survivalState?.travelFoodDebt ?? 0,
+    };
     this.currentEnemySpawnId = null;
     this.currentLocationBattleId = null;
     this.notify();
@@ -359,6 +435,10 @@ export class GameSession {
       contentPack.enemies,
     );
     this.nearbyCaravanId = null;
+    this.waypoint = null;
+    this.pursuedEnemyId = null;
+    this.navigationPath = [];
+    this.pursuedEnemyPosition = null;
     this.hero = createPlayerCard();
     this.warband = [];
     this.reserve = [];
@@ -448,6 +528,7 @@ export class GameSession {
       archetype,
       this.hero,
       this.heroCombatBonuses,
+      getTerrainBattleModifiers(this.currentTerrain),
     );
     this.mode = "battle";
     this.notify();
@@ -759,7 +840,7 @@ export class GameSession {
 
     await repository.write({
       version: 1,
-      worldRevision: 3,
+      worldRevision: 5,
       worldSeed: this.worldSeed,
       rosterRevision: ROSTER_REVISION,
       savedAt: new Date().toISOString(),
@@ -768,6 +849,8 @@ export class GameSession {
         x: this.world.state.x,
         y: this.world.state.y,
         nearbyLocationId: location.id,
+        exploredSectors: this.world.state.exploredSectors,
+        waypoint: this.waypoint,
       },
       gold: this.gold,
       hero: this.hero,
@@ -796,14 +879,150 @@ export class GameSession {
     vertical: number,
     deltaSeconds: number,
   ): string | null {
+    const effectiveSpeed = this.effectiveMovementSpeed;
     const distance = this.world.move(
       horizontal,
       vertical,
       deltaSeconds,
-      this.partyMovementSpeed,
+      effectiveSpeed,
     );
     if (distance <= 0) return null;
-    return this.advanceTime((distance / this.partyMovementSpeed) * 60);
+    this.world.revealAround(this.visibilityRadius);
+    const travelMinutes = (distance / effectiveSpeed) * 60;
+    this.applyTerrainTravelFoodCost(travelMinutes);
+    return this.advanceTime(travelMinutes);
+  }
+
+  setWaypoint(x: number, y: number, labelKey?: string): void {
+    const destination = findNearestTraversablePosition(
+      this.world.map,
+      x,
+      y,
+      30,
+    );
+    this.waypoint = { ...destination, labelKey };
+    this.pursuedEnemyId = null;
+    this.pursuedEnemyPosition = null;
+    this.navigationPath = findWorldPath(
+      this.world.map,
+      this.world.state,
+      destination,
+    );
+    this.notify();
+  }
+
+  clearWaypoint(): void {
+    this.cancelNavigation();
+  }
+
+  cancelNavigation(): void {
+    this.waypoint = null;
+    this.pursuedEnemyId = null;
+    this.pursuedEnemyPosition = null;
+    this.navigationPath = [];
+    this.notify();
+  }
+
+  pursueEnemy(enemyId: string): boolean {
+    const enemy = this.world.state.enemies.find(
+      (candidate) => candidate.id === enemyId && candidate.active,
+    );
+    if (!enemy) return false;
+    this.pursuedEnemyId = enemy.id;
+    this.pursuedEnemyPosition = { x: enemy.x, y: enemy.y };
+    this.waypoint = { x: enemy.x, y: enemy.y };
+    this.navigationPath = findWorldPath(
+      this.world.map,
+      this.world.state,
+      enemy,
+    );
+    this.notify();
+    return true;
+  }
+
+  advanceNavigation(deltaSeconds: number): void {
+    if (!this.waypoint || this.mode !== "world") return;
+
+    if (this.pursuedEnemyId) {
+      const enemy = this.world.state.enemies.find(
+        (candidate) =>
+          candidate.id === this.pursuedEnemyId && candidate.active,
+      );
+      if (!enemy) {
+        this.cancelNavigation();
+        return;
+      }
+      if (
+        Math.hypot(
+          enemy.x - this.world.state.x,
+          enemy.y - this.world.state.y,
+        ) <= 38
+      ) {
+        const enemyId = enemy.id;
+        this.cancelNavigation();
+        this.beginBattle(enemyId);
+        return;
+      }
+      if (
+        !this.pursuedEnemyPosition ||
+        Math.hypot(
+          enemy.x - this.pursuedEnemyPosition.x,
+          enemy.y - this.pursuedEnemyPosition.y,
+        ) > 90 ||
+        this.navigationPath.length === 0
+      ) {
+        this.pursuedEnemyPosition = { x: enemy.x, y: enemy.y };
+        this.waypoint = { x: enemy.x, y: enemy.y };
+        this.navigationPath = findWorldPath(
+          this.world.map,
+          this.world.state,
+          enemy,
+        );
+      }
+    }
+
+    while (
+      this.navigationPath[0] &&
+      Math.hypot(
+        this.navigationPath[0].x - this.world.state.x,
+        this.navigationPath[0].y - this.world.state.y,
+      ) <= 38
+    ) {
+      this.navigationPath.shift();
+    }
+
+    const target = this.navigationPath[0] ?? this.waypoint;
+    const distance = Math.hypot(
+      target.x - this.world.state.x,
+      target.y - this.world.state.y,
+    );
+    if (distance <= 32 && !this.pursuedEnemyId) {
+      this.cancelNavigation();
+      return;
+    }
+    this.moveWorld(
+      target.x - this.world.state.x,
+      target.y - this.world.state.y,
+      deltaSeconds,
+    );
+
+    if (this.pursuedEnemyId && this.mode === "world") {
+      const enemy = this.world.state.enemies.find(
+        (candidate) =>
+          candidate.id === this.pursuedEnemyId && candidate.active,
+      );
+      if (
+        enemy &&
+        Math.hypot(
+          enemy.x - this.world.state.x,
+          enemy.y - this.world.state.y,
+        ) <= 38
+      ) {
+        const enemyId = enemy.id;
+        this.cancelNavigation();
+        this.beginBattle(enemyId);
+      }
+    }
   }
 
   advanceTime(minutes: number): string | null {
@@ -863,6 +1082,23 @@ export class GameSession {
       foodConsumed,
       moraleChange: this.survivalState.morale - previousMorale,
     };
+  }
+
+  private applyTerrainTravelFoodCost(minutes: number): void {
+    const extraMultiplier = Math.max(0, this.terrainFoodMultiplier - 1);
+    if (extraMultiplier <= 0 || minutes <= 0) return;
+    this.survivalState.travelFoodDebt =
+      (this.survivalState.travelFoodDebt ?? 0) +
+      (this.dailyFoodRequirement * extraMultiplier * minutes) / 1440;
+    const due = Math.floor(this.survivalState.travelFoodDebt);
+    if (due <= 0) return;
+    this.survivalState.travelFoodDebt -= due;
+    const consumed = consumeFoodSupply(this.inventory, due);
+    if (consumed < due) {
+      this.survivalState.morale = clampMorale(
+        this.survivalState.morale - (due - consumed),
+      );
+    }
   }
 
   updateEconomy(deltaHours: number): void {
@@ -1003,6 +1239,7 @@ export class GameSession {
       archetype,
       this.hero,
       this.heroCombatBonuses,
+      getTerrainBattleModifiers(this.currentTerrain),
     );
     this.mode = "battle";
     this.notify();

@@ -104,6 +104,10 @@ export function BattleScreen({
             <p className="eyebrow">{t("battle.title")}</p>
             <h1>{t(battle.enemy.nameKey)}</h1>
             {encounterLabel ? <span className="encounter-label">{encounterLabel}</span> : null}
+            <span className={`terrain-battle-tag ${battle.terrainModifiers.terrain}`}>
+              {t(`terrain.${battle.terrainModifiers.terrain}.name`)} ·{" "}
+              {t(`terrain.${battle.terrainModifiers.terrain}.battle`)}
+            </span>
           </div>
           <div className="battle-turn">
             <strong>{t("battle.turn", { turn: battle.turn })}</strong>

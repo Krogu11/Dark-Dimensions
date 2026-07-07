@@ -1,5 +1,10 @@
 import { contentPack, itemsById } from "../../content/content";
 import type { MapLocation, WorldMapDefinition } from "../content/schemas";
+import {
+  distanceToSegment,
+  getTerrainAt,
+  type TerrainType,
+} from "../world/WorldTerrain";
 
 export interface InventoryStack {
   itemId: string;
@@ -96,22 +101,45 @@ export function createEconomyState(
     (location) => location.type === "city" || location.type === "village",
   );
   for (const location of settlements) {
-    markets[location.id] = createInitialStock(seed, location);
+    markets[location.id] = createInitialStock(seed, location, map);
   }
 
   const cities = settlements.filter((location) => location.type === "city");
   const villages = settlements.filter((location) => location.type === "village");
-  const caravans = cities.flatMap((city, cityIndex) => {
-    return [1, 2].map((offset) => {
-      const destination = cities[(cityIndex + offset) % cities.length];
-      const index = cityIndex * 2 + offset - 1;
+  const cityIds = new Set(cities.map((city) => city.id));
+  const cityRoads = map.terrainRoads.filter(
+    (road) =>
+      road.originId &&
+      road.destinationId &&
+      cityIds.has(road.originId) &&
+      cityIds.has(road.destinationId),
+  );
+  const caravans = cityRoads.flatMap((road, roadIndex) => {
+    return [0, 1].map((direction) => {
+      const index = roadIndex * 2 + direction;
+      const origin = map.locations.find(
+        (location) =>
+          location.id ===
+          (direction === 0 ? road.originId : road.destinationId),
+      )!;
+      const destination = map.locations.find(
+        (location) =>
+          location.id ===
+          (direction === 0 ? road.destinationId : road.originId),
+      )!;
       const progress = (index * 0.17) % 0.82;
+      const position = getRoutePosition(
+        map,
+        origin.id,
+        destination.id,
+        progress,
+      );
       return {
         id: `caravan_${index}`,
         kind: "caravan" as const,
-        x: city.x + (destination.x - city.x) * progress,
-        y: city.y + (destination.y - city.y) * progress,
-        originId: city.id,
+        x: position.x,
+        y: position.y,
+        originId: origin.id,
         destinationId: destination.id,
         progress,
         speed: 55 + (hashValue(`${seed}:caravan:${index}`) % 20),
@@ -129,13 +157,14 @@ export function createEconomyState(
   });
   const villagers = villages.map((village, index) => {
     const city = nearestLocation(village, cities);
-    const productionItemId = getLocationResource(seed, village.id);
+    const productionItemId = getLocationResource(seed, village.id, map);
     const progress = (index * 0.11) % 0.76;
+    const position = getRoutePosition(map, village.id, city.id, progress);
     return {
       id: `villager_${index}`,
       kind: "villager" as const,
-      x: village.x + (city.x - village.x) * progress,
-      y: village.y + (city.y - village.y) * progress,
+      x: position.x,
+      y: position.y,
       originId: village.id,
       destinationId: city.id,
       progress,
@@ -219,13 +248,13 @@ export function updateEconomyState(
       (location) => location.id === trader.destinationId,
     );
     if (!origin || !destination) continue;
-    const distance = Math.max(1, Math.hypot(destination.x - origin.x, destination.y - origin.y));
+    const distance = getRouteLength(map, origin.id, destination.id);
     trader.progress += (trader.speed * deltaHours) / distance;
     if (trader.progress >= 1) {
       trader.progress = 0;
       trader.originId = destination.id;
       trader.destinationId = origin.id;
-      serviceTraderAtSettlement(state, trader, destination, seed);
+      serviceTraderAtSettlement(state, trader, destination, seed, map);
     }
     const nextOrigin = map.locations.find(
       (location) => location.id === trader.originId,
@@ -233,10 +262,14 @@ export function updateEconomyState(
     const nextDestination = map.locations.find(
       (location) => location.id === trader.destinationId,
     )!;
-    trader.x =
-      nextOrigin.x + (nextDestination.x - nextOrigin.x) * trader.progress;
-    trader.y =
-      nextOrigin.y + (nextDestination.y - nextOrigin.y) * trader.progress;
+    const position = getRoutePosition(
+      map,
+      nextOrigin.id,
+      nextDestination.id,
+      trader.progress,
+    );
+    trader.x = position.x;
+    trader.y = position.y;
   }
 }
 
@@ -244,11 +277,13 @@ export function createMarketProfile(
   seed: number,
   location: MapLocation,
   economy?: EconomyState,
+  map?: WorldMapDefinition,
 ): MarketProfile | null {
   if (location.type !== "city" && location.type !== "village") return null;
   const locationHash = hashValue(`${seed}:${location.id}`);
-  const resourceId = getLocationResource(seed, location.id);
-  const stock = economy?.markets[location.id] ?? createInitialStock(seed, location);
+  const resourceId = getLocationResource(seed, location.id, map);
+  const stock =
+    economy?.markets[location.id] ?? createInitialStock(seed, location, map);
 
   if (location.type === "village") {
     return {
@@ -284,7 +319,7 @@ export function createMarketProfile(
     locationId: location.id,
     locationType: "city",
     productionItemId: primaryRecipe?.outputItemId ?? resourceId,
-    demandItemId: getCityDemand(seed, location.id),
+    demandItemId: getCityDemand(seed, location.id, map),
     offers: stock.map((entry, index) => ({
       itemId: entry.itemId,
       stock: entry.quantity,
@@ -457,10 +492,14 @@ export function consumeFoodSupply(
   return consumed;
 }
 
-function createInitialStock(seed: number, location: MapLocation): InventoryStack[] {
+function createInitialStock(
+  seed: number,
+  location: MapLocation,
+  map?: WorldMapDefinition,
+): InventoryStack[] {
   const locationHash = hashValue(`${seed}:${location.id}:stock`);
   if (location.type === "village") {
-    const productionItemId = getLocationResource(seed, location.id);
+    const productionItemId = getLocationResource(seed, location.id, map);
     const secondaryItemId = getSecondaryVillageProduct(productionItemId);
     return [
       {
@@ -476,7 +515,7 @@ function createInitialStock(seed: number, location: MapLocation): InventoryStack
     ];
   }
   const importedResources = selectSeededItems(
-    RESOURCE_IDS,
+    getCitySupplyPool(seed, map, location),
     seed,
     `imports:${location.id}`,
     5,
@@ -499,7 +538,7 @@ function restockMarkets(
     const stock = economy.markets[location.id];
     if (!stock) continue;
     if (location.type === "village") {
-      addToInventory(stock, getLocationResource(seed, location.id), 1);
+      addToInventory(stock, getLocationResource(seed, location.id, map), 1);
       addToInventory(stock, "travel_rations", 1);
       addToInventory(stock, "bread", 1);
     } else if (location.type === "city") {
@@ -516,6 +555,7 @@ function serviceTraderAtSettlement(
   trader: CaravanState,
   location: MapLocation,
   seed: number,
+  map: WorldMapDefinition,
 ): void {
   if (trader.kind === "villager" && location.type === "city") {
     const cityStock = economy.markets[location.id];
@@ -523,7 +563,7 @@ function serviceTraderAtSettlement(
       addToInventory(cityStock, cargo.itemId, Math.max(1, Math.floor(cargo.quantity / 2)));
     }
   } else if (trader.kind === "villager" && location.type === "village") {
-    const resourceId = getLocationResource(seed, location.id);
+    const resourceId = getLocationResource(seed, location.id, map);
     trader.inventory = [
       { itemId: resourceId, quantity: 7 + (hashValue(trader.id) % 5) },
       { itemId: "bread", quantity: 2 },
@@ -555,14 +595,167 @@ function calculateBuyPrice(
   return Math.max(1, Math.ceil(item.baseValue * baseMultiplier * scarcityMultiplier));
 }
 
-function getLocationResource(seed: number, locationId: string): string {
-  return RESOURCE_IDS[hashValue(`${seed}:${locationId}`) % RESOURCE_IDS.length];
+function getLocationResource(
+  seed: number,
+  locationId: string,
+  map?: WorldMapDefinition,
+): string {
+  const location = map?.locations.find((candidate) => candidate.id === locationId);
+  if (location?.type === "village" && map) {
+    return getBalancedVillageResource(seed, location, map);
+  }
+  const resources = location
+    ? getRegionalResourcePool(map, location)
+    : RESOURCE_IDS;
+  return resources[hashValue(`${seed}:${locationId}`) % resources.length];
 }
 
-function getCityDemand(seed: number, locationId: string): string {
-  return RESOURCE_IDS[
-    hashValue(`${seed}:${locationId}:demand`) % RESOURCE_IDS.length
+function getCityDemand(
+  seed: number,
+  locationId: string,
+  map?: WorldMapDefinition,
+): string {
+  const location = map?.locations.find((candidate) => candidate.id === locationId);
+  const localResources = location
+    ? new Set(getCitySupplyPool(seed, map, location))
+    : new Set<string>();
+  const importedResources = RESOURCE_IDS.filter(
+    (itemId) => !localResources.has(itemId),
+  );
+  const candidates = importedResources.length > 0 ? importedResources : RESOURCE_IDS;
+  return candidates[
+    hashValue(`${seed}:${locationId}:demand`) % candidates.length
   ];
+}
+
+function getBalancedVillageResource(
+  seed: number,
+  village: MapLocation,
+  map: WorldMapDefinition,
+): string {
+  const cities = map.locations.filter((location) => location.type === "city");
+  const city = nearestLocation(village, cities);
+  const cluster = map.locations
+    .filter(
+      (location) =>
+        location.type === "village" &&
+        nearestLocation(location, cities).id === city.id,
+    )
+    .sort((left, right) => left.id.localeCompare(right.id));
+  const clusterIndex = Math.max(
+    0,
+    cluster.findIndex((location) => location.id === village.id),
+  );
+  if (clusterIndex === 0) return "wheat";
+  if (clusterIndex === 1) {
+    const livestock = ["cattle", "sheep", "pigs", "milk"];
+    return livestock[hashValue(`${seed}:${city.id}:livestock`) % livestock.length];
+  }
+
+  const reserved = new Set(["wheat", "cattle", "sheep", "pigs", "milk"]);
+  const regional = getRegionalResourcePool(map, village).filter(
+    (itemId) => !reserved.has(itemId),
+  );
+  const fallback = ["wood", "stone", "clay", "herbs", "grapes", "fish"];
+  const candidates = regional.length > 0 ? regional : fallback;
+  return candidates[
+    hashValue(`${seed}:${city.id}:village:${clusterIndex}`) % candidates.length
+  ];
+}
+
+function getCitySupplyPool(
+  seed: number,
+  map: WorldMapDefinition | undefined,
+  city: MapLocation,
+): string[] {
+  if (!map || city.type !== "city") {
+    return getRegionalResourcePool(map, city);
+  }
+  const cities = map.locations.filter((location) => location.type === "city");
+  const suppliedResources = map.locations
+    .filter(
+      (location) =>
+        location.type === "village" &&
+        nearestLocation(location, cities).id === city.id,
+    )
+    .map((village) => getBalancedVillageResource(seed, village, map));
+  return [...new Set([...suppliedResources, ...getRegionalResourcePool(map, city)])];
+}
+
+function getRegionalResourcePool(
+  map: WorldMapDefinition | undefined,
+  location: MapLocation,
+): string[] {
+  if (!map) return RESOURCE_IDS;
+  const terrain = getRegionalTerrain(map, location);
+  if (terrain === "mountain") {
+    return ["stone", "iron", "coal", "copper", "silver", "gold_ore"];
+  }
+  if (terrain === "forest") {
+    return ["wood", "herbs", "pigs", "meat", "leather"];
+  }
+  if (terrain === "swamp") {
+    return ["clay", "herbs", "pigs", "fish"];
+  }
+  if (terrain === "desert") {
+    return ["sheep", "cattle", "leather", "clay", "copper"];
+  }
+  if (terrain === "lake" || terrain === "river" || terrain === "sea") {
+    return ["fish", "clay", "milk", "sheep"];
+  }
+  return ["wheat", "grapes", "sheep", "cattle", "pigs", "milk"];
+}
+
+function getRegionalTerrain(
+  map: WorldMapDefinition,
+  location: MapLocation,
+): TerrainType {
+  const directTerrain = getTerrainAt(map, location.x, location.y);
+  if (directTerrain !== "plains" && directTerrain !== "road") {
+    return directTerrain;
+  }
+
+  let nearestTerrain: TerrainType = "plains";
+  let nearestDistance = Math.min(
+    location.x - map.boundaryInset,
+    location.y - map.boundaryInset,
+    map.width - map.boundaryInset - location.x,
+    map.height - map.boundaryInset - location.y,
+  );
+  if (nearestDistance <= 720) nearestTerrain = "sea";
+
+  for (const zone of map.terrainZones) {
+    const distance = Math.max(
+      0,
+      Math.hypot(zone.x - location.x, zone.y - location.y) -
+        Math.max(zone.radiusX, zone.radiusY),
+    );
+    if (distance < nearestDistance && distance <= 900) {
+      nearestDistance = distance;
+      nearestTerrain = zone.type;
+    }
+  }
+
+  for (const river of map.terrainRivers) {
+    for (let index = 0; index < river.points.length - 1; index += 1) {
+      const point = river.points[index];
+      const nextPoint = river.points[index + 1];
+      const distance = distanceToSegment(
+        location.x,
+        location.y,
+        point.x,
+        point.y,
+        nextPoint.x,
+        nextPoint.y,
+      );
+      if (distance < nearestDistance && distance <= 620) {
+        nearestDistance = distance;
+        nearestTerrain = "river";
+      }
+    }
+  }
+
+  return nearestTerrain;
 }
 
 function getSecondaryVillageProduct(productionItemId: string): string {
@@ -614,6 +807,77 @@ function normalizeStacks(stacks: InventoryStack[]): InventoryStack[] {
     }
   }
   return normalized;
+}
+
+function getRoutePoints(
+  map: WorldMapDefinition,
+  originId: string,
+  destinationId: string,
+): Array<{ x: number; y: number }> {
+  const road = map.terrainRoads.find(
+    (candidate) =>
+      (candidate.originId === originId &&
+        candidate.destinationId === destinationId) ||
+      (candidate.originId === destinationId &&
+        candidate.destinationId === originId),
+  );
+  if (road) {
+    return road.originId === originId ? road.points : [...road.points].reverse();
+  }
+  const origin = map.locations.find((location) => location.id === originId)!;
+  const destination = map.locations.find(
+    (location) => location.id === destinationId,
+  )!;
+  return [
+    { x: origin.x, y: origin.y },
+    { x: destination.x, y: destination.y },
+  ];
+}
+
+function getRouteLength(
+  map: WorldMapDefinition,
+  originId: string,
+  destinationId: string,
+): number {
+  const points = getRoutePoints(map, originId, destinationId);
+  return Math.max(
+    1,
+    points.slice(0, -1).reduce((total, point, index) => {
+      const nextPoint = points[index + 1];
+      return total + Math.hypot(nextPoint.x - point.x, nextPoint.y - point.y);
+    }, 0),
+  );
+}
+
+function getRoutePosition(
+  map: WorldMapDefinition,
+  originId: string,
+  destinationId: string,
+  progress: number,
+): { x: number; y: number } {
+  const points = getRoutePoints(map, originId, destinationId);
+  const routeLength = getRouteLength(map, originId, destinationId);
+  let remainingDistance = Math.max(0, Math.min(1, progress)) * routeLength;
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const point = points[index];
+    const nextPoint = points[index + 1];
+    const segmentLength = Math.hypot(
+      nextPoint.x - point.x,
+      nextPoint.y - point.y,
+    );
+    if (remainingDistance <= segmentLength || index === points.length - 2) {
+      const segmentProgress =
+        segmentLength === 0 ? 0 : remainingDistance / segmentLength;
+      return {
+        x: point.x + (nextPoint.x - point.x) * segmentProgress,
+        y: point.y + (nextPoint.y - point.y) * segmentProgress,
+      };
+    }
+    remainingDistance -= segmentLength;
+  }
+
+  return points[points.length - 1];
 }
 
 function nearestLocation(origin: MapLocation, candidates: MapLocation[]): MapLocation {

@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { contentPack } from "../../content/content";
 import { generateWorldMap } from "./WorldGenerator";
-import { isWorldPositionTraversable } from "./WorldTerrain";
+import {
+  getTerrainAt,
+  isPositionNearPath,
+  isWorldPositionTraversable,
+} from "./WorldTerrain";
 
 describe("WorldGenerator", () => {
   it("recreates the same world from the same seed", () => {
@@ -32,15 +36,17 @@ describe("WorldGenerator", () => {
         "wilds",
       ]),
     );
-    expect(world.enemies).toHaveLength(24);
+    expect(world.enemies).toHaveLength(38);
     for (const enemy of world.enemies) {
       expect(enemy.partySize).toBeGreaterThan(0);
       expect(enemy.inventoryWeight).toBeGreaterThan(0);
       expect(enemy.speed).toBeLessThan(200);
     }
-    expect(
-      world.locations.filter((location) => location.type === "village"),
-    ).toHaveLength(12);
+    const villages = world.locations.filter(
+      (location) => location.type === "village",
+    );
+    expect(villages.length).toBeGreaterThanOrEqual(8);
+    expect(villages.length).toBeLessThanOrEqual(16);
     expect(world.locations[0]).toMatchObject({
       id: "city_0",
       x: world.start.x,
@@ -62,6 +68,14 @@ describe("WorldGenerator", () => {
       ]),
     );
     expect(world.terrainRivers).toHaveLength(3);
+    expect(world.terrainRoads).toHaveLength(3);
+    const locationsById = new Map(
+      world.locations.map((location) => [location.id, location]),
+    );
+    for (const road of world.terrainRoads) {
+      expect(locationsById.get(road.originId!)?.type).toBe("city");
+      expect(locationsById.get(road.destinationId!)?.type).toBe("city");
+    }
     expect(world.boundaryInset).toBeGreaterThan(100);
     for (let seed = 1; seed <= 20; seed += 1) {
       const generatedWorld = generateWorldMap(seed * 7919, contentPack.enemies);
@@ -74,10 +88,63 @@ describe("WorldGenerator", () => {
             30,
           ),
         ).toBe(true);
+        expect(
+          generatedWorld.terrainRivers.some((river) =>
+            isPositionNearPath(
+              river.points,
+              river.width,
+              location.x,
+              location.y,
+              location.radius,
+            ),
+          ),
+        ).toBe(false);
+        expect(getTerrainAt(generatedWorld, location.x, location.y)).not.toBe(
+          "lake",
+        );
       }
       for (const enemy of generatedWorld.enemies) {
         expect(
           isWorldPositionTraversable(generatedWorld, enemy.x, enemy.y, 24),
+          `seed ${seed * 7919}, enemy ${enemy.id} at ${enemy.x},${enemy.y}`,
+        ).toBe(true);
+      }
+      const cities = generatedWorld.locations.filter(
+        (location) => location.type === "city",
+      );
+      const villages = generatedWorld.locations.filter(
+        (location) => location.type === "village",
+      );
+      for (const village of villages) {
+        expect(
+          generatedWorld.terrainRoads.some((road) =>
+            isPositionNearPath(
+              road.points,
+              road.width,
+              village.x,
+              village.y,
+              150,
+            ),
+          ),
+        ).toBe(false);
+      }
+      for (const city of cities) {
+        const dependants = villages.filter((village) => {
+          const nearest = cities.reduce((current, candidate) =>
+            Math.hypot(candidate.x - village.x, candidate.y - village.y) <
+            Math.hypot(current.x - village.x, current.y - village.y)
+              ? candidate
+              : current,
+          );
+          return nearest.id === city.id;
+        });
+        expect(dependants.length).toBeGreaterThanOrEqual(2);
+        expect(dependants.length).toBeLessThanOrEqual(4);
+        expect(
+          dependants.every(
+            (village) =>
+              Math.hypot(village.x - city.x, village.y - city.y) <= 1100,
+          ),
         ).toBe(true);
       }
     }

@@ -12,6 +12,411 @@
   text-rendering: optimizeLegibility;
 }
 
+.world-map-controls {
+  position: absolute;
+  z-index: 7;
+  top: 92px;
+  right: 28px;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.minimap {
+  position: relative;
+  width: 176px;
+  height: 116px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(214, 182, 109, 0.34);
+  color: #ead9ae;
+  background: rgba(8, 12, 11, 0.9);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.42);
+  cursor: pointer;
+}
+
+.minimap svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.minimap > span {
+  position: absolute;
+  right: 6px;
+  bottom: 5px;
+  padding: 3px 5px;
+  background: rgba(5, 8, 7, 0.82);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.minimap-land {
+  fill: #303a2b;
+  stroke: #8f7c51;
+  stroke-width: 34;
+}
+
+.minimap-terrain.forest,
+.legend-swatch.forest {
+  fill: #1c3424;
+  background: #1c3424;
+}
+
+.minimap-terrain.swamp,
+.legend-swatch.swamp {
+  fill: #32453e;
+  background: #32453e;
+}
+
+.minimap-terrain.desert,
+.legend-swatch.desert {
+  fill: #766943;
+  background: #766943;
+}
+
+.minimap-terrain.mountain,
+.legend-swatch.mountain {
+  fill: #5c625d;
+  background: #5c625d;
+}
+
+.minimap-terrain.lake,
+.legend-swatch.lake {
+  fill: #28505a;
+  background: #28505a;
+}
+
+.minimap-location {
+  fill: #9d8656;
+}
+
+.minimap-location.city {
+  fill: #e1bd70;
+}
+
+.minimap-location.dungeon {
+  fill: #a84f49;
+}
+
+.minimap-player {
+  fill: #f5e1a7;
+  stroke: #161916;
+  stroke-width: 28;
+}
+
+.minimap-waypoint {
+  fill: none;
+  stroke: #e3bd63;
+  stroke-width: 24;
+}
+
+.map-zoom-controls {
+  display: grid;
+  gap: 6px;
+}
+
+.map-zoom-controls button {
+  width: 38px;
+  border: 1px solid rgba(214, 182, 109, 0.3);
+  color: #d9bd7d;
+  background: rgba(8, 12, 11, 0.9);
+  font: 20px/1 "Cinzel", serif;
+  cursor: pointer;
+}
+
+.strategic-map-overlay {
+  position: absolute;
+  z-index: 32;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background:
+    linear-gradient(rgba(5, 8, 7, 0.82), rgba(5, 7, 6, 0.96)),
+    radial-gradient(circle at center, rgba(153, 119, 59, 0.18), transparent 58%);
+  backdrop-filter: blur(9px);
+}
+
+.strategic-map-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(1180px, 100%);
+  height: min(820px, 100%);
+  overflow: hidden;
+  border: 1px solid rgba(210, 177, 105, 0.36);
+  background: #0d110f;
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.68);
+}
+
+.strategic-map-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid rgba(210, 177, 105, 0.2);
+}
+
+.strategic-map-header h1 {
+  margin: 5px 0;
+  font-size: 28px;
+}
+
+.strategic-map-header p {
+  margin: 0;
+  color: #96988f;
+  font: 14px/1.5 Georgia, serif;
+}
+
+.strategic-map-layout {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) 270px;
+}
+
+.strategic-map-canvas {
+  min-width: 0;
+  min-height: 0;
+  padding: 16px;
+  background: #080b0a;
+}
+
+.strategic-map-canvas svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 1px solid #34382f;
+  background: #172b31;
+  cursor: crosshair;
+}
+
+.strategic-sea {
+  fill: #172b31;
+}
+
+.strategic-land {
+  fill: #303a2b;
+  stroke: #8d7b51;
+  stroke-width: 36;
+}
+
+.strategic-terrain {
+  opacity: 0.92;
+}
+
+.strategic-terrain.forest {
+  fill: #1c3424;
+}
+
+.strategic-terrain.swamp {
+  fill: #32453e;
+}
+
+.strategic-terrain.desert {
+  fill: #766943;
+}
+
+.strategic-terrain.mountain {
+  fill: #5c625d;
+}
+
+.strategic-terrain.lake {
+  fill: #28505a;
+}
+
+.strategic-river {
+  fill: none;
+  stroke: #315c64;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.strategic-road {
+  fill: none;
+  stroke: #8c7950;
+  stroke-linecap: round;
+  opacity: 0.68;
+}
+
+.strategic-location circle {
+  fill: #a68b58;
+  stroke: #171b17;
+  stroke-width: 22;
+  cursor: pointer;
+}
+
+.strategic-location.city circle {
+  fill: #e0bd70;
+}
+
+.strategic-location.dungeon circle {
+  fill: #a94e48;
+}
+
+.strategic-location.castle circle {
+  fill: #8c9ba1;
+}
+
+.strategic-enemy {
+  fill: #d45449;
+  stroke: #551d1a;
+  stroke-width: 18;
+}
+
+.strategic-player {
+  fill: #f2dda1;
+  stroke: #101410;
+  stroke-width: 28;
+}
+
+.strategic-waypoint circle {
+  fill: none;
+  stroke: #f0c965;
+  stroke-width: 28;
+}
+
+.strategic-waypoint line {
+  stroke: #e2bd64;
+  stroke-width: 18;
+  stroke-dasharray: 55 38;
+  opacity: 0.72;
+}
+
+.strategic-fog {
+  fill: rgba(4, 7, 6, 0.93);
+  pointer-events: none;
+}
+
+.strategic-map-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  overflow: auto;
+  border-left: 1px solid rgba(210, 177, 105, 0.18);
+  background: linear-gradient(145deg, #151915, #0c100e);
+}
+
+.terrain-legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.terrain-legend span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #aaa89e;
+  font-size: 10px;
+}
+
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(232, 216, 177, 0.2);
+}
+
+.legend-swatch.plains {
+  background: #303a2b;
+}
+
+.legend-swatch.river {
+  background: #315c64;
+}
+
+.legend-swatch.road {
+  background: #8c7950;
+}
+
+.map-location-detail {
+  padding-top: 16px;
+  border-top: 1px solid rgba(210, 177, 105, 0.18);
+}
+
+.map-location-detail h2 {
+  margin: 7px 0 9px;
+  color: #eee4cb;
+}
+
+.map-location-detail p,
+.map-hint {
+  color: #a6a49a;
+  font: 13px/1.55 Georgia, serif;
+}
+
+.terrain-battle-tag {
+  display: inline-block;
+  margin-top: 7px;
+  padding: 5px 8px;
+  border: 1px solid rgba(214, 182, 109, 0.25);
+  color: #cdb77f;
+  background: rgba(8, 11, 9, 0.62);
+  font-size: 9px;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 760px) {
+  .world-map-controls {
+    top: auto;
+    right: 18px;
+    bottom: 154px;
+  }
+
+  .minimap {
+    width: 102px;
+    height: 72px;
+  }
+
+  .map-zoom-controls button {
+    width: 34px;
+  }
+
+  .strategic-map-overlay {
+    padding: 0;
+  }
+
+  .strategic-map-panel {
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .strategic-map-header {
+    padding: 14px 16px;
+  }
+
+  .strategic-map-header p {
+    display: none;
+  }
+
+  .strategic-map-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .strategic-map-canvas {
+    padding: 8px;
+  }
+
+  .strategic-map-sidebar {
+    max-height: 220px;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(210, 177, 105, 0.18);
+    border-left: 0;
+  }
+
+  .terrain-legend {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .terrain-legend span {
+    font-size: 8px;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -55,6 +460,8 @@ button {
 
 .world-visibility {
   --visibility-radius: 520px;
+  --visibility-x: 50%;
+  --visibility-y: 50%;
   position: absolute;
   z-index: 1;
   inset: 0;
@@ -64,7 +471,7 @@ button {
 
 .world-visibility.day {
   background: radial-gradient(
-    circle at center,
+    circle at var(--visibility-x) var(--visibility-y),
     transparent 0,
     transparent calc(var(--visibility-radius) - 90px),
     rgba(5, 8, 6, 0.15) var(--visibility-radius),
@@ -76,7 +483,7 @@ button {
   background:
     linear-gradient(rgba(4, 8, 14, 0.28), rgba(3, 6, 12, 0.38)),
     radial-gradient(
-      circle at center,
+      circle at var(--visibility-x) var(--visibility-y),
       transparent 0,
       rgba(7, 10, 13, 0.08) calc(var(--visibility-radius) - 75px),
       rgba(2, 4, 8, 0.68) var(--visibility-radius),
@@ -84,61 +491,128 @@ button {
     );
 }
 
-.touch-joystick {
+.desktop-required {
   display: none;
 }
 
-@media (max-width: 900px), (pointer: coarse) {
-  .touch-joystick {
-    position: absolute;
-    z-index: 8;
-    right: 18px;
-    bottom: 18px;
-    display: grid;
-    width: 124px;
-    height: 124px;
-    place-items: center;
-    border: 1px solid rgba(218, 190, 124, 0.42);
-    border-radius: 50%;
-    background:
-      radial-gradient(circle, rgba(201, 169, 96, 0.14) 0 28%, transparent 29%),
-      rgba(7, 10, 8, 0.62);
-    box-shadow:
-      inset 0 0 28px rgba(0, 0, 0, 0.45),
-      0 10px 32px rgba(0, 0, 0, 0.32);
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-  }
+.start-menu-overlay {
+  position: absolute;
+  z-index: 80;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(5, 8, 7, 0.98) 0 28%, rgba(5, 8, 7, 0.72) 58%, rgba(5, 8, 7, 0.9)),
+    radial-gradient(circle at 68% 42%, rgba(155, 119, 61, 0.16), transparent 35%);
+  backdrop-filter: blur(3px) saturate(0.72);
+}
 
-  .touch-joystick::before,
-  .touch-joystick::after {
-    position: absolute;
-    content: "";
-    background: rgba(220, 202, 156, 0.12);
-  }
+.start-menu-overlay::before,
+.start-menu-overlay::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
 
-  .touch-joystick::before {
-    width: 1px;
-    height: 82%;
-  }
+.start-menu-overlay::before {
+  inset: 20px;
+  border: 1px solid rgba(214, 182, 109, 0.16);
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.38);
+}
 
-  .touch-joystick::after {
-    width: 82%;
-    height: 1px;
-  }
+.start-menu-overlay::after {
+  top: -32vh;
+  right: 8vw;
+  width: 48vw;
+  height: 135vh;
+  border-right: 1px solid rgba(214, 182, 109, 0.12);
+  border-left: 1px solid rgba(214, 182, 109, 0.06);
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(214, 182, 109, 0.045),
+    transparent
+  );
+  transform: rotate(19deg);
+}
 
-  .touch-joystick-knob {
-    position: relative;
-    z-index: 1;
-    width: 48px;
-    height: 48px;
-    border: 1px solid rgba(230, 202, 137, 0.72);
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #b89a5e, #55462c);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-    pointer-events: none;
-  }
+.start-menu {
+  position: relative;
+  z-index: 1;
+  width: min(560px, calc(100vw - 80px));
+  margin-right: 34vw;
+  padding: 42px 46px;
+  border-left: 2px solid rgba(214, 182, 109, 0.52);
+  background: linear-gradient(90deg, rgba(9, 13, 11, 0.94), rgba(9, 13, 11, 0.46));
+  box-shadow: -30px 30px 80px rgba(0, 0, 0, 0.32);
+}
+
+.start-menu-sigil {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 34px;
+  place-items: center;
+  border: 1px solid rgba(214, 182, 109, 0.72);
+  color: var(--gold);
+  font: 600 16px "Cinzel", serif;
+  letter-spacing: 0.08em;
+  transform: rotate(45deg);
+}
+
+.start-menu h1 {
+  margin: 8px 0 4px;
+  color: #f1ead9;
+  font-size: clamp(48px, 6vw, 76px);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+}
+
+.start-menu-subtitle {
+  margin: 14px 0 34px;
+  color: #96988f;
+  font: 15px/1.5 Georgia, serif;
+}
+
+.start-menu-actions {
+  display: grid;
+  width: min(330px, 100%);
+  gap: 10px;
+}
+
+.start-menu-actions .button {
+  min-height: 48px;
+  text-align: left;
+}
+
+.start-menu-cancel {
+  padding: 6px 0;
+  border: 0;
+  color: #8b8f87;
+  background: transparent;
+  cursor: pointer;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.start-menu-cancel:hover {
+  color: #d7c69b;
+}
+
+.start-menu-warning {
+  min-height: 36px;
+  margin: 20px 0 0;
+  color: #777c74;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.start-menu-warning.visible {
+  color: #d98476;
 }
 
 .topbar {
@@ -235,6 +709,70 @@ h2 {
   background: linear-gradient(135deg, rgba(13, 16, 15, 0.94), rgba(21, 24, 20, 0.82));
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.32);
   backdrop-filter: blur(10px);
+}
+
+.context-prompt {
+  position: absolute;
+  z-index: 3;
+  bottom: 28px;
+  left: 28px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 420px;
+  padding: 12px 14px;
+  border: 1px solid rgba(204, 182, 126, 0.25);
+  background: rgba(10, 13, 11, 0.9);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(8px);
+}
+
+.context-prompt.hidden {
+  display: none;
+}
+
+.context-prompt > :not(h1):not(.location-actions) {
+  display: none;
+}
+
+.context-prompt h1 {
+  min-width: 150px;
+  margin: 0;
+  color: #f2ead7;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.context-prompt .location-actions {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .desktop-required {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    padding: 36px;
+    background:
+      radial-gradient(circle at center, rgba(45, 54, 42, 0.92), #080b09 68%);
+    text-align: center;
+  }
+
+  .desktop-required h1 {
+    margin: 12px 0;
+    color: #f2ead7;
+    font-size: 30px;
+  }
+
+  .desktop-required p {
+    max-width: 42ch;
+    margin: 0;
+    color: #b7b3a8;
+    font: 16px/1.6 Georgia, serif;
+  }
 }
 
 .eyebrow {

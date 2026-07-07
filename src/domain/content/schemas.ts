@@ -75,6 +75,21 @@ export const terrainRiverSchema = z.object({
     .min(2),
 });
 
+export const terrainRoadSchema = z.object({
+  id: z.string().min(1),
+  originId: z.string().min(1).optional(),
+  destinationId: z.string().min(1).optional(),
+  width: z.number().positive(),
+  points: z
+    .array(
+      z.object({
+        x: z.number().nonnegative(),
+        y: z.number().nonnegative(),
+      }),
+    )
+    .min(2),
+});
+
 export const worldMapSchema = z.object({
   id: z.string().min(1),
   width: z.number().positive(),
@@ -83,6 +98,7 @@ export const worldMapSchema = z.object({
   start: z.object({ x: z.number(), y: z.number() }),
   terrainZones: z.array(terrainZoneSchema),
   terrainRivers: z.array(terrainRiverSchema),
+  terrainRoads: z.array(terrainRoadSchema),
   locations: z.array(mapLocationSchema),
   encounterZones: z.array(encounterZoneSchema),
   enemies: z.array(worldEnemySpawnSchema),
@@ -186,3 +202,4 @@ export type WorldEnemySpawn = z.infer<typeof worldEnemySpawnSchema>;
 export type TerrainZoneType = z.infer<typeof terrainZoneTypeSchema>;
 export type TerrainZone = z.infer<typeof terrainZoneSchema>;
 export type TerrainRiver = z.infer<typeof terrainRiverSchema>;
+export type TerrainRoad = z.infer<typeof terrainRoadSchema>;

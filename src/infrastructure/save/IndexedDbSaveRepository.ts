@@ -19,4 +19,9 @@ export class IndexedDbSaveRepository implements SaveRepository {
     const database = await databasePromise;
     await database.put("saves", save, "primary");
   }
+
+  async delete(): Promise<void> {
+    const database = await databasePromise;
+    await database.delete("saves", "primary");
+  }
 }

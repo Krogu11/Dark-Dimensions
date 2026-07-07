@@ -1,17 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
-  getTouchMovement,
-  resetTouchMovement,
-  setTouchMovement,
+  consumeWorldZoom,
+  requestWorldZoom,
 } from "./WorldInput";
 
-describe("touch world input", () => {
-  it("clamps and resets analog movement", () => {
-    setTouchMovement(1.4, -0.65);
+describe("world input", () => {
+  it("accumulates and consumes map zoom requests", () => {
+    requestWorldZoom(1);
+    requestWorldZoom(-0.25);
 
-    expect(getTouchMovement()).toEqual({ x: 1, y: -0.65 });
-
-    resetTouchMovement();
-    expect(getTouchMovement()).toEqual({ x: 0, y: 0 });
+    expect(consumeWorldZoom()).toBe(0.75);
+    expect(consumeWorldZoom()).toBe(0);
   });
 });

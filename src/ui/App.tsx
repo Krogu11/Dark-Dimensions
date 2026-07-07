@@ -4,14 +4,17 @@ import { gameSession } from "../domain/session/GameSession";
 import { getCardDefinition } from "../domain/cards/CardInstance";
 import { itemsById } from "../content/content";
 import { IndexedDbSaveRepository } from "../infrastructure/save/IndexedDbSaveRepository";
+import type { SaveGame } from "../infrastructure/save/SaveRepository";
 import { GameCanvas } from "./GameCanvas";
 import { BattleScreen } from "./BattleScreen";
 import { CityMenu } from "./CityMenu";
-import { TouchJoystick } from "./TouchJoystick";
+import { WorldMapControls } from "./WorldMapControls";
+import { StartMenu } from "./StartMenu";
 
 const WarbandManager = lazy(() => import("./WarbandManager"));
 const InventoryMarket = lazy(() => import("./InventoryMarket"));
 const QuestBoard = lazy(() => import("./QuestBoard"));
+const StrategicMap = lazy(() => import("./StrategicMap"));
 const saveRepository = new IndexedDbSaveRepository();
 
 export function App() {
@@ -20,6 +23,10 @@ export function App() {
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [questOpen, setQuestOpen] = useState(false);
   const [cityMenuOpen, setCityMenuOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [startMenuOpen, setStartMenuOpen] = useState(true);
+  const [storedSave, setStoredSave] = useState<SaveGame | null>(null);
+  const [sessionStarted, setSessionStarted] = useState(false);
   const [ready, setReady] = useState(false);
   const [, refresh] = useState(0);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -34,6 +41,7 @@ export function App() {
           setInventoryOpen(false);
           setQuestOpen(false);
           setCityMenuOpen(false);
+          setMapOpen(false);
         }
         refresh((value) => value + 1);
       }),
@@ -42,18 +50,44 @@ export function App() {
 
   useEffect(() => {
     gameSession.uiBlocked =
-      warbandOpen || inventoryOpen || questOpen || cityMenuOpen;
+      startMenuOpen ||
+      warbandOpen ||
+      inventoryOpen ||
+      questOpen ||
+      cityMenuOpen ||
+      mapOpen;
     return () => {
       gameSession.uiBlocked = false;
     };
-  }, [warbandOpen, inventoryOpen, questOpen, cityMenuOpen]);
+  }, [
+    startMenuOpen,
+    warbandOpen,
+    inventoryOpen,
+    questOpen,
+    cityMenuOpen,
+    mapOpen,
+  ]);
 
   useEffect(() => {
     void saveRepository.read().then((save) => {
-      if (save) gameSession.restore(save);
+      setStoredSave(save);
       setReady(true);
     });
   }, []);
+
+  function continueGame(): void {
+    if (!sessionStarted && storedSave) gameSession.restore(storedSave);
+    setSessionStarted(true);
+    setStartMenuOpen(false);
+  }
+
+  async function startNewGame(): Promise<void> {
+    await saveRepository.delete();
+    gameSession.reset();
+    setStoredSave(null);
+    setSessionStarted(true);
+    setStartMenuOpen(false);
+  }
 
   async function saveGame(): Promise<void> {
     const saved = await gameSession.save(saveRepository);
@@ -161,13 +195,18 @@ export function App() {
           } as CSSProperties
         }
       />
-      {ready &&
-      gameSession.mode === "world" &&
-      !warbandOpen &&
-      !inventoryOpen &&
-      !questOpen &&
-      !cityMenuOpen ? (
-        <TouchJoystick />
+      <div className="desktop-required">
+        <span className="eyebrow">{t("app.desktopOnlyEyebrow")}</span>
+        <h1>{t("app.desktopOnlyTitle")}</h1>
+        <p>{t("app.desktopOnlyText")}</p>
+      </div>
+      {ready && startMenuOpen ? (
+        <StartMenu
+          canContinue={sessionStarted || storedSave !== null}
+          hasStoredSave={storedSave !== null}
+          onContinue={continueGame}
+          onNewGame={startNewGame}
+        />
       ) : null}
       <header className="topbar">
         <div className="brand">
@@ -202,13 +241,21 @@ export function App() {
             </strong>
           </span>
           <span>
-            {t("hud.speed")} <strong>{gameSession.partyMovementSpeed}</strong>
+            {t("hud.speed")} <strong>{gameSession.effectiveMovementSpeed}</strong>
+          </span>
+          <span>
+            {t("hud.terrain")}{" "}
+            <strong>{t(`terrain.${gameSession.currentTerrain}.name`)}</strong>
           </span>
           <span>{t("hud.worldSeed")} <strong>{gameSession.worldSeed}</strong></span>
         </div>
       </header>
 
-      <aside className="location-card">
+      <aside
+        className={`context-prompt ${
+          nearbyLocation || nearbyCaravan ? "" : "hidden"
+        }`}
+      >
         <span className="eyebrow">{t("hud.region")}</span>
         <h1>
           {nearbyLocation
@@ -249,7 +296,13 @@ export function App() {
             {t("hud.day", { day: gameSession.gameDay })} · {gameSession.gameTimeLabel}
           </span>
           <span>
-            {t("hud.speed")} {gameSession.partyMovementSpeed}
+            {t("hud.speed")} {gameSession.effectiveMovementSpeed}
+          </span>
+          <span>
+            {t("hud.terrain")} {t(`terrain.${gameSession.currentTerrain}.name`)}
+          </span>
+          <span>
+            {t("hud.terrainFood")} ×{gameSession.terrainFoodMultiplier.toFixed(2)}
           </span>
           <span>
             {t("hud.cargo")} {gameSession.cargoWeight.toFixed(1)}
@@ -336,10 +389,37 @@ export function App() {
             ) : null}
           </div>
         ) : null}
+        {nearbyCaravan && gameSession.mode === "world" ? (
+          <div className="location-actions">
+            <button
+              className="button primary"
+              onClick={() => setInventoryOpen(true)}
+            >
+              {t("trade.openMarket")}
+            </button>
+          </div>
+        ) : null}
       </aside>
 
-      {nearbyLocation?.type !== "city" && !cityMenuOpen ? (
+      {ready &&
+      gameSession.mode === "world" &&
+      !warbandOpen &&
+      !inventoryOpen &&
+      !questOpen &&
+      !cityMenuOpen &&
+      !mapOpen ? (
+        <WorldMapControls onOpenMap={() => setMapOpen(true)} />
+      ) : null}
+
+      {nearbyLocation?.type !== "city" && !cityMenuOpen && !mapOpen ? (
       <div className="save-panel">
+        <button
+          className="button ghost"
+          disabled={!ready || gameSession.mode !== "world"}
+          onClick={() => setStartMenuOpen(true)}
+        >
+          {t("startMenu.open")}
+        </button>
         <button
           className="button ghost"
           disabled={!ready || gameSession.mode !== "world"}
@@ -432,6 +512,11 @@ export function App() {
             returnToCity={gameSession.isInCity}
             onClose={() => closeCityService(setQuestOpen)}
           />
+        </Suspense>
+      ) : null}
+      {mapOpen ? (
+        <Suspense fallback={<div className="loading">{t("app.loading")}</div>}>
+          <StrategicMap onClose={() => setMapOpen(false)} />
         </Suspense>
       ) : null}
     </main>

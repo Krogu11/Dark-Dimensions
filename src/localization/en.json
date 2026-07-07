@@ -3,7 +3,23 @@
     "title": "Dark Dimensions",
     "subtitle": "Where every road remembers your failures",
     "world": "World",
-    "loading": "Loading the last city save..."
+    "loading": "Loading the last city save...",
+    "desktopOnlyEyebrow": "Desktop campaign",
+    "desktopOnlyTitle": "A larger screen is required",
+    "desktopOnlyText": "Dark Dimensions is designed for mouse and keyboard. Open it on a desktop or laptop to continue your campaign."
+  },
+  "startMenu": {
+    "eyebrow": "The Shattered Realms await",
+    "continue": "Continue",
+    "newGame": "New Game",
+    "confirmNewGame": "Erase Save & Begin",
+    "cancel": "Keep current campaign",
+    "generating": "Generating world...",
+    "warning": "This permanently abandons the current campaign, erases its city save, and starts a new world.",
+    "saveFound": "A city save is ready to continue.",
+    "activeCampaign": "Your current campaign is paused.",
+    "noSave": "No saved campaign found. Begin a new journey.",
+    "open": "Menu"
   },
   "hud": {
     "region": "The Shattered Realms",
@@ -11,7 +27,7 @@
     "save": "Save in city",
     "saved": "Journey saved",
     "saveBlocked": "You can only save within a city.",
-    "controls": "Move with WASD or arrow keys",
+    "controls": "WASD move · Arrow keys pan camera · Space recenters",
     "danger": "Danger",
     "safe": "Sanctuary",
     "gold": "Gold",
@@ -20,6 +36,8 @@
     "time": "Time",
     "day": "Day {{day}}",
     "speed": "Travel",
+    "terrain": "Terrain",
+    "terrainFood": "Travel rations",
     "cargo": "Load",
     "morale": "Morale",
     "food": "Food",
@@ -31,6 +49,77 @@
     "healed": "The city healers restored your surviving monsters.",
     "healBlocked": "No wounded monsters, or not enough gold.",
     "hostiles": "Red warbands hunt you. Contact begins battle."
+  },
+  "world": {
+    "clickToMove": "Click terrain to travel",
+    "pursuing": "Pursuing {{name}}",
+    "enemyTooltip": {
+      "threat": "Threat",
+      "troops": "Troops",
+      "speed": "Speed",
+      "load": "Load",
+      "warband": "Warband",
+      "click": "Click to pursue and attack"
+    }
+  },
+  "map": {
+    "controls": "World map controls",
+    "open": "Map",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "eyebrow": "Cartographer's table",
+    "title": "Strategic Map",
+    "subtitle": "Explore the realm, read its roads, and mark your next destination.",
+    "close": "Return to world",
+    "hint": "Select a discovered location for details, or tap the map to place a waypoint.",
+    "markDestination": "Mark destination",
+    "clearDestination": "Clear waypoint",
+    "locationType": {
+      "city": "City",
+      "village": "Village",
+      "castle": "Castle",
+      "dungeon": "Dungeon",
+      "landmark": "Landmark",
+      "wilds": "Wild region"
+    }
+  },
+  "terrain": {
+    "plains": {
+      "name": "Plains",
+      "battle": "Open ground offers no major advantage."
+    },
+    "forest": {
+      "name": "Forest",
+      "battle": "Dense cover raises DEF and lowers ATK."
+    },
+    "swamp": {
+      "name": "Swamp",
+      "battle": "Deep mud reduces ATK and DEF."
+    },
+    "desert": {
+      "name": "Desert",
+      "battle": "Open heat raises ATK but weakens DEF."
+    },
+    "mountain": {
+      "name": "Mountains",
+      "battle": "The mountain paths are too steep for battle."
+    },
+    "lake": {
+      "name": "Lake",
+      "battle": "Deep water is impassable."
+    },
+    "river": {
+      "name": "River",
+      "battle": "Unstable footing sharply lowers ATK and DEF."
+    },
+    "road": {
+      "name": "Road",
+      "battle": "Ordered formations gain ATK but lose some cover."
+    },
+    "sea": {
+      "name": "Sea",
+      "battle": "The open sea is impassable."
+    }
   },
   "city": {
     "enter": "Enter city",
@@ -318,49 +407,95 @@
     "levySpearman": { "name": "Levy Spearman" },
     "noviceArcher": { "name": "Novice Archer" },
     "shrineAcolyte": { "name": "Shrine Acolyte" },
+    "militiaShieldbearer": { "name": "Militia Shieldbearer" },
+    "villageSlinger": { "name": "Village Slinger" },
     "koboldJung": { "name": "Young Kobold" },
     "koboldSpeer": { "name": "Kobold Spearman" },
+    "koboldTrapper": { "name": "Kobold Trapper" },
     "goblin": { "name": "Kobold Warrior" },
+    "koboldShaman": { "name": "Kobold Shaman" },
+    "tunnelGuard": { "name": "Tunnel Guard" },
     "koboldCaptain": { "name": "Kobold Captain" },
     "orkRecruit": { "name": "Orc Recruit" },
+    "orcTracker": { "name": "Orc Tracker" },
     "orcWarrior": { "name": "Orc Warrior" },
     "skeleton": { "name": "Skeleton" },
+    "graveArcher": { "name": "Grave Archer" },
+    "restlessSpirit": { "name": "Restless Spirit" },
     "soldier": { "name": "Mercenary" },
     "townGuard": { "name": "Town Guard" },
     "archer": { "name": "Archer" },
     "priest": { "name": "Holy Priest" },
+    "pikeman": { "name": "Pikeman" },
+    "longbowman": { "name": "Longbowman" },
+    "battleMonk": { "name": "Battle Monk" },
     "fireSpirit": { "name": "Fire Spirit" },
+    "frostWisp": { "name": "Frost Wisp" },
+    "stormWisp": { "name": "Storm Wisp" },
     "giantBat": { "name": "Giant Bat" },
+    "direWolf": { "name": "Dire Wolf" },
+    "swampSerpent": { "name": "Swamp Serpent" },
     "ironWarden": { "name": "Iron Warden" },
+    "clockworkScout": { "name": "Clockwork Scout" },
+    "brassGuardian": { "name": "Brass Guardian" },
     "emberRaider": { "name": "Ember Raider" },
     "graveWarden": { "name": "Grave Warden" }
     ,
     "koboldHunter": { "name": "Kobold Hunter" },
+    "caveGeomancer": { "name": "Cave Geomancer" },
     "koboldKing": { "name": "Kobold King" },
     "orcBerserker": { "name": "Orc Berserker" },
+    "orcWolfRider": { "name": "Orc Wolf Rider" },
+    "orcIronhide": { "name": "Orc Ironhide" },
     "orcWarlord": { "name": "Orc Warlord" },
     "boneWarden": { "name": "Bone Warden" },
+    "wraith": { "name": "Wraith" },
+    "boneKnight": { "name": "Bone Knight" },
+    "banshee": { "name": "Banshee" },
     "lich": { "name": "Lich Lord" },
     "knight": { "name": "Knight" },
     "shieldguard": { "name": "Shieldguard" },
     "sniper": { "name": "Elite Marksman" },
     "ranger": { "name": "Gloam Ranger" },
+    "bannerKnight": { "name": "Banner Knight" },
+    "royalArbalest": { "name": "Royal Arbalest" },
     "crusader": { "name": "Crusader" },
     "highPriest": { "name": "High Priest" },
     "flameElemental": { "name": "Flame Elemental" },
+    "iceElemental": { "name": "Ice Elemental" },
+    "stormElemental": { "name": "Storm Elemental" },
     "phoenix": { "name": "Phoenix" },
     "bloodBat": { "name": "Blood Bat" },
+    "alphaWolf": { "name": "Alpha Wolf" },
+    "caveTroll": { "name": "Cave Troll" },
     "nightwing": { "name": "Nightwing" },
+    "wyvern": { "name": "Wyvern" },
     "golem": { "name": "Iron Golem" },
     "siegeGolem": { "name": "Siege Golem" },
+    "cannonGolem": { "name": "Cannon Golem" },
     "ashWarlord": { "name": "Ash Warlord" },
+    "bloodChieftain": { "name": "Blood Chieftain" },
+    "necromancer": { "name": "Necromancer" },
     "deathPaladin": { "name": "Death Paladin" }
   },
   "enemy": {
     "roadReavers": { "name": "Road Reavers" },
     "koboldForagers": { "name": "Kobold Foragers" },
+    "hungryWolves": { "name": "Hungry Wolves" },
+    "desperateMilitia": { "name": "Desperate Militia" },
     "gloamStalkers": { "name": "Gloam Stalkers" },
+    "swampLurkers": { "name": "Swamp Lurkers" },
+    "ashBrood": { "name": "Ash Brood" },
+    "koboldAmbushers": { "name": "Kobold Ambushers" },
     "vaultScavengers": { "name": "Vault Scavengers" },
-    "rustedSentinels": { "name": "Rusted Sentinels" }
+    "graveProcession": { "name": "Grave Procession" },
+    "orcHunters": { "name": "Orc Hunters" },
+    "stormCallers": { "name": "Storm Callers" },
+    "rustedSentinels": { "name": "Rusted Sentinels" },
+    "blackBannerKnights": { "name": "Black Banner Knights" },
+    "trollDen": { "name": "Troll Den" },
+    "necromancerCabal": { "name": "Necromancer Cabal" },
+    "wyvernKin": { "name": "Wyvern Kin" },
+    "ironColossusGuard": { "name": "Iron Colossus Guard" }
   }
 }

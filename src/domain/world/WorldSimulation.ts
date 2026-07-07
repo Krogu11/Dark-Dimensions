@@ -6,9 +6,13 @@ import type {
 import {
   findNearestTraversablePosition,
   getTerrainAt,
+  getTerrainEncounterMultiplier,
+  getTerrainMovementMultiplier,
   isWorldPositionTraversable,
   type TerrainType,
 } from "./WorldTerrain";
+
+export const WORLD_DISCOVERY_CELL_SIZE = 360;
 
 export interface WorldEnemyState extends WorldEnemySpawn {
   spawnX: number;
@@ -23,6 +27,7 @@ export interface WorldState {
   y: number;
   nearbyLocationId: string | null;
   enemies: WorldEnemyState[];
+  exploredSectors: string[];
 }
 
 export class WorldSimulation {
@@ -44,6 +49,7 @@ export class WorldSimulation {
       x: initialPosition.x,
       y: initialPosition.y,
       nearbyLocationId: initial?.nearbyLocationId ?? null,
+      exploredSectors: [...(initial?.exploredSectors ?? [])],
       enemies: map.enemies.map((enemy) => ({
         ...enemy,
         spawnX: enemy.x,
@@ -53,6 +59,7 @@ export class WorldSimulation {
       })),
     };
     this.updateNearbyLocation();
+    this.revealAround(520);
   }
 
   updateEnemies(deltaHours: number, playerThreat = 1): string | null {
@@ -74,14 +81,17 @@ export class WorldSimulation {
         this.state.x - enemy.x,
         this.state.y - enemy.y,
       );
+      const effectiveAggroRadius =
+        enemy.aggroRadius *
+        getTerrainEncounterMultiplier(this.map, this.state.x, this.state.y);
       const shouldFlee =
         !playerIsSafe &&
-        enemy.threat + 1 < playerThreat &&
-        distanceToPlayer <= enemy.aggroRadius * 1.15;
+        playerThreat - enemy.threat >= 3 &&
+        distanceToPlayer <= effectiveAggroRadius * 1.15;
       const shouldPursue =
         !playerIsSafe &&
         !shouldFlee &&
-        distanceToPlayer <= enemy.aggroRadius;
+        distanceToPlayer <= effectiveAggroRadius;
       let targetX = enemy.spawnX;
       let targetY = enemy.spawnY;
 
@@ -101,7 +111,10 @@ export class WorldSimulation {
       const distanceToTarget = Math.hypot(targetX - enemy.x, targetY - enemy.y);
       if (distanceToTarget > 2) {
         const travel = Math.min(
-          enemy.speed * (shouldFlee ? 1.08 : 1) * deltaHours,
+          enemy.speed *
+            getTerrainMovementMultiplier(this.map, enemy.x, enemy.y) *
+            (shouldFlee ? 1.08 : 1) *
+            deltaHours,
           distanceToTarget,
         );
         const travelX = ((targetX - enemy.x) / distanceToTarget) * travel;
@@ -137,22 +150,20 @@ export class WorldSimulation {
     const previousX = this.state.x;
     const previousY = this.state.y;
     const magnitude = Math.hypot(horizontal, vertical) || 1;
-    const nextX =
-      this.state.x + (horizontal / magnitude) * speed * deltaSeconds;
-    const nextY =
-      this.state.y + (vertical / magnitude) * speed * deltaSeconds;
-
-    if (isWorldPositionTraversable(this.map, nextX, nextY, 30)) {
-      this.state.x = nextX;
-      this.state.y = nextY;
-    } else if (
-      isWorldPositionTraversable(this.map, nextX, this.state.y, 30)
-    ) {
-      this.state.x = nextX;
-    } else if (
-      isWorldPositionTraversable(this.map, this.state.x, nextY, 30)
-    ) {
-      this.state.y = nextY;
+    const travelX = (horizontal / magnitude) * speed * deltaSeconds;
+    const travelY = (vertical / magnitude) * speed * deltaSeconds;
+    const steps = Math.max(1, Math.ceil(Math.hypot(travelX, travelY) / 8));
+    for (let step = 0; step < steps; step += 1) {
+      const nextX = this.state.x + travelX / steps;
+      const nextY = this.state.y + travelY / steps;
+      if (isWorldPositionTraversable(this.map, nextX, nextY, 30)) {
+        this.state.x = nextX;
+        this.state.y = nextY;
+      } else if (isWorldPositionTraversable(this.map, nextX, this.state.y, 30)) {
+        this.state.x = nextX;
+      } else if (isWorldPositionTraversable(this.map, this.state.x, nextY, 30)) {
+        this.state.y = nextY;
+      }
     }
     this.updateNearbyLocation();
     return Math.hypot(this.state.x - previousX, this.state.y - previousY);
@@ -160,6 +171,43 @@ export class WorldSimulation {
 
   get currentTerrain(): TerrainType {
     return getTerrainAt(this.map, this.state.x, this.state.y);
+  }
+
+  revealAround(radius: number): void {
+    const explored = new Set(this.state.exploredSectors);
+    const minimumColumn = Math.max(
+      0,
+      Math.floor((this.state.x - radius) / WORLD_DISCOVERY_CELL_SIZE),
+    );
+    const maximumColumn = Math.floor(
+      (this.state.x + radius) / WORLD_DISCOVERY_CELL_SIZE,
+    );
+    const minimumRow = Math.max(
+      0,
+      Math.floor((this.state.y - radius) / WORLD_DISCOVERY_CELL_SIZE),
+    );
+    const maximumRow = Math.floor(
+      (this.state.y + radius) / WORLD_DISCOVERY_CELL_SIZE,
+    );
+    for (let column = minimumColumn; column <= maximumColumn; column += 1) {
+      for (let row = minimumRow; row <= maximumRow; row += 1) {
+        const centerX = (column + 0.5) * WORLD_DISCOVERY_CELL_SIZE;
+        const centerY = (row + 0.5) * WORLD_DISCOVERY_CELL_SIZE;
+        if (
+          Math.hypot(centerX - this.state.x, centerY - this.state.y) <=
+          radius + WORLD_DISCOVERY_CELL_SIZE * 0.72
+        ) {
+          explored.add(`${column}:${row}`);
+        }
+      }
+    }
+    this.state.exploredSectors = [...explored];
+  }
+
+  isPositionExplored(x: number, y: number): boolean {
+    const column = Math.floor(x / WORLD_DISCOVERY_CELL_SIZE);
+    const row = Math.floor(y / WORLD_DISCOVERY_CELL_SIZE);
+    return this.state.exploredSectors.includes(`${column}:${row}`);
   }
 
   get nearbyLocation(): MapLocation | null {

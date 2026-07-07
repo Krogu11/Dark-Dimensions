@@ -10,12 +10,14 @@ export interface DailyUpkeepReport {
 export interface SurvivalState {
   morale: number;
   lastUpkeep: DailyUpkeepReport | null;
+  travelFoodDebt?: number;
 }
 
 export function createSurvivalState(): SurvivalState {
   return {
     morale: 70,
     lastUpkeep: null,
+    travelFoodDebt: 0,
   };
 }
 

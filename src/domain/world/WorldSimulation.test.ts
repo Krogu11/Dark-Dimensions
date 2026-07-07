@@ -73,29 +73,50 @@ describe("WorldSimulation patrol behavior", () => {
     expect(enemy.x).toBeGreaterThanOrEqual(world.boundaryInset + 24);
   });
 
-  it("prevents the player from entering mountains and lakes", () => {
+  it("allows mountain travel but still blocks lakes", () => {
     const world = generateWorldMap(616161, contentPack.enemies);
     const simulation = new WorldSimulation(world);
-    const blockedZone = world.terrainZones.find(
-      (zone) => zone.type === "mountain" || zone.type === "lake",
+    const mountain = world.terrainZones.find(
+      (zone) => zone.type === "mountain",
     )!;
-    simulation.state.x = blockedZone.x - blockedZone.radiusX - 34;
-    simulation.state.y = blockedZone.y;
+    simulation.state.x = mountain.x;
+    simulation.state.y = mountain.y;
+    const mountainStartX = simulation.state.x;
 
+    for (let update = 0; update < 3; update += 1) {
+      simulation.move(1, 0, 0.1, 100);
+    }
+
+    expect(simulation.state.x).toBeGreaterThan(mountainStartX);
+    expect(getTerrainAt(world, simulation.state.x, simulation.state.y)).toBe(
+      "mountain",
+    );
+
+    const lake = world.terrainZones.find((zone) => zone.type === "lake")!;
+    simulation.state.x = lake.x - lake.radiusX - 34;
+    simulation.state.y = lake.y;
     for (let update = 0; update < 20; update += 1) {
       simulation.move(1, 0, 0.1, 200);
     }
-
     expect(getTerrainAt(world, simulation.state.x, simulation.state.y)).not.toBe(
-      blockedZone.type,
+      "lake",
+    );
+  });
+
+  it("records newly explored sectors for the strategic map", () => {
+    const world = generateWorldMap(717171, contentPack.enemies);
+    const simulation = new WorldSimulation(world);
+    const exploredBefore = simulation.state.exploredSectors.length;
+    simulation.state.x = world.width - world.boundaryInset - 60;
+    simulation.state.y = world.height - world.boundaryInset - 60;
+
+    simulation.revealAround(520);
+
+    expect(simulation.state.exploredSectors.length).toBeGreaterThan(
+      exploredBefore,
     );
     expect(
-      isWorldPositionTraversable(
-        world,
-        simulation.state.x,
-        simulation.state.y,
-        30,
-      ),
+      simulation.isPositionExplored(simulation.state.x, simulation.state.y),
     ).toBe(true);
   });
 });

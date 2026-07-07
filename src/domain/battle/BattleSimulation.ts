@@ -5,6 +5,7 @@ import {
   getCardDefinition,
   type CardInstance,
 } from "../cards/CardInstance";
+import type { TerrainBattleModifiers } from "../world/WorldTerrain";
 
 export type BattleOutcome = "active" | "victory" | "defeat";
 type BattleSide = "player" | "enemy";
@@ -19,6 +20,14 @@ export interface CombatBonuses {
   heroAtk: number;
   heroDef: number;
 }
+
+const DEFAULT_TERRAIN_MODIFIERS: TerrainBattleModifiers = {
+  terrain: "plains",
+  playerAttack: 1,
+  playerDefense: 1,
+  enemyAttack: 1,
+  enemyDefense: 1,
+};
 
 interface PlannedAttack {
   attacker: CardInstance;
@@ -46,6 +55,8 @@ export class BattleSimulation {
     readonly enemy: EnemyArchetype,
     readonly hero: CardInstance,
     private readonly combatBonuses: CombatBonuses = { heroAtk: 0, heroDef: 0 },
+    readonly terrainModifiers: TerrainBattleModifiers =
+      DEFAULT_TERRAIN_MODIFIERS,
   ) {
     this.drawPile = [...playerDeck.filter((card) => card.currentHp > 0)];
     this.enemyDrawPile = enemy.deck.map((cardId) => createCardInstance(cardId));
@@ -92,16 +103,26 @@ export class BattleSimulation {
   }
 
   getAttack(card: CardInstance): number {
-    return (
+    const baseAttack =
       getCardDefinition(card.cardId).atk +
-      (card.isHero ? this.combatBonuses.heroAtk : 0)
+      (card.isHero ? this.combatBonuses.heroAtk : 0);
+    return Math.round(
+      baseAttack *
+        (this.isEnemyCard(card)
+          ? this.terrainModifiers.enemyAttack
+          : this.terrainModifiers.playerAttack),
     );
   }
 
   getDefense(card: CardInstance): number {
-    return (
+    const baseDefense =
       getCardDefinition(card.cardId).def +
-      (card.isHero ? this.combatBonuses.heroDef : 0)
+      (card.isHero ? this.combatBonuses.heroDef : 0);
+    return Math.round(
+      baseDefense *
+        (this.isEnemyCard(card)
+          ? this.terrainModifiers.enemyDefense
+          : this.terrainModifiers.playerDefense),
     );
   }
 
@@ -266,5 +287,13 @@ export class BattleSimulation {
     for (let index = cards.length - 1; index >= 0; index -= 1) {
       if (cards[index].currentHp <= 0) cards.splice(index, 1);
     }
+  }
+
+  private isEnemyCard(card: CardInstance): boolean {
+    return (
+      this.enemyField.includes(card) ||
+      this.enemyHand.includes(card) ||
+      this.enemyDrawPile.includes(card)
+    );
   }
 }

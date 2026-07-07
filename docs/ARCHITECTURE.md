@@ -27,6 +27,15 @@ rivers, and a coastal sea boundary. `WorldTerrain.ts` owns terrain lookup,
 future movement modifiers, and shared collision rules so players and patrols
 cannot cross impassable terrain while Phaser remains a rendering layer.
 
+Roads are generated as map data rather than decorative lines. They accelerate
+travel, lower hostile encounter pressure, define caravan and villager routes,
+and create the only traversable crossings over rivers. Terrain also modifies
+visibility, travel ration pressure, patrol movement, and battle ATK/DEF.
+
+Exploration is stored as coarse world sectors. The React strategic map renders
+terrain, discovered locations, threats, roads, fog of war, and player-selected
+waypoints without moving authoritative world state into the UI layer.
+
 The world map is freely traversable. Hostile warbands are represented by red
 markers, wander around generated spawn regions, and pursue the player inside
 their aggro radius. Cities are safe zones. Contact with a hostile warband starts
@@ -51,8 +60,8 @@ stronger patrols continue to pursue.
   from elapsed game hours.
 - Daylight controls map sight distance; locations, patrols, and caravans outside
   the current radius are hidden.
-- Terrain, mounts, skills, weather, injuries, and other future modifiers can
-  extend the same travel-speed calculation.
+- Terrain already modifies travel; mounts, skills, weather, injuries, and
+  equipment can extend the same calculation later.
 
 ## Living locations
 

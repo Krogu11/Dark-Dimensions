@@ -17,6 +17,8 @@ export interface SaveGame {
     x: number;
     y: number;
     nearbyLocationId: string | null;
+    exploredSectors?: string[];
+    waypoint?: { x: number; y: number; labelKey?: string } | null;
   };
   gold?: number;
   deck?: CardInstance[];
@@ -39,4 +41,5 @@ export interface SaveGame {
 export interface SaveRepository {
   read(): Promise<SaveGame | null>;
   write(save: SaveGame): Promise<void>;
+  delete(): Promise<void>;
 }

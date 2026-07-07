@@ -37,6 +37,16 @@ describe("GameSession roster", () => {
     expect(session.moveToWarband(session.reserve[0].uid)).toBe("capacityFull");
   });
 
+  it("keeps a full levy warband at the lowest strategic strength", () => {
+    const session = new GameSession(121212);
+    for (let index = 0; index < 5; index += 1) {
+      expect(session.recruit("village_levy")).toBe("success");
+      expect(session.moveToWarband(session.reserve[0].uid)).toBe("success");
+    }
+
+    expect(session.warbandThreatRating).toBe(1);
+  });
+
   it("upgrades an experienced recruit through a selected branch", () => {
     const session = new GameSession();
     session.recruit("village_levy");
@@ -54,10 +64,10 @@ describe("GameSession roster", () => {
   });
 
   it("allows roster changes away from cities", () => {
-    const session = new GameSession();
+    const session = new GameSession(12345);
     session.recruit("village_levy");
     const recruit = session.reserve[0];
-    session.world.move(1, 0, 2);
+    session.world.move(1, 0, 4);
 
     expect(session.isInCity).toBe(false);
     expect(session.recruit("village_levy")).toBe("notInCity");
@@ -87,6 +97,10 @@ describe("GameSession roster", () => {
     const dungeon = session.world.map.locations.find(
       (location) => location.type === "dungeon",
     )!;
+    for (const enemy of session.world.state.enemies) {
+      enemy.active = false;
+      enemy.respawnHours = 1_000;
+    }
     session.world.state.nearbyLocationId = dungeon.id;
 
     expect(session.enterDungeon(dungeon.id)).toBe(true);
@@ -204,6 +218,10 @@ describe("GameSession roster", () => {
     session.gold = 1_000;
     const offer = session.marketProfile!.offers[0];
     const initialStock = offer.stock;
+    const destination = session.world.map.locations.find(
+      (location) => location.type === "city" && location.id !== "city_0",
+    )!;
+    session.setWaypoint(destination.x, destination.y, destination.nameKey);
     session.buyItem(offer.itemId);
     session.updateEconomy(12);
     let storedSave: SaveGame | null = null;
@@ -211,6 +229,9 @@ describe("GameSession roster", () => {
       read: async () => storedSave,
       write: async (save) => {
         storedSave = structuredClone(save);
+      },
+      delete: async () => {
+        storedSave = null;
       },
     };
 
@@ -226,6 +247,10 @@ describe("GameSession roster", () => {
     expect(restored.economyState.caravans[0].x).toBe(
       storedSave!.economyState!.caravans[0].x,
     );
+    expect(restored.world.state.exploredSectors).toEqual(
+      storedSave!.player.exploredSectors,
+    );
+    expect(restored.waypoint).toEqual(storedSave!.player.waypoint);
   });
 
   it("uses consumables and applies equipped hero bonuses in combat", () => {
@@ -242,7 +267,10 @@ describe("GameSession roster", () => {
     session.beginBattle(session.world.state.enemies[0].id);
 
     expect(session.battle!.getAttack(session.hero)).toBe(
-      getCardDefinition(session.hero.cardId).atk + 100,
+      Math.round(
+        (getCardDefinition(session.hero.cardId).atk + 100) *
+          session.battle!.terrainModifiers.playerAttack,
+      ),
     );
   });
 
@@ -333,6 +361,23 @@ describe("GameSession roster", () => {
     session.moveWorld(1, 0, 1);
 
     expect(session.timeState.totalMinutes).toBeGreaterThan(initialMinutes);
+  });
+
+  it("applies terrain speed, visibility and ration pressure while traveling", () => {
+    const session = new GameSession(272727);
+    const swamp = session.world.map.terrainZones.find(
+      (zone) => zone.type === "swamp",
+    )!;
+    session.world.state.x = swamp.x;
+    session.world.state.y = swamp.y;
+    const baseSpeed = session.partyMovementSpeed;
+
+    session.moveWorld(1, 0, 1);
+
+    expect(["forest", "swamp"]).toContain(session.currentTerrain);
+    expect(session.effectiveMovementSpeed).toBeLessThan(baseSpeed);
+    expect(session.visibilityRadius).toBeLessThan(520);
+    expect(session.survivalState.travelFoodDebt).toBeGreaterThan(0);
   });
 
   it("slows large, heavily loaded parties", () => {
@@ -429,6 +474,9 @@ describe("GameSession roster", () => {
       read: async () => storedSave,
       write: async (save) => {
         storedSave = structuredClone(save);
+      },
+      delete: async () => {
+        storedSave = null;
       },
     };
 
