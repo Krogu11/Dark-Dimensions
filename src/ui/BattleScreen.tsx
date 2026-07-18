@@ -527,14 +527,9 @@ function VictoryUnitsScreen({
   const [, refresh] = useState(0);
   const capturedDefinition = reward.cardId ? getCardDefinition(reward.cardId) : null;
   const releasedUnitSet = new Set(releasedUnitIds);
-  const rosterUnits = [...gameSession.warband, ...gameSession.reserve];
+  const rosterUnits = gameSession.warband;
   const activeRosterUnits = rosterUnits.filter((card) => !releasedUnitSet.has(card.uid));
   const releasedUnits = rosterUnits.filter((card) => releasedUnitSet.has(card.uid));
-  const canTakeCard =
-    !reward.cardId ||
-    gameSession.reserve.length < gameSession.reserveCapacity ||
-    gameSession.warband.length < gameSession.warbandCapacity;
-
   return (
     <div className="battle-overlay">
       <main className="aftermath-board units-board">
@@ -558,10 +553,9 @@ function VictoryUnitsScreen({
             {capturedDefinition && !takeCapturedCard ? (
               <TransferUnitCard
                 cardId={reward.cardId!}
-                label={t("battle.capturedUnit")}
-                note={canTakeCard ? t("battle.capturedUnitHint") : t("battle.noRosterSpace")}
+                label={t("battle.capturedPrisoner")}
+                note={t("battle.capturedPrisonerHint")}
                 direction="right"
-                disabled={!canTakeCard}
                 onMove={onTakeCapturedCard}
               />
             ) : null}
@@ -585,13 +579,13 @@ function VictoryUnitsScreen({
               <strong>{t("battle.yourUnits")}</strong>
               <span>
                 {gameSession.warband.length}/{gameSession.warbandCapacity} ·{" "}
-                {gameSession.reserve.length}/{gameSession.reserveCapacity}
+                {t("warband.prisonersCount", { count: gameSession.prisonerCount })}
               </span>
             </header>
             {capturedDefinition && takeCapturedCard ? (
               <TransferUnitCard
                 cardId={reward.cardId!}
-                label={t("battle.pendingRecruit")}
+                label={t("battle.pendingPrisoner")}
                 direction="left"
                 onMove={onReturnCapturedCard}
               />

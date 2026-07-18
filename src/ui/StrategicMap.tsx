@@ -2,7 +2,7 @@ import { useMemo, useState, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { enemiesById } from "../content/content";
 import { gameSession } from "../domain/session/GameSession";
-import { WORLD_DISCOVERY_CELL_SIZE } from "../domain/world/WorldSimulation";
+import { mergeTerrainCellsIntoRenderRects } from "../domain/world/TerrainCellRendering";
 
 interface StrategicMapProps {
   onClose: () => void;
@@ -11,40 +11,28 @@ interface StrategicMapProps {
 export default function StrategicMap({ onClose }: StrategicMapProps) {
   const { t } = useTranslation();
   const map = gameSession.world.map;
+  const terrainRects = useMemo(
+    () => mergeTerrainCellsIntoRenderRects(map.terrainCells),
+    [map.terrainCells],
+  );
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
     null,
   );
-  const exploredSectors = gameSession.world.state.exploredSectors;
-  const explored = useMemo(
-    () => new Set(exploredSectors),
-    [exploredSectors],
-  );
   const selectedLocation =
     map.locations.find((location) => location.id === selectedLocationId) ?? null;
-  const columns = Math.ceil(map.width / WORLD_DISCOVERY_CELL_SIZE);
-  const rows = Math.ceil(map.height / WORLD_DISCOVERY_CELL_SIZE);
-  const fogCells = useMemo(() => {
-    const cells: Array<{ id: string; x: number; y: number }> = [];
-    for (let column = 0; column < columns; column += 1) {
-      for (let row = 0; row < rows; row += 1) {
-        const id = `${column}:${row}`;
-        if (!explored.has(id)) {
-          cells.push({
-            id,
-            x: column * WORLD_DISCOVERY_CELL_SIZE,
-            y: row * WORLD_DISCOVERY_CELL_SIZE,
-          });
-        }
-      }
-    }
-    return cells;
-  }, [columns, explored, rows]);
+  const visibleLocations = map.locations.filter((location) => {
+    if (location.type === "city" || location.type === "village") return true;
+    if (location.type !== "dungeon") return true;
+    return (
+      gameSession.world.isDungeonActive(location.id) &&
+      gameSession.world.isPositionExplored(location.x, location.y)
+    );
+  });
 
   function placeWaypoint(event: MouseEvent<SVGSVGElement>): void {
     const bounds = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - bounds.left) / bounds.width) * map.width;
     const y = ((event.clientY - bounds.top) / bounds.height) * map.height;
-    if (!gameSession.world.isPositionExplored(x, y)) return;
     gameSession.setWaypoint(x, y);
   }
 
@@ -98,14 +86,14 @@ export default function StrategicMap({ onClose }: StrategicMapProps) {
                 width={map.width - map.boundaryInset * 2}
                 height={map.height - map.boundaryInset * 2}
               />
-              {map.terrainZones.map((zone) => (
-                <ellipse
-                  key={zone.id}
-                  className={`strategic-terrain ${zone.type}`}
-                  cx={zone.x}
-                  cy={zone.y}
-                  rx={zone.radiusX}
-                  ry={zone.radiusY}
+              {terrainRects.map((rect) => (
+                <rect
+                  key={`${rect.x}:${rect.y}:${rect.width}`}
+                  className={`strategic-terrain ${rect.type}`}
+                  x={rect.x}
+                  y={rect.y}
+                  width={rect.width + 2}
+                  height={rect.height + 2}
                 />
               ))}
               {map.terrainRivers.map((river) => (
@@ -128,30 +116,24 @@ export default function StrategicMap({ onClose }: StrategicMapProps) {
                   style={{ strokeWidth: road.width }}
                 />
               ))}
-              {map.locations.map((location) =>
-                gameSession.world.isPositionExplored(
-                  location.x,
-                  location.y,
-                ) ? (
-                  <g
-                    key={location.id}
-                    className={`strategic-location ${location.type}`}
-                    role="button"
-                    tabIndex={0}
-                    onClick={(event) => selectLocation(event, location.id)}
-                  >
-                    <circle
-                      cx={location.x}
-                      cy={location.y}
-                      r={location.type === "city" ? 72 : 50}
-                    />
-                    <title>{t(location.nameKey)}</title>
-                  </g>
-                ) : null,
-              )}
+              {visibleLocations.map((location) => (
+                <g
+                  key={location.id}
+                  className={`strategic-location ${location.type}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={(event) => selectLocation(event, location.id)}
+                >
+                  <circle
+                    cx={location.x}
+                    cy={location.y}
+                    r={location.type === "city" ? 72 : 50}
+                  />
+                  <title>{t(location.nameKey)}</title>
+                </g>
+              ))}
               {gameSession.world.state.enemies.map((enemy) =>
-                enemy.active &&
-                gameSession.world.isPositionExplored(enemy.x, enemy.y) ? (
+                enemy.active ? (
                   <circle
                     key={enemy.id}
                     className="strategic-enemy"
@@ -186,16 +168,6 @@ export default function StrategicMap({ onClose }: StrategicMapProps) {
                 cy={gameSession.world.state.y}
                 r={68}
               />
-              {fogCells.map((cell) => (
-                <rect
-                  key={cell.id}
-                  className="strategic-fog"
-                  x={cell.x}
-                  y={cell.y}
-                  width={WORLD_DISCOVERY_CELL_SIZE + 2}
-                  height={WORLD_DISCOVERY_CELL_SIZE + 2}
-                />
-              ))}
             </svg>
           </div>
 
@@ -203,9 +175,19 @@ export default function StrategicMap({ onClose }: StrategicMapProps) {
             <div className="terrain-legend">
               {[
                 "plains",
+                "tundra",
+                "snowMountain",
+                "pineForest",
                 "forest",
+                "darkForest",
+                "grassland",
+                "heath",
                 "swamp",
+                "bog",
+                "steppe",
                 "desert",
+                "badlands",
+                "hills",
                 "mountain",
                 "lake",
                 "river",

@@ -6,8 +6,11 @@ export const FACTION_IDS = [
   "gloam_compact",
   "iron_concord",
 ] as const;
+export const PLAYER_FACTION_ID = "wanderer" as const;
 
 export type FactionId = (typeof FACTION_IDS)[number];
+export type WorldFactionId = FactionId | typeof PLAYER_FACTION_ID;
+export type FactionRelation = "allied" | "friendly" | "neutral" | "hostile";
 export type QuestType = "delivery" | "bounty" | "escort";
 export type QuestStatus = "available" | "active" | "ready" | "completed";
 
@@ -51,29 +54,27 @@ const RESOURCE_IDS = [
 export function createFactionState(
   seed: number,
   map: WorldMapDefinition,
-  economy: EconomyState,
+  _economy: EconomyState,
   enemies: EnemyArchetype[],
 ): FactionState {
   const settlements = map.locations.filter((location) =>
     ["city", "village", "castle"].includes(location.type),
   );
-  const cities = settlements.filter((location) => location.type === "city");
-  const locationFactions: Record<string, FactionId> = {};
+  const locationFactions = assignSettlementFactions(seed, settlements);
 
-  for (const location of settlements) {
-    if (location.type === "village") {
-      const city = nearestLocation(location, cities);
-      locationFactions[location.id] =
-        locationFactions[city.id] ??
-        FACTION_IDS[hashValue(`${seed}:${city.id}:faction`) % FACTION_IDS.length];
-    } else {
-      locationFactions[location.id] =
-        FACTION_IDS[hashValue(`${seed}:${location.id}:faction`) % FACTION_IDS.length];
-    }
-  }
-
-  const quests = settlements.map((issuer, index) =>
-    createQuest(seed, issuer, index, settlements, economy, enemies, locationFactions),
+  const questIssuers = settlements.filter((location) => location.type === "city");
+  const quests = questIssuers.flatMap((issuer, issuerIndex) =>
+    (["delivery", "bounty", "escort"] as const).map((type, typeIndex) =>
+      createQuest(
+        seed,
+        issuer,
+        issuerIndex * 3 + typeIndex,
+        settlements,
+        enemies,
+        locationFactions,
+        type,
+      ),
+    ),
   );
 
   return {
@@ -87,28 +88,105 @@ export function createFactionState(
   };
 }
 
+export function assignSettlementFactions(
+  seed: number,
+  settlements: MapLocation[],
+): Record<string, FactionId> {
+  const cities = settlements.filter((location) => location.type === "city");
+  const locationFactions: Record<string, FactionId> = {};
+  const cityFactions = new Map<string, FactionId>();
+  const sortedCities = [...cities].sort((left, right) => left.x - right.x);
+  const factionOffset = hashValue(`${seed}:city-faction-offset`) % FACTION_IDS.length;
+  sortedCities.forEach((city, index) => {
+    cityFactions.set(city.id, FACTION_IDS[(index + factionOffset) % FACTION_IDS.length]);
+  });
+
+  for (const location of settlements) {
+    if (location.type === "village" && cities.length > 0) {
+      const city = nearestLocation(location, cities);
+      locationFactions[location.id] =
+        locationFactions[city.id] ?? cityFactions.get(city.id) ?? FACTION_IDS[0];
+    } else if (location.type === "city") {
+      locationFactions[location.id] = cityFactions.get(location.id) ?? FACTION_IDS[0];
+    } else {
+      locationFactions[location.id] =
+        FACTION_IDS[hashValue(`${seed}:${location.id}:faction`) % FACTION_IDS.length];
+    }
+  }
+
+  return locationFactions;
+}
+
+export function getFactionRelation(
+  left: WorldFactionId,
+  right: WorldFactionId,
+  factionState?: FactionState,
+): FactionRelation {
+  if (left === right) return "allied";
+  if (left === PLAYER_FACTION_ID || right === PLAYER_FACTION_ID) {
+    const factionId = left === PLAYER_FACTION_ID ? right : left;
+    if (!isFactionId(factionId)) return "neutral";
+    const reputation = factionState?.reputation[factionId] ?? 0;
+    if (reputation <= -20) return "hostile";
+    if (reputation >= 35) return "allied";
+    if (reputation >= 10) return "friendly";
+    return "neutral";
+  }
+
+  if (
+    (left === "ember_crown" && right === "gloam_compact") ||
+    (left === "gloam_compact" && right === "ember_crown") ||
+    (left === "gloam_compact" && right === "iron_concord") ||
+    (left === "iron_concord" && right === "gloam_compact")
+  ) {
+    return "hostile";
+  }
+  if (
+    (left === "ember_crown" && right === "iron_concord") ||
+    (left === "iron_concord" && right === "ember_crown")
+  ) {
+    return "friendly";
+  }
+  return "neutral";
+}
+
+export function areFactionsHostile(
+  left: WorldFactionId,
+  right: WorldFactionId,
+  factionState?: FactionState,
+): boolean {
+  return getFactionRelation(left, right, factionState) === "hostile";
+}
+
+export function isFactionId(value: string): value is FactionId {
+  return (FACTION_IDS as readonly string[]).includes(value);
+}
+
 function createQuest(
   seed: number,
   issuer: MapLocation,
   index: number,
   settlements: MapLocation[],
-  economy: EconomyState,
   enemies: EnemyArchetype[],
   locationFactions: Record<string, FactionId>,
+  forcedType?: QuestType,
 ): QuestState {
-  const questHash = hashValue(`${seed}:${issuer.id}:quest`);
-  const type: QuestType = ["delivery", "bounty", "escort"][questHash % 3] as QuestType;
-  const otherSettlements = settlements.filter((location) => location.id !== issuer.id);
+  const type: QuestType =
+    forcedType ??
+    (["delivery", "bounty", "escort"][
+      hashValue(`${seed}:${issuer.id}:quest`) % 3
+    ] as QuestType);
+  const questHash = hashValue(`${seed}:${issuer.id}:${type}:quest`);
+  const otherSettlements = settlements.filter(
+    (location) => location.id !== issuer.id && location.type === "city",
+  );
   const target =
-    otherSettlements[hashValue(`${seed}:${issuer.id}:target`) % otherSettlements.length];
-  const caravan =
-    economy.caravans.length > 0
-      ? economy.caravans[
-          hashValue(`${seed}:${issuer.id}:caravan`) % economy.caravans.length
-        ]
-      : null;
-  const enemy = enemies[hashValue(`${seed}:${issuer.id}:enemy`) % enemies.length];
+    otherSettlements[
+      hashValue(`${seed}:${issuer.id}:${type}:target`) % otherSettlements.length
+    ];
+  const enemy = enemies[hashValue(`${seed}:${issuer.id}:${type}:enemy`) % enemies.length];
   const requiredCount = 2 + (enemy?.threat ?? 1) / 2;
+  const caravanId = `quest_caravan_${index}_${issuer.id}`;
 
   return {
     id: `quest_${index}_${issuer.id}`,
@@ -117,16 +195,16 @@ function createQuest(
     factionId: locationFactions[issuer.id],
     issuerLocationId: issuer.id,
     targetLocationId:
-      type === "escort" ? caravan?.destinationId ?? target.id : type === "delivery" ? target.id : issuer.id,
+      type === "escort" ? target?.id ?? issuer.id : issuer.id,
     itemId:
       type === "delivery"
-        ? RESOURCE_IDS[hashValue(`${seed}:${issuer.id}:item`) % RESOURCE_IDS.length]
+        ? RESOURCE_IDS[hashValue(`${seed}:${issuer.id}:${type}:item`) % RESOURCE_IDS.length]
         : null,
-    requiredQuantity: type === "delivery" ? 3 + (questHash % 3) : 0,
+    requiredQuantity: type === "delivery" ? 4 + (questHash % 4) : 0,
     enemyId: type === "bounty" ? enemy.id : null,
     requiredCount: type === "bounty" ? Math.ceil(requiredCount) : 0,
     progress: 0,
-    caravanId: type === "escort" ? caravan?.id ?? null : null,
+    caravanId: type === "escort" ? caravanId : null,
     rewardGold: 28 + (questHash % 28) + (enemy?.threat ?? 1) * 6,
     rewardReputation: 5 + (questHash % 4),
   };

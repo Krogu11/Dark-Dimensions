@@ -14,6 +14,7 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     render: {
       antialias: true,
       pixelArt: false,
+      roundPixels: true,
     },
     scene: [WorldScene],
   });

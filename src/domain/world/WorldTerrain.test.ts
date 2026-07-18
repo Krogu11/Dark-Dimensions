@@ -25,6 +25,10 @@ function createCrossingMap(): WorldMapDefinition {
         radiusY: 100,
       },
     ],
+    terrainCells: [
+      { x: 100, y: 100, size: 800, type: "plains" },
+      { x: 200, y: 200, size: 120, type: "forest" },
+    ],
     terrainRivers: [
       {
         id: "river",
@@ -73,14 +77,7 @@ describe("WorldTerrain", () => {
 
   it("treats mountains as slow terrain instead of an obstacle", () => {
     const map = createCrossingMap();
-    map.terrainZones.push({
-      id: "mountain",
-      type: "mountain",
-      x: 750,
-      y: 250,
-      radiusX: 100,
-      radiusY: 100,
-    });
+    map.terrainCells.push({ x: 700, y: 200, size: 120, type: "mountain" });
 
     expect(isWorldPositionTraversable(map, 750, 250, 20)).toBe(true);
     expect(getTerrainMovementMultiplier(map, 750, 250)).toBeGreaterThan(0);

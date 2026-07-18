@@ -22,27 +22,21 @@ describe("GameSession roster", () => {
     expect(session.hero.isHero).toBe(true);
   });
 
-  it("recruits humans into reserve and selects five active units", () => {
+  it("recruits humans directly into the warband", () => {
     const session = new GameSession();
     session.gold = 1_000;
 
     for (let index = 0; index < 6; index += 1) {
       expect(session.recruit("village_levy")).toBe("success");
     }
-    for (const card of [...session.reserve].slice(0, 5)) {
-      expect(session.moveToWarband(card.uid)).toBe("success");
-    }
-
-    expect(session.warband).toHaveLength(5);
-    expect(session.reserve).toHaveLength(1);
-    expect(session.moveToWarband(session.reserve[0].uid)).toBe("capacityFull");
+    expect(session.warband).toHaveLength(6);
+    expect(session.reserve).toHaveLength(0);
   });
 
   it("keeps a full levy warband at the lowest strategic strength", () => {
     const session = new GameSession(121212);
     for (let index = 0; index < 5; index += 1) {
       expect(session.recruit("village_levy")).toBe("success");
-      expect(session.moveToWarband(session.reserve[0].uid)).toBe("success");
     }
 
     expect(session.warbandThreatRating).toBe(1);
@@ -51,7 +45,7 @@ describe("GameSession roster", () => {
   it("upgrades an experienced recruit through a selected branch", () => {
     const session = new GameSession();
     session.recruit("village_levy");
-    const recruit = session.reserve[0];
+    const recruit = session.warband[0];
     recruit.level = 2;
 
     expect(session.upgradeUnit(recruit.uid, "levy_spearman")).toBe("success");
@@ -67,7 +61,7 @@ describe("GameSession roster", () => {
   it("allows roster changes away from cities", () => {
     const session = new GameSession(12345);
     session.recruit("village_levy");
-    const recruit = session.reserve[0];
+    const recruit = session.warband[0];
     session.world.move(1, 0, 4);
 
     expect(session.isInCity).toBe(false);
@@ -78,8 +72,7 @@ describe("GameSession roster", () => {
   it("awards battle XP only to deployed survivors and restores the hero", () => {
     const session = new GameSession();
     session.recruit("village_levy");
-    const recruit = session.reserve[0];
-    session.moveToWarband(recruit.uid);
+    const recruit = session.warband[0];
     session.beginBattle(session.world.state.enemies[0].id);
     session.battle!.deployedUnitUids.add(recruit.uid);
     session.battle!.outcome = "victory";
@@ -256,7 +249,7 @@ describe("GameSession roster", () => {
   it("uses consumables and applies equipped hero bonuses in combat", () => {
     const session = new GameSession(445566);
     session.recruit("village_levy");
-    const recruit = session.reserve[0];
+    const recruit = session.warband[0];
     recruit.currentHp = 200;
     addToInventory(session.inventory, "healing_poultice", 1);
     addToInventory(session.inventory, "iron_talisman", 1);
@@ -292,7 +285,7 @@ describe("GameSession roster", () => {
     expect(session.spendSkill("pathfinding")).toBe(true);
     expect(session.spendSkill("leadership")).toBe(true);
     expect(session.partyMovementSpeed).toBeGreaterThan(baseSpeed);
-    expect(session.warbandCapacity).toBe(6);
+    expect(session.warbandCapacity).toBe(10);
   });
 
   it("persists character progression in city saves", async () => {
@@ -318,7 +311,7 @@ describe("GameSession roster", () => {
 
     expect(restored.characterState.attributes.charisma).toBe(2);
     expect(restored.characterState.skills.leadership).toBe(1);
-    expect(restored.warbandCapacity).toBe(6);
+    expect(restored.warbandCapacity).toBe(12);
   });
 
   it("completes delivery quests and awards faction reputation", () => {
@@ -370,10 +363,20 @@ describe("GameSession roster", () => {
       (candidate) => candidate.type === "escort",
     )!;
     session.world.state.nearbyLocationId = quest.issuerLocationId;
+    expect(
+      session.economyState.caravans.some(
+        (candidate) => candidate.id === quest.caravanId,
+      ),
+    ).toBe(false);
     session.acceptQuest(quest.id);
     const caravan = session.economyState.caravans.find(
       (candidate) => candidate.id === quest.caravanId,
     )!;
+    const issuer = session.world.map.locations.find(
+      (location) => location.id === quest.issuerLocationId,
+    )!;
+    expect(caravan.originId).toBe(issuer.id);
+    expect(caravan.progress).toBeGreaterThan(0);
     const target = session.world.map.locations.find(
       (location) => location.id === quest.targetLocationId,
     )!;
@@ -412,16 +415,22 @@ describe("GameSession roster", () => {
 
   it("applies terrain speed, visibility and ration pressure while traveling", () => {
     const session = new GameSession(272727);
-    const swamp = session.world.map.terrainZones.find(
-      (zone) => zone.type === "swamp",
+    const slowSightCell = session.world.map.terrainCells.find(
+      (cell) =>
+        cell.type === "forest" ||
+        cell.type === "darkForest" ||
+        cell.type === "swamp" ||
+        cell.type === "bog",
     )!;
-    session.world.state.x = swamp.x;
-    session.world.state.y = swamp.y;
+    session.world.state.x = slowSightCell.x + slowSightCell.size / 2;
+    session.world.state.y = slowSightCell.y + slowSightCell.size / 2;
     const baseSpeed = session.partyMovementSpeed;
 
     session.moveWorld(1, 0, 1);
 
-    expect(["forest", "swamp"]).toContain(session.currentTerrain);
+    expect(["forest", "darkForest", "swamp", "bog"]).toContain(
+      session.currentTerrain,
+    );
     expect(session.effectiveMovementSpeed).toBeLessThan(baseSpeed);
     expect(session.visibilityRadius).toBeLessThan(520);
     expect(session.survivalState.travelFoodDebt).toBeGreaterThan(0);
@@ -544,7 +553,7 @@ describe("GameSession roster", () => {
     const session = new GameSession(343434);
     session.gold = 1_000;
     session.recruit("village_levy");
-    const recruit = session.reserve[0];
+    const recruit = session.warband[0];
     recruit.currentHp = 100;
 
     session.advanceTime(60);
@@ -613,6 +622,43 @@ describe("GameSession roster", () => {
     expect(inventoryQuantity(session.inventory, "wood")).toBe(woodBefore);
   });
 
+  it("takes prisoners and recruits or sells them with tier costs", () => {
+    const session = new GameSession(202021);
+    session.gold = 1_000;
+    session.beginBattle(session.world.state.enemies[0].id);
+    if (!session.battle) throw new Error("Expected battle");
+    vi.spyOn(session.battle, "rollReward").mockReturnValue({
+      gold: 0,
+      cardId: "village_levy",
+      items: [],
+    });
+    session.battle.outcome = "victory";
+    session.characterState.xp = 100;
+
+    const claimed = session.claimVictoryReward({
+      continueDungeon: true,
+      takeCard: true,
+      itemIds: [],
+    });
+
+    expect(claimed?.cardId).toBe("village_levy");
+    expect(session.prisonerCount).toBe(1);
+    session.characterState.xp = 100;
+    const moraleBeforeRecruitment = session.morale;
+    expect(session.recruitPrisoner("village_levy")).toBe("success");
+    expect(session.gold).toBe(990);
+    expect(session.morale).toBe(moraleBeforeRecruitment - 5);
+    expect(session.warband).toHaveLength(1);
+
+    session.prisoners = [{ cardId: "village_levy", quantity: 1 }];
+    session.world.state.nearbyLocationId = session.world.map.locations.find(
+      (location) => location.type === "city",
+    )!.id;
+    expect(session.sellPrisoner("village_levy")).toBe("success");
+    expect(session.gold).toBe(996);
+    expect(session.prisonerCount).toBe(0);
+  });
+
   it("consumes food from partially filled Mount-and-Blade-style stacks", () => {
     const session = new GameSession(929292);
     session.inventory = [];
@@ -620,8 +666,8 @@ describe("GameSession roster", () => {
     session.warband = Array.from({ length: 5 }, () =>
       createCardInstance("village_levy"),
     );
-    session.reserve = Array.from({ length: 6 }, () =>
-      createCardInstance("village_levy"),
+    session.warband.push(
+      ...Array.from({ length: 6 }, () => createCardInstance("village_levy")),
     );
 
     expect(session.rationCount).toBe(60);
@@ -665,4 +711,100 @@ describe("GameSession roster", () => {
     expect(restored.rationCount).toBe(48);
     expect(restored.foodCapacity).toBe(60);
   });
+
+  it("lets the player join a nearby NPC warband battle", () => {
+    const session = new GameSession(949494);
+    session.world.state.x = 1000;
+    session.world.state.y = 1000;
+    session.world.state.warbands = [
+      createSessionWarband("ember_patrol", "ember_crown", 1000, 1000, [
+        "soldier",
+        "wache",
+      ]),
+      createSessionWarband("gloam_patrol", "gloam_compact", 1024, 1000, [
+        "village_levy",
+      ]),
+    ];
+
+    session.world.updateWarbands(0.2, session.factionState);
+    const battle = session.world.state.warbandBattles[0];
+
+    expect(battle).toBeDefined();
+    expect(session.joinWarbandBattle(battle.id, battle.attackerId)).toBe(true);
+    expect(session.mode).toBe("battle");
+    expect(session.battle?.enemy.deck).toEqual(["village_levy"]);
+  });
+
+  it("persists faction warband AI state in city saves", async () => {
+    const session = new GameSession(959595);
+    const city = session.world.map.locations.find((location) => location.type === "city")!;
+    session.world.state.nearbyLocationId = city.id;
+    session.world.state.warbands[0].state = "chasing";
+    session.world.state.warbands[0].targetWarbandId = session.world.state.warbands[1].id;
+    let storedSave: SaveGame | null = null;
+    const repository: SaveRepository = {
+      read: async () => storedSave,
+      write: async (save) => {
+        storedSave = structuredClone(save);
+      },
+      delete: async () => {
+        storedSave = null;
+      },
+    };
+
+    expect(await session.save(repository)).toBe(true);
+    const restored = new GameSession(1);
+    restored.restore(storedSave!);
+
+    expect(restored.world.state.warbands[0].state).toBe("chasing");
+    expect(restored.world.state.warbands[0].targetWarbandId).toBe(
+      session.world.state.warbands[1].id,
+    );
+  });
 });
+
+function createSessionWarband(
+  id: string,
+  factionId: "ember_crown" | "gloam_compact" | "iron_concord",
+  x: number,
+  y: number,
+  unitIds: string[],
+) {
+  return {
+    id,
+    nameKey: `test.${id}`,
+    type: "patrol" as const,
+    factionId,
+    x,
+    y,
+    targetX: x,
+    targetY: y,
+    unitIds,
+    speed: 180,
+    detectionRadius: 600,
+    aggressionRadius: 520,
+    aggression: 0.7,
+    state: "patrolling" as const,
+    homeLocationId: null,
+    spawnX: x,
+    spawnY: y,
+    maxPursuitDistance: 1200,
+    respawnHours: 1,
+    respawnRemainingHours: 0,
+    leaderLevel: 1,
+    equipmentItemIds: [],
+    patrolPoints: [
+      { x, y },
+      { x: x + 60, y },
+    ],
+    patrolIndex: 0,
+    allowedRadius: 1400,
+    targetWarbandId: null,
+    targetEnemyId: null,
+    activeBattleId: null,
+    hpRatio: 1,
+    experience: 0,
+    lootItemIds: [],
+  };
+}
+

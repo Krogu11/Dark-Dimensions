@@ -12,6 +12,9 @@ import {
 import { getWeeklyUnitWage } from "../domain/cards/UnitUpkeep";
 import {
   gameSession,
+  getPrisonerRecruitGoldCost,
+  getPrisonerRecruitXpCost,
+  getPrisonerSellPrice,
   type RosterActionResult,
 } from "../domain/session/GameSession";
 
@@ -40,9 +43,10 @@ export default function WarbandManager({
       setMessage(successMessage ?? null);
       return;
     }
-    setMessage(
-      t(result === "notEnoughGold" ? "warband.poor" : "warband.full"),
-    );
+    if (result === "notEnoughGold") setMessage(t("warband.poor"));
+    else if (result === "notEnoughXp") setMessage(t("warband.notEnoughXp"));
+    else if (result === "notInCity") setMessage(t("warband.notInCity"));
+    else setMessage(t("warband.full"));
   }
 
   function upgrade(card: CardInstance, targetCardId: string): void {
@@ -69,6 +73,7 @@ export default function WarbandManager({
           <div className="warband-summary">
             <strong>{t("warband.leadership", { level: gameSession.leadershipLevel })}</strong>
             <span>{t("hud.gold")} {gameSession.gold}</span>
+            <span>{t("warband.prisonersCount", { count: gameSession.prisonerCount })}</span>
             <button className="button ghost" onClick={onClose}>
               {t(returnToCity ? "trade.returnToCity" : "warband.close")}
             </button>
@@ -92,19 +97,15 @@ export default function WarbandManager({
 
         <div className="warband-columns">
           <RosterSection
-            title={t("warband.active")}
+            title={t("warband.warband")}
             capacity={t("warband.activeCapacity", {
               count: gameSession.warband.length,
               capacity: gameSession.warbandCapacity,
             })}
             cards={gameSession.warband}
             emptyText={t("warband.emptyActive")}
-            actionLabel={t("warband.toReserve")}
             selectedUid={selectedUid}
             onSelect={setSelectedUid}
-            onAction={(card) =>
-              resultMessage(gameSession.moveToReserve(card.uid))
-            }
             onDismiss={(card) =>
               resultMessage(
                 gameSession.dismissUnit(card.uid),
@@ -114,25 +115,20 @@ export default function WarbandManager({
               )
             }
           />
-          <RosterSection
-            title={t("warband.reserve")}
-            capacity={t("warband.reserveCapacity", {
-              count: gameSession.reserve.length,
-              capacity: gameSession.reserveCapacity,
-            })}
-            cards={gameSession.reserve}
-            emptyText={t("warband.emptyReserve")}
-            actionLabel={t("warband.toActive")}
-            selectedUid={selectedUid}
-            onSelect={setSelectedUid}
-            onAction={(card) =>
-              resultMessage(gameSession.moveToWarband(card.uid))
-            }
-            onDismiss={(card) =>
+          <PrisonerSection
+            onRecruit={(cardId) =>
               resultMessage(
-                gameSession.dismissUnit(card.uid),
-                t("warband.dismissed", {
-                  unit: t(getCardDefinition(card.cardId).nameKey),
+                gameSession.recruitPrisoner(cardId),
+                t("warband.prisonerRecruited", {
+                  unit: t(getCardDefinition(cardId).nameKey),
+                }),
+              )
+            }
+            onSell={(cardId) =>
+              resultMessage(
+                gameSession.sellPrisoner(cardId),
+                t("warband.prisonerSold", {
+                  unit: t(getCardDefinition(cardId).nameKey),
                 }),
               )
             }
@@ -177,7 +173,7 @@ export default function WarbandManager({
                     disabled={
                       !gameSession.isInCity ||
                       gameSession.gold < (definition.recruitCost ?? 0) ||
-                      gameSession.reserve.length >= gameSession.reserveCapacity
+                      gameSession.warband.length >= gameSession.warbandCapacity
                     }
                     onClick={() =>
                       resultMessage(
@@ -279,10 +275,8 @@ interface RosterSectionProps {
   capacity: string;
   cards: CardInstance[];
   emptyText: string;
-  actionLabel: string;
   selectedUid: string;
   onSelect: (uid: string) => void;
-  onAction: (card: CardInstance) => void;
   onDismiss: (card: CardInstance) => void;
 }
 
@@ -291,10 +285,8 @@ function RosterSection({
   capacity,
   cards,
   emptyText,
-  actionLabel,
   selectedUid,
   onSelect,
-  onAction,
   onDismiss,
 }: RosterSectionProps) {
   return (
@@ -309,9 +301,7 @@ function RosterSection({
             key={card.uid}
             card={card}
             selected={selectedUid === card.uid}
-            actionLabel={actionLabel}
             onSelect={() => onSelect(card.uid)}
-            onAction={() => onAction(card)}
             onDismiss={() => onDismiss(card)}
           />
         ))}
@@ -324,16 +314,12 @@ function RosterSection({
 function RosterCard({
   card,
   selected,
-  actionLabel,
   onSelect,
-  onAction,
   onDismiss,
 }: {
   card: CardInstance;
   selected: boolean;
-  actionLabel: string;
   onSelect: () => void;
-  onAction: () => void;
   onDismiss: () => void;
 }) {
   const { t } = useTranslation();
@@ -362,15 +348,6 @@ function RosterCard({
       </div>
       <div className="roster-card-actions">
         <button
-          className="mini-action"
-          onClick={(event) => {
-            event.stopPropagation();
-            onAction();
-          }}
-        >
-          {actionLabel}
-        </button>
-        <button
           className="mini-action danger"
           onClick={(event) => {
             event.stopPropagation();
@@ -381,5 +358,72 @@ function RosterCard({
         </button>
       </div>
     </article>
+  );
+}
+
+function PrisonerSection({
+  onRecruit,
+  onSell,
+}: {
+  onRecruit: (cardId: string) => void;
+  onSell: (cardId: string) => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <section className="roster-section">
+      <div className="roster-heading">
+        <h2>{t("warband.prisoners")}</h2>
+        <span>{t("warband.prisonersCount", { count: gameSession.prisonerCount })}</span>
+      </div>
+      <div className="roster-list">
+        {gameSession.prisoners.map((prisoner) => {
+          const definition = getCardDefinition(prisoner.cardId);
+          const recruitGold = getPrisonerRecruitGoldCost(definition.tier);
+          const recruitXp = getPrisonerRecruitXpCost(definition.tier);
+          const sellPrice = getPrisonerSellPrice(definition.tier);
+          return (
+            <article className="roster-card" key={prisoner.cardId}>
+              <div>
+                <small>{t("warband.tier", { tier: definition.tier })} · x{prisoner.quantity}</small>
+                <strong className={`rarity-name ${definition.rarity}`}>
+                  {t(definition.nameKey)}
+                </strong>
+                <span>
+                  {t("warband.prisonerRecruitCost", {
+                    gold: recruitGold,
+                    xp: recruitXp,
+                  })}
+                </span>
+                <span>{t("warband.prisonerSellPrice", { gold: sellPrice })}</span>
+              </div>
+              <div className="roster-card-actions">
+                <button
+                  className="mini-action"
+                  disabled={
+                    gameSession.warband.length >= gameSession.warbandCapacity ||
+                    gameSession.gold < recruitGold ||
+                    gameSession.characterState.xp < recruitXp
+                  }
+                  onClick={() => onRecruit(prisoner.cardId)}
+                >
+                  {t("warband.recruitPrisoner")}
+                </button>
+                <button
+                  className="mini-action danger"
+                  disabled={!gameSession.isInCity}
+                  onClick={() => onSell(prisoner.cardId)}
+                >
+                  {t("warband.sellPrisoner")}
+                </button>
+              </div>
+            </article>
+          );
+        })}
+        {gameSession.prisoners.length === 0 ? (
+          <p className="roster-empty">{t("warband.emptyPrisoners")}</p>
+        ) : null}
+      </div>
+    </section>
   );
 }

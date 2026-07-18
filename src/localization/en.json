@@ -30,8 +30,13 @@
     "controls": "WASD move · Arrow keys pan camera · Space recenters",
     "danger": "Danger",
     "safe": "Sanctuary",
+    "menu": "Campaign menu",
     "gold": "Gold",
+    "goldTooltip": "Weekly wages: {{wages}}g",
     "deck": "Warband",
+    "attack": "Attack",
+    "defense": "Defense",
+    "sight": "Sight",
     "strength": "Strength",
     "time": "Time",
     "day": "Day {{day}}",
@@ -53,6 +58,7 @@
   "world": {
     "clickToMove": "Click terrain to travel",
     "pursuing": "Pursuing {{name}}",
+    "warbandBattle": "Running battle",
     "enemyTooltip": {
       "threat": "Threat",
       "troops": "Troops",
@@ -60,6 +66,86 @@
       "load": "Load",
       "warband": "Warband",
       "click": "Click to pursue and attack"
+    },
+    "warbandTooltip": {
+      "faction": "Faction",
+      "relation": "Relation",
+      "type": "Type",
+      "strength": "Estimated strength",
+      "troops": "Units",
+      "state": "State",
+      "target": "Target",
+      "click": "Click to travel to this warband",
+      "joinBattle": "Click nearby battle to join"
+    },
+    "warbandInteraction": {
+      "description": "{{type}} of {{faction}} · strength {{strength}} · {{units}} units · {{state}}.",
+      "distance": "{{distance}}m away",
+      "range": "Interaction range: {{distance}}m",
+      "follow": "Follow",
+      "joinBattle": "Join battle",
+      "travelToBattle": "Travel to battle",
+      "talk": "Talk",
+      "info": "Ask for information",
+      "help": "Request aid",
+      "close": "Close",
+      "talkResult": "{{name}} greets you briefly and keeps one eye on the road.",
+      "infoResult": "{{name}} reports movement near hostile camps and trade roads.",
+      "helpResult": "{{name}} is not taking requests yet."
+    },
+    "relation": {
+      "allied": "Allied",
+      "friendly": "Friendly",
+      "neutral": "Neutral",
+      "hostile": "Hostile"
+    },
+    "warbandType": {
+      "lord": "Lord",
+      "patrol": "Patrol",
+      "scout": "Scout",
+      "merchantEscort": "Merchant escort",
+      "militia": "Militia",
+      "army": "Army",
+      "elite": "Elite warband"
+    },
+    "warbandState": {
+      "idle": "Idle",
+      "patrolling": "Patrolling",
+      "traveling": "Traveling",
+      "chasing": "Chasing",
+      "fighting": "Fighting",
+      "retreating": "Retreating",
+      "returning": "Returning",
+      "destroyed": "Destroyed"
+    },
+    "faction": {
+      "ember_crown": {
+        "lord": "Ember Crown Lord",
+        "patrol": "Ember Crown Patrol",
+        "scout": "Ember Crown Scouts",
+        "merchantEscort": "Ember Trade Escort",
+        "militia": "Ember Local Militia",
+        "army": "Ember Crown Army",
+        "elite": "Ember Crown Vanguard"
+      },
+      "gloam_compact": {
+        "lord": "Gloam Compact Lord",
+        "patrol": "Gloam Compact Patrol",
+        "scout": "Gloam Compact Scouts",
+        "merchantEscort": "Gloam Trade Escort",
+        "militia": "Gloam Local Militia",
+        "army": "Gloam Compact Army",
+        "elite": "Gloam Compact Chosen"
+      },
+      "iron_concord": {
+        "lord": "Iron Concord Lord",
+        "patrol": "Iron Concord Patrol",
+        "scout": "Iron Concord Scouts",
+        "merchantEscort": "Iron Trade Escort",
+        "militia": "Iron Local Militia",
+        "army": "Iron Concord Army",
+        "elite": "Iron Concord Hammer"
+      }
     }
   },
   "map": {
@@ -100,6 +186,14 @@
       "name": "Pinewood",
       "battle": "Tall pines offer light cover and narrow sightlines."
     },
+    "tundra": {
+      "name": "Tundra",
+      "battle": "Frozen open ground slows armies and exposes formations."
+    },
+    "snowMountain": {
+      "name": "Frostpeaks",
+      "battle": "Icy heights punish movement and favor hardy defenders."
+    },
     "swamp": {
       "name": "Swamp",
       "battle": "Deep mud reduces ATK and DEF."
@@ -115,6 +209,10 @@
     "badlands": {
       "name": "Badlands",
       "battle": "Broken earth rewards aggressive raiders."
+    },
+    "steppe": {
+      "name": "Steppe",
+      "battle": "Dry grasslands favor mobile warbands."
     },
     "grassland": {
       "name": "Grassland",
@@ -174,12 +272,15 @@
   },
   "warband": {
     "open": "Warband",
-    "title": "Warband & Recruitment",
+    "short": "Warband",
+    "capacity": "Warband capacity",
+    "title": "Warband & Prisoners",
     "subtitle": "Warband Ledger",
     "leadership": "Leadership {{level}}",
     "active": "Active Warband",
+    "warband": "Warband",
     "reserve": "Reserve",
-    "activeCapacity": "{{count}} / {{capacity}} active",
+    "activeCapacity": "{{count}} / {{capacity}} units",
     "reserveCapacity": "{{count}} / {{capacity}} reserve",
     "recruitment": "Human Recruits",
     "recruit": "Recruit · {{cost}}g",
@@ -198,11 +299,22 @@
     "currentHp": "Current HP",
     "recruitmentLocked": "Recruitment is only available inside a city.",
     "close": "Return to world",
-    "emptyActive": "No units selected. Your hero will fight alone.",
+    "emptyActive": "No hired units. Your hero will fight alone.",
     "emptyReserve": "The reserve is empty.",
     "full": "No free roster slot.",
     "poor": "Not enough gold.",
-    "recruited": "{{unit}} joined your reserve.",
+    "notEnoughXp": "Not enough Wanderer XP.",
+    "notInCity": "This action is only available in a city.",
+    "recruited": "{{unit}} joined your warband.",
+    "prisoners": "Prisoners",
+    "prisonersCount": "{{count}} prisoners",
+    "emptyPrisoners": "No prisoners taken.",
+    "recruitPrisoner": "Recruit",
+    "sellPrisoner": "Sell",
+    "prisonerRecruitCost": "Recruit: {{gold}}g, {{xp}} XP, -5 morale",
+    "prisonerSellPrice": "Sell in city: {{gold}}g",
+    "prisonerRecruited": "{{unit}} joined your warband.",
+    "prisonerSold": "{{unit}} was sold in the city.",
     "upgraded": "{{unit}} joined a new unit tier.",
     "dismiss": "Dismiss",
     "dismissed": "{{unit}} left your warband.",
@@ -212,6 +324,7 @@
   },
   "character": {
     "open": "Character",
+    "short": "Hero",
     "close": "Return to world",
     "eyebrow": "Wanderer's Chronicle",
     "title": "Character",
@@ -349,7 +462,10 @@
     "spoilsTitle": "Choose Rewards",
     "battleRewards": "Battle Rewards",
     "capturedUnit": "Captured Unit",
-    "capturedUnitHint": "Can join your reserve or active warband.",
+    "capturedUnitHint": "Can be taken prisoner after battle.",
+    "capturedPrisoner": "Captured Prisoner",
+    "capturedPrisonerHint": "Goes to your prisoners. Recruit later with gold, XP, and morale.",
+    "pendingPrisoner": "Prisoner to take",
     "noRosterSpace": "No roster space. Dismiss a unit first.",
     "take": "Take",
     "noLoot": "No spoils worth carrying.",
@@ -360,6 +476,7 @@
     "retreat": "Return to last save",
     "goldReward": "+{{gold}} gold",
     "cardReward": "Captured card: {{card}}",
+    "prisonerReward": "Prisoner taken: {{card}}",
     "itemReward": "{{item}} ×{{quantity}}",
     "noCardReward": "No card survived the spoils.",
     "instructions": "Summon units, arrange your warband, then resolve the automatic battle round.",
@@ -402,6 +519,7 @@
     "playerInventory": "Your inventory",
     "foodSupply": "Food {{current}}/{{maximum}}",
     "openMarket": "Market",
+    "marketShort": "Market",
     "openInventory": "Inventory",
     "inventory": "Inventory",
     "equipped": "Hero equipment",
@@ -465,6 +583,7 @@
   "quests": {
     "eyebrow": "Contracts & Allegiances",
     "title": "Quest Ledger",
+    "short": "Quests",
     "close": "Return to world",
     "open": "Quests · {{count}}",
     "reputation": "Reputation {{value}}",
@@ -472,7 +591,10 @@
     "active": "Active contracts",
     "noLocalQuests": "No new contract is posted here.",
     "noActiveQuests": "No contracts accepted.",
+    "talk": "Talk",
     "accept": "Accept",
+    "acceptContract": "Accept contract",
+    "decline": "Maybe later",
     "claim": "Claim reward",
     "inProgress": "Check progress",
     "accepted": "Contract accepted.",
@@ -482,6 +604,12 @@
     "deliveryDescription": "Deliver {{quantity}} × {{item}} to {{target}}.",
     "bountyDescription": "Defeat {{count}} warbands of {{enemy}}. Progress: {{progress}}/{{count}}.",
     "escortDescription": "Remain near the assigned caravan until it reaches {{target}}.",
+    "dialogMayor": "Mayor of {{location}}",
+    "dialog": {
+      "delivery": "Our stores are running thin. Bring {{quantity}} crates of {{item}} back to this city and I will see that you are paid before the council bell fades.",
+      "bounty": "{{enemy}} packs have been bleeding the roads. Hunt down {{count}} of their warbands, then return here for your reward.",
+      "escort": "A caravan leaves from our gate and must reach {{target}} intact. Stay close enough that raiders think twice."
+    },
     "rewards": "{{gold}} gold · +{{reputation}} reputation",
     "type": {
       "delivery": "Trade delivery",
@@ -558,18 +686,37 @@
       "ravenhold": "Ravenhold",
       "thornwall": "Thornwall",
       "sunkenVault": "The Sunken Vault",
+      "sunkenNest": "Sunken Nest",
       "boneCrypt": "The Bone Crypt",
       "emberCavern": "Ember Cavern",
       "hollowDepths": "The Hollow Depths",
       "oldMine": "The Old Mine",
+      "koboldWarren": "Kobold Warren",
+      "orcWarcamp": "Orc Warcamp",
+      "beastDen": "Beast Den",
+      "ashRift": "Ash Rift",
+      "rustedVault": "Rusted Vault",
+      "outlawHideout": "Outlaw Hideout",
       "witchStone": "Witch Stone",
       "fallenColossus": "The Fallen Colossus",
       "moonWell": "The Moon Well",
       "bleakMonument": "The Bleak Monument",
+      "oldShrine": "The Old Shrine",
+      "watcherTree": "Watcher Tree",
+      "brokenObelisk": "The Broken Obelisk",
+      "silverSpring": "Silver Spring",
+      "hangedOak": "The Hanged Oak",
+      "starfallCrater": "Starfall Crater",
       "gloamwood": "Gloamwood",
       "ashenFen": "The Ashen Fen",
       "wolfMoor": "Wolf Moor",
-      "silentHeath": "The Silent Heath"
+      "silentHeath": "The Silent Heath",
+      "stagGrove": "Stag Grove",
+      "crowField": "Crow Field",
+      "mistMarsh": "Mist Marsh",
+      "thornBrake": "Thorn Brake",
+      "boarHollow": "Boar Hollow",
+      "coldBarrow": "Cold Barrow"
     },
     "description": {
       "city": "A fortified city where the journey can be saved and wounded troops restored.",

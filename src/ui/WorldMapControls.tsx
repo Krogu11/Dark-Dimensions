@@ -1,5 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { gameSession } from "../domain/session/GameSession";
+import { WORLD_DISCOVERY_CELL_SIZE } from "../domain/world/WorldSimulation";
+import { getTerrainAt } from "../domain/world/WorldTerrain";
 import { requestWorldZoom } from "../phaser/input/WorldInput";
 
 interface WorldMapControlsProps {
@@ -9,12 +11,28 @@ interface WorldMapControlsProps {
 export function WorldMapControls({ onOpenMap }: WorldMapControlsProps) {
   const { t } = useTranslation();
   const map = gameSession.world.map;
-  const explored = new Set(gameSession.world.state.exploredSectors);
-  const isExplored = (x: number, y: number) => {
-    const column = Math.floor(x / 360);
-    const row = Math.floor(y / 360);
-    return explored.has(`${column}:${row}`);
-  };
+  const columns = Math.ceil(map.width / WORLD_DISCOVERY_CELL_SIZE);
+  const rows = Math.ceil(map.height / WORLD_DISCOVERY_CELL_SIZE);
+  const terrainSectors = Array.from({ length: columns * rows }, (_, index) => {
+    const column = index % columns;
+    const row = Math.floor(index / columns);
+    const x = column * WORLD_DISCOVERY_CELL_SIZE;
+    const y = row * WORLD_DISCOVERY_CELL_SIZE;
+    return {
+      id: `${column}:${row}`,
+      x,
+      y,
+      type: getTerrainAt(map, x + WORLD_DISCOVERY_CELL_SIZE / 2, y + WORLD_DISCOVERY_CELL_SIZE / 2),
+    };
+  });
+  const visibleLocations = map.locations.filter((location) => {
+    if (location.type === "city" || location.type === "village") return true;
+    if (location.type !== "dungeon") return true;
+    return (
+      gameSession.world.isDungeonActive(location.id) &&
+      gameSession.world.isPositionExplored(location.x, location.y)
+    );
+  });
 
   return (
     <aside className="world-map-controls" aria-label={t("map.controls")}>
@@ -32,29 +50,25 @@ export function WorldMapControls({ onOpenMap }: WorldMapControlsProps) {
             width={map.width - map.boundaryInset * 2}
             height={map.height - map.boundaryInset * 2}
           />
-          {map.terrainZones.map((zone) =>
-            isExplored(zone.x, zone.y) ? (
-              <ellipse
-                key={zone.id}
-                className={`minimap-terrain ${zone.type}`}
-                cx={zone.x}
-                cy={zone.y}
-                rx={zone.radiusX}
-                ry={zone.radiusY}
-              />
-            ) : null,
-          )}
-          {map.locations.map((location) =>
-            isExplored(location.x, location.y) ? (
-              <circle
-                key={location.id}
-                className={`minimap-location ${location.type}`}
-                cx={location.x}
-                cy={location.y}
-                r={location.type === "city" ? 74 : 46}
-              />
-            ) : null,
-          )}
+          {terrainSectors.map((sector) => (
+            <rect
+              key={sector.id}
+              className={`minimap-terrain ${sector.type}`}
+              x={sector.x}
+              y={sector.y}
+              width={WORLD_DISCOVERY_CELL_SIZE + 2}
+              height={WORLD_DISCOVERY_CELL_SIZE + 2}
+            />
+          ))}
+          {visibleLocations.map((location) => (
+            <circle
+              key={location.id}
+              className={`minimap-location ${location.type}`}
+              cx={location.x}
+              cy={location.y}
+              r={location.type === "city" ? 74 : 46}
+            />
+          ))}
           {gameSession.waypoint ? (
             <circle
               className="minimap-waypoint"
@@ -85,7 +99,7 @@ export function WorldMapControls({ onOpenMap }: WorldMapControlsProps) {
           onClick={() => requestWorldZoom(-1)}
           aria-label={t("map.zoomOut")}
         >
-          −
+          -
         </button>
       </div>
     </aside>

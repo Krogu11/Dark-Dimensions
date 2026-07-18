@@ -3,6 +3,7 @@ import { enemiesById } from "../../content/content";
 import {
   createCardInstances,
   createPlayerCard,
+  getCardDefinition,
 } from "../cards/CardInstance";
 import type { EnemyArchetype } from "../content/schemas";
 import { BattleSimulation } from "./BattleSimulation";
@@ -23,6 +24,49 @@ describe("BattleSimulation", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
+
+  it("randomizes the player's starting hand from the whole warband", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const cardIds = [
+      "village_levy",
+      "wache",
+      "riesenbat",
+      "ork_rekrut",
+      "kobold_jung",
+      "kobold_speer",
+    ];
+
+    const battle = new BattleSimulation(
+      createCardInstances(cardIds),
+      createEnemy(["village_levy"]),
+      createPlayerCard(),
+    );
+
+    expect(battle.hand.map((card) => card.cardId)).toEqual(cardIds.slice(1));
+  });
+
+  it("randomizes the enemy starting hand before summoning", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const enemyCardIds = [
+      "village_levy",
+      "wache",
+      "riesenbat",
+      "ork_rekrut",
+      "kobold_jung",
+      "kobold_speer",
+    ];
+
+    const battle = new BattleSimulation(
+      [],
+      createEnemy(enemyCardIds),
+      createPlayerCard(),
+    );
+
+    expect(battle.enemyField.map((card) => card.cardId)).toEqual(
+      enemyCardIds.slice(1, 3),
+    );
+  });
+
   it("uses one of three actions for a normal summon", () => {
     const enemy = enemiesById.get("kobold_foragers")!;
     const battle = new BattleSimulation(
@@ -182,17 +226,60 @@ describe("BattleSimulation", () => {
     expect(highDefenseDamage).toBeLessThan(lowDefenseDamage);
   });
 
-  it("automatically fills the enemy formation before resolving a round", () => {
+  it("fills the enemy formation only after resolving current attacks", () => {
     const enemy = enemiesById.get("kobold_foragers")!;
     const battle = new BattleSimulation([], enemy, createPlayerCard());
+    const nextEnemy = battle.enemyHand[0];
 
     expect(battle.enemyField).toHaveLength(2);
     battle.resolveRound();
 
     expect(battle.enemyField.length).toBeGreaterThanOrEqual(2);
+    expect(battle.enemyField).toContain(nextEnemy);
+    expect(nextEnemy.currentHp).toBe(getCardDefinition(nextEnemy.cardId).maxHp);
     expect(
       battle.enemyField.length + battle.enemyHand.length + battle.enemyDrawPile.length,
     ).toBeLessThanOrEqual(enemy.deck.length);
+  });
+
+  it("does not allow newly summoned enemies to attack or take damage in the same round", () => {
+    const enemy = createEnemy(["kobold_jung", "kobold_trapper", "kobold_speer"]);
+    const battle = new BattleSimulation(
+      createCardInstances(["village_levy", "village_levy", "village_levy"]),
+      enemy,
+      createPlayerCard(),
+    );
+    const nextEnemy = battle.enemyHand[0];
+    for (const card of [...battle.hand]) battle.summon(card.uid);
+
+    battle.resolveRound();
+
+    expect(battle.enemyField).toContain(nextEnemy);
+    expect(nextEnemy.currentHp).toBe(getCardDefinition(nextEnemy.cardId).maxHp);
+    expect(
+      battle.animationEvents.some(
+        (event) =>
+          event.type === "attack" &&
+          (event.attackerUids.includes(nextEnemy.uid) ||
+            event.defenderUids.includes(nextEnemy.uid)),
+      ),
+    ).toBe(false);
+  });
+
+  it("rounds combat damage to clean tens", () => {
+    const battle = new BattleSimulation(
+      createCardInstances(["village_levy"]),
+      createEnemy(["kobold_trapper"]),
+      createPlayerCard(),
+    );
+    battle.summon(battle.hand[0].uid);
+
+    battle.resolveRound();
+
+    for (const stats of battle.unitStats.values()) {
+      expect(stats.damageDealt % 10).toBe(0);
+      expect(stats.hpLost % 10).toBe(0);
+    }
   });
 
   it("rolls precise item tables independently from captured cards", () => {

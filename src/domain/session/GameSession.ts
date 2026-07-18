@@ -28,6 +28,7 @@ import {
 } from "../cards/CardInstance";
 import { getWeeklyRosterWage } from "../cards/UnitUpkeep";
 import { WorldSimulation } from "../world/WorldSimulation";
+import type { WorldWarbandState } from "../world/WorldWarbands";
 import { createWorldSeed, generateWorldMap } from "../world/WorldGenerator";
 import { findWorldPath, type WorldPoint } from "../world/WorldPathfinder";
 import {
@@ -60,6 +61,8 @@ import {
 } from "../economy/Economy";
 import {
   createFactionState,
+  getFactionRelation,
+  PLAYER_FACTION_ID,
   type FactionId,
   type FactionState,
   type QuestState,
@@ -80,11 +83,17 @@ import {
 
 type SessionListener = () => void;
 export type GameMode = "world" | "battle";
-const ROSTER_REVISION = 2;
+const ROSTER_REVISION = 3;
+export const WARBAND_INTERACTION_RANGE = 88;
+export interface PrisonerStack {
+  cardId: string;
+  quantity: number;
+}
 export type RosterActionResult =
   | "success"
   | "notInCity"
   | "notEnoughGold"
+  | "notEnoughXp"
   | "capacityFull"
   | "invalid";
 export type TradeActionResult =
@@ -120,6 +129,7 @@ export class GameSession {
   hero: CardInstance;
   warband: CardInstance[] = [];
   reserve: CardInstance[] = [];
+  prisoners: PrisonerStack[] = [];
   leadershipLevel = 1;
   characterState: CharacterState = createCharacterState();
   gold = 80;
@@ -136,13 +146,19 @@ export class GameSession {
   timeState: GameTimeState = createGameTimeState();
   survivalState: SurvivalState = createSurvivalState();
   nearbyCaravanId: string | null = null;
+  selectedWarbandId: string | null = null;
   waypoint: { x: number; y: number; labelKey?: string } | null = null;
   uiBlocked = false;
   pursuedEnemyId: string | null = null;
+  pursuedWarbandId: string | null = null;
   private navigationPath: WorldPoint[] = [];
   private pursuedEnemyPosition: WorldPoint | null = null;
+  private pursuedWarbandPosition: WorldPoint | null = null;
   private currentEnemySpawnId: string | null = null;
   private currentLocationBattleId: string | null = null;
+  private currentWarbandBattleId: string | null = null;
+  private currentWarbandAllyId: string | null = null;
+  private currentWarbandEnemyId: string | null = null;
   private pendingVictoryReward: BattleReward | null = null;
   private listeners = new Set<SessionListener>();
 
@@ -162,11 +178,15 @@ export class GameSession {
   }
 
   get warbandCapacity(): number {
-    return 4 + this.leadershipLevel + this.characterState.skills.leadership;
+    return (
+      5 +
+      this.characterState.attributes.charisma * 2 +
+      this.characterState.skills.leadership * 3
+    );
   }
 
   get reserveCapacity(): number {
-    return 10;
+    return 0;
   }
 
   get warbandThreatRating(): number {
@@ -196,7 +216,11 @@ export class GameSession {
   }
 
   get allUnits(): CardInstance[] {
-    return [...this.warband, ...this.reserve];
+    return this.warband;
+  }
+
+  get prisonerCount(): number {
+    return this.prisoners.reduce((sum, prisoner) => sum + prisoner.quantity, 0);
   }
 
   get cargoWeight(): number {
@@ -325,6 +349,34 @@ export class GameSession {
     if (this.dungeonRun) return "dungeon";
     if (this.currentLocationBattleId) return "castle";
     return "patrol";
+  }
+
+  get nearbyWarbandBattleId(): string | null {
+    const battle = this.world.state.warbandBattles.find(
+      (candidate) =>
+        candidate.state === "fighting" &&
+        Math.hypot(
+          candidate.x - this.world.state.x,
+          candidate.y - this.world.state.y,
+        ) <= 78,
+    );
+    return battle?.id ?? null;
+  }
+
+  get selectedWarband() {
+    return this.selectedWarbandId
+      ? this.world.getWarband(this.selectedWarbandId)
+      : null;
+  }
+
+  get selectedWarbandDistance(): number {
+    const warband = this.selectedWarband;
+    return warband ? this.getWarbandDistance(warband.id) : Number.POSITIVE_INFINITY;
+  }
+
+  get interactableSelectedWarband() {
+    const warband = this.selectedWarband;
+    return warband && this.canInteractWithWarband(warband.id) ? warband : null;
   }
 
   get heroCombatBonuses(): { heroAtk: number; heroDef: number } {
@@ -463,12 +515,15 @@ export class GameSession {
       if (quest.itemId) quest.itemId = migrateItemId(quest.itemId);
     }
     this.nearbyCaravanId = null;
+    this.selectedWarbandId = null;
     this.waypoint = save.player.waypoint ?? null;
     this.pursuedEnemyId = null;
+    this.pursuedWarbandId = null;
     this.navigationPath = this.waypoint
       ? findWorldPath(this.world.map, this.world.state, this.waypoint)
       : [];
     this.pursuedEnemyPosition = null;
+    this.pursuedWarbandPosition = null;
     const hasCurrentRoster = save.rosterRevision === ROSTER_REVISION;
     this.hero = hasCurrentRoster && save.hero
       ? normalizeCardInstance(save.hero)
@@ -476,9 +531,15 @@ export class GameSession {
     this.warband = hasCurrentRoster
       ? (save.warband ?? []).map(normalizeCardInstance)
       : [];
-    this.reserve = hasCurrentRoster
-      ? (save.reserve ?? []).map(normalizeCardInstance)
-      : [];
+    if (hasCurrentRoster) {
+      this.prisoners = normalizePrisoners(save.prisoners);
+    } else {
+      this.prisoners = [];
+      this.warband.push(
+        ...(save.warband ?? []).map(normalizeCardInstance),
+        ...(save.reserve ?? []).map(normalizeCardInstance),
+      );
+    }
     this.leadershipLevel = hasCurrentRoster ? (save.leadershipLevel ?? 1) : 1;
     this.characterState = normalizeCharacterState(save.characterState);
     const baseHeroMaxHp = getCardDefinition(this.hero.cardId).maxHp;
@@ -503,6 +564,9 @@ export class GameSession {
     };
     this.currentEnemySpawnId = null;
     this.currentLocationBattleId = null;
+    this.currentWarbandBattleId = null;
+    this.currentWarbandAllyId = null;
+    this.currentWarbandEnemyId = null;
     this.pendingVictoryReward = null;
     this.notify();
   }
@@ -518,13 +582,17 @@ export class GameSession {
       contentPack.enemies,
     );
     this.nearbyCaravanId = null;
+    this.selectedWarbandId = null;
     this.waypoint = null;
     this.pursuedEnemyId = null;
+    this.pursuedWarbandId = null;
     this.navigationPath = [];
     this.pursuedEnemyPosition = null;
+    this.pursuedWarbandPosition = null;
     this.hero = createPlayerCard();
     this.warband = [];
     this.reserve = [];
+    this.prisoners = [];
     this.leadershipLevel = 1;
     this.characterState = createCharacterState();
     this.gold = 80;
@@ -542,6 +610,9 @@ export class GameSession {
     this.hero.currentHp = this.heroMaxHp;
     this.currentEnemySpawnId = null;
     this.currentLocationBattleId = null;
+    this.currentWarbandBattleId = null;
+    this.currentWarbandAllyId = null;
+    this.currentWarbandEnemyId = null;
     this.pendingVictoryReward = null;
     this.notify();
   }
@@ -550,32 +621,22 @@ export class GameSession {
     if (this.world.nearbyLocation?.type !== "city") return "notInCity";
     const definition = recruitableCards.find((card) => card.id === cardId);
     if (!definition?.recruitCost) return "invalid";
-    if (this.reserve.length >= this.reserveCapacity) return "capacityFull";
+    if (this.warband.length >= this.warbandCapacity) return "capacityFull";
     if (this.gold < definition.recruitCost) return "notEnoughGold";
 
     this.gold -= definition.recruitCost;
-    this.reserve.push(createCardInstance(cardId));
+    this.warband.push(createCardInstance(cardId));
     this.advanceTime(30);
     this.notify();
     return "success";
   }
 
   moveToWarband(uid: string): RosterActionResult {
-    if (this.warband.length >= this.warbandCapacity) return "capacityFull";
-    const index = this.reserve.findIndex((card) => card.uid === uid);
-    if (index < 0) return "invalid";
-    this.warband.push(this.reserve.splice(index, 1)[0]);
-    this.notify();
-    return "success";
+    return this.warband.some((card) => card.uid === uid) ? "success" : "invalid";
   }
 
   moveToReserve(uid: string): RosterActionResult {
-    if (this.reserve.length >= this.reserveCapacity) return "capacityFull";
-    const index = this.warband.findIndex((card) => card.uid === uid);
-    if (index < 0) return "invalid";
-    this.reserve.push(this.warband.splice(index, 1)[0]);
-    this.notify();
-    return "success";
+    return this.warband.some((card) => card.uid === uid) ? "success" : "invalid";
   }
 
   upgradeUnit(uid: string, targetCardId: string): RosterActionResult {
@@ -610,6 +671,9 @@ export class GameSession {
 
     this.currentEnemySpawnId = enemySpawnId;
     this.currentLocationBattleId = null;
+    this.currentWarbandBattleId = null;
+    this.currentWarbandAllyId = null;
+    this.currentWarbandEnemyId = null;
     this.dungeonRun = null;
     this.pendingVictoryReward = null;
     this.battle = new BattleSimulation(
@@ -621,6 +685,101 @@ export class GameSession {
     );
     this.mode = "battle";
     this.notify();
+  }
+
+  joinWarbandBattle(
+    battleId: string,
+    alliedWarbandId: string | null = null,
+  ): boolean {
+    if (this.mode !== "world") return false;
+    const battle = this.world.getWarbandBattle(battleId);
+    if (!battle || battle.state !== "fighting") return false;
+    const attacker = this.world.getWarband(battle.attackerId);
+    const defender = battle.defenderId ? this.world.getWarband(battle.defenderId) : null;
+    if (!attacker) return false;
+    if (battle.enemyId) {
+      const spawn = this.world.state.enemies.find(
+        (enemy) => enemy.id === battle.enemyId && enemy.active,
+      );
+      const archetype = spawn ? enemiesById.get(spawn.archetypeId) : null;
+      if (!spawn || !archetype) return false;
+      battle.playerJoined = true;
+      this.currentEnemySpawnId = spawn.id;
+      this.currentLocationBattleId = null;
+      this.currentWarbandBattleId = battle.id;
+      this.currentWarbandAllyId = attacker.id;
+      this.currentWarbandEnemyId = null;
+      this.dungeonRun = null;
+      this.pendingVictoryReward = null;
+      this.battle = new BattleSimulation(
+        this.warband,
+        archetype,
+        this.hero,
+        { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp },
+        getTerrainBattleModifiers(this.currentTerrain),
+      );
+      this.mode = "battle";
+      this.notify();
+      return true;
+    }
+    if (!defender) return false;
+
+    const chosenAllyId =
+      alliedWarbandId ??
+      ([attacker, defender].find(
+        (warband) =>
+          getFactionRelation(PLAYER_FACTION_ID, warband.factionId, this.factionState) !==
+          "hostile",
+      )?.id ??
+        null);
+    const enemyWarband =
+      chosenAllyId === attacker.id
+        ? defender
+        : chosenAllyId === defender.id
+          ? attacker
+          : attacker;
+
+    battle.playerJoined = true;
+    this.currentEnemySpawnId = null;
+    this.currentLocationBattleId = null;
+    this.currentWarbandBattleId = battle.id;
+    this.currentWarbandAllyId = chosenAllyId;
+    this.currentWarbandEnemyId = enemyWarband.id;
+    this.dungeonRun = null;
+    this.pendingVictoryReward = null;
+    this.battle = new BattleSimulation(
+      this.warband,
+      {
+        id: `npc_${enemyWarband.id}`,
+        nameKey: enemyWarband.nameKey,
+        deck: [
+          ...(enemyWarband.leaderCardId ? [enemyWarband.leaderCardId] : []),
+          ...enemyWarband.unitIds,
+        ],
+        goldReward: Math.max(12, Math.round(enemyWarband.unitIds.length * 7)),
+        threat: Math.min(
+          5,
+          Math.max(1, Math.ceil(enemyWarband.unitIds.length / 2)),
+        ),
+        dropTable: enemyWarband.unitIds.map((cardId) => ({
+          cardId,
+          chance: 0.05,
+        })),
+        itemDropTable: enemyWarband.lootItemIds.map((itemId) => ({
+          itemId,
+          chance: 0.35,
+          minimum: 1,
+          maximum: 2,
+        })),
+      },
+      this.hero,
+      { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp },
+      getTerrainBattleModifiers(this.currentTerrain),
+      createWarbandBattleDeck(enemyWarband),
+    );
+    this.mode = "battle";
+    this.notify();
+    return true;
   }
 
   enterDungeon(locationId: string): boolean {
@@ -808,6 +967,7 @@ export class GameSession {
       return false;
     }
     quest.status = "active";
+    if (quest.type === "escort") this.ensureEscortCaravan(quest);
     this.advanceTime(10);
     this.notify();
     return true;
@@ -893,17 +1053,26 @@ export class GameSession {
     awardCharacterXp(this.characterState, 70 + completedBattle.enemy.threat * 25);
 
     if (claimedReward.cardId) {
-      if (this.reserve.length < this.reserveCapacity) {
-        this.reserve.push(createCardInstance(claimedReward.cardId));
-      } else if (this.warband.length < this.warbandCapacity) {
-        this.warband.push(createCardInstance(claimedReward.cardId));
-      } else {
-        claimedReward.cardId = null;
-      }
+      this.addPrisoner(claimedReward.cardId, 1);
     }
 
     if (this.currentEnemySpawnId) {
       this.world.defeatEnemy(this.currentEnemySpawnId);
+    }
+
+    if (this.currentWarbandBattleId && !this.currentWarbandEnemyId) {
+      this.world.resolveWarbandEnemyBattleWithPlayer(
+        this.currentWarbandBattleId,
+        this.currentWarbandAllyId,
+      );
+    }
+
+    if (this.currentWarbandBattleId && this.currentWarbandEnemyId) {
+      this.world.resolveWarbandBattleWithPlayer(
+        this.currentWarbandBattleId,
+        this.currentWarbandEnemyId,
+        this.currentWarbandAllyId,
+      );
     }
 
     if (this.dungeonRun) {
@@ -941,6 +1110,9 @@ export class GameSession {
     this.dungeonRun = null;
     this.currentEnemySpawnId = null;
     this.currentLocationBattleId = null;
+    this.currentWarbandBattleId = null;
+    this.currentWarbandAllyId = null;
+    this.currentWarbandEnemyId = null;
     this.pendingVictoryReward = null;
     this.advanceTime(45);
     this.notify();
@@ -961,6 +1133,50 @@ export class GameSession {
       return "success";
     }
     return "invalid";
+  }
+
+  recruitPrisoner(cardId: string): RosterActionResult {
+    if (this.warband.length >= this.warbandCapacity) return "capacityFull";
+    const stack = this.prisoners.find((prisoner) => prisoner.cardId === cardId);
+    if (!stack || stack.quantity <= 0) return "invalid";
+    const definition = getCardDefinition(cardId);
+    const cost = getPrisonerRecruitGoldCost(definition.tier);
+    const xpCost = getPrisonerRecruitXpCost(definition.tier);
+    if (this.gold < cost) return "notEnoughGold";
+    if (this.characterState.xp < xpCost) return "notEnoughXp";
+
+    this.gold -= cost;
+    this.characterState.xp -= xpCost;
+    this.survivalState.morale = clampMorale(this.survivalState.morale - 5);
+    stack.quantity -= 1;
+    if (stack.quantity <= 0) {
+      this.prisoners = this.prisoners.filter((prisoner) => prisoner.quantity > 0);
+    }
+    this.warband.push(createCardInstance(cardId));
+    this.advanceTime(30);
+    this.notify();
+    return "success";
+  }
+
+  sellPrisoner(cardId: string): RosterActionResult {
+    if (this.world.nearbyLocation?.type !== "city") return "notInCity";
+    const stack = this.prisoners.find((prisoner) => prisoner.cardId === cardId);
+    if (!stack || stack.quantity <= 0) return "invalid";
+    const definition = getCardDefinition(cardId);
+    this.gold += getPrisonerSellPrice(definition.tier);
+    stack.quantity -= 1;
+    if (stack.quantity <= 0) {
+      this.prisoners = this.prisoners.filter((prisoner) => prisoner.quantity > 0);
+    }
+    this.advanceTime(10);
+    this.notify();
+    return "success";
+  }
+
+  private addPrisoner(cardId: string, quantity: number): void {
+    const existing = this.prisoners.find((prisoner) => prisoner.cardId === cardId);
+    if (existing) existing.quantity += quantity;
+    else this.prisoners.push({ cardId, quantity });
   }
 
   get healCost(): number {
@@ -1000,11 +1216,15 @@ export class GameSession {
         nearbyLocationId: location.id,
         exploredSectors: this.world.state.exploredSectors,
         waypoint: this.waypoint,
+        warbands: this.world.state.warbands,
+        warbandBattles: this.world.state.warbandBattles,
+        monsterRaids: this.world.state.monsterRaids,
       },
       gold: this.gold,
       hero: this.hero,
       warband: this.warband,
-      reserve: this.reserve,
+      reserve: [],
+      prisoners: this.prisoners,
       leadershipLevel: this.leadershipLevel,
       characterState: this.characterState,
       completedLocationIds: [...this.completedLocationIds],
@@ -1054,7 +1274,9 @@ export class GameSession {
     );
     this.waypoint = { ...destination, labelKey };
     this.pursuedEnemyId = null;
+    this.pursuedWarbandId = null;
     this.pursuedEnemyPosition = null;
+    this.pursuedWarbandPosition = null;
     this.navigationPath = findWorldPath(
       this.world.map,
       this.world.state,
@@ -1070,9 +1292,45 @@ export class GameSession {
   cancelNavigation(): void {
     this.waypoint = null;
     this.pursuedEnemyId = null;
+    this.pursuedWarbandId = null;
     this.pursuedEnemyPosition = null;
+    this.pursuedWarbandPosition = null;
     this.navigationPath = [];
     this.notify();
+  }
+
+  selectWarband(warbandId: string | null): boolean {
+    if (!warbandId) {
+      this.selectedWarbandId = null;
+      this.notify();
+      return true;
+    }
+    const warband = this.world.getWarband(warbandId);
+    if (!warband || warband.state === "destroyed") return false;
+    if (!this.canInteractWithWarband(warband.id)) {
+      this.selectedWarbandId = null;
+      this.notify();
+      return false;
+    }
+    this.selectedWarbandId = warband.id;
+    this.notify();
+    return true;
+  }
+
+  getWarbandDistance(warbandId: string): number {
+    const warband = this.world.getWarband(warbandId);
+    return warband
+      ? Math.hypot(warband.x - this.world.state.x, warband.y - this.world.state.y)
+      : Number.POSITIVE_INFINITY;
+  }
+
+  canInteractWithWarband(warbandId: string): boolean {
+    const warband = this.world.getWarband(warbandId);
+    return Boolean(
+      warband &&
+        warband.state !== "destroyed" &&
+        this.getWarbandDistance(warbandId) <= WARBAND_INTERACTION_RANGE,
+    );
   }
 
   pursueEnemy(enemyId: string): boolean {
@@ -1081,12 +1339,31 @@ export class GameSession {
     );
     if (!enemy) return false;
     this.pursuedEnemyId = enemy.id;
+    this.pursuedWarbandId = null;
     this.pursuedEnemyPosition = { x: enemy.x, y: enemy.y };
     this.waypoint = { x: enemy.x, y: enemy.y };
     this.navigationPath = findWorldPath(
       this.world.map,
       this.world.state,
       enemy,
+    );
+    this.notify();
+    return true;
+  }
+
+  pursueWarband(warbandId: string): boolean {
+    const warband = this.world.getWarband(warbandId);
+    if (!warband || warband.state === "destroyed") return false;
+    this.selectedWarbandId = warband.id;
+    this.pursuedWarbandId = warband.id;
+    this.pursuedEnemyId = null;
+    this.pursuedEnemyPosition = null;
+    this.pursuedWarbandPosition = { x: warband.x, y: warband.y };
+    this.waypoint = { x: warband.x, y: warband.y, labelKey: warband.nameKey };
+    this.navigationPath = findWorldPath(
+      this.world.map,
+      this.world.state,
+      warband,
     );
     this.notify();
     return true;
@@ -1129,6 +1406,41 @@ export class GameSession {
           this.world.map,
           this.world.state,
           enemy,
+        );
+      }
+    }
+
+    if (this.pursuedWarbandId) {
+      const warband = this.world.getWarband(this.pursuedWarbandId);
+      if (!warband || warband.state === "destroyed") {
+        this.cancelNavigation();
+        return;
+      }
+      if (
+        Math.hypot(
+          warband.x - this.world.state.x,
+          warband.y - this.world.state.y,
+        ) <= 72
+      ) {
+        this.cancelNavigation();
+        this.selectedWarbandId = warband.id;
+        this.notify();
+        return;
+      }
+      if (
+        !this.pursuedWarbandPosition ||
+        Math.hypot(
+          warband.x - this.pursuedWarbandPosition.x,
+          warband.y - this.pursuedWarbandPosition.y,
+        ) > 90 ||
+        this.navigationPath.length === 0
+      ) {
+        this.pursuedWarbandPosition = { x: warband.x, y: warband.y };
+        this.waypoint = { x: warband.x, y: warband.y, labelKey: warband.nameKey };
+        this.navigationPath = findWorldPath(
+          this.world.map,
+          this.world.state,
+          warband,
         );
       }
     }
@@ -1197,7 +1509,9 @@ export class GameSession {
     const collidedEnemyId = this.world.updateEnemies(
       deltaHours,
       this.warbandThreatRating,
+      [...this.economyState.caravans, ...this.economyState.villagers],
     );
+    this.world.updateWarbands(deltaHours, this.factionState);
     this.updateEconomy(deltaHours);
     if (collidedEnemyId && this.mode === "world") {
       this.beginBattle(collidedEnemyId);
@@ -1370,9 +1684,7 @@ export class GameSession {
           quest.status = "ready";
         }
       } else if (quest.type === "escort" && quest.caravanId) {
-        const caravan = this.economyState.caravans.find(
-          (candidate) => candidate.id === quest.caravanId,
-        );
+        const caravan = this.ensureEscortCaravan(quest);
         const target = this.world.map.locations.find(
           (location) => location.id === quest.targetLocationId,
         );
@@ -1389,6 +1701,42 @@ export class GameSession {
         }
       }
     }
+  }
+
+  private ensureEscortCaravan(quest: QuestState): CaravanState | null {
+    if (quest.type !== "escort" || !quest.targetLocationId) return null;
+    const existing = this.economyState.caravans.find(
+      (candidate) => candidate.id === quest.caravanId,
+    );
+    if (existing) return existing;
+
+    const origin = this.world.map.locations.find(
+      (location) => location.id === quest.issuerLocationId,
+    );
+    const target = this.world.map.locations.find(
+      (location) => location.id === quest.targetLocationId,
+    );
+    if (!origin || !target) return null;
+
+    const caravanId = quest.caravanId ?? `quest_caravan_${quest.id}`;
+    quest.caravanId = caravanId;
+    const caravan: CaravanState = {
+      id: caravanId,
+      kind: "caravan",
+      x: origin.x,
+      y: origin.y,
+      originId: origin.id,
+      destinationId: target.id,
+      progress: 0,
+      speed: 48,
+      inventory: [
+        { itemId: "bread", quantity: 4 },
+        { itemId: "wine", quantity: 2 },
+        { itemId: "iron", quantity: 2 },
+      ],
+    };
+    this.economyState.caravans.push(caravan);
+    return caravan;
   }
 
   private getNearbyLocation(
@@ -1511,6 +1859,47 @@ function normalizeInventory(
     }
   }
   return normalized;
+}
+
+function normalizePrisoners(prisoners: PrisonerStack[] | undefined): PrisonerStack[] {
+  return (prisoners ?? [])
+    .filter((prisoner) => prisoner.quantity > 0 && contentPack.cards.some((card) => card.id === prisoner.cardId))
+    .map((prisoner) => ({
+      cardId: prisoner.cardId,
+      quantity: Math.floor(prisoner.quantity),
+    }));
+}
+
+function createWarbandBattleDeck(warband: WorldWarbandState): CardInstance[] {
+  const cards = [
+    ...(warband.leaderCardId
+      ? [
+          (() => {
+            const leader = createCardInstance(warband.leaderCardId!);
+            leader.level = warband.leaderLevel;
+            return leader;
+          })(),
+        ]
+      : []),
+    ...warband.unitIds.map((cardId) => createCardInstance(cardId)),
+  ];
+  return cards.map((card) => {
+    const definition = getCardDefinition(card.cardId);
+    card.currentHp = definition.maxHp;
+    return card;
+  });
+}
+
+export function getPrisonerRecruitGoldCost(tier: number): number {
+  return Math.max(10, tier * 10);
+}
+
+export function getPrisonerRecruitXpCost(tier: number): number {
+  return tier * 35;
+}
+
+export function getPrisonerSellPrice(tier: number): number {
+  return Math.max(4, tier * 6);
 }
 
 function migrateItemId(itemId: string): string {

@@ -1,10 +1,15 @@
 import Phaser from "phaser";
 import { enemiesById } from "../../content/content";
 import { getCardDefinition } from "../../domain/cards/CardInstance";
-import { gameSession } from "../../domain/session/GameSession";
-import type { TerrainZone } from "../../domain/content/schemas";
-import type { FactionId } from "../../domain/quests/Factions";
+import { gameSession, WARBAND_INTERACTION_RANGE } from "../../domain/session/GameSession";
+import type { MapLocation, TerrainCell } from "../../domain/content/schemas";
+import {
+  getFactionRelation,
+  PLAYER_FACTION_ID,
+  type FactionId,
+} from "../../domain/quests/Factions";
 import { isPositionNearPath } from "../../domain/world/WorldTerrain";
+import { estimateWarbandStrength } from "../../domain/world/WorldWarbands";
 import i18n from "../../localization/i18n";
 import { consumeWorldZoom, requestWorldZoom } from "../input/WorldInput";
 
@@ -15,6 +20,102 @@ const LOCATION_COLORS = {
   dungeon: 0x9f4a4a,
   landmark: 0x9c83b8,
   wilds: 0x66845b,
+} as const;
+
+const LOCATION_TEXTURES = {
+  city: "location-town-red",
+  village: "location-village-red",
+  kobold: "location-kobold-warren",
+  beast: "location-beast-den",
+  swamp: "location-sunken-nest",
+  undead: "location-bone-crypt",
+  orc: "location-orc-warcamp",
+  elemental: "location-ash-rift",
+  machine: "location-rusted-vault",
+  outlaw: "location-outlaw-hideout",
+} as const;
+
+const LOCATION_ASSETS = {
+  city: "/assets/world/locations/town-red-map.png",
+  village: "/assets/world/locations/village-red-map.png",
+  kobold: "/assets/world/locations/kobold-warren-map.png",
+  beast: "/assets/world/locations/beast-den-map.png",
+  swamp: "/assets/world/locations/sunken-nest-map.png",
+  undead: "/assets/world/locations/bone-crypt-map.png",
+  orc: "/assets/world/locations/orc-warcamp-map.png",
+  elemental: "/assets/world/locations/ash-rift-map.png",
+  machine: "/assets/world/locations/rusted-vault-map.png",
+  outlaw: "/assets/world/locations/outlaw-hideout-map.png",
+} as const;
+
+type LocationTextureKey = keyof typeof LOCATION_TEXTURES;
+
+const DUNGEON_BIOME_TEXTURES: Record<string, LocationTextureKey> = {
+  koboldwarren: "kobold",
+  beastden: "beast",
+  sunkennest: "swamp",
+  bonecrypt: "undead",
+  orcwarcamp: "orc",
+  ashrift: "elemental",
+  rustedvault: "machine",
+  outlawhideout: "outlaw",
+};
+
+const DUNGEON_ENEMY_TEXTURES: Record<string, LocationTextureKey> = {
+  kobold_foragers: "kobold",
+  kobold_ambushers: "kobold",
+  hungry_wolves: "beast",
+  swamp_lurkers: "swamp",
+  grave_procession: "undead",
+  necromancer_cabal: "undead",
+  road_reavers: "orc",
+  orc_hunters: "orc",
+  ash_brood: "elemental",
+  storm_callers: "elemental",
+  wyvern_kin: "elemental",
+  vault_scavengers: "machine",
+  rusted_sentinels: "machine",
+  iron_colossus_guard: "machine",
+  desperate_militia: "outlaw",
+  black_banner_knights: "outlaw",
+};
+
+const LOCATION_SPRITE_CONFIG = {
+  city: {
+    texture: LOCATION_TEXTURES.city,
+    width: 210,
+    height: 213,
+    y: 4,
+    originY: 0.58,
+    glowRadius: 86,
+    labelY: -108,
+    factionY: 100,
+    hitWidth: 238,
+    hitHeight: 236,
+  },
+  village: {
+    texture: LOCATION_TEXTURES.village,
+    width: 144,
+    height: 146,
+    y: 3,
+    originY: 0.58,
+    glowRadius: 62,
+    labelY: -78,
+    factionY: 70,
+    hitWidth: 172,
+    hitHeight: 170,
+  },
+} as const;
+
+const DUNGEON_SPRITE_CONFIG = {
+  width: 150,
+  height: 150,
+  y: 2,
+  originY: 0.6,
+  glowRadius: 62,
+  labelY: -80,
+  hitWidth: 176,
+  hitHeight: 174,
 } as const;
 
 const FACTION_COLORS: Record<FactionId, number> = {
@@ -29,10 +130,13 @@ const TERRAIN_COLORS = {
   forest: 0x1c3424,
   darkForest: 0x112219,
   pineForest: 0x1b3028,
+  tundra: 0x66716b,
+  snowMountain: 0x7f8f95,
   swamp: 0x28352f,
   bog: 0x202b2d,
   desert: 0x665b39,
   badlands: 0x5a3d31,
+  steppe: 0x6c6138,
   grassland: 0x3d4a2d,
   heath: 0x3a3530,
   mountain: 0x454944,
@@ -41,19 +145,60 @@ const TERRAIN_COLORS = {
   river: 0x2b5156,
 } as const;
 
+const WORLD_BASESET_TEXTURE = "world-baseset";
+const WORLD_BASESET_ASSET = "/assets/world/environment/base-set.png";
+const TERRAIN_DECOR_REVISION = 2;
+const TERRAIN_CHUNK_SIZE = 1200;
+const TERRAIN_CHUNK_VISIBILITY_MARGIN = 700;
+
+interface WorldDecorFrame {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  scale?: number;
+}
+
+const WORLD_DECOR_FRAMES = {
+  pinePair: { x: 530, y: 326, width: 14, height: 20, scale: 1.3 },
+  roundTree: { x: 577, y: 360, width: 15, height: 16, scale: 1.45 },
+  smallTree: { x: 627, y: 360, width: 11, height: 16, scale: 1.35 },
+  treeLine: { x: 594, y: 327, width: 45, height: 16, scale: 1.05 },
+  broadTrees: { x: 593, y: 384, width: 31, height: 16, scale: 1.25 },
+  snowyRidge: { x: 194, y: 345, width: 62, height: 16, scale: 1.18 },
+  grayRocks: { x: 257, y: 347, width: 31, height: 12, scale: 1.35 },
+  tallRocks: { x: 289, y: 346, width: 15, height: 15, scale: 1.45 },
+  lowRocks: { x: 306, y: 350, width: 14, height: 8, scale: 1.45 },
+  smallRocks: { x: 322, y: 351, width: 12, height: 8, scale: 1.35 },
+  stoneLine: { x: 32, y: 530, width: 32, height: 13, scale: 1.05 },
+  bridgePlank: { x: 515, y: 426, width: 59, height: 13, scale: 1 },
+} satisfies Record<string, WorldDecorFrame>;
+
+interface TerrainChunk {
+  x: number;
+  y: number;
+  size: number;
+  textureKey: string;
+  image?: Phaser.GameObjects.Image;
+}
+
 export class WorldScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Container;
   private locationMarkers = new Map<string, Phaser.GameObjects.Container>();
   private locationLabels = new Map<string, Phaser.GameObjects.Text>();
   private enemyMarkers = new Map<string, Phaser.GameObjects.Container>();
+  private warbandMarkers = new Map<string, Phaser.GameObjects.Container>();
+  private warbandBattleMarkers = new Map<string, Phaser.GameObjects.Container>();
   private caravanMarkers = new Map<string, Phaser.GameObjects.Container>();
   private villagerMarkers = new Map<string, Phaser.GameObjects.Container>();
+  private terrainChunks: TerrainChunk[] = [];
   private waypointMarker!: Phaser.GameObjects.Container;
   private waypointLine!: Phaser.GameObjects.Graphics;
   private enemyTooltip!: Phaser.GameObjects.Container;
   private enemyTooltipText!: Phaser.GameObjects.Text;
   private hoveredEnemyId: string | null = null;
-  private worldZoom = 1.02;
+  private hoveredWarbandId: string | null = null;
+  private worldZoom = 0.78;
   private cameraPanX = 0;
   private cameraPanY = 0;
   private keys!: Record<"up" | "down" | "left" | "right", Phaser.Input.Keyboard.Key>;
@@ -67,11 +212,22 @@ export class WorldScene extends Phaser.Scene {
     super("world");
   }
 
+  preload(): void {
+    for (const [assetKey, textureKey] of Object.entries(LOCATION_TEXTURES)) {
+      this.load.image(textureKey, LOCATION_ASSETS[assetKey as keyof typeof LOCATION_ASSETS]);
+    }
+    this.load.image(WORLD_BASESET_TEXTURE, WORLD_BASESET_ASSET);
+  }
+
   create(): void {
     this.cameras.main.setBackgroundColor("#111613");
+    this.cameras.main.roundPixels = true;
+    this.defineWorldBaseSetFrames();
     this.drawTerrain();
     this.drawLocations();
     this.createEnemies();
+    this.createWarbands();
+    this.createWarbandBattles();
     this.createCaravans();
     this.createVillagers();
     this.createPlayer();
@@ -87,7 +243,15 @@ export class WorldScene extends Phaser.Scene {
       gameSession.world.state.y,
     );
     this.updateLocationLabelScale();
+    this.updateTerrainChunkVisibility();
     this.updateMarkerVisibility();
+  }
+
+  private defineWorldBaseSetFrames(): void {
+    const texture = this.textures.get(WORLD_BASESET_TEXTURE);
+    if (texture.has("bridge-plank")) return;
+    const frame = WORLD_DECOR_FRAMES.bridgePlank;
+    texture.add("bridge-plank", 0, frame.x, frame.y, frame.width, frame.height);
   }
 
   update(_time: number, delta: number): void {
@@ -97,11 +261,12 @@ export class WorldScene extends Phaser.Scene {
     if (zoomDelta !== 0) {
       this.worldZoom = Phaser.Math.Clamp(
         this.worldZoom + zoomDelta * 0.14,
-        0.3,
+        0.22,
         1.6,
       );
       this.cameras.main.setZoom(this.worldZoom);
       this.updateLocationLabelScale();
+      this.updateTerrainChunkVisibility();
     }
 
     const horizontal =
@@ -123,6 +288,8 @@ export class WorldScene extends Phaser.Scene {
     this.updateCamera(Math.min(delta, 40) / 1000);
 
     this.updateEnemyMarkers();
+    this.updateWarbandMarkers();
+    this.updateWarbandBattleMarkers();
     this.updateEnemyTooltip();
     this.updateCaravanMarkers();
     this.updateVillagerMarkers();
@@ -149,73 +316,22 @@ export class WorldScene extends Phaser.Scene {
 
   private drawTerrain(): void {
     const map = gameSession.world.map;
-    const graphics = this.add.graphics();
+    const baseGraphics = this.add.graphics().setDepth(0);
     const inset = map.boundaryInset;
-    graphics.fillStyle(TERRAIN_COLORS.sea).fillRect(0, 0, map.width, map.height);
-    graphics
+    baseGraphics.fillStyle(TERRAIN_COLORS.sea).fillRect(0, 0, map.width, map.height);
+    baseGraphics
       .fillStyle(TERRAIN_COLORS.plains)
       .fillRect(inset, inset, map.width - inset * 2, map.height - inset * 2);
-    graphics
+    baseGraphics
       .lineStyle(28, 0x9c8b5c, 0.24)
       .strokeRect(inset, inset, map.width - inset * 2, map.height - inset * 2);
-    graphics
+    baseGraphics
       .lineStyle(7, 0x111b1c, 0.92)
       .strokeRect(inset - 9, inset - 9, map.width - inset * 2 + 18, map.height - inset * 2 + 18);
 
-    for (const zone of map.terrainZones) {
-      if (zone.type !== "lake") {
-        graphics
-          .fillStyle(TERRAIN_COLORS[zone.type], 0.16)
-          .fillEllipse(zone.x, zone.y, zone.radiusX * 2.36, zone.radiusY * 2.36);
-        graphics
-          .fillStyle(TERRAIN_COLORS[zone.type], 0.28)
-          .fillEllipse(zone.x, zone.y, zone.radiusX * 2.16, zone.radiusY * 2.16);
-      }
-      graphics
-        .fillStyle(TERRAIN_COLORS[zone.type], zone.type === "lake" ? 0.98 : 0.88)
-        .fillEllipse(zone.x, zone.y, zone.radiusX * 2, zone.radiusY * 2);
-      if (zone.type === "lake") {
-        graphics
-          .lineStyle(8, 0x78908a, 0.22)
-          .strokeEllipse(zone.x, zone.y, zone.radiusX * 2, zone.radiusY * 2);
-      } else if (zone.type === "mountain") {
-        graphics
-          .lineStyle(10, 0x191c1a, 0.34)
-          .strokeEllipse(zone.x, zone.y, zone.radiusX * 2, zone.radiusY * 2);
-      }
-      this.drawTerrainZoneDetails(graphics, zone);
-    }
+    this.createTerrainChunks();
 
-    for (const river of map.terrainRivers) {
-      graphics.lineStyle(river.width + 18, 0x14272a, 0.72);
-      this.strokeTerrainPath(graphics, river.points);
-      graphics.lineStyle(river.width, TERRAIN_COLORS.river, 0.94);
-      this.strokeTerrainPath(graphics, river.points);
-      graphics.lineStyle(5, 0x8aa29a, 0.15);
-      this.strokeTerrainPath(graphics, river.points);
-    }
-
-    for (const location of map.locations) {
-      if (location.type === "wilds") {
-        graphics
-          .fillStyle(0x293324, 0.72)
-          .fillEllipse(location.x, location.y, location.radius * 5.2, location.radius * 3.8);
-      } else if (location.type === "dungeon") {
-        graphics
-          .fillStyle(0x312a23, 0.66)
-          .fillEllipse(location.x, location.y, location.radius * 5, location.radius * 3.2);
-      }
-    }
-
-    for (const road of map.terrainRoads) {
-      graphics.lineStyle(road.width + 8, 0x211e17, 0.24);
-      this.strokeTerrainPath(graphics, road.points);
-      graphics.lineStyle(road.width, 0x766b4e, 0.34);
-      this.strokeTerrainPath(graphics, road.points);
-      graphics.lineStyle(2, 0xc0aa72, 0.14);
-      this.strokeTerrainPath(graphics, road.points);
-    }
-    this.drawBridgeCrossings(graphics);
+    const overlayGraphics = this.add.graphics().setDepth(2);
 
     for (let index = 0; index < 1900; index += 1) {
       const x =
@@ -225,99 +341,230 @@ export class WorldScene extends Phaser.Scene {
         inset +
         ((index * 151 + gameSession.worldSeed % 631) % (map.height - inset * 2));
       const radius = 2 + (index % 4);
-      graphics.fillStyle(index % 5 === 0 ? 0x84906c : 0x111711, 0.42);
-      graphics.fillCircle(x, y, radius);
+      overlayGraphics.fillStyle(index % 5 === 0 ? 0x84906c : 0x111711, 0.42);
+      overlayGraphics.fillCircle(x, y, radius);
     }
 
-    graphics.lineStyle(3, 0x759498, 0.2);
+    for (const river of map.terrainRivers) {
+      overlayGraphics.lineStyle(river.width + 18, 0x14272a, 1);
+      this.strokeTerrainPath(overlayGraphics, river.points);
+      overlayGraphics.lineStyle(river.width, TERRAIN_COLORS.river, 1);
+      this.strokeTerrainPath(overlayGraphics, river.points);
+      overlayGraphics.lineStyle(5, 0x8aa29a, 0.65);
+      this.strokeTerrainPath(overlayGraphics, river.points);
+    }
+
+    for (const road of [...map.terrainRoads].sort((left, right) => left.width - right.width)) {
+      const isMinorRoad = road.width <= 12;
+      overlayGraphics.lineStyle(road.width + (isMinorRoad ? 4 : 8), 0x211e17, 1);
+      this.strokeTerrainPath(overlayGraphics, road.points);
+      overlayGraphics.lineStyle(road.width, isMinorRoad ? 0x6a5f43 : 0x766b4e, 1);
+      this.strokeTerrainPath(overlayGraphics, road.points);
+    }
+    this.drawBridgeCrossings(overlayGraphics);
+
+    overlayGraphics.lineStyle(3, 0x759498, 0.2);
     for (let index = 0; index < 70; index += 1) {
       const horizontal = inset / 2 + ((index * 113) % (map.width - inset));
       const vertical = inset / 2 + ((index * 97) % (map.height - inset));
-      graphics.beginPath();
-      graphics.moveTo(horizontal - 18, 62 + (index % 4) * 24);
-      graphics.lineTo(horizontal + 18, 62 + (index % 4) * 24);
-      graphics.strokePath();
-      graphics.beginPath();
-      graphics.moveTo(62 + (index % 4) * 24, vertical - 18);
-      graphics.lineTo(62 + (index % 4) * 24, vertical + 18);
-      graphics.strokePath();
+      overlayGraphics.beginPath();
+      overlayGraphics.moveTo(horizontal - 18, 62 + (index % 4) * 24);
+      overlayGraphics.lineTo(horizontal + 18, 62 + (index % 4) * 24);
+      overlayGraphics.strokePath();
+      overlayGraphics.beginPath();
+      overlayGraphics.moveTo(62 + (index % 4) * 24, vertical - 18);
+      overlayGraphics.lineTo(62 + (index % 4) * 24, vertical + 18);
+      overlayGraphics.strokePath();
     }
   }
 
-  private drawTerrainZoneDetails(
-    graphics: Phaser.GameObjects.Graphics,
-    zone: TerrainZone,
-  ): void {
-    const detailCount =
-      ["forest", "darkForest", "pineForest"].includes(zone.type)
-        ? 54
-        : ["mountain", "hills"].includes(zone.type)
-          ? 32
-          : 24;
-    for (let index = 0; index < detailCount; index += 1) {
-      const angle =
-        ((index * 137 + zone.x * 0.01 + zone.y * 0.02) % 360) *
-        (Math.PI / 180);
-      const spread = 0.18 + (((index * 47 + zone.id.length * 13) % 73) / 100);
-      const x = zone.x + Math.cos(angle) * zone.radiusX * spread;
-      const y = zone.y + Math.sin(angle) * zone.radiusY * spread;
+  private createTerrainChunks(): void {
+    const map = gameSession.world.map;
+    const columns = Math.ceil(map.width / TERRAIN_CHUNK_SIZE);
+    const rows = Math.ceil(map.height / TERRAIN_CHUNK_SIZE);
 
-      if (["forest", "darkForest", "pineForest"].includes(zone.type)) {
-        graphics.fillStyle(0x0c1c13, 0.72).fillCircle(x, y + 5, 7);
-        graphics.fillStyle(
-          zone.type === "darkForest"
-            ? 0x263d2e
-            : zone.type === "pineForest"
-              ? 0x3d5b4e
-              : 0x486044,
-          0.86,
-        ).fillTriangle(
+    for (let column = 0; column < columns; column += 1) {
+      for (let row = 0; row < rows; row += 1) {
+        const x = column * TERRAIN_CHUNK_SIZE;
+        const y = row * TERRAIN_CHUNK_SIZE;
+        this.terrainChunks.push({
           x,
-          y - 13,
-          x - 10,
-          y + 8,
-          x + 10,
-          y + 8,
-        );
-      } else if (zone.type === "swamp" || zone.type === "bog") {
-        graphics
-          .fillStyle(index % 3 === 0 ? 0x192d2d : 0x53604a, zone.type === "bog" ? 0.5 : 0.42)
-          .fillEllipse(x, y, 24 + (index % 4) * 6, 8 + (index % 3) * 4);
-      } else if (zone.type === "desert" || zone.type === "badlands") {
-        graphics.lineStyle(3, 0xa3935c, 0.34);
-        graphics.beginPath();
-        graphics.moveTo(x - 13, y);
-        graphics.lineTo(x, y - 5);
-        graphics.lineTo(x + 13, y);
-        graphics.strokePath();
-      } else if (zone.type === "mountain" || zone.type === "hills") {
-        const size = 18 + (index % 5) * 4;
-        graphics
-          .fillStyle(
-            zone.type === "hills"
-              ? index % 3 === 0 ? 0x65704d : 0x303829
-              : index % 3 === 0 ? 0x687069 : 0x2c302d,
-            zone.type === "hills" ? 0.66 : 0.94,
-          )
-          .fillTriangle(x, y - size, x - size * 0.72, y + size * 0.55, x + size * 0.72, y + size * 0.55);
-        if (zone.type === "mountain") {
-          graphics
-            .fillStyle(0xc1c2b7, 0.52)
-            .fillTriangle(x, y - size, x - size * 0.22, y - size * 0.48, x + size * 0.26, y - size * 0.45);
-        }
-      } else if (zone.type === "lake") {
-        graphics
-          .fillStyle(0x77969a, 0.2)
-          .fillEllipse(x, y, 28 + (index % 3) * 8, 4);
-      } else if (zone.type === "grassland" || zone.type === "heath") {
-        graphics.lineStyle(2, zone.type === "grassland" ? 0x70814d : 0x675b50, 0.36);
-        graphics.beginPath();
-        graphics.moveTo(x - 8, y + 5);
-        graphics.lineTo(x, y - 7);
-        graphics.lineTo(x + 8, y + 5);
-        graphics.strokePath();
+          y,
+          size: TERRAIN_CHUNK_SIZE,
+          textureKey: `terrain_${TERRAIN_DECOR_REVISION}_${gameSession.worldSeed}_${column}_${row}`,
+        });
       }
     }
+  }
+
+  private ensureTerrainChunkImage(chunk: TerrainChunk): Phaser.GameObjects.Image {
+    if (chunk.image) return chunk.image;
+
+    if (!this.textures.exists(chunk.textureKey)) {
+      const map = gameSession.world.map;
+      const texture = this.textures.createCanvas(
+        chunk.textureKey,
+        chunk.size,
+        chunk.size,
+      );
+      if (!texture) {
+        throw new Error(`Could not create terrain texture ${chunk.textureKey}`);
+      }
+      const context = texture.getContext();
+      const baseSetImage = this.textures
+        .get(WORLD_BASESET_TEXTURE)
+        .getSourceImage() as HTMLImageElement;
+      context.imageSmoothingEnabled = false;
+      context.clearRect(0, 0, chunk.size, chunk.size);
+      for (const cell of map.terrainCells) {
+        if (
+          !this.doesRectIntersectChunk(
+            cell.x,
+            cell.y,
+            cell.size,
+            cell.size,
+            chunk.x,
+            chunk.y,
+          )
+        ) {
+          continue;
+        }
+        const localX = cell.x - chunk.x;
+        const localY = cell.y - chunk.y;
+        context.globalAlpha = cell.type === "lake" ? 0.98 : 0.9;
+        context.fillStyle = this.colorToCss(TERRAIN_COLORS[cell.type]);
+        context.fillRect(localX, localY, cell.size + 1, cell.size + 1);
+        context.globalAlpha = 1;
+
+        this.drawTerrainCellDetails(context, baseSetImage, cell, localX, localY);
+      }
+      texture.refresh();
+    }
+
+    chunk.image = this.add
+      .image(chunk.x, chunk.y, chunk.textureKey)
+      .setOrigin(0)
+      .setDepth(1)
+      .setVisible(false);
+    return chunk.image;
+  }
+
+  private drawTerrainCellDetails(
+    context: CanvasRenderingContext2D,
+    baseSetImage: HTMLImageElement,
+    cell: TerrainCell,
+    localX: number,
+    localY: number,
+  ): void {
+    if (cell.type === "plains" || cell.type === "lake") return;
+    const seed = Math.abs(
+      Math.floor(cell.x * 17 + cell.y * 31 + gameSession.worldSeed * 13),
+    );
+    const density = this.getTerrainCellDetailDensity(cell.type, seed);
+    for (let index = 0; index < density; index += 1) {
+      const offsetSeed = seed + index * 97;
+      const x = localX + 18 + (offsetSeed % Math.max(1, cell.size - 36));
+      const y =
+        localY +
+        18 +
+        (Math.floor(offsetSeed / 11) % Math.max(1, cell.size - 36));
+      this.drawTerrainDetail(context, baseSetImage, cell.type, x, y, offsetSeed);
+    }
+  }
+
+  private getTerrainCellDetailDensity(
+    type: TerrainCell["type"],
+    seed: number,
+  ): number {
+    if (["forest", "darkForest", "pineForest"].includes(type)) return seed % 2 === 0 ? 2 : 1;
+    if (type === "mountain" || type === "snowMountain") return seed % 3 === 0 ? 2 : 1;
+    if (type === "hills") return seed % 2 === 0 ? 1 : 0;
+    if (type === "tundra") return seed % 4 === 0 ? 1 : 0;
+    if (type === "badlands" || type === "steppe") return seed % 5 === 0 ? 1 : 0;
+    return 0;
+  }
+
+  private drawTerrainDetail(
+    context: CanvasRenderingContext2D,
+    baseSetImage: HTMLImageElement,
+    type: TerrainCell["type"],
+    x: number,
+    y: number,
+    seed: number,
+  ): void {
+    if (["forest", "darkForest", "pineForest"].includes(type)) {
+      const frames =
+        type === "darkForest"
+          ? [WORLD_DECOR_FRAMES.roundTree, WORLD_DECOR_FRAMES.broadTrees]
+          : type === "pineForest"
+            ? [WORLD_DECOR_FRAMES.pinePair, WORLD_DECOR_FRAMES.smallTree]
+            : [
+                WORLD_DECOR_FRAMES.roundTree,
+                WORLD_DECOR_FRAMES.broadTrees,
+                WORLD_DECOR_FRAMES.treeLine,
+              ];
+      this.drawDecorFrame(context, baseSetImage, frames[seed % frames.length], x, y, seed);
+      return;
+    }
+
+    if (type === "badlands" || type === "steppe" || type === "tundra") {
+      this.drawDecorFrame(context, baseSetImage, WORLD_DECOR_FRAMES.stoneLine, x, y, seed);
+      return;
+    }
+
+    if (type === "mountain" || type === "snowMountain" || type === "hills") {
+      const frame =
+        type === "hills"
+          ? seed % 2 === 0
+            ? WORLD_DECOR_FRAMES.lowRocks
+            : WORLD_DECOR_FRAMES.smallRocks
+          : type === "snowMountain"
+            ? WORLD_DECOR_FRAMES.snowyRidge
+            : seed % 2 === 0
+              ? WORLD_DECOR_FRAMES.grayRocks
+              : WORLD_DECOR_FRAMES.tallRocks;
+      this.drawDecorFrame(context, baseSetImage, frame, x, y, seed);
+    }
+  }
+
+  private drawDecorFrame(
+    context: CanvasRenderingContext2D,
+    baseSetImage: HTMLImageElement,
+    frame: WorldDecorFrame,
+    x: number,
+    y: number,
+    seed: number,
+  ): void {
+    const scale = (frame.scale ?? 1) * (0.86 + (seed % 5) * 0.07);
+    const width = Math.round(frame.width * scale);
+    const height = Math.round(frame.height * scale);
+    context.drawImage(
+      baseSetImage,
+      frame.x,
+      frame.y,
+      frame.width,
+      frame.height,
+      Math.round(x - width / 2),
+      Math.round(y - height / 2),
+      width,
+      height,
+    );
+  }
+
+  private doesRectIntersectChunk(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    chunkX: number,
+    chunkY: number,
+  ): boolean {
+    return (
+      x + width >= chunkX &&
+      y + height >= chunkY &&
+      x <= chunkX + TERRAIN_CHUNK_SIZE &&
+      y <= chunkY + TERRAIN_CHUNK_SIZE
+    );
   }
 
   private strokeTerrainPath(
@@ -343,13 +590,31 @@ export class WorldScene extends Phaser.Scene {
         continue;
       }
       const color = LOCATION_COLORS[location.type];
+      const factionId = gameSession.factionState.locationFactions[location.id];
+      const spriteConfig = this.getLocationSpriteConfig(location);
       const marker = this.add.container(location.x, location.y);
-      const glow = this.add.circle(0, 0, 25, color, 0.12);
-      const outer = this.add.circle(0, 0, 14, 0x080a09, 0.95).setStrokeStyle(2, color, 0.9);
-      const inner = this.add.circle(0, 0, 5, color, 1);
+      const glow = this.add.circle(0, 0, spriteConfig?.glowRadius ?? 25, color, 0.12);
+      const markerBody =
+        spriteConfig
+          ? this.add
+              .image(0, spriteConfig.y, spriteConfig.texture)
+              .setDisplaySize(spriteConfig.width, spriteConfig.height)
+              .setOrigin(0.5, spriteConfig.originY)
+          : null;
+      const outer =
+        spriteConfig
+          ? null
+          : this.add.circle(0, 0, 14, 0x080a09, 0.95).setStrokeStyle(2, color, 0.9);
+      const inner =
+        spriteConfig
+          ? null
+          : this.add.circle(0, 0, 5, color, 1);
       const label = this.add
-        .text(0, -30, i18n.t(location.nameKey), {
-          color: "#eadfca",
+        .text(0, spriteConfig?.labelY ?? -30, i18n.t(location.nameKey), {
+          color:
+            location.type === "city" && factionId
+              ? this.hexColor(FACTION_COLORS[factionId])
+              : "#eadfca",
           fontFamily: "Cinzel, Georgia, serif",
           fontSize: "11px",
           backgroundColor: "rgba(7, 10, 8, 0.78)",
@@ -357,12 +622,20 @@ export class WorldScene extends Phaser.Scene {
         })
         .setOrigin(0.5, 1)
         .setStroke("#10130f", 2);
-      marker.add([glow, outer, inner, label]);
-      const factionId = gameSession.factionState.locationFactions[location.id];
+      marker.add([
+        glow,
+        ...(markerBody ? [markerBody] : []),
+        ...(outer ? [outer] : []),
+        ...(inner ? [inner] : []),
+        label,
+      ]);
+      marker.setDepth(7);
       if (factionId) {
+        const factionY =
+          spriteConfig && "factionY" in spriteConfig ? spriteConfig.factionY : 20;
         marker.add(
           this.add
-            .rectangle(0, 20, 9, 9, FACTION_COLORS[factionId], 0.95)
+            .rectangle(0, factionY, 9, 9, FACTION_COLORS[factionId], 0.95)
             .setAngle(45)
             .setStrokeStyle(1, 0x111411),
         );
@@ -370,7 +643,7 @@ export class WorldScene extends Phaser.Scene {
       this.locationMarkers.set(location.id, marker);
       this.locationLabels.set(location.id, label);
       marker
-        .setSize(150, 76)
+        .setSize(spriteConfig?.hitWidth ?? 150, spriteConfig?.hitHeight ?? 76)
         .setInteractive({ cursor: "pointer" })
         .on(
           Phaser.Input.Events.POINTER_DOWN,
@@ -520,7 +793,7 @@ export class WorldScene extends Phaser.Scene {
 
   private createEnemyTooltip(): void {
     const background = this.add
-      .rectangle(0, 0, 300, 156, 0x080b09, 0.96)
+      .rectangle(0, 0, 320, 202, 0x080b09, 0.96)
       .setOrigin(0)
       .setStrokeStyle(1, 0xb65a50, 0.8);
     this.enemyTooltipText = this.add.text(14, 12, "", {
@@ -528,7 +801,7 @@ export class WorldScene extends Phaser.Scene {
       fontFamily: "Arial",
       fontSize: "12px",
       lineSpacing: 5,
-      wordWrap: { width: 272 },
+      wordWrap: { width: 292 },
     });
     this.enemyTooltip = this.add
       .container(0, 0, [background, this.enemyTooltipText])
@@ -567,6 +840,19 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private updateEnemyTooltip(): void {
+    if (this.hoveredWarbandId) {
+      const warband = gameSession.world.getWarband(this.hoveredWarbandId);
+      if (
+        !warband ||
+        warband.state === "destroyed" ||
+        !this.isWithinSight(warband.x, warband.y, 80)
+      ) {
+        this.hideEnemyTooltip();
+        return;
+      }
+      this.enemyTooltip.setPosition(warband.x + 34, warband.y - 190);
+      return;
+    }
     if (!this.hoveredEnemyId) return;
     const enemy = gameSession.world.state.enemies.find(
       (candidate) => candidate.id === this.hoveredEnemyId,
@@ -580,7 +866,224 @@ export class WorldScene extends Phaser.Scene {
 
   private hideEnemyTooltip(): void {
     this.hoveredEnemyId = null;
+    this.hoveredWarbandId = null;
     this.enemyTooltip.setVisible(false);
+  }
+
+  private createWarbands(): void {
+    for (const warband of gameSession.world.state.warbands) {
+      const color = FACTION_COLORS[warband.factionId] ?? 0xb8a46b;
+      const glow = this.add.circle(0, 0, 24, color, 0.11);
+      const ring = this.add
+        .circle(0, 0, 12, 0x0b0d0b, 0.96)
+        .setStrokeStyle(2, color, 0.95);
+      const core = this.add.circle(0, 0, 5, color, 1);
+      const banner = this.add.rectangle(8, -15, 13, 18, color, 0.92).setAngle(12);
+      const icon = this.add
+        .text(0, 18, this.getWarbandIcon(warband.type), {
+          color: "#eadfca",
+          fontFamily: "Arial",
+          fontSize: "11px",
+        })
+        .setOrigin(0.5);
+      const marker = this.add.container(warband.x, warband.y, [
+        glow,
+        ring,
+        core,
+        banner,
+        icon,
+      ]);
+      marker.setDepth(8);
+      marker
+        .setSize(58, 66)
+        .setInteractive({ cursor: "pointer" })
+        .on(Phaser.Input.Events.POINTER_OVER, () => {
+          this.showWarbandTooltip(warband.id);
+        })
+        .on(Phaser.Input.Events.POINTER_OUT, () => {
+          if (this.hoveredWarbandId === warband.id) this.hideEnemyTooltip();
+        })
+        .on(
+          Phaser.Input.Events.POINTER_DOWN,
+          (
+            _pointer: Phaser.Input.Pointer,
+            _localX: number,
+            _localY: number,
+            event: Phaser.Types.Input.EventData,
+          ) => {
+            event.stopPropagation();
+            const distanceToPlayer = Math.hypot(
+              warband.x - gameSession.world.state.x,
+              warband.y - gameSession.world.state.y,
+            );
+            if (
+              warband.activeBattleId &&
+              distanceToPlayer <= WARBAND_INTERACTION_RANGE
+            ) {
+              gameSession.joinWarbandBattle(warband.activeBattleId);
+              return;
+            }
+            if (distanceToPlayer <= WARBAND_INTERACTION_RANGE) {
+              gameSession.selectWarband(warband.id);
+            } else {
+              gameSession.pursueWarband(warband.id);
+            }
+          },
+        );
+      this.warbandMarkers.set(warband.id, marker);
+      this.tweens.add({
+        targets: glow,
+        scale: 1.55,
+        alpha: 0.02,
+        duration: 1200,
+        yoyo: true,
+        repeat: -1,
+      });
+    }
+  }
+
+  private updateWarbandMarkers(): void {
+    for (const warband of gameSession.world.state.warbands) {
+      const marker = this.warbandMarkers.get(warband.id);
+      if (!marker) continue;
+      marker.setPosition(warband.x, warband.y);
+      marker.setVisible(
+        warband.state !== "destroyed" &&
+          this.isWithinSight(warband.x, warband.y, 80),
+      );
+    }
+  }
+
+  private createWarbandBattles(): void {
+    for (const battle of gameSession.world.state.warbandBattles) {
+      this.ensureWarbandBattleMarker(battle.id);
+    }
+  }
+
+  private ensureWarbandBattleMarker(
+    battleId: string,
+  ): Phaser.GameObjects.Container | null {
+    const existing = this.warbandBattleMarkers.get(battleId);
+    if (existing) return existing;
+    const battle = gameSession.world.getWarbandBattle(battleId);
+    if (!battle) return null;
+    const glow = this.add.circle(0, 0, 32, 0xffb34d, 0.13);
+    const ring = this.add
+      .circle(0, 0, 15, 0x140c05, 0.96)
+      .setStrokeStyle(2, 0xffbd68, 0.95);
+    const swords = this.add
+      .text(0, -1, "⚔", {
+        color: "#f2d59a",
+        fontFamily: "Arial",
+        fontSize: "18px",
+      })
+      .setOrigin(0.5);
+    const marker = this.add
+      .container(battle.x, battle.y, [glow, ring, swords])
+      .setDepth(9);
+    marker
+      .setSize(62, 62)
+      .setInteractive({ cursor: "pointer" })
+      .on(
+        Phaser.Input.Events.POINTER_DOWN,
+        (
+          _pointer: Phaser.Input.Pointer,
+          _localX: number,
+          _localY: number,
+          event: Phaser.Types.Input.EventData,
+        ) => {
+          event.stopPropagation();
+          if (
+            Math.hypot(
+              battle.x - gameSession.world.state.x,
+              battle.y - gameSession.world.state.y,
+            ) <= 86
+          ) {
+            gameSession.joinWarbandBattle(battle.id);
+          } else {
+            gameSession.setWaypoint(battle.x, battle.y, "world.warbandBattle");
+          }
+        },
+      );
+    this.warbandBattleMarkers.set(battle.id, marker);
+    this.tweens.add({
+      targets: glow,
+      scale: 1.7,
+      alpha: 0.025,
+      duration: 720,
+      yoyo: true,
+      repeat: -1,
+    });
+    return marker;
+  }
+
+  private updateWarbandBattleMarkers(): void {
+    const activeIds = new Set<string>();
+    for (const battle of gameSession.world.state.warbandBattles) {
+      activeIds.add(battle.id);
+      const marker = this.ensureWarbandBattleMarker(battle.id);
+      marker?.setPosition(battle.x, battle.y);
+      marker?.setVisible(
+        battle.state === "fighting" && this.isWithinSight(battle.x, battle.y, 180),
+      );
+    }
+    for (const [battleId, marker] of this.warbandBattleMarkers) {
+      if (activeIds.has(battleId)) continue;
+      marker.destroy(true);
+      this.warbandBattleMarkers.delete(battleId);
+    }
+  }
+
+  private showWarbandTooltip(warbandId: string): void {
+    const warband = gameSession.world.getWarband(warbandId);
+    if (!warband) return;
+    const relation = getFactionRelation(
+      PLAYER_FACTION_ID,
+      warband.factionId,
+      gameSession.factionState,
+    );
+    const target = warband.targetWarbandId
+      ? gameSession.world.getWarband(warband.targetWarbandId)
+      : null;
+    const enemyTarget = warband.targetEnemyId
+      ? gameSession.world.state.enemies.find(
+          (enemy) => enemy.id === warband.targetEnemyId,
+        )
+      : null;
+    this.enemyTooltipText.setText([
+      i18n.t(warband.nameKey).toUpperCase(),
+      `${i18n.t("world.warbandTooltip.faction")}: ${i18n.t(`faction.${warband.factionId}.name`)}`,
+      `${i18n.t("world.warbandTooltip.relation")}: ${i18n.t(`world.relation.${relation}`)}`,
+      `${i18n.t("world.warbandTooltip.type")}: ${i18n.t(`world.warbandType.${warband.type}`)}`,
+      `${i18n.t("world.warbandTooltip.strength")}: ${Math.round(estimateWarbandStrength(warband))}`,
+      `${i18n.t("world.warbandTooltip.troops")}: ${warband.unitIds.length}   ${i18n.t("world.warbandTooltip.state")}: ${i18n.t(`world.warbandState.${warband.state}`)}`,
+      `${i18n.t("world.warbandTooltip.target")}: ${target ? i18n.t(target.nameKey) : enemyTarget ? i18n.t("world.enemyTooltip.warband") : "—"}`,
+      warband.activeBattleId
+        ? i18n.t("world.warbandTooltip.joinBattle")
+        : i18n.t("world.warbandTooltip.click"),
+    ]);
+    this.hoveredWarbandId = warbandId;
+    this.hoveredEnemyId = null;
+    this.enemyTooltip.setVisible(true);
+    this.enemyTooltip.setPosition(warband.x + 34, warband.y - 190);
+  }
+
+  private getWarbandIcon(type: string): string {
+    if (type === "lord") return "♛";
+    if (type === "scout") return "S";
+    if (type === "merchantEscort") return "M";
+    if (type === "militia") return "L";
+    if (type === "army") return "A";
+    if (type === "elite") return "E";
+    return "P";
+  }
+
+  private hexColor(color: number): string {
+    return `#${color.toString(16).padStart(6, "0")}`;
+  }
+
+  private colorToCss(color: number): string {
+    return this.hexColor(color);
   }
 
   private createCaravans(): void {
@@ -650,10 +1153,72 @@ export class WorldScene extends Phaser.Scene {
       const inactiveDungeon =
         location.type === "dungeon" &&
         !gameSession.world.isDungeonActive(location.id);
+      const visible =
+        location.type === "city" || location.type === "village"
+          ? true
+          : location.type === "dungeon"
+            ? !inactiveDungeon &&
+              (gameSession.world.isPositionExplored(location.x, location.y) ||
+                this.isWithinSight(location.x, location.y, 80))
+            : this.isWithinSight(location.x, location.y, 80);
       this.locationMarkers
         .get(location.id)
-        ?.setVisible(!inactiveDungeon && this.isWithinSight(location.x, location.y, 80));
+        ?.setVisible(visible);
     }
+  }
+
+  private getLocationSpriteConfig(
+    location: MapLocation,
+  ):
+    | (typeof LOCATION_SPRITE_CONFIG)[keyof typeof LOCATION_SPRITE_CONFIG]
+    | (typeof DUNGEON_SPRITE_CONFIG & { texture: string })
+    | null {
+    if (location.type === "city" || location.type === "village") {
+      return LOCATION_SPRITE_CONFIG[location.type];
+    }
+    if (location.type !== "dungeon") return null;
+    const textureKey = this.getDungeonTextureKey(location);
+    return {
+      ...DUNGEON_SPRITE_CONFIG,
+      texture: LOCATION_TEXTURES[textureKey],
+    };
+  }
+
+  private getDungeonTextureKey(location: MapLocation): LocationTextureKey {
+    const profile = location.spawnProfile;
+    if (this.isLocationTextureKey(profile?.spriteKey)) return profile.spriteKey;
+
+    const biomeKey = this.normalizeDungeonToken(profile?.biome ?? "");
+    if (DUNGEON_BIOME_TEXTURES[biomeKey]) return DUNGEON_BIOME_TEXTURES[biomeKey];
+
+    for (const enemyId of profile?.enemyIds ?? []) {
+      const enemyTexture = DUNGEON_ENEMY_TEXTURES[enemyId];
+      if (enemyTexture) return enemyTexture;
+    }
+
+    const bossTexture = profile?.bossEnemyId
+      ? DUNGEON_ENEMY_TEXTURES[profile.bossEnemyId]
+      : undefined;
+    if (bossTexture) return bossTexture;
+
+    const nameKey = this.normalizeDungeonToken(location.nameKey);
+    if (nameKey.includes("koboldwarren")) return "kobold";
+    if (nameKey.includes("beastden")) return "beast";
+    if (nameKey.includes("sunken") || nameKey.includes("hollowdepths")) return "swamp";
+    if (nameKey.includes("bonecrypt")) return "undead";
+    if (nameKey.includes("orcwarcamp")) return "orc";
+    if (nameKey.includes("ashrift") || nameKey.includes("embercavern")) return "elemental";
+    if (nameKey.includes("rustedvault") || nameKey.includes("oldmine")) return "machine";
+
+    return "beast";
+  }
+
+  private isLocationTextureKey(value: string | undefined): value is LocationTextureKey {
+    return Boolean(value && value in LOCATION_TEXTURES);
+  }
+
+  private normalizeDungeonToken(value: string): string {
+    return value.toLowerCase().replace(/[^a-z0-9]/g, "");
   }
 
   private updateLocationLabelScale(): void {
@@ -734,6 +1299,28 @@ export class WorldScene extends Phaser.Scene {
       Phaser.Math.Linear(current.y, targetY, 0.14),
     );
     this.updateVisibilityOrigin();
+    this.updateTerrainChunkVisibility();
+  }
+
+  private updateTerrainChunkVisibility(): void {
+    const view = this.cameras.main.worldView;
+    const left = view.x - TERRAIN_CHUNK_VISIBILITY_MARGIN;
+    const right = view.right + TERRAIN_CHUNK_VISIBILITY_MARGIN;
+    const top = view.y - TERRAIN_CHUNK_VISIBILITY_MARGIN;
+    const bottom = view.bottom + TERRAIN_CHUNK_VISIBILITY_MARGIN;
+
+    for (const chunk of this.terrainChunks) {
+      const visible =
+        chunk.x + chunk.size >= left &&
+        chunk.x <= right &&
+        chunk.y + chunk.size >= top &&
+        chunk.y <= bottom;
+      if (visible) {
+        this.ensureTerrainChunkImage(chunk).setVisible(true);
+      } else {
+        chunk.image?.setVisible(false);
+      }
+    }
   }
 
   private updateVisibilityOrigin(): void {
@@ -810,12 +1397,12 @@ export class WorldScene extends Phaser.Scene {
           y: exit.y + directionY * 24,
         };
 
-        graphics.lineStyle(roadWidth + 14, 0x17140f, 0.92);
+        graphics.lineStyle(roadWidth + 14, 0x17140f, 1);
         graphics.beginPath();
         graphics.moveTo(bridgeStart.x, bridgeStart.y);
         graphics.lineTo(bridgeEnd.x, bridgeEnd.y);
         graphics.strokePath();
-        graphics.lineStyle(roadWidth + 5, 0x8f7549, 0.98);
+        graphics.lineStyle(roadWidth + 5, 0x8f7549, 1);
         graphics.beginPath();
         graphics.moveTo(bridgeStart.x, bridgeStart.y);
         graphics.lineTo(bridgeEnd.x, bridgeEnd.y);
@@ -824,12 +1411,19 @@ export class WorldScene extends Phaser.Scene {
         const plankCount = Math.max(2, Math.floor((bridgeLength + 48) / 14));
         const normalX = -directionY;
         const normalY = directionX;
+        const plankAngle = Phaser.Math.RadToDeg(Math.atan2(normalY, normalX));
         for (let plank = 0; plank <= plankCount; plank += 1) {
           const progress = plank / plankCount;
           const centerX = bridgeStart.x + (bridgeEnd.x - bridgeStart.x) * progress;
           const centerY = bridgeStart.y + (bridgeEnd.y - bridgeStart.y) * progress;
           const halfWidth = roadWidth * 0.48;
-          graphics.lineStyle(2, 0x3b2e1d, 0.78);
+          this.add
+            .image(centerX, centerY, WORLD_BASESET_TEXTURE, "bridge-plank")
+            .setDisplaySize(Math.max(18, roadWidth * 1.05), 9)
+            .setAngle(plankAngle)
+            .setDepth(4)
+            .setAlpha(0.86);
+          graphics.lineStyle(2, 0x3b2e1d, 1);
           graphics.beginPath();
           graphics.moveTo(
             centerX - normalX * halfWidth,

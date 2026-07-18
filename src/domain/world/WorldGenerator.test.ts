@@ -37,11 +37,38 @@ describe("WorldGenerator", () => {
       ]),
     );
     expect(world.enemies.length).toBeGreaterThanOrEqual(36);
+    expect(world.warbandSpawns?.length ?? 0).toBeGreaterThan(12);
+    expect(
+      (world.warbandSpawns ?? []).every(
+        (spawn) => Math.hypot(spawn.x - world.start.x, spawn.y - world.start.y) >= 1350,
+      ),
+    ).toBe(true);
     const dungeons = world.locations.filter(
       (location) => location.type === "dungeon",
     );
     expect(dungeons.length).toBeGreaterThanOrEqual(14);
     expect(dungeons.every((dungeon) => dungeon.spawnProfile)).toBe(true);
+    expect(
+      dungeons.every((dungeon) => dungeon.spawnProfile?.spriteKey),
+    ).toBe(true);
+    expect(
+      new Set(dungeons.map((dungeon) => dungeon.spawnProfile?.spriteKey)).size,
+    ).toBeGreaterThan(1);
+    const dungeonNameBySprite = new Map([
+      ["kobold", "generatedLocation.name.koboldWarren"],
+      ["beast", "generatedLocation.name.beastDen"],
+      ["swamp", "generatedLocation.name.sunkenNest"],
+      ["undead", "generatedLocation.name.boneCrypt"],
+      ["orc", "generatedLocation.name.orcWarcamp"],
+      ["elemental", "generatedLocation.name.ashRift"],
+      ["machine", "generatedLocation.name.rustedVault"],
+      ["outlaw", "generatedLocation.name.outlawHideout"],
+    ]);
+    for (const dungeon of dungeons) {
+      expect(dungeon.nameKey).toBe(
+        dungeonNameBySprite.get(dungeon.spawnProfile!.spriteKey!),
+      );
+    }
     const dungeonIds = new Set(dungeons.map((dungeon) => dungeon.id));
     for (const enemy of world.enemies) {
       expect(enemy.sourceLocationId).toBeDefined();
@@ -53,8 +80,45 @@ describe("WorldGenerator", () => {
     const villages = world.locations.filter(
       (location) => location.type === "village",
     );
-    expect(villages.length).toBeGreaterThanOrEqual(8);
-    expect(villages.length).toBeLessThanOrEqual(16);
+    expect(villages.length).toBeGreaterThanOrEqual(24);
+    expect(villages.length).toBeLessThanOrEqual(48);
+    const citiesById = new Map(
+      world.locations
+        .filter((location) => location.type === "city")
+        .map((location) => [location.id, location]),
+    );
+    const majorRoads = world.terrainRoads.filter((road) => road.width >= 20);
+    expect(majorRoads.length).toBeGreaterThanOrEqual(11);
+    for (const road of majorRoads) {
+      const origin = citiesById.get(road.originId ?? "");
+      const destination = citiesById.get(road.destinationId ?? "");
+      expect(origin).toBeDefined();
+      expect(destination).toBeDefined();
+      expect(road.points[0]).toMatchObject({ x: origin!.x, y: origin!.y });
+      expect(road.points[1].x).toBeCloseTo(origin!.x, 5);
+      expect(road.points[1].y).toBeGreaterThan(origin!.y + 80);
+      expect(road.points.at(-1)).toMatchObject({
+        x: destination!.x,
+        y: destination!.y,
+      });
+      expect(road.points.at(-2)!.x).toBeCloseTo(destination!.x, 5);
+      expect(road.points.at(-2)!.y).toBeGreaterThan(destination!.y + 80);
+    }
+    const villageRoads = world.terrainRoads.filter((road) => road.width < 20);
+    expect(villageRoads.length).toBeGreaterThanOrEqual(villages.length);
+    expect(villageRoads.some((road) => road.width <= 8)).toBe(true);
+    const villagesById = new Map(villages.map((village) => [village.id, village]));
+    const cityIds = new Set(citiesById.keys());
+    for (const road of villageRoads.filter((road) => villagesById.has(road.originId ?? ""))) {
+      const village = villagesById.get(road.originId!)!;
+      expect(road.points[0]).toMatchObject({ x: village.x, y: village.y });
+      expect(road.points[1].x).toBeCloseTo(village.x, 5);
+      expect(road.points[1].y).toBeGreaterThan(village.y + 40);
+    }
+    for (const road of villageRoads.filter((road) => cityIds.has(road.destinationId ?? ""))) {
+      const city = citiesById.get(road.destinationId!)!;
+      expect(road.points.at(-1)).not.toMatchObject({ x: city.x, y: city.y });
+    }
     expect(world.locations[0]).toMatchObject({
       id: "city_0",
       x: world.start.x,
@@ -64,28 +128,32 @@ describe("WorldGenerator", () => {
 
   it("generates varied terrain and keeps important positions traversable", () => {
     const world = generateWorldMap(24680, contentPack.enemies);
-    const terrainTypes = world.terrainZones.map((zone) => zone.type);
+    const terrainTypes = world.terrainCells.map((cell) => cell.type);
 
     expect(terrainTypes).toEqual(
       expect.arrayContaining([
-        "forest",
+        "tundra",
+        "pineForest",
         "darkForest",
         "grassland",
+        "steppe",
         "hills",
-        "swamp",
+        "forest",
         "mountain",
         "lake",
       ]),
     );
-    expect(world.terrainRivers).toHaveLength(3);
-    expect(world.terrainRoads).toHaveLength(3);
+    expect(world.terrainRivers).toHaveLength(5);
+    const worldMajorRoads = world.terrainRoads.filter((road) => road.width >= 20);
+    expect(worldMajorRoads).toHaveLength(11);
     const locationsById = new Map(
       world.locations.map((location) => [location.id, location]),
     );
-    for (const road of world.terrainRoads) {
+    for (const road of worldMajorRoads) {
       expect(locationsById.get(road.originId!)?.type).toBe("city");
       expect(locationsById.get(road.destinationId!)?.type).toBe("city");
     }
+    expect(world.terrainRoads.some((road) => road.width < 20)).toBe(true);
     expect(world.boundaryInset).toBeGreaterThan(100);
     for (let seed = 1; seed <= 20; seed += 1) {
       const generatedWorld = generateWorldMap(seed * 7919, contentPack.enemies);
@@ -136,7 +204,7 @@ describe("WorldGenerator", () => {
               150,
             ),
           ),
-        ).toBe(false);
+        ).toBe(true);
       }
       for (const city of cities) {
         const dependants = villages.filter((village) => {
@@ -153,10 +221,10 @@ describe("WorldGenerator", () => {
         expect(
           dependants.every(
             (village) =>
-              Math.hypot(village.x - city.x, village.y - city.y) <= 1100,
+              Math.hypot(village.x - city.x, village.y - city.y) <= 1500,
           ),
         ).toBe(true);
       }
     }
-  });
+  }, 30000);
 });

@@ -1,7 +1,12 @@
 import { lazy, Suspense, useEffect, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
-import { gameSession } from "../domain/session/GameSession";
+import { gameSession, WARBAND_INTERACTION_RANGE } from "../domain/session/GameSession";
 import { getCardDefinition } from "../domain/cards/CardInstance";
+import {
+  getFactionRelation,
+  PLAYER_FACTION_ID,
+} from "../domain/quests/Factions";
+import { estimateWarbandStrength } from "../domain/world/WorldWarbands";
 import { itemsById } from "../content/content";
 import { IndexedDbSaveRepository } from "../infrastructure/save/IndexedDbSaveRepository";
 import type { SaveGame } from "../infrastructure/save/SaveRepository";
@@ -10,6 +15,7 @@ import { BattleScreen } from "./BattleScreen";
 import { CityMenu } from "./CityMenu";
 import { WorldMapControls } from "./WorldMapControls";
 import { StartMenu } from "./StartMenu";
+import { getTerrainBattleModifiers } from "../domain/world/WorldTerrain";
 
 const WarbandManager = lazy(() => import("./WarbandManager"));
 const InventoryMarket = lazy(() => import("./InventoryMarket"));
@@ -26,6 +32,7 @@ export function App() {
   const [characterOpen, setCharacterOpen] = useState(false);
   const [cityMenuOpen, setCityMenuOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
+  const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [startMenuOpen, setStartMenuOpen] = useState(true);
   const [storedSave, setStoredSave] = useState<SaveGame | null>(null);
   const [sessionStarted, setSessionStarted] = useState(false);
@@ -34,6 +41,48 @@ export function App() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const nearbyLocation = gameSession.world.nearbyLocation;
   const nearbyCaravan = gameSession.nearbyCaravan;
+  const selectedWarband = gameSession.interactableSelectedWarband;
+  const selectedWarbandDistance = selectedWarband
+    ? gameSession.selectedWarbandDistance
+    : Number.POSITIVE_INFINITY;
+  const selectedWarbandRelation = selectedWarband
+    ? getFactionRelation(
+        PLAYER_FACTION_ID,
+        selectedWarband.factionId,
+        gameSession.factionState,
+      )
+    : null;
+  const foodDays =
+    gameSession.dailyFoodRequirement > 0
+      ? gameSession.rationCount / gameSession.dailyFoodRequirement
+      : Number.POSITIVE_INFINITY;
+  const foodDaysLabel = Number.isFinite(foodDays)
+    ? foodDays >= 10
+      ? `${Math.floor(foodDays)}d`
+      : `${foodDays.toFixed(1)}d`
+    : "\u221e";
+  const moraleFace =
+    gameSession.morale >= 80
+      ? "\u2726"
+      : gameSession.morale >= 55
+        ? "\u2727"
+        : gameSession.morale >= 30
+          ? "\u2736"
+          : "\u2737";
+  const terrainBattle = getTerrainBattleModifiers(gameSession.currentTerrain);
+  const terrainTooltip = [
+    `${t(`terrain.${gameSession.currentTerrain}.name`)}`,
+    `${t("hud.speed")} \u00d7${gameSession.terrainMovementMultiplier.toFixed(2)}`,
+    `${t("hud.terrainFood")} \u00d7${gameSession.terrainFoodMultiplier.toFixed(2)}`,
+    `${t("hud.sight")} ${gameSession.visibilityRadius}m`,
+    `${t("hud.attack")} ${Math.round(terrainBattle.playerAttack * 100)}%`,
+    `${t("hud.defense")} ${Math.round(terrainBattle.playerDefense * 100)}%`,
+  ].join("\n");
+  const dayMinutes = gameSession.timeState.totalMinutes % 1440;
+  const clockRotation = (dayMinutes / 1440) * 360;
+  const hasCharacterLevelUp =
+    gameSession.characterState.attributePoints > 0 ||
+    gameSession.characterState.skillPoints > 0;
 
   useEffect(
     () =>
@@ -80,6 +129,35 @@ export function App() {
     });
   }, []);
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key !== "Escape" || gameSession.mode !== "world") return;
+      if (
+        warbandOpen ||
+        inventoryOpen ||
+        questOpen ||
+        characterOpen ||
+        cityMenuOpen ||
+        mapOpen
+      ) {
+        return;
+      }
+      event.preventDefault();
+      setSideMenuOpen(false);
+      setStartMenuOpen(true);
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    warbandOpen,
+    inventoryOpen,
+    questOpen,
+    characterOpen,
+    cityMenuOpen,
+    mapOpen,
+  ]);
+
   function continueGame(): void {
     if (!sessionStarted && storedSave) gameSession.restore(storedSave);
     setSessionStarted(true);
@@ -106,6 +184,30 @@ export function App() {
     window.setTimeout(() => setSaveMessage(null), 2600);
   }
 
+  function followSelectedWarband(): void {
+    if (!selectedWarband) return;
+    gameSession.pursueWarband(selectedWarband.id);
+  }
+
+  function joinSelectedWarbandBattle(): void {
+    if (!selectedWarband?.activeBattleId) return;
+    if (selectedWarbandDistance > 86) {
+      gameSession.pursueWarband(selectedWarband.id);
+      return;
+    }
+    gameSession.joinWarbandBattle(selectedWarband.activeBattleId, selectedWarband.id);
+  }
+
+  function talkToSelectedWarband(kind: "talk" | "info"): void {
+    if (!selectedWarband) return;
+    setSaveMessage(
+      t(`world.warbandInteraction.${kind}Result`, {
+        name: t(selectedWarband.nameKey),
+      }),
+    );
+    window.setTimeout(() => setSaveMessage(null), 3200);
+  }
+
   function prepareVictory(): ReturnType<typeof gameSession.prepareVictoryReward> {
     return gameSession.prepareVictoryReward();
   }
@@ -121,7 +223,7 @@ export function App() {
       const rewardParts = [t("battle.goldReward", { gold: reward.gold })];
       rewardParts.push(
         cardName
-          ? t("battle.cardReward", { card: cardName })
+          ? t("battle.prisonerReward", { card: cardName })
           : t("battle.noCardReward"),
       );
       for (const item of reward.items) {
@@ -218,48 +320,55 @@ export function App() {
           </span>
         </div>
         <div className="resource-strip">
-          <span>{t("hud.gold")} <strong>{gameSession.gold}</strong></span>
-          <span>
-            {t("hud.deck")}{" "}
+          <span
+            className="hud-chip"
+            title={t("hud.goldTooltip", { wages: gameSession.weeklyWageCost })}
+          >
+            <span className="hud-icon">{"\u25cf"}</span>
+            <span className="hud-label">{t("hud.gold")}</span>
+            <strong>{gameSession.gold}</strong>
+          </span>
+          <span className="hud-chip" title={t("warband.capacity")}>
+            <span className="hud-icon">{"\u2694"}</span>
+            <span className="hud-label">{t("hud.deck")}</span>
             <strong>{gameSession.warband.length}/{gameSession.warbandCapacity}</strong>
           </span>
-          <span>
-            {t("hud.strength")} <strong>{gameSession.warbandThreatRating}</strong>
+          <span className={`hud-chip morale-chip morale-${moraleMood(gameSession.morale)}`}>
+            <span className="hud-icon">{moraleFace}</span>
+            <span className="hud-label">{t("hud.morale")}</span>
+            <strong>{gameSession.morale}</strong>
           </span>
-          <span>
-            {t("hud.morale")} <strong>{gameSession.morale}</strong>
+          <span
+            className="hud-chip"
+            title={`${gameSession.rationCount}/${gameSession.foodCapacity} \u00b7 -${gameSession.dailyFoodRequirement}/${t("hud.dayShort")}`}
+          >
+            <span className="hud-icon">{"\u25e7"}</span>
+            <span className="hud-label">{t("hud.food")}</span>
+            <strong>{foodDaysLabel}</strong>
           </span>
-          <span>
-            {t("hud.food")}{" "}
-            <strong>
-              {gameSession.rationCount}/{gameSession.foodCapacity}
-            </strong>
+          <span className="hud-chip">
+            <span className="hud-icon arrows">{"\u00bb\u00bb\u00bb"}</span>
+            <span className="hud-label">{t("hud.speed")}</span>
+            <strong>{gameSession.effectiveMovementSpeed}</strong>
           </span>
-          <span>
-            {t("hud.time")}{" "}
-            <strong>
-              {t("hud.day", { day: gameSession.gameDay })} {gameSession.gameTimeLabel}
-            </strong>
-          </span>
-          <span>
-            {t("hud.speed")} <strong>{gameSession.effectiveMovementSpeed}</strong>
-          </span>
-          <span>
-            {t("hud.terrain")}{" "}
+          <span className="hud-chip terrain-chip" title={terrainTooltip}>
+            <span className="hud-icon">{"\u25c6"}</span>
+            <span className="hud-label">{t("hud.terrain")}</span>
             <strong>{t(`terrain.${gameSession.currentTerrain}.name`)}</strong>
           </span>
-          <span>{t("hud.worldSeed")} <strong>{gameSession.worldSeed}</strong></span>
         </div>
       </header>
 
       <aside
         className={`context-prompt ${
-          nearbyLocation || nearbyCaravan ? "" : "hidden"
+          selectedWarband || nearbyLocation || nearbyCaravan ? "" : "hidden"
         }`}
       >
         <span className="eyebrow">{t("hud.region")}</span>
         <h1>
-          {nearbyLocation
+          {selectedWarband
+            ? t(selectedWarband.nameKey)
+            : nearbyLocation
             ? t(nearbyLocation.nameKey)
             : nearbyCaravan
               ? t(
@@ -270,7 +379,15 @@ export function App() {
               : t("hud.unknown")}
         </h1>
         <p>
-          {nearbyLocation
+          {selectedWarband
+            ? t("world.warbandInteraction.description", {
+                faction: t(`faction.${selectedWarband.factionId}.name`),
+                type: t(`world.warbandType.${selectedWarband.type}`),
+                strength: Math.round(estimateWarbandStrength(selectedWarband)),
+                units: selectedWarband.unitIds.length,
+                state: t(`world.warbandState.${selectedWarband.state}`),
+              })
+            : nearbyLocation
             ? t(nearbyLocation.descriptionKey)
             : nearbyCaravan
               ? t(
@@ -281,9 +398,11 @@ export function App() {
               : "No walls. No witnesses. Only the road ahead."}
         </p>
         <div className="status-line">
-          <span className={nearbyLocation?.type === "city" ? "status safe" : "status danger"}>
+          <span className={nearbyLocation?.type === "city" || selectedWarbandRelation === "friendly" || selectedWarbandRelation === "allied" ? "status safe" : "status danger"}>
             {t(
-              nearbyLocation?.type === "city"
+              selectedWarbandRelation
+                ? `world.relation.${selectedWarbandRelation}`
+                : nearbyLocation?.type === "city"
                 ? "hud.safe"
                 : nearbyCaravan
                   ? "trade.merchant"
@@ -335,6 +454,60 @@ export function App() {
           </p>
         ) : null}
         <p className="hostile-hint">{t("hud.hostiles")}</p>
+        {selectedWarband ? (
+          <>
+            <div className="location-faction">
+              <span className={`faction-seal ${selectedWarband.factionId}`} />
+              <strong>{t(`faction.${selectedWarband.factionId}.name`)}</strong>
+              <em>
+                {t("world.warbandInteraction.distance", {
+                  distance: Math.round(selectedWarbandDistance),
+                })}
+              </em>
+            </div>
+            <div className="location-actions">
+              <button className="button primary" onClick={followSelectedWarband}>
+                {t("world.warbandInteraction.follow")}
+              </button>
+              {selectedWarband.activeBattleId ? (
+                <button className="button danger" onClick={joinSelectedWarbandBattle}>
+                  {t(
+                    selectedWarbandDistance <= 86
+                      ? "world.warbandInteraction.joinBattle"
+                      : "world.warbandInteraction.travelToBattle",
+                  )}
+                </button>
+              ) : null}
+              {selectedWarbandRelation !== "hostile" ? (
+                <>
+                  <button
+                    className="button ghost"
+                    onClick={() => talkToSelectedWarband("talk")}
+                  >
+                    {t("world.warbandInteraction.talk")}
+                  </button>
+                  <button
+                    className="button ghost"
+                    onClick={() => talkToSelectedWarband("info")}
+                  >
+                    {t("world.warbandInteraction.info")}
+                  </button>
+                </>
+              ) : null}
+              <button
+                className="button ghost"
+                onClick={() => gameSession.selectWarband(null)}
+              >
+                {t("world.warbandInteraction.close")}
+              </button>
+              <span className="interaction-range-note">
+                {t("world.warbandInteraction.range", {
+                  distance: WARBAND_INTERACTION_RANGE,
+                })}
+              </span>
+            </div>
+          </>
+        ) : null}
         {nearbyLocation && gameSession.currentFactionId ? (
           <div className="location-faction">
             <span className={`faction-seal ${gameSession.currentFactionId}`} />
@@ -402,60 +575,90 @@ export function App() {
         ) : null}
       </aside>
 
-      {ready &&
-      gameSession.mode === "world" &&
-      !warbandOpen &&
-      !inventoryOpen &&
-      !questOpen &&
-      !characterOpen &&
-      !cityMenuOpen &&
-      !mapOpen ? (
-        <WorldMapControls onOpenMap={() => setMapOpen(true)} />
-      ) : null}
-
-      {nearbyLocation?.type !== "city" && !cityMenuOpen && !mapOpen ? (
-      <div className="save-panel">
-        <button
-          className="button ghost"
-          disabled={!ready || gameSession.mode !== "world"}
-          onClick={() => setStartMenuOpen(true)}
-        >
-          {t("startMenu.open")}
-        </button>
-        <button
-          className="button ghost"
-          disabled={!ready || gameSession.mode !== "world"}
-          onClick={() => setQuestOpen(true)}
-        >
-          {t("quests.open", { count: gameSession.activeQuests.length })}
-        </button>
-        <button
-          className="button ghost"
-          disabled={!ready || gameSession.mode !== "world"}
-          onClick={() => setInventoryOpen(true)}
-        >
-          {t(
-            gameSession.marketProfile
-              ? "trade.openMarket"
-              : "trade.openInventory",
-          )}
-        </button>
-        <button
-          className="button ghost"
-          disabled={!ready}
-          onClick={() => setWarbandOpen(true)}
-        >
-          {t("warband.open")}
-        </button>
-        <button
-          className="button ghost"
-          disabled={!ready}
-          onClick={() => setCharacterOpen(true)}
-        >
-          {t("character.open")}
-        </button>
-        {saveMessage ? <span className="toast">{saveMessage}</span> : null}
-      </div>
+      {ready && gameSession.mode === "world" && !startMenuOpen ? (
+        <aside className="right-hud" aria-label={t("hud.menu")}>
+          <WorldMapControls onOpenMap={() => setMapOpen(true)} />
+          <div className="time-orb" title={`${t("hud.day", { day: gameSession.gameDay })} \u00b7 ${gameSession.gameTimeLabel}`}>
+            <span className="clock-face">
+              <span
+                className="clock-hand"
+                style={{ transform: `translateX(-50%) rotate(${clockRotation}deg)` }}
+              />
+            </span>
+            <span>
+              <strong>{t("hud.day", { day: gameSession.gameDay })}</strong>
+              <small>{gameSession.gameTimeLabel}</small>
+            </span>
+          </div>
+          <button
+            className={`side-menu-toggle ${sideMenuOpen ? "open" : ""}`}
+            type="button"
+            onClick={() => setSideMenuOpen((open) => !open)}
+            aria-expanded={sideMenuOpen}
+          >
+            <span>{"\u2630"}</span>
+            <strong>{t("startMenu.open")}</strong>
+          </button>
+          <nav className={`side-menu ${sideMenuOpen ? "open" : "collapsed"}`}>
+            <button
+              className="side-menu-button"
+              disabled={!ready || gameSession.mode !== "world"}
+              onClick={() => {
+                setSideMenuOpen(false);
+                setQuestOpen(true);
+              }}
+              title={t("quests.open", { count: gameSession.activeQuests.length })}
+            >
+              <span>!</span>
+              <small>{t("quests.short")}</small>
+              {gameSession.activeQuests.length > 0 ? (
+                <em>{gameSession.activeQuests.length}</em>
+              ) : null}
+            </button>
+            <button
+              className="side-menu-button"
+              disabled={!ready || gameSession.mode !== "world"}
+              onClick={() => {
+                setSideMenuOpen(false);
+                setInventoryOpen(true);
+              }}
+              title={t(
+                gameSession.marketProfile
+                  ? "trade.openMarket"
+                  : "trade.openInventory",
+              )}
+            >
+              <span>{"\u25c8"}</span>
+              <small>{gameSession.marketProfile ? t("trade.marketShort") : t("trade.inventory")}</small>
+            </button>
+            <button
+              className="side-menu-button"
+              disabled={!ready}
+              onClick={() => {
+                setSideMenuOpen(false);
+                setWarbandOpen(true);
+              }}
+              title={t("warband.open")}
+            >
+              <span>{"\u2694"}</span>
+              <small>{t("warband.short")}</small>
+            </button>
+            <button
+              className={`side-menu-button ${hasCharacterLevelUp ? "attention" : ""}`}
+              disabled={!ready}
+              onClick={() => {
+                setSideMenuOpen(false);
+                setCharacterOpen(true);
+              }}
+              title={t("character.open")}
+            >
+              <span>{"\u2726"}</span>
+              <small>{t("character.short")}</small>
+              {hasCharacterLevelUp ? <em>+</em> : null}
+            </button>
+          </nav>
+          {saveMessage ? <span className="toast">{saveMessage}</span> : null}
+        </aside>
       ) : null}
       {cityMenuOpen && nearbyLocation?.type === "city" ? (
         <CityMenu
@@ -537,4 +740,11 @@ export function App() {
       ) : null}
     </main>
   );
+}
+
+function moraleMood(morale: number): "high" | "steady" | "low" | "angry" {
+  if (morale >= 80) return "high";
+  if (morale >= 55) return "steady";
+  if (morale >= 30) return "low";
+  return "angry";
 }

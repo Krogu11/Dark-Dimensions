@@ -1,4 +1,5 @@
 import type {
+  TerrainCell,
   TerrainZone,
   TerrainZoneType,
   WorldMapDefinition,
@@ -16,10 +17,13 @@ export const TERRAIN_MOVEMENT_MULTIPLIERS: Record<TerrainType, number> = {
   forest: 0.82,
   darkForest: 0.76,
   pineForest: 0.86,
+  tundra: 0.72,
+  snowMountain: 0.36,
   swamp: 0.65,
   bog: 0.58,
   desert: 0.88,
   badlands: 0.78,
+  steppe: 0.96,
   grassland: 1.04,
   heath: 0.94,
   mountain: 0.42,
@@ -35,10 +39,13 @@ export const TERRAIN_VISIBILITY_MULTIPLIERS: Record<TerrainType, number> = {
   forest: 0.68,
   darkForest: 0.56,
   pineForest: 0.74,
+  tundra: 1.02,
+  snowMountain: 0.78,
   swamp: 0.78,
   bog: 0.7,
   desert: 1.15,
   badlands: 1.04,
+  steppe: 1.08,
   grassland: 1.12,
   heath: 1.02,
   mountain: 0.72,
@@ -54,10 +61,13 @@ export const TERRAIN_ENCOUNTER_MULTIPLIERS: Record<TerrainType, number> = {
   forest: 1.35,
   darkForest: 1.55,
   pineForest: 1.18,
+  tundra: 1.08,
+  snowMountain: 1.1,
   swamp: 1.25,
   bog: 1.42,
   desert: 1.12,
   badlands: 1.22,
+  steppe: 0.98,
   grassland: 0.92,
   heath: 1.05,
   mountain: 1.15,
@@ -73,10 +83,13 @@ export const TERRAIN_FOOD_MULTIPLIERS: Record<TerrainType, number> = {
   forest: 1.05,
   darkForest: 1.14,
   pineForest: 1.02,
+  tundra: 1.22,
+  snowMountain: 1.3,
   swamp: 1.25,
   bog: 1.35,
   desert: 1.2,
   badlands: 1.16,
+  steppe: 1.05,
   grassland: 0.92,
   heath: 1.04,
   mountain: 1.2,
@@ -102,13 +115,6 @@ export function getTerrainAt(
 ): TerrainType {
   if (!isInsidePlayableBounds(map, x, y)) return "sea";
 
-  const blockingZone = map.terrainZones.find(
-    (zone) =>
-      (zone.type === "mountain" || zone.type === "lake") &&
-      isInsideTerrainZone(zone, x, y),
-  );
-  if (blockingZone) return blockingZone.type;
-
   if (isPositionOnRoad(map, x, y)) return "road";
 
   if (
@@ -119,10 +125,7 @@ export function getTerrainAt(
     return "river";
   }
 
-  return (
-    map.terrainZones.find((zone) => isInsideTerrainZone(zone, x, y))?.type ??
-    "plains"
-  );
+  return getTerrainCellAt(map, x, y) ?? "plains";
 }
 
 export function getTerrainMovementMultiplier(
@@ -178,7 +181,7 @@ export function getTerrainBattleModifiers(
       enemyDefense: 0.9,
     };
   }
-  if (terrain === "desert" || terrain === "badlands") {
+  if (terrain === "desert" || terrain === "badlands" || terrain === "steppe") {
     return {
       terrain,
       playerAttack: 1.06,
@@ -221,14 +224,26 @@ export function isWorldPositionTraversable(
   radius = 0,
 ): boolean {
   if (!isInsidePlayableBounds(map, x, y, radius)) return false;
-  const blockedByZone = map.terrainZones.some(
-    (zone) => zone.type === "lake" && isInsideTerrainZone(zone, x, y, radius),
-  );
-  if (blockedByZone) return false;
+  if (getTerrainCellAt(map, x, y) === "lake") return false;
   const crossesRiver = map.terrainRivers.some((river) =>
     isPositionNearPath(river.points, river.width, x, y, radius),
   );
   return !crossesRiver || isPositionOnRoad(map, x, y, radius);
+}
+
+function getTerrainCellAt(
+  map: WorldMapDefinition,
+  x: number,
+  y: number,
+): TerrainCell["type"] | null {
+  for (let index = map.terrainCells.length - 1; index >= 0; index -= 1) {
+    const cell = map.terrainCells[index];
+    if (x >= cell.x && y >= cell.y && x < cell.x + cell.size && y < cell.y + cell.size) {
+      return cell.type;
+    }
+  }
+
+  return null;
 }
 
 export function findNearestTraversablePosition(

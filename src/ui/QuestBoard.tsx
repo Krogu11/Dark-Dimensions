@@ -16,11 +16,15 @@ export default function QuestBoard({
 }: QuestBoardProps) {
   const { t } = useTranslation();
   const [message, setMessage] = useState<string | null>(null);
+  const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
+  const selectedQuest =
+    gameSession.localAvailableQuests.find((quest) => quest.id === selectedQuestId) ??
+    null;
 
   function accept(questId: string): void {
-    setMessage(
-      t(gameSession.acceptQuest(questId) ? "quests.accepted" : "quests.unavailable"),
-    );
+    const accepted = gameSession.acceptQuest(questId);
+    setMessage(t(accepted ? "quests.accepted" : "quests.unavailable"));
+    if (accepted) setSelectedQuestId(null);
   }
 
   function claim(questId: string): void {
@@ -62,8 +66,11 @@ export default function QuestBoard({
                 key={quest.id}
                 quest={quest}
                 action={
-                  <button className="button primary compact" onClick={() => accept(quest.id)}>
-                    {t("quests.accept")}
+                  <button
+                    className="button primary compact"
+                    onClick={() => setSelectedQuestId(quest.id)}
+                  >
+                    {t("quests.talk")}
                   </button>
                 }
               />
@@ -94,9 +101,72 @@ export default function QuestBoard({
             ) : null}
           </section>
         </div>
+        {selectedQuest ? (
+          <QuestDialog
+            quest={selectedQuest}
+            onAccept={() => accept(selectedQuest.id)}
+            onClose={() => setSelectedQuestId(null)}
+          />
+        ) : null}
         {message ? <div className="trade-message">{message}</div> : null}
       </main>
     </div>
+  );
+}
+
+function QuestDialog({
+  quest,
+  onAccept,
+  onClose,
+}: {
+  quest: QuestState;
+  onAccept: () => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const issuer = gameSession.world.map.locations.find(
+    (location) => location.id === quest.issuerLocationId,
+  );
+  const target = gameSession.world.map.locations.find(
+    (location) => location.id === quest.targetLocationId,
+  );
+  const enemy = quest.enemyId ? enemiesById.get(quest.enemyId) : null;
+  const item = quest.itemId ? itemsById.get(quest.itemId) : null;
+
+  return (
+    <section className="quest-dialog">
+      <div>
+        <p className="eyebrow">
+          {t("quests.dialogMayor", {
+            location: issuer ? t(issuer.nameKey) : "",
+          })}
+        </p>
+        <h2>{t(`quests.type.${quest.type}`)}</h2>
+        <p className="quest-dialog-text">
+          {t(`quests.dialog.${quest.type}`, {
+            quantity: quest.requiredQuantity,
+            item: item ? t(item.nameKey) : "",
+            target: target ? t(target.nameKey) : "",
+            enemy: enemy ? t(enemy.nameKey) : "",
+            count: quest.requiredCount,
+          })}
+        </p>
+        <p className="quest-dialog-reward">
+          {t("quests.rewards", {
+            gold: quest.rewardGold,
+            reputation: quest.rewardReputation,
+          })}
+        </p>
+      </div>
+      <footer>
+        <button className="button ghost compact" onClick={onClose}>
+          {t("quests.decline")}
+        </button>
+        <button className="button primary compact" onClick={onAccept}>
+          {t("quests.acceptContract")}
+        </button>
+      </footer>
+    </section>
   );
 }
 

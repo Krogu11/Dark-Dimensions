@@ -165,6 +165,12 @@ describe("procedural markets", () => {
       radiusX: 420,
       radiusY: 320,
     });
+    world.terrainCells.push({
+      x: village.x - 80,
+      y: village.y - 80,
+      size: 180,
+      type: "forest",
+    });
     const economy = createEconomyState(808080, world);
     const market = createMarketProfile(808080, village, economy, world)!;
 

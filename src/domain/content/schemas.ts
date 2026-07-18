@@ -20,6 +20,7 @@ export const mapLocationSchema = z.object({
   spawnProfile: z
     .object({
       biome: z.string().min(1),
+      spriteKey: z.string().min(1).optional(),
       enemyIds: z.array(z.string().min(1)).min(1),
       bossEnemyId: z.string().min(1),
       respawnHours: z.number().positive(),
@@ -54,14 +55,74 @@ export const worldEnemySpawnSchema = z.object({
   threat: z.number().int().min(1).max(5),
 });
 
+export const warbandTypeSchema = z.enum([
+  "lord",
+  "patrol",
+  "scout",
+  "merchantEscort",
+  "militia",
+  "army",
+  "elite",
+]);
+
+export const warbandStateSchema = z.enum([
+  "idle",
+  "patrolling",
+  "traveling",
+  "chasing",
+  "fighting",
+  "retreating",
+  "returning",
+  "destroyed",
+]);
+
+export const warbandTemplateSchema = z.object({
+  id: z.string().min(1),
+  nameKey: z.string().min(1),
+  type: warbandTypeSchema,
+  factionId: z.string().min(1),
+  unitIds: z.array(z.string().min(1)).min(1),
+  speed: z.number().positive(),
+  detectionRadius: z.number().positive(),
+  aggressionRadius: z.number().positive(),
+  aggression: z.number().min(0).max(1),
+  maxPursuitDistance: z.number().positive(),
+  respawnHours: z.number().positive(),
+  leaderCardId: z.string().min(1).optional(),
+  leaderLevel: z.number().int().positive().optional(),
+  equipmentItemIds: z.array(z.string().min(1)).default([]),
+  lootItemIds: z.array(z.string().min(1)).default([]),
+});
+
+export const warbandSpawnSchema = z.object({
+  id: z.string().min(1),
+  templateId: z.string().min(1),
+  homeLocationId: z.string().min(1).optional(),
+  x: z.number().nonnegative(),
+  y: z.number().nonnegative(),
+  patrolPoints: z
+    .array(
+      z.object({
+        x: z.number().nonnegative(),
+        y: z.number().nonnegative(),
+      }),
+    )
+    .optional(),
+  allowedRadius: z.number().positive().optional(),
+  spawnChance: z.number().min(0).max(1).default(1),
+});
+
 export const terrainZoneTypeSchema = z.enum([
   "forest",
   "darkForest",
   "pineForest",
+  "tundra",
+  "snowMountain",
   "swamp",
   "bog",
   "desert",
   "badlands",
+  "steppe",
   "grassland",
   "heath",
   "mountain",
@@ -76,6 +137,30 @@ export const terrainZoneSchema = z.object({
   y: z.number().nonnegative(),
   radiusX: z.number().positive(),
   radiusY: z.number().positive(),
+});
+
+export const terrainCellSchema = z.object({
+  x: z.number().nonnegative(),
+  y: z.number().nonnegative(),
+  size: z.number().positive(),
+  type: z.enum([
+    "plains",
+    "forest",
+    "darkForest",
+    "pineForest",
+    "tundra",
+    "snowMountain",
+    "swamp",
+    "bog",
+    "desert",
+    "badlands",
+    "steppe",
+    "grassland",
+    "heath",
+    "mountain",
+    "hills",
+    "lake",
+  ]),
 });
 
 export const terrainRiverSchema = z.object({
@@ -113,11 +198,14 @@ export const worldMapSchema = z.object({
   boundaryInset: z.number().positive(),
   start: z.object({ x: z.number(), y: z.number() }),
   terrainZones: z.array(terrainZoneSchema),
+  terrainCells: z.array(terrainCellSchema),
   terrainRivers: z.array(terrainRiverSchema),
   terrainRoads: z.array(terrainRoadSchema),
   locations: z.array(mapLocationSchema),
   encounterZones: z.array(encounterZoneSchema),
   enemies: z.array(worldEnemySpawnSchema),
+  warbandTemplates: z.array(warbandTemplateSchema).optional(),
+  warbandSpawns: z.array(warbandSpawnSchema).optional(),
 });
 
 export const combatRulesSchema = z.object({
@@ -221,7 +309,12 @@ export type ItemDefinition = z.infer<typeof itemDefinitionSchema>;
 export type TradeRecipe = z.infer<typeof tradeRecipeSchema>;
 export type EnemyArchetype = z.infer<typeof enemyArchetypeSchema>;
 export type WorldEnemySpawn = z.infer<typeof worldEnemySpawnSchema>;
+export type WarbandTemplate = z.infer<typeof warbandTemplateSchema>;
+export type WarbandSpawn = z.infer<typeof warbandSpawnSchema>;
+export type WarbandType = z.infer<typeof warbandTypeSchema>;
+export type WarbandState = z.infer<typeof warbandStateSchema>;
 export type TerrainZoneType = z.infer<typeof terrainZoneTypeSchema>;
 export type TerrainZone = z.infer<typeof terrainZoneSchema>;
+export type TerrainCell = z.infer<typeof terrainCellSchema>;
 export type TerrainRiver = z.infer<typeof terrainRiverSchema>;
 export type TerrainRoad = z.infer<typeof terrainRoadSchema>;

@@ -7,6 +7,12 @@ import type { FactionState } from "../../domain/quests/Factions";
 import type { GameTimeState } from "../../domain/time/GameClock";
 import type { SurvivalState } from "../../domain/survival/Survival";
 import type { CharacterState } from "../../domain/character/CharacterProgression";
+import type { PrisonerStack } from "../../domain/session/GameSession";
+import type { WorldMonsterRaidState } from "../../domain/world/WorldSimulation";
+import type {
+  WorldWarbandBattleState,
+  WorldWarbandState,
+} from "../../domain/world/WorldWarbands";
 
 export interface SaveGame {
   version: 1;
@@ -20,12 +26,16 @@ export interface SaveGame {
     nearbyLocationId: string | null;
     exploredSectors?: string[];
     waypoint?: { x: number; y: number; labelKey?: string } | null;
+    warbands?: WorldWarbandState[];
+    warbandBattles?: WorldWarbandBattleState[];
+    monsterRaids?: WorldMonsterRaidState[];
   };
   gold?: number;
   deck?: CardInstance[];
   rosterRevision?: number;
   warband?: CardInstance[];
   reserve?: CardInstance[];
+  prisoners?: PrisonerStack[];
   hero?: CardInstance;
   leadershipLevel?: number;
   characterState?: CharacterState;

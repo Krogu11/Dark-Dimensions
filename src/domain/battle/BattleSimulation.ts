@@ -88,9 +88,10 @@ export class BattleSimulation {
     private readonly combatBonuses: CombatBonuses = { heroAtk: 0, heroDef: 0 },
     readonly terrainModifiers: TerrainBattleModifiers =
       DEFAULT_TERRAIN_MODIFIERS,
+    enemyDeckOverride?: CardInstance[],
   ) {
-    this.drawPile = [...playerDeck.filter((card) => card.currentHp > 0)];
-    this.enemyDrawPile = enemy.deck.map((cardId) => createCardInstance(cardId));
+    this.drawPile = shuffleCards(playerDeck.filter((card) => card.currentHp > 0));
+    this.enemyDrawPile = shuffleCards(enemyDeckOverride ?? createEnemyBattleDeck(enemy));
     this.playerField.push(hero);
     this.ensureUnitStats(hero);
     this.initializeUnit(hero, "player");
@@ -176,7 +177,6 @@ export class BattleSimulation {
 
     this.message = null;
     this.animationEvents.length = 0;
-    this.enemySummonPhase(contentPack.combatRules.summonsPerTurn);
 
     const attacks = [
       ...this.planAttacks(this.playerField, this.enemyField),
@@ -216,6 +216,7 @@ export class BattleSimulation {
     this.turn += 1;
     this.summonsRemaining = contentPack.combatRules.summonsPerTurn;
     this.attackBonuses.clear();
+    this.enemySummonPhase(contentPack.combatRules.summonsPerTurn);
     this.drawToFive();
     this.drawEnemyToFive();
   }
@@ -223,13 +224,24 @@ export class BattleSimulation {
   rollReward(): BattleReward {
     const drop = this.enemy.dropTable.find((entry) => Math.random() <= entry.chance);
     const items = this.enemy.itemDropTable
-      .filter((entry) => Math.random() <= entry.chance)
+      .filter((entry) => Math.random() <= Math.min(0.95, entry.chance * 2.2 + 0.08))
       .map((entry) => ({
         itemId: entry.itemId,
         quantity:
           entry.minimum +
           Math.floor(Math.random() * (entry.maximum - entry.minimum + 1)),
       }));
+    if (items.length === 0 && this.enemy.itemDropTable.length > 0) {
+      const fallback = this.enemy.itemDropTable[
+        Math.floor(Math.random() * this.enemy.itemDropTable.length)
+      ];
+      items.push({
+        itemId: fallback.itemId,
+        quantity:
+          fallback.minimum +
+          Math.floor(Math.random() * (fallback.maximum - fallback.minimum + 1)),
+      });
+    }
     return {
       gold: this.enemy.goldReward,
       cardId: drop?.cardId ?? null,
@@ -255,7 +267,8 @@ export class BattleSimulation {
     const defense = this.getDefense(defender);
     const defenseReduction =
       defense / (defense + 1400);
-    const damage = Math.max(80, Math.floor(attack * (1 - defenseReduction)));
+    const rawDamage = attack * (1 - defenseReduction);
+    const damage = Math.max(80, Math.round(rawDamage / 10) * 10);
 
     const shield = this.shields.get(defender.uid) ?? 0;
     const absorbed = Math.min(shield, damage);
@@ -425,4 +438,26 @@ export class BattleSimulation {
       this.enemyDrawPile.includes(card)
     );
   }
+}
+
+function createEnemyBattleDeck(enemy: EnemyArchetype): CardInstance[] {
+  const targetSize = Math.max(
+    enemy.deck.length,
+    Math.min(14, enemy.deck.length + Math.max(0, enemy.threat - 1) * 2),
+  );
+  return Array.from({ length: targetSize }, (_, index) =>
+    createCardInstance(enemy.deck[index % enemy.deck.length]),
+  );
+}
+
+function shuffleCards(cards: CardInstance[]): CardInstance[] {
+  const shuffled = [...cards];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [
+      shuffled[swapIndex],
+      shuffled[index],
+    ];
+  }
+  return shuffled;
 }

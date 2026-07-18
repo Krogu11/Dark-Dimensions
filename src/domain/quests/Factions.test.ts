@@ -18,6 +18,27 @@ describe("procedural factions and quests", () => {
     expect(first.quests.some((quest) => quest.type === "escort")).toBe(true);
   });
 
+  it("creates a delivery, bounty and escort contract for each city", () => {
+    const world = generateWorldMap(112244, contentPack.enemies);
+    const economy = createEconomyState(112244, world);
+    const factions = createFactionState(112244, world, economy, contentPack.enemies);
+    const cities = world.locations.filter((location) => location.type === "city");
+
+    for (const city of cities) {
+      const cityQuests = factions.quests.filter(
+        (quest) => quest.issuerLocationId === city.id,
+      );
+      expect(cityQuests.map((quest) => quest.type).sort()).toEqual([
+        "bounty",
+        "delivery",
+        "escort",
+      ]);
+      expect(
+        cityQuests.find((quest) => quest.type === "delivery")?.targetLocationId,
+      ).toBe(city.id);
+    }
+  });
+
   it("assigns every generated settlement to a faction", () => {
     const world = generateWorldMap(776655, contentPack.enemies);
     const economy = createEconomyState(776655, world);
