@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type CSSProperties } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { gameSession, WARBAND_INTERACTION_RANGE } from "../domain/session/GameSession";
 import { getCardDefinition } from "../domain/cards/CardInstance";
@@ -13,11 +13,17 @@ import type { SaveGame } from "../infrastructure/save/SaveRepository";
 import { GameCanvas } from "./GameCanvas";
 import { BattleScreen } from "./BattleScreen";
 import { CityMenu } from "./CityMenu";
+import { VillageMenu } from "./VillageMenu";
 import { WorldMapControls } from "./WorldMapControls";
 import { StartMenu } from "./StartMenu";
+import { CharacterCreator } from "./CharacterCreator";
+import { PauseMenu } from "./PauseMenu";
+import { TitleMusic } from "./TitleMusic";
+import type { RunProfile } from "../domain/character/CharacterOrigins";
 import { getTerrainBattleModifiers } from "../domain/world/WorldTerrain";
 
 const WarbandManager = lazy(() => import("./WarbandManager"));
+const RecruitmentScreen = lazy(() => import("./RecruitmentScreen"));
 const InventoryMarket = lazy(() => import("./InventoryMarket"));
 const QuestBoard = lazy(() => import("./QuestBoard"));
 const StrategicMap = lazy(() => import("./StrategicMap"));
@@ -27,18 +33,26 @@ const saveRepository = new IndexedDbSaveRepository();
 export function App() {
   const { t } = useTranslation();
   const [warbandOpen, setWarbandOpen] = useState(false);
+  const [recruitmentOpen, setRecruitmentOpen] = useState(false);
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [questOpen, setQuestOpen] = useState(false);
   const [characterOpen, setCharacterOpen] = useState(false);
   const [cityMenuOpen, setCityMenuOpen] = useState(false);
+  const [villageMenuOpen, setVillageMenuOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [startMenuOpen, setStartMenuOpen] = useState(true);
+  const [characterCreatorOpen, setCharacterCreatorOpen] = useState(false);
+  const [pauseMenuOpen, setPauseMenuOpen] = useState(false);
   const [storedSave, setStoredSave] = useState<SaveGame | null>(null);
   const [sessionStarted, setSessionStarted] = useState(false);
   const [ready, setReady] = useState(false);
   const [, refresh] = useState(0);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [runEnded, setRunEnded] = useState(false);
+  const autosaveQueue = useRef<Promise<void>>(Promise.resolve());
+  const lastAutosavedLocation = useRef<string | null>(null);
+  const previousMode = useRef(gameSession.mode);
   const nearbyLocation = gameSession.world.nearbyLocation;
   const nearbyCaravan = gameSession.nearbyCaravan;
   const selectedWarband = gameSession.interactableSelectedWarband;
@@ -89,10 +103,12 @@ export function App() {
       gameSession.subscribe(() => {
         if (gameSession.mode === "battle") {
           setWarbandOpen(false);
+          setRecruitmentOpen(false);
           setInventoryOpen(false);
           setQuestOpen(false);
           setCharacterOpen(false);
           setCityMenuOpen(false);
+          setVillageMenuOpen(false);
           setMapOpen(false);
         }
         refresh((value) => value + 1);
@@ -103,17 +119,23 @@ export function App() {
   useEffect(() => {
     gameSession.uiBlocked =
       startMenuOpen ||
+      characterCreatorOpen ||
+      pauseMenuOpen ||
       warbandOpen ||
+      recruitmentOpen ||
       inventoryOpen ||
       questOpen ||
       characterOpen ||
       cityMenuOpen ||
+      villageMenuOpen ||
       mapOpen;
     return () => {
       gameSession.uiBlocked = false;
     };
   }, [
     startMenuOpen,
+    characterCreatorOpen,
+    pauseMenuOpen,
     warbandOpen,
     inventoryOpen,
     questOpen,
@@ -130,31 +152,57 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    if (!sessionStarted) return;
+    const locationId = nearbyLocation?.id ?? null;
+    if (locationId && locationId !== lastAutosavedLocation.current) {
+      lastAutosavedLocation.current = locationId;
+      queueAutosave("Location entered");
+    }
+  }, [sessionStarted, nearbyLocation?.id]);
+
+  useEffect(() => {
+    if (!sessionStarted) {
+      previousMode.current = gameSession.mode;
+      return;
+    }
+    if (previousMode.current !== "battle" && gameSession.mode === "battle") {
+      queueAutosave("Battle checkpoint");
+    } else if (previousMode.current === "battle" && gameSession.mode === "world") {
+      queueAutosave("Battle survived");
+    }
+    previousMode.current = gameSession.mode;
+  }, [sessionStarted, gameSession.mode]);
+
+  useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {
       if (event.key !== "Escape" || gameSession.mode !== "world") return;
       if (
         warbandOpen ||
+        recruitmentOpen ||
         inventoryOpen ||
         questOpen ||
         characterOpen ||
         cityMenuOpen ||
+        villageMenuOpen ||
         mapOpen
       ) {
         return;
       }
       event.preventDefault();
       setSideMenuOpen(false);
-      setStartMenuOpen(true);
+      setPauseMenuOpen((open) => !open);
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
     warbandOpen,
+    recruitmentOpen,
     inventoryOpen,
     questOpen,
     characterOpen,
     cityMenuOpen,
+    villageMenuOpen,
     mapOpen,
   ]);
 
@@ -162,20 +210,38 @@ export function App() {
     if (!sessionStarted && storedSave) gameSession.restore(storedSave);
     setSessionStarted(true);
     setStartMenuOpen(false);
+    setPauseMenuOpen(false);
+    setRunEnded(false);
   }
 
-  async function startNewGame(): Promise<void> {
+  function openCharacterCreator(): void {
+    setStartMenuOpen(false);
+    setCharacterCreatorOpen(true);
+  }
+
+  async function startNewGame(profile: RunProfile): Promise<void> {
+    await autosaveQueue.current;
     await saveRepository.delete();
-    gameSession.reset();
+    gameSession.beginNewRun(profile);
     setStoredSave(null);
     setSessionStarted(true);
+    setRunEnded(false);
+    setCharacterCreatorOpen(false);
     setStartMenuOpen(false);
+    await writeAutosave();
   }
 
-  async function saveGame(): Promise<void> {
-    const saved = await gameSession.save(saveRepository);
-    setSaveMessage(t(saved ? "hud.saved" : "hud.saveBlocked"));
-    window.setTimeout(() => setSaveMessage(null), 2600);
+  async function writeAutosave(): Promise<void> {
+    await gameSession.save(saveRepository);
+    setStoredSave(await saveRepository.read());
+  }
+
+  function queueAutosave(label: string): void {
+    autosaveQueue.current = autosaveQueue.current.then(async () => {
+      await writeAutosave();
+      setSaveMessage(`${label} · Autosaved`);
+      window.setTimeout(() => setSaveMessage(null), 1800);
+    });
   }
 
   function healDeck(): void {
@@ -217,8 +283,10 @@ export function App() {
   ): ReturnType<typeof gameSession.claimVictoryReward> {
     const reward = gameSession.claimVictoryReward(selection);
     if (reward) {
-      const cardName = reward.cardId
-        ? t(getCardDefinition(reward.cardId).nameKey)
+      queueAutosave("Battle survived");
+      const capturedCardIds = reward.capturedCardIds ?? (reward.cardId ? [reward.cardId] : []);
+      const cardName = capturedCardIds.length
+        ? capturedCardIds.map((cardId) => t(getCardDefinition(cardId).nameKey)).join(", ")
         : null;
       const rewardParts = [t("battle.goldReward", { gold: reward.gold })];
       rewardParts.push(
@@ -266,6 +334,7 @@ export function App() {
     setServiceOpen: (open: boolean) => void,
   ): void {
     setCityMenuOpen(false);
+    setVillageMenuOpen(false);
     setServiceOpen(true);
   }
 
@@ -274,17 +343,40 @@ export function App() {
   ): void {
     setServiceOpen(false);
     if (gameSession.isInCity) setCityMenuOpen(true);
+    else if (gameSession.world.nearbyLocation?.type === "village") setVillageMenuOpen(true);
   }
 
-  function finishDefeat(): void {
-    void saveRepository.read().then((save) => {
-      if (save) gameSession.restore(save);
-      else gameSession.reset();
-    });
+  function helpCurrentVillage(): void {
+    if (!nearbyLocation || nearbyLocation.type !== "village") return;
+    const result = gameSession.helpVillage(nearbyLocation.id);
+    setSaveMessage(result === "success" ? "You helped the villagers. Relations, prosperity and militia improved." : result === "alreadyHelped" ? "You have already helped this village this week." : "Village help is unavailable.");
+  }
+
+  function waitInCurrentVillage(): void {
+    if (!nearbyLocation || nearbyLocation.type !== "village") return;
+    if (gameSession.waitInVillageUntilNight(nearbyLocation.id)) setSaveMessage("You wait in the village until 22:00.");
+  }
+
+  function raidCurrentVillage(): void {
+    if (!nearbyLocation || nearbyLocation.type !== "village") return;
+    if (!window.confirm("Plunder this village? You will fight its militia and lose 50 village relation and 20 faction reputation.")) return;
+    gameSession.startVillageRaid(nearbyLocation.id);
+  }
+
+  async function finishDefeat(): Promise<void> {
+    await autosaveQueue.current;
+    await saveRepository.delete();
+    setStoredSave(null);
+    setSessionStarted(false);
+    setRunEnded(true);
+    setPauseMenuOpen(false);
+    setStartMenuOpen(true);
+    gameSession.reset();
   }
 
   return (
     <main className="game-shell">
+      <TitleMusic active={startMenuOpen || characterCreatorOpen} />
       {ready ? (
         <GameCanvas key={gameSession.worldSeed} />
       ) : (
@@ -306,9 +398,32 @@ export function App() {
       {ready && startMenuOpen ? (
         <StartMenu
           canContinue={sessionStarted || storedSave !== null}
-          hasStoredSave={storedSave !== null}
+          activeRun={sessionStarted}
+          save={storedSave}
+          notice={runEnded ? "The run is over. The realm has claimed another wanderer." : undefined}
+          activeGold={gameSession.gold}
+          activeWarbandCount={gameSession.warband.length}
+          activeWarbandCapacity={gameSession.warbandCapacity}
           onContinue={continueGame}
-          onNewGame={startNewGame}
+          onNewRun={openCharacterCreator}
+        />
+      ) : null}
+      {ready && characterCreatorOpen ? (
+        <CharacterCreator
+          onCancel={() => {
+            setCharacterCreatorOpen(false);
+            setStartMenuOpen(true);
+          }}
+          onConfirm={startNewGame}
+        />
+      ) : null}
+      {ready && pauseMenuOpen && !startMenuOpen && !characterCreatorOpen ? (
+        <PauseMenu
+          onResume={() => setPauseMenuOpen(false)}
+          onMainMenu={() => {
+            setPauseMenuOpen(false);
+            setStartMenuOpen(true);
+          }}
         />
       ) : null}
       <header className="topbar">
@@ -530,6 +645,7 @@ export function App() {
             </button>
           </div>
         ) : null}
+        {nearbyLocation?.type === "village" && gameSession.mode === "world" ? <div className="location-actions"><button className="button primary" onClick={() => setVillageMenuOpen(true)}>Enter village</button></div> : null}
         {nearbyLocation &&
         nearbyLocation.type !== "city" &&
         gameSession.mode === "world" ? (
@@ -548,7 +664,7 @@ export function App() {
                 {t("locationActions.challengeCastle")}
               </button>
             ) : null}
-            {["village", "landmark", "wilds"].includes(nearbyLocation.type) ? (
+            {["landmark", "wilds"].includes(nearbyLocation.type) ? (
               <button
                 className="button ghost"
                 disabled={gameSession.completedLocationIds.has(nearbyLocation.id)}
@@ -571,11 +687,12 @@ export function App() {
             >
               {t("trade.openMarket")}
             </button>
+            {nearbyCaravan.kind === "villager" ? <button className="button danger" onClick={() => { if (window.confirm("Attack these villagers and seize their cargo? This damages village and faction relations.")) gameSession.attackNearbyVillager(); }}>Attack villagers</button> : null}
           </div>
         ) : null}
       </aside>
 
-      {ready && gameSession.mode === "world" && !startMenuOpen ? (
+      {ready && gameSession.mode === "world" && !startMenuOpen && !characterCreatorOpen && !pauseMenuOpen ? (
         <aside className="right-hud" aria-label={t("hud.menu")}>
           <WorldMapControls onOpenMap={() => setMapOpen(true)} />
           <div className="time-orb" title={`${t("hud.day", { day: gameSession.gameDay })} \u00b7 ${gameSession.gameTimeLabel}`}>
@@ -665,11 +782,10 @@ export function App() {
           city={nearbyLocation}
           message={saveMessage}
           onMarket={() => openCityService(setInventoryOpen)}
-          onWarband={() => openCityService(setWarbandOpen)}
+          onWarband={() => openCityService(setRecruitmentOpen)}
           onCharacter={() => openCityService(setCharacterOpen)}
           onQuests={() => openCityService(setQuestOpen)}
           onHeal={healDeck}
-          onSave={() => void saveGame()}
           onLeave={() => setCityMenuOpen(false)}
         />
       ) : null}
@@ -705,7 +821,17 @@ export function App() {
         <Suspense fallback={<div className="loading">{t("app.loading")}</div>}>
           <WarbandManager
             returnToCity={gameSession.isInCity}
+            onChange={() => queueAutosave("Warband updated")}
             onClose={() => closeCityService(setWarbandOpen)}
+          />
+        </Suspense>
+      ) : null}
+      {villageMenuOpen && nearbyLocation?.type === "village" ? <VillageMenu village={nearbyLocation} message={saveMessage} onMarket={() => openCityService(setInventoryOpen)} onRecruit={() => openCityService(setRecruitmentOpen)} onElder={() => undefined} onHelp={helpCurrentVillage} onWaitNight={waitInCurrentVillage} onRaid={raidCurrentVillage} onLeave={() => setVillageMenuOpen(false)} /> : null}
+      {recruitmentOpen ? (
+        <Suspense fallback={<div className="loading">{t("app.loading")}</div>}>
+          <RecruitmentScreen
+            onRecruit={() => queueAutosave("Recruit joined")}
+            onClose={() => closeCityService(setRecruitmentOpen)}
           />
         </Suspense>
       ) : null}
@@ -713,6 +839,7 @@ export function App() {
         <Suspense fallback={<div className="loading">{t("app.loading")}</div>}>
           <InventoryMarket
             returnToCity={gameSession.isInCity}
+            onTrade={() => queueAutosave("Trade completed")}
             onClose={() => closeCityService(setInventoryOpen)}
           />
         </Suspense>

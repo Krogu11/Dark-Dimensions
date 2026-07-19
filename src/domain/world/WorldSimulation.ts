@@ -553,6 +553,16 @@ export class WorldSimulation {
     warband: WorldWarbandState,
     factionState?: FactionState,
   ): void {
+    if (
+      warband.state === "chasing" &&
+      (warband.targetWarbandId || warband.targetEnemyId) &&
+      !this.getPursuitTarget(warband)
+    ) {
+      warband.state = "returning";
+      warband.targetWarbandId = null;
+      warband.targetEnemyId = null;
+      return;
+    }
     if (warband.hpRatio < 0.28) {
       warband.state = "returning";
       warband.targetWarbandId = null;

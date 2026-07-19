@@ -5,6 +5,7 @@ import {
   getTerrainAt,
   type TerrainType,
 } from "../world/WorldTerrain";
+import type { CityState } from "../world/Cities";
 
 export interface InventoryStack {
   itemId: string;
@@ -24,6 +25,9 @@ export interface MarketProfile {
   locationType: "city" | "village" | "caravan" | "villager";
   productionItemId: string;
   demandItemId: string | null;
+  demandItemIds: string[];
+  surplusItemIds: string[];
+  merchantGold: number;
   offers: MarketOffer[];
   recipeIds: string[];
 }
@@ -38,10 +42,14 @@ export interface CaravanState {
   progress: number;
   speed: number;
   inventory: InventoryStack[];
+  leaderCardId?: string;
+  leaderLevel?: number;
+  unitIds?: string[];
 }
 
 export interface EconomyState {
   markets: Record<string, InventoryStack[]>;
+  merchantGold: Record<string, number>;
   caravans: CaravanState[];
   villagers: CaravanState[];
   restockHours: number;
@@ -159,6 +167,9 @@ export function createEconomyState(
         destinationId: destination.id,
         progress,
         speed: 55 + (hashValue(`${seed}:caravan:${index}`) % 20),
+        leaderCardId: "wache",
+        leaderLevel: 2,
+        unitIds: ["village_levy", "militia_shieldbearer"],
         inventory: selectSeededItems(
           CITY_TRADE_IDS,
           seed,
@@ -185,6 +196,9 @@ export function createEconomyState(
       destinationId: city.id,
       progress,
       speed: 36 + (hashValue(`${seed}:villager:${index}`) % 14),
+      leaderCardId: "village_levy",
+      leaderLevel: 1,
+      unitIds: ["village_slinger"],
       inventory: [
         { itemId: productionItemId, quantity: 6 + (index % 5) },
         { itemId: "bread", quantity: 2 + (index % 2) },
@@ -192,7 +206,15 @@ export function createEconomyState(
     };
   });
 
-  return { markets, caravans, villagers, restockHours: 0 };
+  const merchantGold = Object.fromEntries(
+    settlements.map((location) => [
+      location.id,
+      location.type === "city"
+        ? 700 + (hashValue(`${seed}:${location.id}:gold`) % 900)
+        : 180 + (hashValue(`${seed}:${location.id}:gold`) % 260),
+    ]),
+  );
+  return { markets, merchantGold, caravans, villagers, restockHours: 0 };
 }
 
 export function normalizeEconomyState(
@@ -225,10 +247,14 @@ export function normalizeEconomyState(
   );
   return {
     markets,
+    merchantGold: { ...fresh.merchantGold, ...(state.merchantGold ?? {}) },
     caravans: hasCurrentRoutes
       ? state.caravans.map((caravan) => ({
           ...caravan,
           kind: "caravan" as const,
+          leaderCardId: caravan.leaderCardId ?? "wache",
+          leaderLevel: caravan.leaderLevel ?? 2,
+          unitIds: caravan.unitIds ?? ["village_levy", "militia_shieldbearer"],
           inventory: normalizeStacks(caravan.inventory),
         }))
       : fresh.caravans,
@@ -236,6 +262,9 @@ export function normalizeEconomyState(
       ? legacyState.villagers!.map((villager) => ({
           ...villager,
           kind: "villager" as const,
+          leaderCardId: villager.leaderCardId ?? "village_levy",
+          leaderLevel: villager.leaderLevel ?? 1,
+          unitIds: villager.unitIds ?? ["village_slinger"],
           inventory: normalizeStacks(villager.inventory),
         }))
       : fresh.villagers,
@@ -294,6 +323,7 @@ export function createMarketProfile(
   location: MapLocation,
   economy?: EconomyState,
   map?: WorldMapDefinition,
+  cityState?: CityState | null,
 ): MarketProfile | null {
   if (location.type !== "city" && location.type !== "village") return null;
   const locationHash = hashValue(`${seed}:${location.id}`);
@@ -308,6 +338,9 @@ export function createMarketProfile(
       locationType: "village",
       productionItemId: resourceId,
       demandItemId: null,
+      demandItemIds: [],
+      surplusItemIds: [resourceId],
+      merchantGold: economy?.merchantGold[location.id] ?? 250,
       offers: stock.map((entry) => ({
         itemId: entry.itemId,
         stock: entry.quantity,
@@ -330,19 +363,42 @@ export function createMarketProfile(
   const primaryRecipe = contentPack.tradeRecipes.find(
     (candidate) => candidate.id === recipes[0],
   );
+  const demandItemIds = selectSeededItems(
+    RESOURCE_IDS.filter((itemId) => itemId !== resourceId),
+    seed,
+    `demands:${location.id}`,
+    cityState && cityState.garrison >= 400 ? 4 : 3,
+  );
+  const surplusItemIds = selectSeededItems(
+    [resourceId, ...CITY_TRADE_IDS, primaryRecipe?.outputItemId ?? resourceId],
+    seed,
+    `surpluses:${location.id}`,
+    cityState && cityState.prosperity >= 65 ? 3 : 2,
+  );
   return {
     sourceId: location.id,
     locationId: location.id,
     locationType: "city",
     productionItemId: primaryRecipe?.outputItemId ?? resourceId,
-    demandItemId: getCityDemand(seed, location.id, map),
+    demandItemId: demandItemIds[0] ?? getCityDemand(seed, location.id, map),
+    demandItemIds,
+    surplusItemIds,
+    merchantGold:
+      economy?.merchantGold[location.id] ??
+      900 + (cityState?.prosperity ?? 50) * 12 + Math.floor((cityState?.population ?? 3000) / 20),
     offers: stock.map((entry, index) => ({
       itemId: entry.itemId,
       stock: entry.quantity,
       buyPrice: calculateBuyPrice(
         entry.itemId,
         entry.quantity,
-        1.08 + ((locationHash >>> (index + 2)) % 18) / 100,
+        (1.08 + ((locationHash >>> (index + 2)) % 18) / 100) *
+          (surplusItemIds[0] === entry.itemId
+            ? 0.75
+            : surplusItemIds.includes(entry.itemId)
+              ? 0.86
+              : 1) *
+          (cityState ? 1.06 - cityState.prosperity * 0.0012 : 1),
       ),
     })),
     recipeIds: recipes,
@@ -360,6 +416,9 @@ export function createCaravanMarketProfile(
     locationType: caravan.kind,
     productionItemId: caravan.inventory[0]?.itemId ?? "wood",
     demandItemId: null,
+    demandItemIds: [],
+    surplusItemIds: caravan.inventory.slice(0, 2).map((entry) => entry.itemId),
+    merchantGold: 420,
     offers: caravan.inventory.map((entry) => ({
       itemId: entry.itemId,
       stock: entry.quantity,
@@ -390,7 +449,8 @@ export function calculateSellPrice(
   if (!item) return 0;
   const locationHash = hashValue(`${seed}:${profile.sourceId}:${itemId}`);
   const localVariation = 0.9 + (locationHash % 21) / 100;
-  const demandMultiplier = profile.demandItemId === itemId ? 1.45 : 1;
+  const demandIndex = profile.demandItemIds.indexOf(itemId);
+  const demandMultiplier = demandIndex === 0 ? 1.5 : demandIndex === 1 ? 1.35 : demandIndex >= 0 ? 1.2 : 1;
   const marketMultiplier =
     profile.locationType === "city"
       ? 0.92

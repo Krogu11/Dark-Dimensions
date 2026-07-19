@@ -1,299 +1,170 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { enemiesById } from "../../content/content";
-import {
-  createCardInstances,
-  createPlayerCard,
-  getCardDefinition,
-} from "../cards/CardInstance";
+import { createCardInstances, createPlayerCard } from "../cards/CardInstance";
 import type { EnemyArchetype } from "../content/schemas";
-import { BattleSimulation } from "./BattleSimulation";
+import { BattleSimulation, createEnemyBattleDeck } from "./BattleSimulation";
 
-function createEnemy(deck: string[]): EnemyArchetype {
-  return {
-    id: "test_enemy",
-    nameKey: "enemy.test.name",
-    deck,
-    goldReward: 0,
-    threat: 1,
-    dropTable: [],
-    itemDropTable: [],
-  };
+function createEnemy(deck: string[], overrides: Partial<EnemyArchetype> = {}): EnemyArchetype {
+  return { id: "test_enemy", nameKey: "enemy.test.name", deck, goldReward: 0, threat: 1, dropTable: [], itemDropTable: [], ...overrides };
 }
 
 describe("BattleSimulation", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
+  afterEach(() => vi.restoreAllMocks());
+
+  it("keeps early encounters at tier 1 and scales composition with player progress", () => {
+    const wolves = enemiesById.get("hungry_wolves")!;
+    const early = createEnemyBattleDeck(wolves, { playerLevel: 1, warbandThreat: 1 });
+    const veteran = createEnemyBattleDeck(wolves, { playerLevel: 9, warbandThreat: 4 });
+    expect(early).toHaveLength(3);
+    expect(early.every((card) => card.cardId === "stray_wolf" || card.cardId === "riesenbat")).toBe(true);
+    expect(veteran.length).toBeGreaterThan(early.length);
+    expect(veteran.some((card) => card.cardId === "alpha_wolf" || card.cardId === "cave_bat" || card.cardId === "blood_bat")).toBe(true);
+    expect(veteran.every((card) => card.level >= 3)).toBe(true);
   });
 
-  it("randomizes the player's starting hand from the whole warband", () => {
+  it("keeps both leaders behind the unit formations", () => {
+    const hero = createPlayerCard();
+    const battle = new BattleSimulation(createCardInstances(["village_levy"]), createEnemy(["ork_rekrut"]), hero);
+    expect(battle.playerField).not.toContain(hero);
+    expect(battle.enemyField).not.toContain(battle.enemyLeader);
+    expect(battle.enemyLeader.cardId).toBe("ork_rekrut");
+  });
+
+  it("uses leadership-derived variable field slots", () => {
+    const battle = new BattleSimulation(createCardInstances(Array(7).fill("village_levy")), createEnemy(["ork_rekrut"]), createPlayerCard(), { heroAtk: 0, heroDef: 0, fieldSlots: 6 });
+    expect(battle.playerFieldSlots).toBe(6);
+    for (let index = 0; index < 3; index++) expect(battle.summon(battle.hand[0].uid)).toBe(true);
+    expect(battle.playerField).toHaveLength(3);
+  });
+
+  it("spends the shared tactical actions on summons, recalls, and draws", () => {
+    const battle = new BattleSimulation(createCardInstances(Array(7).fill("village_levy")), createEnemy(["ork_rekrut"]), createPlayerCard());
+    const first = battle.hand[0];
+    expect(battle.summon(first.uid)).toBe(true);
+    expect(battle.recall(first.uid)).toBe(true);
+    expect(battle.drawCard()).toBe(true);
+    expect(battle.actionsRemaining).toBe(0);
+  });
+
+  it("draws one free card at the end of a resolved round", () => {
+    const battle = new BattleSimulation(createCardInstances(Array(7).fill("wache")), createEnemy(["skelett"]), createPlayerCard());
+    battle.summon(battle.hand[0].uid);
+    const totalBefore = battle.hand.length;
+    battle.resolveRound();
+    expect(battle.hand.length).toBe(totalBefore + 1);
+    expect(battle.actionsRemaining).toBe(3);
+  });
+
+  it("sends only overkill damage through a unit to its leader", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
-    const cardIds = [
-      "village_levy",
-      "wache",
-      "riesenbat",
-      "ork_rekrut",
-      "kobold_jung",
-      "kobold_speer",
-    ];
-
-    const battle = new BattleSimulation(
-      createCardInstances(cardIds),
-      createEnemy(["village_levy"]),
-      createPlayerCard(),
-    );
-
-    expect(battle.hand.map((card) => card.cardId)).toEqual(cardIds.slice(1));
+    const battle = new BattleSimulation(createCardInstances(["cannon_golem"]), createEnemy(["village_levy", "village_levy"]), createPlayerCard());
+    battle.enemyField.splice(1);
+    battle.enemyField[0].currentHp = 1;
+    battle.summon(battle.hand[0].uid);
+    const leaderHp = battle.enemyLeader.currentHp;
+    battle.resolveRound();
+    expect(battle.enemyLeader.currentHp).toBeLessThan(leaderHp);
   });
 
-  it("randomizes the enemy starting hand before summoning", () => {
+  it("retargets later same-initiative attackers after their first target dies", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
-    const enemyCardIds = [
-      "village_levy",
-      "wache",
-      "riesenbat",
-      "ork_rekrut",
-      "kobold_jung",
-      "kobold_speer",
-    ];
-
     const battle = new BattleSimulation(
-      [],
-      createEnemy(enemyCardIds),
+      createCardInstances(["village_levy", "village_levy"]),
+      createEnemy(["dire_wolf", "dire_wolf", "dire_wolf"]),
       createPlayerCard(),
     );
-
-    expect(battle.enemyField.map((card) => card.cardId)).toEqual(
-      enemyCardIds.slice(1, 3),
-    );
-  });
-
-  it("uses one of three actions for a normal summon", () => {
-    const enemy = enemiesById.get("kobold_foragers")!;
-    const battle = new BattleSimulation(
-      createCardInstances(["kobold_jung", "kobold_speer"]),
-      enemy,
-      createPlayerCard(),
-    );
-
-    expect(battle.summon(battle.hand[0].uid)).toBe(true);
-    expect(battle.summonsRemaining).toBe(2);
-    expect(battle.playerField).toHaveLength(2);
-    expect(battle.animationEvents.at(-1)).toMatchObject({
-      type: "summon",
-      side: "player",
-    });
-  });
-
-  it("returns a summoned monster to hand for one action", () => {
-    const enemy = enemiesById.get("kobold_foragers")!;
-    const battle = new BattleSimulation(
-      createCardInstances(["village_levy"]),
-      enemy,
-      createPlayerCard(),
-    );
-    const recruit = battle.hand[0];
-    battle.summon(recruit.uid);
-
-    expect(battle.recall(recruit.uid)).toBe(true);
-    expect(battle.playerField).toHaveLength(1);
-    expect(battle.hand).toContain(recruit);
-    expect(battle.summonsRemaining).toBe(1);
-    expect(battle.animationEvents.at(-1)).toMatchObject({
-      type: "recall",
-      side: "player",
-    });
-  });
-
-  it("lets higher initiative units kill lower initiative attackers first", () => {
-    const battle = new BattleSimulation(
-      createCardInstances(["riesenbat"]),
-      createEnemy(["ork_rekrut"]),
-      createPlayerCard(),
-    );
-    const bat = battle.hand[0];
-    const enemy = battle.enemyField[0];
-    enemy.currentHp = 1;
-    const batHpBefore = bat.currentHp;
-    battle.summon(bat.uid);
+    const firstLevy = battle.hand[0];
+    const secondLevy = battle.hand[1];
+    battle.summon(firstLevy.uid);
+    battle.summon(secondLevy.uid);
 
     battle.resolveRound();
 
-    expect(battle.enemyField).not.toContain(enemy);
-    expect(bat.currentHp).toBe(batHpBefore);
-    expect(
-      battle.animationEvents.some(
-        (event) =>
-          event.type === "attack" && event.attackerUids.includes(enemy.uid),
-      ),
-    ).toBe(false);
+    expect(firstLevy.currentHp).toBe(0);
+    expect(secondLevy.currentHp).toBeLessThan(900);
   });
 
-  it("continues when the Wanderer falls but other player units hold the field", () => {
+  it("attacks the leader directly when its field is empty", () => {
+    const battle = new BattleSimulation(createCardInstances(["cannon_golem"]), createEnemy(["village_levy", "village_levy"]), createPlayerCard());
+    for (const enemy of battle.enemyField) enemy.currentHp = 0;
+    battle.summon(battle.hand[0].uid);
+    battle.commitLeaderAction("attack", battle.enemyLeader.uid);
+    const leaderHp = battle.enemyLeader.currentHp;
+    battle.resolveRound();
+    expect(battle.enemyLeader.currentHp).toBeLessThan(leaderHp);
+  });
+
+  it("loses immediately when the hero dies even with surviving units", () => {
     const hero = createPlayerCard();
-    const battle = new BattleSimulation(
-      createCardInstances(["village_levy"]),
-      createEnemy(["orc_ironhide"]),
-      hero,
-    );
+    const battle = new BattleSimulation(createCardInstances(["village_levy"]), createEnemy(["cannon_golem"]), hero);
     battle.summon(battle.hand[0].uid);
     hero.currentHp = 1;
-
     battle.resolveRound();
+    expect(battle.outcome).toBe("defeat");
+  });
 
-    expect(battle.playerField.some((card) => card.isHero)).toBe(false);
-    expect(battle.playerField.length).toBeGreaterThan(0);
+  it("does not lose while a living unit remains in hand or draw pile", () => {
+    const battle = new BattleSimulation(createCardInstances(["wache", "wache"]), createEnemy(["village_levy"]), createPlayerCard());
+    expect(battle.playerField).toHaveLength(0);
     expect(battle.outcome).toBe("active");
   });
 
-  it("resolves matching initiative attacks simultaneously", () => {
-    const battle = new BattleSimulation(
-      createCardInstances(["village_levy"]),
-      createEnemy(["orc_tracker"]),
-      createPlayerCard(),
-    );
-    const levy = battle.hand[0];
-    const enemy = battle.enemyField[0];
-    enemy.currentHp = 1;
-    const heroHpBefore = battle.hero.currentHp;
-    battle.summon(levy.uid);
-
-    battle.resolveRound();
-
-    expect(battle.enemyField).not.toContain(enemy);
-    expect(battle.hero.currentHp).toBeLessThan(heroHpBefore);
-    expect(
-      battle.animationEvents.some(
-        (event) => event.type === "attack" && event.simultaneous,
-      ),
-    ).toBe(true);
-  });
-
-  it("records destruction animation events after lethal attacks", () => {
-    const enemy = enemiesById.get("road_reavers")!;
-    const hero = createPlayerCard();
-    const battle = new BattleSimulation([], enemy, hero);
-    const doomedEnemy = battle.enemyField[0];
-    doomedEnemy.currentHp = 1;
-    const heroHpBefore = hero.currentHp;
-
-    battle.resolveRound();
-
-    expect(battle.enemyField).not.toContain(doomedEnemy);
-    expect(hero.currentHp).toBeLessThan(heroHpBefore);
-    expect(
-      battle.animationEvents.some(
-        (event) =>
-          event.type === "destroyed" && event.cardUid === doomedEnemy.uid,
-      ),
-    ).toBe(true);
-  });
-
-  it("persists combat damage on deployed player cards", () => {
-    const deck = createCardInstances(["wache"]);
-    const enemy = enemiesById.get("road_reavers")!;
-    const battle = new BattleSimulation(deck, enemy, createPlayerCard());
-    const guard = battle.hand[0];
-    const hpBeforeCombat = guard.currentHp;
-    battle.summon(guard.uid);
-
-    battle.resolveRound();
-
-    expect(guard.currentHp).toBeLessThan(hpBeforeCombat);
-  });
-
-  it("uses DEF as passive damage reduction", () => {
-    const enemy = enemiesById.get("road_reavers")!;
-    const lowDefense = createCardInstances(["village_levy"])[0];
-    const highDefense = createCardInstances(["wache"])[0];
-    const lowDefenseBattle = new BattleSimulation(
-      [lowDefense],
-      enemy,
-      createPlayerCard(),
-    );
-    const highDefenseBattle = new BattleSimulation(
-      [highDefense],
-      enemy,
-      createPlayerCard(),
-    );
-    lowDefenseBattle.summon(lowDefense.uid);
-    highDefenseBattle.summon(highDefense.uid);
-
-    lowDefenseBattle.resolveRound();
-    highDefenseBattle.resolveRound();
-
-    const lowDefenseDamage = 900 - lowDefense.currentHp;
-    const highDefenseDamage = 1850 - highDefense.currentHp;
-    expect(highDefenseDamage).toBeLessThan(lowDefenseDamage);
-  });
-
-  it("fills the enemy formation only after resolving current attacks", () => {
-    const enemy = enemiesById.get("kobold_foragers")!;
-    const battle = new BattleSimulation([], enemy, createPlayerCard());
-    const nextEnemy = battle.enemyHand[0];
-
-    expect(battle.enemyField).toHaveLength(2);
-    battle.resolveRound();
-
-    expect(battle.enemyField.length).toBeGreaterThanOrEqual(2);
-    expect(battle.enemyField).toContain(nextEnemy);
-    expect(nextEnemy.currentHp).toBe(getCardDefinition(nextEnemy.cardId).maxHp);
-    expect(
-      battle.enemyField.length + battle.enemyHand.length + battle.enemyDrawPile.length,
-    ).toBeLessThanOrEqual(enemy.deck.length);
-  });
-
-  it("does not allow newly summoned enemies to attack or take damage in the same round", () => {
-    const enemy = createEnemy(["kobold_jung", "kobold_trapper", "kobold_speer"]);
-    const battle = new BattleSimulation(
-      createCardInstances(["village_levy", "village_levy", "village_levy"]),
-      enemy,
-      createPlayerCard(),
-    );
-    const nextEnemy = battle.enemyHand[0];
-    for (const card of [...battle.hand]) battle.summon(card.uid);
-
-    battle.resolveRound();
-
-    expect(battle.enemyField).toContain(nextEnemy);
-    expect(nextEnemy.currentHp).toBe(getCardDefinition(nextEnemy.cardId).maxHp);
-    expect(
-      battle.animationEvents.some(
-        (event) =>
-          event.type === "attack" &&
-          (event.attackerUids.includes(nextEnemy.uid) ||
-            event.defenderUids.includes(nextEnemy.uid)),
-      ),
-    ).toBe(false);
-  });
-
-  it("rounds combat damage to clean tens", () => {
-    const battle = new BattleSimulation(
-      createCardInstances(["village_levy"]),
-      createEnemy(["kobold_trapper"]),
-      createPlayerCard(),
-    );
+  it("wins when the enemy leader dies", () => {
+    const battle = new BattleSimulation(createCardInstances(["cannon_golem"]), createEnemy(["village_levy", "village_levy"]), createPlayerCard());
+    battle.enemyField.splice(0);
+    battle.enemyLeader.currentHp = 1;
     battle.summon(battle.hand[0].uid);
-
     battle.resolveRound();
-
-    for (const stats of battle.unitStats.values()) {
-      expect(stats.damageDealt % 10).toBe(0);
-      expect(stats.hpLost % 10).toBe(0);
-    }
+    expect(battle.outcome).toBe("victory");
   });
 
-  it("rolls precise item tables independently from captured cards", () => {
+  it("spends a tactical action to commit one level-gated leader command", () => {
+    const hero = createPlayerCard();
+    hero.level = 3;
+    const battle = new BattleSimulation(createCardInstances(["village_levy"]), createEnemy(["orc_ironhide"]), hero);
+    battle.summon(battle.hand[0].uid);
+    const guardedUid = battle.playerField[0].uid;
+    expect(battle.commitLeaderAction("guard")).toBe(true);
+    expect(battle.actionsRemaining).toBe(1);
+    expect(battle.commitLeaderAction("attack")).toBe(false);
+    battle.resolveRound();
+    expect(battle.animationEvents).toContainEqual(expect.objectContaining({ type: "leaderAction", side: "player", actionId: "guard" }));
+    expect(battle.animationEvents).toContainEqual(
+      expect.objectContaining({
+        type: "leaderAction",
+        affectedUids: expect.arrayContaining([guardedUid]),
+      }),
+    );
+  });
+
+  it("requires Strategic Attack to target a living enemy unit before the leader", () => {
+    const battle = new BattleSimulation(createCardInstances(["village_levy"]), createEnemy(["wache", "wache"]), createPlayerCard());
+    expect(battle.commitLeaderAction("attack")).toBe(false);
+    expect(battle.commitLeaderAction("attack", battle.enemyLeader.uid)).toBe(false);
+    const target = battle.enemyField[1];
+    expect(battle.commitLeaderAction("attack", target.uid)).toBe(true);
+    expect(battle.selectedLeaderTargetUid).toBe(target.uid);
+    expect(battle.actionsRemaining).toBe(2);
+  });
+
+  it("unlocks and improves racial leader commands through leader levels", () => {
+    const novice = createPlayerCard();
+    const veteran = createPlayerCard();
+    veteran.level = 5;
+    const noviceBattle = new BattleSimulation([], createEnemy(["village_levy"]), novice);
+    const veteranBattle = new BattleSimulation([], createEnemy(["village_levy"]), veteran);
+    expect(noviceBattle.availableLeaderActions.map((command) => command.id)).toEqual(["attack", "rally"]);
+    expect(veteranBattle.availableLeaderActions.map((command) => command.id)).toEqual(["attack", "rally", "guard", "restore"]);
+  });
+
+  it("rewards gold, minimum loot, and prisoners from actually defeated units", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
-    const enemy = enemiesById.get("road_reavers")!;
-    const battle = new BattleSimulation([], enemy, createPlayerCard());
-
+    const battle = new BattleSimulation([], enemiesById.get("road_reavers")!, createPlayerCard());
+    battle.defeatedEnemyCardIds.push("orc_youngblood", "giant_rat", "orc_youngblood");
     const reward = battle.rollReward();
-
-    expect(reward.cardId).toBe("ork_rekrut");
-    expect(reward.items).toEqual([
-      { itemId: "iron", quantity: 1 },
-      { itemId: "rusty_sword", quantity: 1 },
-      { itemId: "healing_poultice", quantity: 1 },
-    ]);
+    expect(reward.cardId).toBe("orc_youngblood");
+    expect(reward.capturedCardIds).toHaveLength(2);
+    expect(reward.gold).toBeGreaterThanOrEqual(34);
+    expect(reward.items.reduce((sum, item) => sum + item.quantity, 0)).toBeGreaterThanOrEqual(2);
   });
 });

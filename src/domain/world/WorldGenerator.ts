@@ -12,6 +12,7 @@ import type {
 } from "../content/schemas";
 import { assignSettlementFactions, type FactionId } from "../quests/Factions";
 import { distanceToSegment, isPositionNearPath } from "./WorldTerrain";
+import { generateUniqueCityName } from "./CityNames";
 
 const LOCATION_NAMES = {
   city: [
@@ -218,6 +219,7 @@ export function generateWorldMap(
   enemyArchetypes: EnemyArchetype[],
 ): WorldMapDefinition {
   const random = createRandom(seed);
+  const cityNameRandom = createRandom(seed ^ 0x43a17f2b);
   const width = randomInteger(random, 15000, 17800);
   const height = randomInteger(random, 10200, 12600);
   const terrainRandom = createRandom(seed ^ 0x5f3759df);
@@ -247,8 +249,9 @@ export function generateWorldMap(
       avoidMountains: true,
     },
   );
+  const usedCityNames = new Set<string>();
   const locations: MapLocation[] = [
-    createLocation("city", 0, start.x, start.y, random),
+    createLocation("city", 0, start.x, start.y, random, undefined, undefined, generateUniqueCityName(cityNameRandom, usedCityNames)),
   ];
 
   for (let index = 1; index < LOCATION_COUNTS.city; index += 1) {
@@ -263,7 +266,7 @@ export function generateWorldMap(
       1450,
       { avoidMountains: true },
     );
-    locations.push(createLocation("city", index, position.x, position.y, random));
+    locations.push(createLocation("city", index, position.x, position.y, random, undefined, undefined, generateUniqueCityName(cityNameRandom, usedCityNames)));
   }
 
   const cities = locations.filter((location) => location.type === "city");
@@ -1512,6 +1515,7 @@ function createLocation(
   random: () => number,
   spawnProfile?: MapLocation["spawnProfile"],
   forcedName?: (typeof LOCATION_NAMES)[GeneratedLocationType][number],
+  generatedName?: string,
 ): MapLocation {
   const names = LOCATION_NAMES[type];
   const name =
@@ -1520,7 +1524,7 @@ function createLocation(
   return {
     id: `${type}_${index}`,
     type,
-    nameKey: `generatedLocation.name.${name}`,
+    nameKey: generatedName ?? `generatedLocation.name.${name}`,
     descriptionKey: `generatedLocation.description.${type}`,
     x,
     y,

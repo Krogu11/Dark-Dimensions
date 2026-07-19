@@ -3,7 +3,7 @@
     "title": "Dark Dimensions",
     "subtitle": "Where every road remembers your failures",
     "world": "World",
-    "loading": "Loading the last city save...",
+    "loading": "Loading the Ironman autosave...",
     "desktopOnlyEyebrow": "Desktop campaign",
     "desktopOnlyTitle": "A larger screen is required",
     "desktopOnlyText": "Dark Dimensions is designed for mouse and keyboard. Open it on a desktop or laptop to continue your campaign."
@@ -15,8 +15,8 @@
     "confirmNewGame": "Erase Save & Begin",
     "cancel": "Keep current campaign",
     "generating": "Generating world...",
-    "warning": "This permanently abandons the current campaign, erases its city save, and starts a new world.",
-    "saveFound": "A city save is ready to continue.",
+    "warning": "This permanently abandons the current run, erases its autosave, and starts a new world.",
+    "saveFound": "An Ironman autosave is ready to continue.",
     "activeCampaign": "Your current campaign is paused.",
     "noSave": "No saved campaign found. Begin a new journey.",
     "open": "Menu"
@@ -26,7 +26,7 @@
     "unknown": "The wilds",
     "save": "Save in city",
     "saved": "Journey saved",
-    "saveBlocked": "You can only save within a city.",
+    "saveBlocked": "Progress is saved automatically in Ironman mode.",
     "controls": "WASD move · Arrow keys pan camera · Space recenters",
     "danger": "Danger",
     "safe": "Sanctuary",
@@ -320,7 +320,7 @@
     "dismissed": "{{unit}} left your warband.",
     "level": "Level {{level}}",
     "xp": "{{xp}} / {{needed}} XP",
-    "heroNote": "Your hero always enters battle and never occupies a Warband slot."
+    "heroNote": "Your hero leads from behind the formation and never occupies a unit slot."
   },
   "character": {
     "open": "Character",
@@ -411,10 +411,102 @@
   "battle": {
     "title": "Card Battle",
     "turn": "Turn {{turn}}",
-    "summons": "{{count}} summons remaining",
+    "summons": "{{count}} tactical actions remaining",
     "hand": "Hand",
     "yourField": "Your field",
     "enemyField": "Enemy field",
+    "enemyLeader": "Enemy leader",
+    "yourLeader": "Your leader",
+    "leaderAction": "Leader action",
+    "leaderCommands": "Leader commands",
+    "commandCost": "1 action",
+    "commandCommitted": "Committed",
+    "commandChooseTarget": "Choose target",
+    "commandEnemyTargetPrompt": "Strategic Attack: choose an enemy unit. The leader is targetable only when the field is empty.",
+    "commandAllyTargetPrompt": "Choose a wounded allied unit or the leader.",
+    "commandLockedSlot": "Locked slot",
+    "commandLocked": "Locked",
+    "commandLevel": "Level {{level}}",
+    "commandUnlock": "Unlocks at leader level {{level}}",
+    "commandRaces": {
+      "hero": "Leadership",
+      "human": "Human doctrine",
+      "orc": "Orc warcraft",
+      "kobold": "Kobold tricks",
+      "undead": "Death rites",
+      "machine": "Machine protocols",
+      "elemental": "Elemental power",
+      "beast": "Pack instincts"
+    },
+    "commandEffects": {
+      "attack": "Leader attacks",
+      "attackAll": "+{{value}} ATK",
+      "defenseAll": "+{{value}} DEF",
+      "healLowest": "Heal {{value}} HP",
+      "shieldAll": "+{{value}} shield"
+    },
+    "frontLine": "Front line",
+    "portraitReserved": "Portrait",
+    "terrainEffect": "Field effect: ATK {{attack}} · DEF {{defense}}",
+    "unitDetails": "Unit details",
+    "cardEffect": "Battle effect",
+    "drawCard": "Draw card",
+    "leaderActions": {
+      "attack": "Strategic attack",
+      "rally": "Rally (+ATK)",
+      "guard": "Hold the line (+DEF)",
+      "restore": "Field aid",
+      "humanBulwark": "Bulwark",
+      "humanFieldAid": "Field aid",
+      "humanSanctuary": "Sanctuary",
+      "orcWarcry": "Warcry",
+      "orcBloodrush": "Bloodrush",
+      "koboldMob": "Mob order",
+      "koboldTrap": "Lay traps",
+      "undeadDrain": "Soul drain",
+      "undeadDeathWard": "Death ward",
+      "machineFortify": "Fortify",
+      "machineOverclock": "Overclock",
+      "elementalSurge": "Elemental surge",
+      "elementalWard": "Elemental ward",
+      "beastHunt": "Call the hunt",
+      "beastPackGuard": "Pack guard"
+    },
+    "raceIdentity": {
+      "hero": "A leader whose commands shape the formation and decide when to strike.",
+      "human": "Disciplined troops focused on defense, healing, and protecting allies.",
+      "orc": "Aggressive warriors who grow more dangerous through rage and overwhelming force.",
+      "kobold": "Numerous tricksters who become stronger in packs and disrupt enemy plans.",
+      "undead": "Relentless dead who drain life, exploit casualties, and return from defeat.",
+      "machine": "Armored constructs built around shields, repair, and resistance.",
+      "elemental": "Unstable beings that spread direct damage and battlefield conditions.",
+      "beast": "Fast hunters that focus wounded prey and gain strength from the pack."
+    },
+    "effects": {
+      "none": "No special battle effect.",
+      "heal_lowest_300": "On summon: heal the most wounded ally by 300 HP.",
+      "burn_weakest_300": "On summon: deal 300 damage to the weakest enemy.",
+      "shield_self_400": "On summon: gain a 400-point shield.",
+      "rally_all_150": "On summon: all allies gain 150 ATK this round.",
+      "human_guard_all_180": "On summon: all allies gain 180 DEF this round.",
+      "orc_rage_self_250": "On summon: this unit gains 250 ATK this round.",
+      "kobold_pack_100": "On summon: gain 100 ATK for every allied Kobold.",
+      "undead_drain_200": "On summon: drain up to 200 HP from the weakest enemy.",
+      "beast_pack_120": "On summon: allied Beasts gain 120 ATK this round.",
+      "human_first_aid_180": "On summon: heal the most wounded ally by 180 HP.",
+      "human_brace_160": "On summon: all allies gain 160 DEF this round.",
+      "human_volley_120": "On summon: deal 120 damage to the weakest enemy.",
+      "orc_bloodrage_180": "On summon: this unit gains 180 ATK this round.",
+      "orc_overrun_160": "On summon: deal 160 damage to the weakest enemy.",
+      "kobold_trap_140": "On summon: the strongest enemy loses 140 ATK this round.",
+      "undead_reanimate_30": "On summon: gain a shield equal to 30% of maximum HP.",
+      "machine_repair_180": "On summon: repair the most damaged ally by 180 HP.",
+      "machine_armor_all_140": "On summon: all allies gain 140 DEF this round.",
+      "elemental_frost_140": "On summon: the strongest enemy loses 140 ATK this round.",
+      "elemental_chain_160": "On summon: deal 160 damage to every enemy unit.",
+      "beast_first_strike_140": "On summon: deal 140 damage to the weakest enemy.",
+      "beast_hunt_160": "On summon: gain 160 ATK if an enemy is wounded."
+    },
     "summon": "Summon",
     "recall": "Return to hand",
     "resolveRound": "Resolve round",
@@ -428,10 +520,12 @@
       "destroyed": "{{card}} is destroyed."
     },
     "fieldFull": "Your field is full.",
+    "handFull": "Your hand is full.",
+    "drawPileEmpty": "Your draw pile is empty.",
     "victory": "Victory",
     "defeat": "Defeat",
     "victoryText": "The enemy warband breaks and scatters.",
-    "defeatText": "Your surviving memory returns to the last city save.",
+    "defeatText": "Death is final. This Ironman run and its autosave will be erased.",
     "aftermathEyebrow": "Battle Report",
     "yourWarbandReport": "Your Warband",
     "afterReportHint": "Review losses and performance, then choose the spoils you actually want to carry.",
@@ -473,7 +567,7 @@
     "dismiss": "Dismiss",
     "dismissUnit": "Dismiss {{unit}}",
     "continue": "Return to world",
-    "retreat": "Return to last save",
+    "retreat": "End Run",
     "goldReward": "+{{gold}} gold",
     "cardReward": "Captured card: {{card}}",
     "prisonerReward": "Prisoner taken: {{card}}",
@@ -569,16 +663,36 @@
     "invalid": "That action is not available here.",
     "notEnoughGold": "Not enough gold.",
     "notEnoughItems": "Required goods are missing.",
+    "merchantCannotAfford": "The merchant cannot afford that quantity.",
     "tooHeavy": "Your packs are too heavy.",
     "noEffect": "No surviving unit needs treatment.",
     "lootAlmanac": "Loot almanac — exact drop chances",
     "cardChance": "{{name}} card · {{chance}}%",
-    "itemChance": "{{name}} ×{{minimum}}–{{maximum}} · {{chance}}%"
+    "itemChance": "{{name}} ×{{minimum}}–{{maximum}} · {{chance}}%",
+    "merchantFunds": "Merchant funds",
+    "inDemand": "In demand",
+    "localSurplus": "Local surplus",
+    "weeklyNeeds": "Weekly pay {{wages}}g",
+    "offers": "offers",
+    "stacks": "stacks",
+    "buying": "Buying from merchant",
+    "selling": "Selling to merchant",
+    "quantity": "Quantity",
+    "max": "Max",
+    "buyNow": "Buy goods",
+    "sellNow": "Sell goods",
+    "selectPrompt": "Select an item from either side to prepare a trade."
   },
   "faction": {
-    "ember_crown": { "name": "The Ember Crown" },
-    "gloam_compact": { "name": "The Gloam Compact" },
-    "iron_concord": { "name": "The Iron Concord" }
+    "ember_crown": {
+      "name": "The Ember Crown"
+    },
+    "gloam_compact": {
+      "name": "The Gloam Compact"
+    },
+    "iron_concord": {
+      "name": "The Iron Concord"
+    }
   },
   "quests": {
     "eyebrow": "Contracts & Allegiances",
@@ -618,48 +732,174 @@
     }
   },
   "item": {
-    "wood": { "name": "Wood", "description": "Standard timber used for tools, buildings, and fuel." },
-    "iron": { "name": "Iron", "description": "Common metal demanded by smiths and garrisons." },
-    "copper": { "name": "Copper", "description": "Useful metal traded to workshops and minters." },
-    "silver": { "name": "Silver", "description": "Valuable metal carried under armed guard." },
-    "goldOre": { "name": "Gold", "description": "Rare raw gold sold at exceptional prices." },
-    "coal": { "name": "Coal", "description": "Fuel for city forges, kilns, and winter stores." },
-    "stone": { "name": "Stone", "description": "Heavy building material needed by towns and castles." },
-    "wheat": { "name": "Wheat", "description": "Basic grain milled into flour." },
-    "grapes": { "name": "Grapes", "description": "Fresh vineyard produce pressed into wine." },
-    "sheep": { "name": "Sheep", "description": "Livestock raised for wool and meat." },
-    "cattle": { "name": "Cattle", "description": "Large livestock supplying meat, leather, and milk." },
-    "pigs": { "name": "Pigs", "description": "Village livestock commonly sold for meat." },
-    "milk": { "name": "Milk", "description": "Fresh dairy produce processed into cheese." },
-    "fish": { "name": "Fish", "description": "Fresh catch sold by river and coastal villages." },
-    "clay": { "name": "Clay", "description": "Raw clay fired into practical pottery." },
-    "herbs": { "name": "Herbs", "description": "Common medicinal plants used by healers." },
-    "flour": { "name": "Flour", "description": "Milled wheat ready for city bakeries." },
-    "bread": { "name": "Bread", "description": "Durable staple food and the basis of travel rations." },
-    "wine": { "name": "Wine", "description": "Processed luxury drink traded between cities." },
-    "wool": { "name": "Wool", "description": "Clean fleece supplied to cloth workers." },
-    "meat": { "name": "Meat", "description": "Preserved cuts sold to settlements and armies." },
-    "driedMeat": { "name": "Dried Meat", "description": "Long-lasting food prepared for armies and distant travel." },
-    "cheese": { "name": "Cheese", "description": "Long-lasting dairy product with strong trade value." },
-    "leather": { "name": "Leather", "description": "Tanned material needed by armorers and craftsmen." },
-    "pottery": { "name": "Pottery", "description": "Fired household goods traded in every settlement." },
-    "travelRations": { "name": "Travel Rations", "description": "Food consumed by the hero and Warband at the start of each new day." },
-    "healingPoultice": { "name": "Healing Poultice", "description": "Consumable: restores 300 HP to the most wounded unit." },
-    "woodenClub": { "name": "Wooden Club", "description": "Right hand weapon: a crude starter club with modest base damage." },
-    "rustySword": { "name": "Rusty Sword", "description": "Right hand weapon: cheap iron, better than a club if it holds together." },
-    "militiaSpear": { "name": "Militia Spear", "description": "Right hand weapon: simple reach and reliable piercing damage." },
-    "huntingBow": { "name": "Hunting Bow", "description": "Right hand weapon: a light bow adapted from village hunters." },
-    "ironMace": { "name": "Iron Mace", "description": "Right hand weapon: heavy blunt force favored against armor." },
-    "steelSword": { "name": "Steel Sword", "description": "Right hand weapon: a proper battlefield blade with strong damage." },
-    "warAxe": { "name": "War Axe", "description": "Right hand weapon: brutal chopping power, heavy but decisive." },
-    "knightlyLongsword": { "name": "Knightly Longsword", "description": "Right hand weapon: expensive noble steel with excellent damage." },
-    "obsidianBlade": { "name": "Obsidian Blade", "description": "Right hand weapon: a rare dark blade dropped only by terrifying foes." },
-    "simpleShield": { "name": "Simple Shield", "description": "Left hand shield: basic protection for desperate roads." },
-    "kiteShield": { "name": "Kite Shield", "description": "Left hand shield: a sturdy soldier's shield with strong DEF." },
-    "towerShield": { "name": "Tower Shield", "description": "Left hand shield: very heavy, very protective." },
-    "runedAegis": { "name": "Runed Aegis", "description": "Left hand shield: a rare warded shield with exceptional DEF." },
-    "ironTalisman": { "name": "Iron Talisman", "description": "Hero equipment: grants +100 ATK." },
-    "wardingCharm": { "name": "Warding Charm", "description": "Hero equipment: grants +120 DEF." }
+    "wood": {
+      "name": "Wood",
+      "description": "Standard timber used for tools, buildings, and fuel."
+    },
+    "iron": {
+      "name": "Iron",
+      "description": "Common metal demanded by smiths and garrisons."
+    },
+    "copper": {
+      "name": "Copper",
+      "description": "Useful metal traded to workshops and minters."
+    },
+    "silver": {
+      "name": "Silver",
+      "description": "Valuable metal carried under armed guard."
+    },
+    "goldOre": {
+      "name": "Gold",
+      "description": "Rare raw gold sold at exceptional prices."
+    },
+    "coal": {
+      "name": "Coal",
+      "description": "Fuel for city forges, kilns, and winter stores."
+    },
+    "stone": {
+      "name": "Stone",
+      "description": "Heavy building material needed by towns and castles."
+    },
+    "wheat": {
+      "name": "Wheat",
+      "description": "Basic grain milled into flour."
+    },
+    "grapes": {
+      "name": "Grapes",
+      "description": "Fresh vineyard produce pressed into wine."
+    },
+    "sheep": {
+      "name": "Sheep",
+      "description": "Livestock raised for wool and meat."
+    },
+    "cattle": {
+      "name": "Cattle",
+      "description": "Large livestock supplying meat, leather, and milk."
+    },
+    "pigs": {
+      "name": "Pigs",
+      "description": "Village livestock commonly sold for meat."
+    },
+    "milk": {
+      "name": "Milk",
+      "description": "Fresh dairy produce processed into cheese."
+    },
+    "fish": {
+      "name": "Fish",
+      "description": "Fresh catch sold by river and coastal villages."
+    },
+    "clay": {
+      "name": "Clay",
+      "description": "Raw clay fired into practical pottery."
+    },
+    "herbs": {
+      "name": "Herbs",
+      "description": "Common medicinal plants used by healers."
+    },
+    "flour": {
+      "name": "Flour",
+      "description": "Milled wheat ready for city bakeries."
+    },
+    "bread": {
+      "name": "Bread",
+      "description": "Durable staple food and the basis of travel rations."
+    },
+    "wine": {
+      "name": "Wine",
+      "description": "Processed luxury drink traded between cities."
+    },
+    "wool": {
+      "name": "Wool",
+      "description": "Clean fleece supplied to cloth workers."
+    },
+    "meat": {
+      "name": "Meat",
+      "description": "Preserved cuts sold to settlements and armies."
+    },
+    "driedMeat": {
+      "name": "Dried Meat",
+      "description": "Long-lasting food prepared for armies and distant travel."
+    },
+    "cheese": {
+      "name": "Cheese",
+      "description": "Long-lasting dairy product with strong trade value."
+    },
+    "leather": {
+      "name": "Leather",
+      "description": "Tanned material needed by armorers and craftsmen."
+    },
+    "pottery": {
+      "name": "Pottery",
+      "description": "Fired household goods traded in every settlement."
+    },
+    "travelRations": {
+      "name": "Travel Rations",
+      "description": "Food consumed by the hero and Warband at the start of each new day."
+    },
+    "healingPoultice": {
+      "name": "Healing Poultice",
+      "description": "Consumable: restores 300 HP to the most wounded unit."
+    },
+    "woodenClub": {
+      "name": "Wooden Club",
+      "description": "Right hand weapon: a crude starter club with modest base damage."
+    },
+    "rustySword": {
+      "name": "Rusty Sword",
+      "description": "Right hand weapon: cheap iron, better than a club if it holds together."
+    },
+    "militiaSpear": {
+      "name": "Militia Spear",
+      "description": "Right hand weapon: simple reach and reliable piercing damage."
+    },
+    "huntingBow": {
+      "name": "Hunting Bow",
+      "description": "Right hand weapon: a light bow adapted from village hunters."
+    },
+    "ironMace": {
+      "name": "Iron Mace",
+      "description": "Right hand weapon: heavy blunt force favored against armor."
+    },
+    "steelSword": {
+      "name": "Steel Sword",
+      "description": "Right hand weapon: a proper battlefield blade with strong damage."
+    },
+    "warAxe": {
+      "name": "War Axe",
+      "description": "Right hand weapon: brutal chopping power, heavy but decisive."
+    },
+    "knightlyLongsword": {
+      "name": "Knightly Longsword",
+      "description": "Right hand weapon: expensive noble steel with excellent damage."
+    },
+    "obsidianBlade": {
+      "name": "Obsidian Blade",
+      "description": "Right hand weapon: a rare dark blade dropped only by terrifying foes."
+    },
+    "simpleShield": {
+      "name": "Simple Shield",
+      "description": "Left hand shield: basic protection for desperate roads."
+    },
+    "kiteShield": {
+      "name": "Kite Shield",
+      "description": "Left hand shield: a sturdy soldier's shield with strong DEF."
+    },
+    "towerShield": {
+      "name": "Tower Shield",
+      "description": "Left hand shield: very heavy, very protective."
+    },
+    "runedAegis": {
+      "name": "Runed Aegis",
+      "description": "Left hand shield: a rare warded shield with exceptional DEF."
+    },
+    "ironTalisman": {
+      "name": "Iron Talisman",
+      "description": "Hero equipment: grants +100 ATK."
+    },
+    "wardingCharm": {
+      "name": "Warding Charm",
+      "description": "Hero equipment: grants +120 DEF."
+    }
   },
   "generatedLocation": {
     "name": {
@@ -719,7 +959,7 @@
       "coldBarrow": "Cold Barrow"
     },
     "description": {
-      "city": "A fortified city where the journey can be saved and wounded troops restored.",
+      "city": "A fortified refuge of trade, soldiers, and crowded streets. Progress is recorded automatically at its gates.",
       "village": "A small settlement clinging to life beyond the protection of high walls.",
       "castle": "A grim stronghold guarding old roads and older grudges.",
       "dungeon": "A hostile depth promising rare enemies, cards, and an early grave.",
@@ -750,100 +990,365 @@
     }
   },
   "card": {
-    "playerWanderer": { "name": "The Wanderer" },
-    "villageLevy": { "name": "Village Levy" },
-    "levySpearman": { "name": "Levy Spearman" },
-    "noviceArcher": { "name": "Novice Archer" },
-    "shrineAcolyte": { "name": "Shrine Acolyte" },
-    "militiaShieldbearer": { "name": "Militia Shieldbearer" },
-    "villageSlinger": { "name": "Village Slinger" },
-    "koboldJung": { "name": "Young Kobold" },
-    "koboldSpeer": { "name": "Kobold Spearman" },
-    "koboldTrapper": { "name": "Kobold Trapper" },
-    "goblin": { "name": "Kobold Warrior" },
-    "koboldShaman": { "name": "Kobold Shaman" },
-    "tunnelGuard": { "name": "Tunnel Guard" },
-    "koboldCaptain": { "name": "Kobold Captain" },
-    "orkRecruit": { "name": "Orc Recruit" },
-    "orcTracker": { "name": "Orc Tracker" },
-    "orcWarrior": { "name": "Orc Warrior" },
-    "skeleton": { "name": "Skeleton" },
-    "graveArcher": { "name": "Grave Archer" },
-    "restlessSpirit": { "name": "Restless Spirit" },
-    "soldier": { "name": "Mercenary" },
-    "townGuard": { "name": "Town Guard" },
-    "archer": { "name": "Archer" },
-    "priest": { "name": "Holy Priest" },
-    "pikeman": { "name": "Pikeman" },
-    "longbowman": { "name": "Longbowman" },
-    "battleMonk": { "name": "Battle Monk" },
-    "fireSpirit": { "name": "Fire Spirit" },
-    "frostWisp": { "name": "Frost Wisp" },
-    "stormWisp": { "name": "Storm Wisp" },
-    "giantBat": { "name": "Giant Bat" },
-    "direWolf": { "name": "Dire Wolf" },
-    "swampSerpent": { "name": "Swamp Serpent" },
-    "ironWarden": { "name": "Iron Warden" },
-    "clockworkScout": { "name": "Clockwork Scout" },
-    "brassGuardian": { "name": "Brass Guardian" },
-    "emberRaider": { "name": "Ember Raider" },
-    "graveWarden": { "name": "Grave Warden" }
-    ,
-    "koboldHunter": { "name": "Kobold Hunter" },
-    "caveGeomancer": { "name": "Cave Geomancer" },
-    "koboldKing": { "name": "Kobold King" },
-    "orcBerserker": { "name": "Orc Berserker" },
-    "orcWolfRider": { "name": "Orc Wolf Rider" },
-    "orcIronhide": { "name": "Orc Ironhide" },
-    "orcWarlord": { "name": "Orc Warlord" },
-    "boneWarden": { "name": "Bone Warden" },
-    "wraith": { "name": "Wraith" },
-    "boneKnight": { "name": "Bone Knight" },
-    "banshee": { "name": "Banshee" },
-    "lich": { "name": "Lich Lord" },
-    "knight": { "name": "Knight" },
-    "shieldguard": { "name": "Shieldguard" },
-    "sniper": { "name": "Elite Marksman" },
-    "ranger": { "name": "Gloam Ranger" },
-    "bannerKnight": { "name": "Banner Knight" },
-    "royalArbalest": { "name": "Royal Arbalest" },
-    "crusader": { "name": "Crusader" },
-    "highPriest": { "name": "High Priest" },
-    "flameElemental": { "name": "Flame Elemental" },
-    "iceElemental": { "name": "Ice Elemental" },
-    "stormElemental": { "name": "Storm Elemental" },
-    "phoenix": { "name": "Phoenix" },
-    "bloodBat": { "name": "Blood Bat" },
-    "alphaWolf": { "name": "Alpha Wolf" },
-    "caveTroll": { "name": "Cave Troll" },
-    "nightwing": { "name": "Nightwing" },
-    "wyvern": { "name": "Wyvern" },
-    "golem": { "name": "Iron Golem" },
-    "siegeGolem": { "name": "Siege Golem" },
-    "cannonGolem": { "name": "Cannon Golem" },
-    "ashWarlord": { "name": "Ash Warlord" },
-    "bloodChieftain": { "name": "Blood Chieftain" },
-    "necromancer": { "name": "Necromancer" },
-    "deathPaladin": { "name": "Death Paladin" }
+    "playerWanderer": {
+      "name": "The Wanderer"
+    },
+    "villageLevy": {
+      "name": "Village Levy"
+    },
+    "levySpearman": {
+      "name": "Levy Swordsman"
+    },
+    "noviceArcher": {
+      "name": "Novice Archer"
+    },
+    "shrineAcolyte": {
+      "name": "Shrine Acolyte"
+    },
+    "militiaShieldbearer": {
+      "name": "Militia Shieldbearer"
+    },
+    "villageSlinger": {
+      "name": "Village Slinger"
+    },
+    "koboldJung": {
+      "name": "Young Kobold"
+    },
+    "koboldSpeer": {
+      "name": "Kobold Spearman"
+    },
+    "koboldTrapper": {
+      "name": "Kobold Trapper"
+    },
+    "goblin": {
+      "name": "Kobold Warrior"
+    },
+    "koboldShaman": {
+      "name": "Kobold Shaman"
+    },
+    "tunnelGuard": {
+      "name": "Tunnel Guard"
+    },
+    "koboldCaptain": {
+      "name": "Kobold Captain"
+    },
+    "orkRecruit": {
+      "name": "Orc Recruit"
+    },
+    "orcTracker": {
+      "name": "Orc Tracker"
+    },
+    "orcWarrior": {
+      "name": "Orc Warrior"
+    },
+    "skeleton": {
+      "name": "Skeleton"
+    },
+    "graveArcher": {
+      "name": "Grave Archer"
+    },
+    "restlessSpirit": {
+      "name": "Restless Spirit"
+    },
+    "soldier": {
+      "name": "Mercenary"
+    },
+    "townGuard": {
+      "name": "Town Guard"
+    },
+    "archer": {
+      "name": "Archer"
+    },
+    "priest": {
+      "name": "Holy Priest"
+    },
+    "pikeman": {
+      "name": "Pikeman"
+    },
+    "longbowman": {
+      "name": "Longbowman"
+    },
+    "battleMonk": {
+      "name": "Battle Monk"
+    },
+    "fireSpirit": {
+      "name": "Fire Spirit"
+    },
+    "frostWisp": {
+      "name": "Frost Wisp"
+    },
+    "stormWisp": {
+      "name": "Storm Wisp"
+    },
+    "giantBat": {
+      "name": "Giant Bat"
+    },
+    "direWolf": {
+      "name": "Dire Wolf"
+    },
+    "swampSerpent": {
+      "name": "Swamp Serpent"
+    },
+    "ironWarden": {
+      "name": "Iron Warden"
+    },
+    "clockworkScout": {
+      "name": "Clockwork Scout"
+    },
+    "brassGuardian": {
+      "name": "Brass Guardian"
+    },
+    "emberRaider": {
+      "name": "Ember Raider"
+    },
+    "graveWarden": {
+      "name": "Grave Warden"
+    },
+    "koboldHunter": {
+      "name": "Kobold Hunter"
+    },
+    "caveGeomancer": {
+      "name": "Cave Geomancer"
+    },
+    "koboldKing": {
+      "name": "Kobold King"
+    },
+    "orcBerserker": {
+      "name": "Orc Berserker"
+    },
+    "orcWolfRider": {
+      "name": "Orc Wolf Rider"
+    },
+    "orcIronhide": {
+      "name": "Orc Ironhide"
+    },
+    "orcWarlord": {
+      "name": "Orc Warlord"
+    },
+    "boneWarden": {
+      "name": "Bone Warden"
+    },
+    "wraith": {
+      "name": "Wraith"
+    },
+    "boneKnight": {
+      "name": "Bone Knight"
+    },
+    "banshee": {
+      "name": "Banshee"
+    },
+    "lich": {
+      "name": "Lich Lord"
+    },
+    "knight": {
+      "name": "Knight"
+    },
+    "shieldguard": {
+      "name": "Shieldguard"
+    },
+    "sniper": {
+      "name": "Elite Marksman"
+    },
+    "ranger": {
+      "name": "Gloam Ranger"
+    },
+    "bannerKnight": {
+      "name": "Banner Knight"
+    },
+    "royalArbalest": {
+      "name": "Royal Arbalest"
+    },
+    "crusader": {
+      "name": "Crusader"
+    },
+    "highPriest": {
+      "name": "High Priest"
+    },
+    "flameElemental": {
+      "name": "Flame Elemental"
+    },
+    "iceElemental": {
+      "name": "Ice Elemental"
+    },
+    "stormElemental": {
+      "name": "Storm Elemental"
+    },
+    "phoenix": {
+      "name": "Phoenix"
+    },
+    "bloodBat": {
+      "name": "Blood Bat"
+    },
+    "alphaWolf": {
+      "name": "Alpha Wolf"
+    },
+    "caveTroll": {
+      "name": "Cave Troll"
+    },
+    "nightwing": {
+      "name": "Nightwing"
+    },
+    "wyvern": {
+      "name": "Wyvern"
+    },
+    "golem": {
+      "name": "Iron Golem"
+    },
+    "siegeGolem": {
+      "name": "Siege Golem"
+    },
+    "cannonGolem": {
+      "name": "Cannon Golem"
+    },
+    "ashWarlord": {
+      "name": "Ash Warlord"
+    },
+    "bloodChieftain": {
+      "name": "Blood Chieftain"
+    },
+    "necromancer": {
+      "name": "Necromancer"
+    },
+    "deathPaladin": {
+      "name": "Death Paladin"
+    }
   },
   "enemy": {
-    "roadReavers": { "name": "Road Reavers" },
-    "koboldForagers": { "name": "Kobold Foragers" },
-    "hungryWolves": { "name": "Hungry Wolves" },
-    "desperateMilitia": { "name": "Desperate Militia" },
-    "gloamStalkers": { "name": "Gloam Stalkers" },
-    "swampLurkers": { "name": "Swamp Lurkers" },
-    "ashBrood": { "name": "Ash Brood" },
-    "koboldAmbushers": { "name": "Kobold Ambushers" },
-    "vaultScavengers": { "name": "Vault Scavengers" },
-    "graveProcession": { "name": "Grave Procession" },
-    "orcHunters": { "name": "Orc Hunters" },
-    "stormCallers": { "name": "Storm Callers" },
-    "rustedSentinels": { "name": "Rusted Sentinels" },
-    "blackBannerKnights": { "name": "Black Banner Knights" },
-    "trollDen": { "name": "Troll Den" },
-    "necromancerCabal": { "name": "Necromancer Cabal" },
-    "wyvernKin": { "name": "Wyvern Kin" },
-    "ironColossusGuard": { "name": "Iron Colossus Guard" }
+    "roadReavers": {
+      "name": "Road Reavers"
+    },
+    "koboldForagers": {
+      "name": "Kobold Foragers"
+    },
+    "hungryWolves": {
+      "name": "Hungry Wolves"
+    },
+    "desperateMilitia": {
+      "name": "Desperate Militia"
+    },
+    "gloamStalkers": {
+      "name": "Gloam Stalkers"
+    },
+    "swampLurkers": {
+      "name": "Swamp Lurkers"
+    },
+    "ashBrood": {
+      "name": "Ash Brood"
+    },
+    "koboldAmbushers": {
+      "name": "Kobold Ambushers"
+    },
+    "vaultScavengers": {
+      "name": "Vault Scavengers"
+    },
+    "graveProcession": {
+      "name": "Grave Procession"
+    },
+    "orcHunters": {
+      "name": "Orc Hunters"
+    },
+    "stormCallers": {
+      "name": "Storm Callers"
+    },
+    "rustedSentinels": {
+      "name": "Rusted Sentinels"
+    },
+    "blackBannerKnights": {
+      "name": "Black Banner Knights"
+    },
+    "trollDen": {
+      "name": "Troll Den"
+    },
+    "necromancerCabal": {
+      "name": "Necromancer Cabal"
+    },
+    "wyvernKin": {
+      "name": "Wyvern Kin"
+    },
+    "ironColossusGuard": {
+      "name": "Iron Colossus Guard"
+    }
+  },
+  "cards": {
+    "swordsman": {
+      "name": "Swordsman",
+      "description": "A disciplined attacker trained to break open exposed formations."
+    },
+    "noble_recruit": {
+      "name": "Noble Recruit",
+      "description": "A privileged recruit with the training and means to join the cavalry."
+    },
+    "mounted_squire": {
+      "name": "Mounted Squire",
+      "description": "A mobile retainer learning to lead a charge from horseback."
+    },
+    "lancer": {
+      "name": "Lancer",
+      "description": "A heavy cavalry attacker whose charge punishes weakened lines."
+    },
+    "royal_cavalier": {
+      "name": "Royal Cavalier",
+      "description": "An elite mounted champion and symbol of human command."
+    },
+    "halberdier": {
+      "name": "Halberdier",
+      "description": "A veteran polearm fighter who controls the front line."
+    },
+    "royal_guard": {
+      "name": "Royal Guard",
+      "description": "The realm's finest defensive infantry."
+    },
+    "orc_youngblood": {
+      "name": "Orc Youngblood",
+      "description": "An eager raider: dangerous, but still beatable by a new warband."
+    },
+    "kobold_slinger": {
+      "name": "Kobold Slinger",
+      "description": "A skirmisher who wins through distraction and dirty tricks."
+    },
+    "scrap_automaton": {
+      "name": "Scrap Automaton",
+      "description": "A slow machine assembled from mismatched armor plates."
+    },
+    "maintenance_drone": {
+      "name": "Maintenance Drone",
+      "description": "A fragile support construct built to repair allied machines."
+    },
+    "ember_spark": {
+      "name": "Ember Spark",
+      "description": "A small but volatile spark of living flame."
+    },
+    "frost_spark": {
+      "name": "Frost Spark",
+      "description": "A shard of cold that slows enemy aggression."
+    },
+    "storm_spark": {
+      "name": "Storm Spark",
+      "description": "Unstable lightning searching for a path through its enemies."
+    },
+    "stray_wolf": {
+      "name": "Stray Wolf",
+      "description": "A lean predator that hunts wounded prey."
+    },
+    "giant_rat": {
+      "name": "Giant Rat",
+      "description": "A vicious scavenger made bold by the pack."
+    },
+    "cave_bat": {
+      "name": "Cave Bat",
+      "description": "A swift cavern hunter that strikes before the line can settle."
+    },
+    "lost_soul": {
+      "name": "Lost Soul",
+      "description": "A fading spirit that steals warmth from the living."
+    },
+    "plague_rat": {
+      "name": "Plague Rat",
+      "description": "A diseased pack hunter hardened by carrion and ruin."
+    },
+    "alpha_rat": {
+      "name": "Rat King",
+      "description": "An enormous alpha that drives its swarm into a frenzy."
+    }
   }
 }

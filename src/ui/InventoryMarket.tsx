@@ -1,31 +1,19 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  contentPack,
-  itemsById,
-  tradeRecipesById,
-} from "../content/content";
-import { getCardDefinition } from "../domain/cards/CardInstance";
-import type {
-  InventoryStack,
-  MarketOffer,
-  MarketProfile,
-} from "../domain/economy/Economy";
-import {
-  gameSession,
-  type EquipmentSlot,
-  type TradeActionResult,
-} from "../domain/session/GameSession";
+import { itemsById } from "../content/content";
+import type { InventoryStack, MarketOffer } from "../domain/economy/Economy";
+import { gameSession } from "../domain/session/GameSession";
 import type { ItemDefinition } from "../domain/content/schemas";
 
 interface InventoryMarketProps {
   onClose: () => void;
+  onTrade?: () => void;
   returnToCity?: boolean;
 }
 
-type MarketTab = "market" | "workshops" | "inventory";
 type ItemFilter = "all" | "consumable" | "resource" | "tradeGood" | "equipment";
-type SortMode = "name" | "price" | "quantity" | "weight";
+type QuantityMode = 1 | 5 | "max";
+type Side = "merchant" | "player";
 
 interface DisplayEntry {
   item: ItemDefinition;
@@ -35,503 +23,165 @@ interface DisplayEntry {
   offer?: MarketOffer;
 }
 
-const FILTERS: ItemFilter[] = [
-  "all",
-  "consumable",
-  "resource",
-  "tradeGood",
-  "equipment",
-];
-const SORT_MODES: SortMode[] = ["name", "price", "quantity", "weight"];
-const EQUIPMENT_SLOTS: Array<{ slot: EquipmentSlot; labelKey: string }> = [
-  { slot: "rightHand", labelKey: "trade.rightHand" },
-  { slot: "leftHand", labelKey: "trade.leftHand" },
-  { slot: "accessory", labelKey: "trade.accessory" },
-];
+const FILTERS: ItemFilter[] = ["all", "consumable", "resource", "tradeGood", "equipment"];
 
-function formatStackAmount(stack: InventoryStack): string {
-  const item = itemsById.get(stack.itemId);
-  if (!item?.foodUnits) return `×${stack.quantity}`;
-  const capacity = item.foodUnits * stack.quantity;
-  return `${stack.supply ?? capacity}/${capacity}`;
-}
-
-function entryWeight(entry: DisplayEntry): number {
-  return entry.item.weight * entry.quantity;
-}
-
-function getSlotLabelKey(item: ItemDefinition): string {
-  if (item.equipmentSlot === "rightHand") return "trade.rightHand";
-  if (item.equipmentSlot === "leftHand") return "trade.leftHand";
-  return "trade.accessory";
-}
-
-export default function InventoryMarket({
-  onClose,
-  returnToCity = false,
-}: InventoryMarketProps) {
+export default function InventoryMarket({ onClose, onTrade, returnToCity = false }: InventoryMarketProps) {
   const { t } = useTranslation();
+  const [filter, setFilter] = useState<ItemFilter>("all");
+  const [quantityMode, setQuantityMode] = useState<QuantityMode>(1);
+  const [selected, setSelected] = useState<{ side: Side; itemId: string } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<MarketTab>(
-    gameSession.marketProfile ? "market" : "inventory",
-  );
-  const [itemFilter, setItemFilter] = useState<ItemFilter>("all");
-  const [sortMode, setSortMode] = useState<SortMode>("name");
+  const [, redraw] = useState(0);
   const profile = gameSession.marketProfile;
   const location = gameSession.world.nearbyLocation;
   const caravan = gameSession.nearbyCaravan;
-  const recipes = (profile?.recipeIds ?? [])
-    .map((recipeId) => tradeRecipesById.get(recipeId))
-    .filter((recipe) => recipe !== undefined);
 
-  const marketEntries = useMemo(
-    () =>
-      filterAndSort(
-        profile?.offers.map((offer) => ({
-          item: itemsById.get(offer.itemId)!,
-          quantity: offer.stock,
-          price: gameSession.getBuyPrice(offer.itemId),
-          offer,
-        })) ?? [],
-        itemFilter,
-        sortMode,
-        t,
-      ),
-    [profile, itemFilter, sortMode, t],
-  );
-  const inventoryEntries = useMemo(
-    () =>
-      filterAndSort(
-        gameSession.inventory.map((stack) => ({
-          item: itemsById.get(stack.itemId)!,
-          quantity: stack.quantity,
-          price: profile ? gameSession.getSellPrice(stack.itemId) : 0,
-          stack,
-        })),
-        itemFilter,
-        sortMode,
-        t,
-      ),
-    [profile, itemFilter, sortMode, t],
-  );
+  const merchantEntries = useMemo(() => filterEntries((profile?.offers ?? []).map((offer) => ({
+    item: itemsById.get(offer.itemId)!, quantity: offer.stock,
+    price: gameSession.getBuyPrice(offer.itemId), offer,
+  })), filter), [profile, filter]);
+  const playerEntries = useMemo(() => filterEntries(gameSession.inventory.map((stack) => ({
+    item: itemsById.get(stack.itemId)!, quantity: stack.quantity,
+    price: profile ? gameSession.getSellPrice(stack.itemId) : 0, stack,
+  })), filter), [profile, filter, gameSession.inventory.length]);
+  const selectedEntry = selected?.side === "merchant"
+    ? merchantEntries.find((entry) => entry.item.id === selected.itemId)
+    : playerEntries.find((entry) => entry.item.id === selected?.itemId);
+  const merchantGold = profile?.locationId
+    ? (gameSession.economyState.merchantGold[profile.locationId] ?? profile.merchantGold)
+    : profile?.merchantGold ?? 0;
 
-  function act(result: TradeActionResult, successKey: string): void {
-    setMessage(t(result === "success" ? successKey : `trade.${result}`));
+  function maxQuantity(entry: DisplayEntry, side: Side): number {
+    if (side === "player") return Math.max(0, Math.min(entry.quantity, Math.floor(merchantGold / Math.max(1, entry.price))));
+    const weightRoom = entry.item.weight <= 0 ? entry.quantity : Math.floor((gameSession.maxCargoWeight - gameSession.cargoWeight) / entry.item.weight);
+    return Math.max(0, Math.min(entry.quantity, Math.floor(gameSession.gold / Math.max(1, entry.price)), weightRoom));
   }
 
+  function selectedQuantity(entry: DisplayEntry, side: Side): number {
+    return quantityMode === "max"
+      ? maxQuantity(entry, side)
+      : Math.min(quantityMode, maxQuantity(entry, side));
+  }
+
+  function trade(): void {
+    if (!selected || !selectedEntry || !profile) return;
+    const quantity = selectedQuantity(selectedEntry, selected.side);
+    if (quantity <= 0) return;
+    const result = selected.side === "merchant"
+      ? gameSession.buyItem(selectedEntry.item.id, quantity)
+      : gameSession.sellItem(selectedEntry.item.id, quantity);
+    setMessage(t(result === "success" ? (selected.side === "merchant" ? "trade.bought" : "trade.sold") : `trade.${result}`));
+    if (result === "success") onTrade?.();
+    redraw((value) => value + 1);
+  }
+
+  const marketName = location ? t(location.nameKey) : caravan ? t(caravan.kind === "villager" ? "trade.villagerName" : "trade.caravanName") : t("trade.roadInventory");
+
+  if (!profile) return <InventoryOnly onClose={onClose} />;
+
   return (
-    <div className="ledger-overlay">
-      <main className="trade-ledger">
-        <header className="trade-header">
-          <div>
-            <p className="eyebrow">{t("trade.eyebrow")}</p>
-            <h1>{profile ? t("trade.marketTitle") : t("trade.inventoryTitle")}</h1>
-            <p>
-              {location
-                ? t(location.nameKey)
-                : caravan
-                  ? t(
-                      caravan.kind === "villager"
-                        ? "trade.villagerName"
-                        : "trade.caravanName",
-                    )
-                  : t("trade.roadInventory")}
-            </p>
-          </div>
-          <div className="trade-header-actions">
-            <strong>{t("hud.gold")} {gameSession.gold}</strong>
-            <span>
-              {t("hud.food")} {gameSession.rationCount}/{gameSession.foodCapacity} ·{" "}
-              {t("hud.wages")} {gameSession.weeklyWageCost}g
-            </span>
-            <span
-              className={
-                gameSession.cargoWeight > gameSession.maxCargoWeight
-                  ? "cargo-limit warning"
-                  : "cargo-limit"
-              }
-            >
-              {t("trade.weight")} {gameSession.cargoWeight.toFixed(1)}/
-              {gameSession.maxCargoWeight}
-            </span>
-            {gameSession.currentFactionId ? (
-              <span className="market-reputation">
-                {t(`faction.${gameSession.currentFactionId}.name`)} ·{" "}
-                {t("quests.reputation", {
-                  value: gameSession.currentFactionReputation,
-                })}
-              </span>
-            ) : null}
-            <button className="button ghost" onClick={onClose}>
-              {t(returnToCity ? "trade.returnToCity" : "trade.close")}
-            </button>
-          </div>
+    <div className="market-overlay">
+      <main className="market-screen">
+        <header className="market-header">
+          <div><p className="eyebrow">{t("trade.eyebrow")}</p><h1>{marketName}</h1><p>{t("trade.marketTitle")}</p></div>
+          <div className="market-wallet"><span><small>{t("hud.gold")}</small><strong>{gameSession.gold}g</strong></span><span><small>{t("trade.weight")}</small><strong>{gameSession.cargoWeight.toFixed(1)} / {gameSession.maxCargoWeight}</strong></span><span><small>{t("trade.merchantFunds")}</small><strong>{merchantGold}g</strong></span></div>
+          <button className="market-close" onClick={onClose}>{t(returnToCity ? "trade.returnToCity" : "trade.close")} <b>→</b></button>
         </header>
 
-        <nav className="trade-tabs">
-          {profile ? (
-            <>
-              <button
-                className={activeTab === "market" ? "active" : ""}
-                onClick={() => setActiveTab("market")}
-              >
-                {t("trade.marketTab")}
-              </button>
-              <button
-                className={activeTab === "workshops" ? "active" : ""}
-                onClick={() => setActiveTab("workshops")}
-              >
-                {t("trade.workshopTab")}
-              </button>
-            </>
-          ) : null}
-          <button
-            className={activeTab === "inventory" ? "active" : ""}
-            onClick={() => setActiveTab("inventory")}
-          >
-            {t("trade.inventoryTab")}
-          </button>
+        <section className="market-intel">
+          <MarketSignals title={t("trade.inDemand")} modifier="+20–50%" itemIds={profile.demandItemIds} tone="demand" />
+          <MarketSignals title={t("trade.localSurplus")} modifier="Lower buy prices" itemIds={profile.surplusItemIds} tone="surplus" />
+          <div className="market-supply"><span>{t("hud.food")}</span><strong>{gameSession.rationCount} / {gameSession.foodCapacity}</strong><small>{t("trade.weeklyNeeds", { wages: gameSession.weeklyWageCost })}</small></div>
+        </section>
+
+        <nav className="market-filters" aria-label="Item filters">
+          {FILTERS.map((value) => <button key={value} className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>{t(`trade.filter.${value}`)}</button>)}
         </nav>
 
-        <div className="trade-controls">
-          <div>
-            {FILTERS.map((filter) => (
-              <button
-                key={filter}
-                className={itemFilter === filter ? "active" : ""}
-                onClick={() => setItemFilter(filter)}
-              >
-                {t(`trade.filter.${filter}`)}
-              </button>
-            ))}
-          </div>
-          <label>
-            {t("trade.sortBy")}
-            <select
-              value={sortMode}
-              onChange={(event) => setSortMode(event.target.value as SortMode)}
-            >
-              {SORT_MODES.map((mode) => (
-                <option key={mode} value={mode}>
-                  {t(`trade.sort.${mode}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        <section className="market-columns">
+          <TradeColumn side="merchant" title={t("trade.merchantInventory")} subtitle={`${merchantEntries.length} ${t("trade.offers")}`} entries={merchantEntries} selected={selected} onSelect={setSelected} />
+          <TradeColumn side="player" title={t("trade.playerInventory")} subtitle={`${playerEntries.length} ${t("trade.stacks")}`} entries={playerEntries} selected={selected} onSelect={setSelected} />
+        </section>
 
-        <div className="trade-grid tabbed">
-          <section className="ledger-panel" hidden={activeTab !== "inventory"}>
-            <div className="ledger-heading">
-              <h2>{t("trade.inventory")}</h2>
-              <span>
-                {gameSession.inventory.reduce((sum, stack) => sum + stack.quantity, 0)} ·{" "}
-                {gameSession.cargoWeight.toFixed(1)}/{gameSession.maxCargoWeight}
-              </span>
-            </div>
-
-            <EquipmentSlots act={act} />
-
-            <ItemList
-              entries={inventoryEntries}
-              emptyText={t("trade.emptyInventory")}
-              renderAction={(entry) => (
-                <InventoryActions entry={entry} profileAvailable={Boolean(profile)} act={act} />
-              )}
-            />
-          </section>
-
-          <section className="ledger-panel" hidden={activeTab === "inventory"}>
-            <div className="ledger-heading">
-              <h2>
-                {activeTab === "workshops"
-                  ? t("trade.workshops")
-                  : profile
-                    ? t("trade.localMarket")
-                    : t("trade.noMarket")}
-              </h2>
-              <span>{profile?.locationType ?? "—"}</span>
-            </div>
-
-            {profile ? (
-              <>
-                {activeTab === "market" ? (
-                  <>
-                    <MarketNote profile={profile} />
-                    <div className="exchange-grid">
-                      <section className="exchange-column">
-                        <header>
-                          <strong>{t("trade.merchantInventory")}</strong>
-                          <span>{marketEntries.length}</span>
-                        </header>
-                        <ItemList
-                          entries={marketEntries}
-                          emptyText={t("trade.emptyFiltered")}
-                          marketList
-                          renderAction={(entry) => (
-                            <button
-                              className="button primary compact"
-                              disabled={
-                                gameSession.gold < entry.price ||
-                                entry.quantity <= 0 ||
-                                !gameSession.canBuyItem(entry.item.id)
-                              }
-                              onClick={() => act(gameSession.buyItem(entry.item.id), "trade.bought")}
-                            >
-                              {t("trade.buyStock", {
-                                price: entry.price,
-                                stock: entry.quantity,
-                              })}
-                            </button>
-                          )}
-                        />
-                      </section>
-                      <section className="exchange-column player-cargo">
-                        <header>
-                          <strong>{t("trade.playerInventory")}</strong>
-                          <span>{inventoryEntries.length}</span>
-                        </header>
-                        <ItemList
-                          entries={inventoryEntries}
-                          emptyText={t("trade.emptyInventory")}
-                          renderAction={(entry) => (
-                            <button
-                              className="button ghost compact"
-                              onClick={() => act(gameSession.sellItem(entry.item.id), "trade.sold")}
-                            >
-                              {t("trade.sell", { price: entry.price })}
-                            </button>
-                          )}
-                        />
-                      </section>
-                    </div>
-                  </>
-                ) : null}
-                {activeTab === "workshops"
-                  ? recipes.map((recipe) => (
-                      <article className="workshop-card" key={recipe.id}>
-                        <span>{t("trade.workshop")}</span>
-                        <strong>
-                          {t(itemsById.get(recipe.inputItemId)!.nameKey)} ×
-                          {recipe.inputQuantity} →{" "}
-                          {t(itemsById.get(recipe.outputItemId)!.nameKey)} ×
-                          {recipe.outputQuantity}
-                        </strong>
-                        <button
-                          className="button primary compact"
-                          onClick={() =>
-                            act(gameSession.processTrade(recipe.id), "trade.processed")
-                          }
-                        >
-                          {t("trade.process", { price: recipe.goldCost })}
-                        </button>
-                      </article>
-                    ))
-                  : null}
-              </>
-            ) : (
-              <p className="ledger-empty">{t("trade.marketHint")}</p>
-            )}
-          </section>
-        </div>
-
-        <details className="loot-almanac">
-          <summary>{t("trade.lootAlmanac")}</summary>
-          <div>
-            {contentPack.enemies.map((enemy) => (
-              <article key={enemy.id}>
-                <strong>{t(enemy.nameKey)}</strong>
-                {enemy.dropTable.map((drop) => (
-                  <span key={drop.cardId}>
-                    {t("trade.cardChance", {
-                      name: t(getCardDefinition(drop.cardId).nameKey),
-                      chance: Math.round(drop.chance * 100),
-                    })}
-                  </span>
-                ))}
-                {enemy.itemDropTable.map((drop) => (
-                  <span key={drop.itemId}>
-                    {t("trade.itemChance", {
-                      name: t(itemsById.get(drop.itemId)!.nameKey),
-                      chance: Math.round(drop.chance * 1000) / 10,
-                      minimum: drop.minimum,
-                      maximum: drop.maximum,
-                    })}
-                  </span>
-                ))}
-              </article>
-            ))}
-          </div>
-        </details>
-
-        {message ? <div className="trade-message">{message}</div> : null}
+        <footer className="market-tradebar">
+          {selectedEntry && selected ? <>
+            <div className="market-selection"><span>{selected.side === "merchant" ? t("trade.buying") : t("trade.selling")}</span><strong>{t(selectedEntry.item.nameKey)}</strong><small>{t(selectedEntry.item.descriptionKey)}</small></div>
+            <div className="quantity-picker"><span>{t("trade.quantity")}</span>{([1, 5, "max"] as QuantityMode[]).map((value) => <button key={value} className={quantityMode === value ? "active" : ""} onClick={() => setQuantityMode(value)}>{value === "max" ? t("trade.max") : value}</button>)}</div>
+            <div className="trade-total"><span>{selectedQuantity(selectedEntry, selected.side)} × {selectedEntry.price}g</span><strong>{selectedQuantity(selectedEntry, selected.side) * selectedEntry.price}g</strong></div>
+            <button className="market-confirm" disabled={maxQuantity(selectedEntry, selected.side) <= 0} onClick={trade}>{selected.side === "merchant" ? t("trade.buyNow") : t("trade.sellNow")}</button>
+          </> : <p className="market-prompt">{t("trade.selectPrompt")}</p>}
+        </footer>
+        {message ? <div className="market-message">{message}</div> : null}
       </main>
     </div>
   );
 }
 
-function EquipmentSlots({
-  act,
-}: {
-  act: (result: TradeActionResult, successKey: string) => void;
-}) {
+function MarketSignals({ title, modifier, itemIds, tone }: { title: string; modifier: string; itemIds: string[]; tone: string }) {
   const { t } = useTranslation();
-  return (
-    <div className="equipment-slots expanded">
-      {EQUIPMENT_SLOTS.map(({ slot, labelKey }) => {
-        const itemId =
-          slot === "rightHand"
-            ? gameSession.rightHandItemId
-            : slot === "leftHand"
-              ? gameSession.leftHandItemId
-              : gameSession.equippedItemId;
-        const equipped = itemId ? itemsById.get(itemId) : null;
-        return (
-          <article className="equipped-slot" key={slot}>
-            <span>{t(labelKey)}</span>
-            {equipped ? (
-              <>
-                <strong>{t(equipped.nameKey)}</strong>
-                <small>{t(equipped.descriptionKey)}</small>
-                <em>
-                  ATK +{equipped.statBonus?.atk ?? 0} · DEF +
-                  {equipped.statBonus?.def ?? 0} · {t("trade.weight")}{" "}
-                  {equipped.weight}
-                </em>
-                <button
-                  className="button ghost compact"
-                  onClick={() => act(gameSession.unequipItem(slot), "trade.unequipped")}
-                >
-                  {t("trade.unequip")}
-                </button>
-              </>
-            ) : (
-              <em>{t("trade.emptyEquipment")}</em>
-            )}
-          </article>
-        );
-      })}
-    </div>
-  );
+  return <div className={`market-signals ${tone}`}><span>{title}</span><div>{itemIds.map((itemId) => <strong key={itemId}>{t(itemsById.get(itemId)?.nameKey ?? itemId)}</strong>)}</div><small>{modifier}</small></div>;
 }
 
-function MarketNote({ profile }: { profile: MarketProfile }) {
+function TradeColumn({ side, title, subtitle, entries, selected, onSelect }: { side: Side; title: string; subtitle: string; entries: DisplayEntry[]; selected: { side: Side; itemId: string } | null; onSelect: (value: { side: Side; itemId: string }) => void }) {
   const { t } = useTranslation();
-  const itemId =
-    profile.locationType === "village"
-      ? profile.productionItemId
-      : profile.locationType === "city"
-        ? profile.demandItemId!
-        : profile.productionItemId;
-  return (
-    <div className="market-note">
-      <strong>
-        {t(
-          profile.locationType === "village"
-            ? "trade.localProduction"
-            : profile.locationType === "city"
-              ? "trade.cityDemand"
-              : "trade.caravanStock",
-        )}
-      </strong>
-      <span>{t(itemsById.get(itemId)!.nameKey)}</span>
-    </div>
-  );
+  return <section className={`market-column ${side}`}><header><div><span>{side === "merchant" ? "Local wares" : "Warband cargo"}</span><h2>{title}</h2></div><small>{subtitle}</small></header><div className="market-scroll-list">
+    {entries.map((entry) => <button key={entry.item.id} className={`market-item ${selected?.side === side && selected.itemId === entry.item.id ? "selected" : ""}`} onClick={() => onSelect({ side, itemId: entry.item.id })}>
+      <span className={`market-item-mark ${entry.item.type}`}>{entry.item.itemImage ? <img src={entry.item.itemImage} alt="" style={{ objectPosition: `${entry.item.imageFocus?.x ?? 50}% ${entry.item.imageFocus?.y ?? 50}%` }} /> : t(entry.item.nameKey).slice(0, 1)}</span><span className="market-item-copy"><small>{t(`trade.filter.${entry.item.type}`)} · {entry.item.weight} {t("trade.weight")}</small><strong>{t(entry.item.nameKey)}</strong><em>{t(entry.item.descriptionKey)}</em>{entry.item.type === "equipment" ? <EquipmentStats item={entry.item} /> : null}</span><span className="market-item-value"><strong>{entry.price}g</strong><small>×{entry.quantity}</small></span>
+      {entry.item.type === "equipment" ? <EquipmentComparison item={entry.item} /> : null}
+    </button>)}
+    {entries.length === 0 ? <p className="ledger-empty">{t("trade.emptyFiltered")}</p> : null}
+  </div></section>;
 }
 
-function ItemList({
-  entries,
-  emptyText,
-  renderAction,
-  marketList = false,
-}: {
-  entries: DisplayEntry[];
-  emptyText: string;
-  renderAction: (entry: DisplayEntry) => ReactNode;
-  marketList?: boolean;
-}) {
-  const { t } = useTranslation();
-  return (
-    <div className={marketList ? "market-list" : "inventory-list"}>
-      {entries.map((entry) => (
-        <article
-          className={`${marketList ? "market-row" : "inventory-row"} ${entry.item.type}`}
-          key={entry.item.id}
-        >
-          <div>
-            <span>
-              {t(`trade.filter.${entry.item.type}`)} · {t("trade.weight")}{" "}
-              {entry.item.weight} · {t("trade.totalWeight")}{" "}
-              {entryWeight(entry).toFixed(1)}
-            </span>
-            <strong>
-              {t(entry.item.nameKey)}{" "}
-              {entry.stack ? formatStackAmount(entry.stack) : `×${entry.quantity}`}
-            </strong>
-            <small>{t(entry.item.descriptionKey)}</small>
-          </div>
-          <div className="inventory-actions">{renderAction(entry)}</div>
-        </article>
-      ))}
-      {entries.length === 0 ? <p className="ledger-empty">{emptyText}</p> : null}
-    </div>
-  );
+function EquipmentStats({ item }: { item: ItemDefinition }) {
+  return <span className="market-equipment-stats">
+    {equipmentSlotLabel(item)} · ATK +{item.statBonus?.atk ?? 0} · DEF +{item.statBonus?.def ?? 0}
+  </span>;
 }
 
-function InventoryActions({
-  entry,
-  profileAvailable,
-  act,
-}: {
-  entry: DisplayEntry;
-  profileAvailable: boolean;
-  act: (result: TradeActionResult, successKey: string) => void;
-}) {
+function EquipmentComparison({ item }: { item: ItemDefinition }) {
   const { t } = useTranslation();
-  return (
-    <>
-      {entry.item.type === "consumable" && entry.item.effect ? (
-        <button
-          className="button ghost compact"
-          onClick={() => act(gameSession.useItem(entry.item.id), "trade.used")}
-        >
-          {t("trade.use")}
-        </button>
-      ) : null}
-      {entry.item.type === "equipment" ? (
-        <button
-          className="button ghost compact"
-          onClick={() => act(gameSession.equipItem(entry.item.id), "trade.equippedResult")}
-        >
-          {t("trade.equipSlot", {
-            slot: t(getSlotLabelKey(entry.item)),
-          })}
-        </button>
-      ) : null}
-      {profileAvailable ? (
-        <button
-          className="button ghost compact"
-          onClick={() => act(gameSession.sellItem(entry.item.id), "trade.sold")}
-        >
-          {t("trade.sell", { price: entry.price })}
-        </button>
-      ) : null}
-    </>
-  );
+  const equippedId = item.equipmentSlot === "leftHand"
+    ? gameSession.leftHandItemId
+    : item.equipmentSlot === "accessory"
+      ? gameSession.equippedItemId
+      : gameSession.rightHandItemId;
+  const equipped = equippedId ? itemsById.get(equippedId) : undefined;
+  const attackDifference = (item.statBonus?.atk ?? 0) - (equipped?.statBonus?.atk ?? 0);
+  const defenseDifference = (item.statBonus?.def ?? 0) - (equipped?.statBonus?.def ?? 0);
+  return <span className="equipment-comparison-tooltip" role="tooltip">
+    <span>Compared with {equipped ? t(equipped.nameKey) : "empty slot"}</span>
+    <strong>{equipmentSlotLabel(item)}</strong>
+    <em className={differenceClass(attackDifference)}>ATK {formatDifference(attackDifference)}</em>
+    <em className={differenceClass(defenseDifference)}>DEF {formatDifference(defenseDifference)}</em>
+  </span>;
 }
 
-function filterAndSort(
-  entries: DisplayEntry[],
-  filter: ItemFilter,
-  sortMode: SortMode,
-  t: (key: string) => string,
-): DisplayEntry[] {
+function equipmentSlotLabel(item: ItemDefinition): string {
+  if (item.equipmentSlot === "leftHand") return "Left hand";
+  if (item.equipmentSlot === "accessory") return "Accessory";
+  return "Right hand";
+}
+
+function differenceClass(value: number): string {
+  return value > 0 ? "better" : value < 0 ? "worse" : "equal";
+}
+
+function formatDifference(value: number): string {
+  return value > 0 ? `+${value}` : `${value}`;
+}
+
+function InventoryOnly({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+  const [, redraw] = useState(0);
+  return <div className="market-overlay"><main className="market-screen inventory-only"><header className="market-header"><div><p className="eyebrow">{t("trade.roadInventory")}</p><h1>{t("trade.inventoryTitle")}</h1></div><button className="market-close" onClick={onClose}>{t("trade.close")} →</button></header><section className="inventory-only-list">
+    {gameSession.inventory.map((stack) => { const item = itemsById.get(stack.itemId)!; return <article key={item.id}><div><strong>{t(item.nameKey)} ×{stack.quantity}</strong><small>{t(item.descriptionKey)}</small></div><div>{item.type === "consumable" ? <button onClick={() => { gameSession.useItem(item.id); redraw(v => v + 1); }}>{t("trade.use")}</button> : null}{item.type === "equipment" ? <button onClick={() => { gameSession.equipItem(item.id); redraw(v => v + 1); }}>{t("trade.equip")}</button> : null}</div></article>; })}
+  </section></main></div>;
+}
+
+function filterEntries(entries: DisplayEntry[], filter: ItemFilter): DisplayEntry[] {
+  const priority: Record<ItemDefinition["type"], number> = { consumable: 0, equipment: 1, tradeGood: 2, resource: 3 };
   return entries
-    .filter((entry) => filter === "all" || entry.item.type === filter)
-    .sort((left, right) => {
-      if (sortMode === "price") return right.price - left.price;
-      if (sortMode === "quantity") return right.quantity - left.quantity;
-      if (sortMode === "weight") return entryWeight(right) - entryWeight(left);
-      return t(left.item.nameKey).localeCompare(t(right.item.nameKey));
-    });
+    .filter((entry) => entry.item && (filter === "all" || entry.item.type === filter))
+    .sort((a, b) => priority[a.item.type] - priority[b.item.type] || a.price - b.price);
 }

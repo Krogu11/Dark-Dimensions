@@ -19,17 +19,32 @@ import {
   type CharacterState,
 } from "../character/CharacterProgression";
 import {
+  applyChoiceBonuses,
+  getRunChoices,
+  type RunProfile,
+} from "../character/CharacterOrigins";
+import {
   awardXp,
   createCardInstance,
   createPlayerCard,
   getCardDefinition,
   normalizeCardInstance,
+  xpNeededForNextLevel,
+  xpNeededForUnitUpgrade,
   type CardInstance,
 } from "../cards/CardInstance";
 import { getWeeklyRosterWage } from "../cards/UnitUpkeep";
 import { WorldSimulation } from "../world/WorldSimulation";
 import type { WorldWarbandState } from "../world/WorldWarbands";
 import { createWorldSeed, generateWorldMap } from "../world/WorldGenerator";
+import {
+  createCityStates,
+  normalizeCityStates,
+  type CityState,
+  type CityStates,
+} from "../world/Cities";
+import { ensureRecruitmentOffers, getRecruitmentCost } from "../world/Recruitment";
+import { createVillageStates, ensureVillageQuest, ensureVillageRecruitmentOffers, normalizeVillageStates, type VillageQuest, type VillageState, type VillageStates } from "../world/Villages";
 import { findWorldPath, type WorldPoint } from "../world/WorldPathfinder";
 import {
   findNearestTraversablePosition,
@@ -61,6 +76,7 @@ import {
 } from "../economy/Economy";
 import {
   createFactionState,
+  areFactionsHostile,
   getFactionRelation,
   PLAYER_FACTION_ID,
   type FactionId,
@@ -95,12 +111,14 @@ export type RosterActionResult =
   | "notEnoughGold"
   | "notEnoughXp"
   | "capacityFull"
+  | "notAvailable"
   | "invalid";
 export type TradeActionResult =
   | "success"
   | "invalid"
   | "notEnoughGold"
   | "notEnoughItems"
+  | "merchantCannotAfford"
   | "tooHeavy"
   | "noEffect";
 export type EquipmentSlot = "rightHand" | "leftHand" | "accessory";
@@ -109,6 +127,7 @@ export type LocationEventResult =
   | { kind: "danger"; amount: number }
   | { kind: "alreadyVisited"; amount: 0 }
   | { kind: "invalid"; amount: 0 };
+export type VillageHelpResult = "success" | "alreadyHelped" | "invalid";
 
 export interface VictoryClaimSelection {
   takeCard: boolean;
@@ -126,12 +145,15 @@ export interface DungeonRun {
 export class GameSession {
   worldSeed: number;
   world: WorldSimulation;
+  cityStates: CityStates;
+  villageStates: VillageStates;
   hero: CardInstance;
   warband: CardInstance[] = [];
   reserve: CardInstance[] = [];
   prisoners: PrisonerStack[] = [];
   leadershipLevel = 1;
   characterState: CharacterState = createCharacterState();
+  runProfile: RunProfile | null = null;
   gold = 80;
   mode: GameMode = "world";
   battle: BattleSimulation | null = null;
@@ -160,11 +182,14 @@ export class GameSession {
   private currentWarbandAllyId: string | null = null;
   private currentWarbandEnemyId: string | null = null;
   private pendingVictoryReward: BattleReward | null = null;
+  private villageBattleContext: { kind: "defense" | "raid" | "villager"; locationId: string; villagerId?: string; cargo?: InventoryStack[] } | null = null;
   private listeners = new Set<SessionListener>();
 
   constructor(seed = createWorldSeed()) {
     this.worldSeed = seed;
     this.world = this.createWorld(seed);
+    this.cityStates = createCityStates(seed, this.world.map);
+    this.villageStates = createVillageStates(seed, this.world.map);
     this.economyState = createEconomyState(seed, this.world.map);
     this.factionState = createFactionState(
       seed,
@@ -187,6 +212,10 @@ export class GameSession {
 
   get reserveCapacity(): number {
     return 0;
+  }
+
+  get battleFieldSlots(): number {
+    return Math.min(7, 3 + Math.floor(Math.max(0, this.leadershipLevel - 1) / 2));
   }
 
   get warbandThreatRating(): number {
@@ -429,6 +458,7 @@ export class GameSession {
         location,
         this.economyState,
         this.world.map,
+        this.cityStates[location.id] ?? null,
       );
     }
     return this.nearbyCaravan
@@ -486,6 +516,8 @@ export class GameSession {
       generateWorldMap(this.worldSeed, contentPack.enemies),
       save.worldRevision === 5 ? save.player : undefined,
     );
+    this.cityStates = normalizeCityStates(save.cityStates, this.worldSeed, this.world.map);
+    this.villageStates = normalizeVillageStates(save.villageStates, this.worldSeed, this.world.map);
     this.economyState = normalizeEconomyState(
       save.economyState,
       this.worldSeed,
@@ -540,8 +572,16 @@ export class GameSession {
         ...(save.reserve ?? []).map(normalizeCardInstance),
       );
     }
+    for (const card of this.warband) {
+      if (card.level <= 1) continue;
+      for (let legacyLevel = 1; legacyLevel < card.level; legacyLevel += 1) {
+        card.xp += xpNeededForNextLevel(legacyLevel);
+      }
+      card.level = 1;
+    }
     this.leadershipLevel = hasCurrentRoster ? (save.leadershipLevel ?? 1) : 1;
     this.characterState = normalizeCharacterState(save.characterState);
+    this.runProfile = save.runProfile ?? null;
     const baseHeroMaxHp = getCardDefinition(this.hero.cardId).maxHp;
     this.hero.currentHp =
       !save.characterState && this.hero.currentHp >= baseHeroMaxHp
@@ -568,12 +608,30 @@ export class GameSession {
     this.currentWarbandAllyId = null;
     this.currentWarbandEnemyId = null;
     this.pendingVictoryReward = null;
+    if (save.activeBattle) {
+      const checkpoint = save.activeBattle;
+      this.currentEnemySpawnId = checkpoint.enemySpawnId;
+      this.currentLocationBattleId = checkpoint.locationId;
+      this.currentWarbandBattleId = checkpoint.warbandBattleId;
+      this.currentWarbandAllyId = checkpoint.warbandAllyId;
+      this.currentWarbandEnemyId = checkpoint.warbandEnemyId;
+      this.dungeonRun = checkpoint.dungeonRun;
+      this.villageBattleContext = checkpoint.villageContext ?? null;
+      const archetype = enemiesById.get(checkpoint.enemyId) ?? checkpoint.enemy;
+      if (archetype) {
+        this.startArchetypeBattle(archetype);
+      } else if (checkpoint.warbandBattleId) {
+        this.joinWarbandBattle(checkpoint.warbandBattleId, checkpoint.warbandAllyId);
+      }
+    }
     this.notify();
   }
 
   reset(): void {
     this.worldSeed = createWorldSeed();
     this.world = this.createWorld(this.worldSeed);
+    this.cityStates = createCityStates(this.worldSeed, this.world.map);
+    this.villageStates = createVillageStates(this.worldSeed, this.world.map);
     this.economyState = createEconomyState(this.worldSeed, this.world.map);
     this.factionState = createFactionState(
       this.worldSeed,
@@ -595,6 +653,7 @@ export class GameSession {
     this.prisoners = [];
     this.leadershipLevel = 1;
     this.characterState = createCharacterState();
+    this.runProfile = null;
     this.gold = 80;
     this.mode = "world";
     this.battle = null;
@@ -614,7 +673,182 @@ export class GameSession {
     this.currentWarbandAllyId = null;
     this.currentWarbandEnemyId = null;
     this.pendingVictoryReward = null;
+    this.villageBattleContext = null;
     this.notify();
+  }
+
+  beginNewRun(profile: RunProfile): void {
+    this.reset();
+    this.runProfile = profile;
+    applyChoiceBonuses(this.characterState, profile);
+    for (const choice of getRunChoices(profile)) {
+      this.gold += choice.goldBonus ?? 0;
+      for (const item of choice.items ?? []) {
+        addToInventory(this.inventory, item.itemId, item.quantity);
+      }
+      if (choice.rightHandItemId) this.rightHandItemId = choice.rightHandItemId;
+      if (choice.leftHandItemId) this.leftHandItemId = choice.leftHandItemId;
+    }
+    this.hero.currentHp = this.heroMaxHp;
+    this.notify();
+  }
+
+  getCityState(locationId: string): CityState | null {
+    return this.cityStates[locationId] ?? null;
+  }
+
+  getVillageState(locationId: string): VillageState | null { return this.villageStates[locationId] ?? null; }
+
+  get currentVillageRecruitmentOffers(): string[] {
+    const village = this.world.nearbyLocation;
+    if (village?.type !== "village") return [];
+    const state = this.villageStates[village.id];
+    return state ? ensureVillageRecruitmentOffers(state, this.worldSeed, getGameDay(this.timeState)) : [];
+  }
+
+  getVillageRecruitmentCost(cardId: string): number {
+    const definition = getCardDefinition(cardId);
+    return Math.max(5, Math.round(getRecruitmentCost(definition) * 0.75));
+  }
+
+  recruitFromVillageOffer(cardId: string): RosterActionResult {
+    const village = this.world.nearbyLocation;
+    if (village?.type !== "village") return "notInCity";
+    const state = this.villageStates[village.id];
+    const offers = state ? ensureVillageRecruitmentOffers(state, this.worldSeed, getGameDay(this.timeState)) : [];
+    if (!state || state.condition === "looted" || !offers.includes(cardId)) return "notAvailable";
+    const definition = getCardDefinition(cardId);
+    if (definition.race !== "human" || definition.tier > 2) return "invalid";
+    const cost = this.getVillageRecruitmentCost(cardId);
+    if (this.warband.length >= this.warbandCapacity) return "capacityFull";
+    if (this.gold < cost) return "notEnoughGold";
+    this.gold -= cost;
+    this.warband.push(createCardInstance(cardId));
+    state.recruitmentOffers = offers.filter((id) => id !== cardId);
+    this.advanceTime(20);
+    this.notify();
+    return "success";
+  }
+
+  helpVillage(locationId: string): VillageHelpResult {
+    const location = this.world.nearbyLocation;
+    const state = this.villageStates[locationId];
+    if (!location || location.id !== locationId || location.type !== "village" || !state || state.condition === "looted") return "invalid";
+    const week = Math.floor((getGameDay(this.timeState) - 1) / 7) + 1;
+    if (state.lastHelpedWeek >= week) return "alreadyHelped";
+    state.lastHelpedWeek = week;
+    state.relation = Math.min(100, state.relation + 4);
+    state.prosperity = Math.min(100, state.prosperity + 2);
+    state.militia += 3;
+    const factionId = this.factionState.locationFactions[locationId];
+    if (factionId) this.factionState.reputation[factionId] = Math.min(100, this.factionState.reputation[factionId] + 1);
+    this.advanceTime(300);
+    this.notify();
+    return "success";
+  }
+
+  waitInVillageUntilNight(locationId: string): boolean {
+    const location = this.world.nearbyLocation;
+    if (!location || location.id !== locationId || location.type !== "village") return false;
+    const minuteOfDay = this.timeState.totalMinutes % 1440;
+    const target = 22 * 60;
+    this.advanceTime(minuteOfDay < target ? target - minuteOfDay : 1440 - minuteOfDay + target);
+    this.notify();
+    return true;
+  }
+
+  getCurrentVillageQuest(): VillageQuest | null {
+    const village = this.world.nearbyLocation;
+    const state = village?.type === "village" ? this.villageStates[village.id] : null;
+    return state ? ensureVillageQuest(state, this.worldSeed, getGameDay(this.timeState)) : null;
+  }
+
+  acceptVillageQuest(locationId: string): boolean {
+    const location = this.world.nearbyLocation; const state = this.villageStates[locationId];
+    if (!location || location.id !== locationId || location.type !== "village" || !state) return false;
+    const quest = ensureVillageQuest(state, this.worldSeed, getGameDay(this.timeState));
+    if (quest.status !== "available") return false;
+    quest.status = "active"; this.advanceTime(10); this.notify(); return true;
+  }
+
+  completeVillageDelivery(locationId: string): boolean {
+    const location = this.world.nearbyLocation; const state = this.villageStates[locationId];
+    if (!location || location.id !== locationId || location.type !== "village" || !state) return false;
+    const quest = ensureVillageQuest(state, this.worldSeed, getGameDay(this.timeState));
+    if (quest.type !== "delivery" || quest.status !== "active" || !quest.itemId || inventoryQuantity(this.inventory, quest.itemId) < quest.quantity) return false;
+    removeFromInventory(this.inventory, quest.itemId, quest.quantity); this.rewardVillageQuest(state, quest); this.advanceTime(10); this.notify(); return true;
+  }
+
+  startVillageNightDefense(locationId: string): boolean {
+    const location = this.world.nearbyLocation; const state = this.villageStates[locationId];
+    if (!location || location.id !== locationId || location.type !== "village" || !state || !this.isNight) return false;
+    const quest = ensureVillageQuest(state, this.worldSeed, getGameDay(this.timeState));
+    if (quest.type !== "night_bandits" || quest.status !== "active") return false;
+    this.villageBattleContext = { kind: "defense", locationId };
+    this.startArchetypeBattle(enemiesById.get(this.characterState.level < 4 ? "road_reavers" : "kobold_ambushers") ?? enemiesById.get("road_reavers")!);
+    return true;
+  }
+
+  startVillageRaid(locationId: string): boolean {
+    const location = this.world.nearbyLocation; const state = this.villageStates[locationId];
+    if (!location || location.id !== locationId || location.type !== "village" || !state || state.condition === "looted") return false;
+    const factionId = this.factionState.locationFactions[locationId];
+    state.relation = Math.max(-100, state.relation - 50);
+    if (factionId) this.factionState.reputation[factionId] = Math.max(-100, this.factionState.reputation[factionId] - 20);
+    const count = Math.max(2, Math.min(8, Math.ceil(state.militia / 12)));
+    const deck = Array.from({ length: count }, (_, index) => index % 3 === 2 && state.prosperity >= 45 ? "militia_shieldbearer" : index % 2 ? "village_slinger" : "village_levy");
+    this.villageBattleContext = { kind: "raid", locationId };
+    this.startArchetypeBattle({ id: `village_militia_${locationId}`, nameKey: location.nameKey, leaderCardId: state.militia >= 35 ? "militia_shieldbearer" : "village_levy", deck, goldReward: 0, threat: Math.max(1, Math.min(4, Math.ceil(state.militia / 25))), dropTable: [], itemDropTable: [] });
+    return true;
+  }
+
+  attackNearbyVillager(): boolean {
+    const villager = this.nearbyCaravan;
+    if (!villager || villager.kind !== "villager") return false;
+    const origin = this.villageStates[villager.originId]; const factionId = this.factionState.locationFactions[villager.originId];
+    if (origin) origin.relation = Math.max(-100, origin.relation - 18);
+    if (factionId) this.factionState.reputation[factionId] = Math.max(-100, this.factionState.reputation[factionId] - 7);
+    this.villageBattleContext = { kind: "villager", locationId: villager.originId, villagerId: villager.id, cargo: structuredClone(villager.inventory) };
+    this.startArchetypeBattle({ id: `villager_${villager.id}`, nameKey: "trade.villagerName", leaderCardId: villager.leaderCardId ?? "village_levy", deck: villager.unitIds?.length ? villager.unitIds : ["village_slinger"], goldReward: 4, threat: 1, dropTable: [], itemDropTable: [] });
+    return true;
+  }
+
+  private rewardVillageQuest(state: VillageState, quest: VillageQuest): void {
+    quest.status = "completed"; this.gold += quest.rewardGold; state.relation = Math.min(100, state.relation + quest.rewardRelation); state.prosperity = Math.min(100, state.prosperity + 3); state.militia += 2;
+    const factionId = this.factionState.locationFactions[state.locationId]; if (factionId) this.factionState.reputation[factionId] = Math.min(100, this.factionState.reputation[factionId] + 3);
+  }
+
+  get currentRecruitmentOffers(): string[] {
+    const city = this.world.nearbyLocation;
+    if (city?.type !== "city") return [];
+    const state = this.cityStates[city.id];
+    return state ? ensureRecruitmentOffers(state, this.worldSeed, getGameDay(this.timeState)) : [];
+  }
+
+  get currentRecruitmentRestockDay(): number | null {
+    const city = this.world.nearbyLocation;
+    if (city?.type !== "city") return null;
+    this.currentRecruitmentOffers;
+    return this.cityStates[city.id]?.recruitmentRestockDay ?? null;
+  }
+
+  recruitFromCityOffer(cardId: string): RosterActionResult {
+    const city = this.world.nearbyLocation;
+    if (city?.type !== "city") return "notInCity";
+    const state = this.cityStates[city.id];
+    const offers = state ? ensureRecruitmentOffers(state, this.worldSeed, getGameDay(this.timeState)) : [];
+    if (!offers.includes(cardId)) return "notAvailable";
+    const definition = contentPack.cards.find((card) => card.id === cardId);
+    if (!definition) return "invalid";
+    const cost = getRecruitmentCost(definition);
+    if (this.warband.length >= this.warbandCapacity) return "capacityFull";
+    if (this.gold < cost) return "notEnoughGold";
+    this.gold -= cost;
+    this.warband.push(createCardInstance(cardId));
+    state.recruitmentOffers = offers.filter((id) => id !== cardId);
+    this.advanceTime(30);
+    this.notify();
+    return "success";
   }
 
   recruit(cardId: string): RosterActionResult {
@@ -643,19 +877,18 @@ export class GameSession {
     const card = this.allUnits.find((candidate) => candidate.uid === uid);
     if (!card) return "invalid";
     const upgrade = upgradesByCardId.get(card.cardId);
-    if (
-      !upgrade ||
-      card.level < upgrade.requiredLevel ||
-      !upgrade.options.includes(targetCardId)
-    ) {
+    const sourceDefinition = getCardDefinition(card.cardId);
+    const requiredXp = xpNeededForUnitUpgrade(sourceDefinition.tier);
+    if (!upgrade || card.xp < requiredXp || !upgrade.options.includes(targetCardId)) {
       return "invalid";
     }
 
     const upgradedDefinition = getCardDefinition(targetCardId);
+    const healthRatio = Math.max(0, Math.min(1, card.currentHp / sourceDefinition.maxHp));
     card.cardId = upgradedDefinition.id;
-    card.currentHp = upgradedDefinition.maxHp;
+    card.currentHp = Math.max(1, Math.round(upgradedDefinition.maxHp * healthRatio));
     card.level = 1;
-    card.xp = 0;
+    card.xp -= requiredXp;
     this.advanceTime(20);
     this.notify();
     return "success";
@@ -680,8 +913,10 @@ export class GameSession {
       this.warband,
       archetype,
       this.hero,
-      { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp },
+      { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp, fieldSlots: this.battleFieldSlots },
       getTerrainBattleModifiers(this.currentTerrain),
+      undefined,
+      { playerLevel: this.characterState.level, warbandThreat: this.warbandThreatRating },
     );
     this.mode = "battle";
     this.notify();
@@ -715,8 +950,10 @@ export class GameSession {
         this.warband,
         archetype,
         this.hero,
-        { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp },
+        { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp, fieldSlots: this.battleFieldSlots },
         getTerrainBattleModifiers(this.currentTerrain),
+        undefined,
+        { playerLevel: this.characterState.level, warbandThreat: this.warbandThreatRating },
       );
       this.mode = "battle";
       this.notify();
@@ -752,6 +989,8 @@ export class GameSession {
       {
         id: `npc_${enemyWarband.id}`,
         nameKey: enemyWarband.nameKey,
+        leaderCardId: enemyWarband.leaderCardId ?? enemyWarband.unitIds[0],
+        leaderLevel: enemyWarband.leaderLevel,
         deck: [
           ...(enemyWarband.leaderCardId ? [enemyWarband.leaderCardId] : []),
           ...enemyWarband.unitIds,
@@ -773,9 +1012,10 @@ export class GameSession {
         })),
       },
       this.hero,
-      { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp },
+      { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp, fieldSlots: this.battleFieldSlots },
       getTerrainBattleModifiers(this.currentTerrain),
       createWarbandBattleDeck(enemyWarband),
+      { playerLevel: this.characterState.level, warbandThreat: this.warbandThreatRating },
     );
     this.mode = "battle";
     this.notify();
@@ -857,32 +1097,45 @@ export class GameSession {
     return { kind: "danger", amount };
   }
 
-  buyItem(itemId: string): TradeActionResult {
+  buyItem(itemId: string, quantity = 1): TradeActionResult {
     const profile = this.marketProfile;
     const offer = profile?.offers.find((candidate) => candidate.itemId === itemId);
-    if (!profile || !offer || offer.stock <= 0) return "invalid";
-    const price = this.getBuyPrice(itemId);
+    quantity = Math.floor(quantity);
+    if (!profile || !offer || offer.stock < quantity || quantity <= 0) return "invalid";
+    const price = this.getBuyPrice(itemId) * quantity;
     if (this.gold < price) return "notEnoughGold";
-    if (!this.canCarryItem(itemId, 1)) return "tooHeavy";
+    if (!this.canCarryItem(itemId, quantity)) return "tooHeavy";
     const stock = marketStock(this.economyState, profile);
     const stockEntry = stock.find((entry) => entry.itemId === itemId);
-    if (!stockEntry || stockEntry.quantity <= 0) return "invalid";
-    stockEntry.quantity -= 1;
+    if (!stockEntry || stockEntry.quantity < quantity) return "invalid";
+    stockEntry.quantity -= quantity;
     this.gold -= price;
-    addToInventory(this.inventory, itemId, 1);
+    addToInventory(this.inventory, itemId, quantity);
+    if (profile.locationId) {
+      this.economyState.merchantGold[profile.locationId] =
+        (this.economyState.merchantGold[profile.locationId] ?? profile.merchantGold) + price;
+    }
     this.advanceTime(5);
     this.notify();
     return "success";
   }
 
-  sellItem(itemId: string): TradeActionResult {
+  sellItem(itemId: string, quantity = 1): TradeActionResult {
     const profile = this.marketProfile;
-    if (!profile) return "invalid";
-    const price = this.getSellPrice(itemId);
-    if (!removeFromInventory(this.inventory, itemId, 1)) return "notEnoughItems";
+    quantity = Math.floor(quantity);
+    if (!profile || quantity <= 0) return "invalid";
+    const price = this.getSellPrice(itemId) * quantity;
+    if (profile.locationId && (this.economyState.merchantGold[profile.locationId] ?? profile.merchantGold) < price) {
+      return "merchantCannotAfford";
+    }
+    if (!removeFromInventory(this.inventory, itemId, quantity)) return "notEnoughItems";
     const stock = marketStock(this.economyState, profile);
     this.gold += price;
-    addToInventory(stock, itemId, 1);
+    addToInventory(stock, itemId, quantity);
+    if (profile.locationId) {
+      this.economyState.merchantGold[profile.locationId] =
+        (this.economyState.merchantGold[profile.locationId] ?? profile.merchantGold) - price;
+    }
     this.advanceTime(5);
     this.notify();
     return "success";
@@ -1019,7 +1272,7 @@ export class GameSession {
     if (!reward) return null;
     return this.claimVictoryReward({
       continueDungeon,
-      takeCard: Boolean(reward.cardId),
+      takeCard: getCapturedCardIds(reward).length > 0,
       itemIds: reward.items.map((item) => item.itemId),
     });
   }
@@ -1033,6 +1286,7 @@ export class GameSession {
     const claimedReward: BattleReward = {
       gold: reward.gold,
       cardId: selection.takeCard ? reward.cardId : null,
+      capturedCardIds: selection.takeCard ? getCapturedCardIds(reward) : [],
       items: reward.items.filter((item) => selection.itemIds.includes(item.itemId)),
     };
     this.gold += reward.gold;
@@ -1052,9 +1306,7 @@ export class GameSession {
     }
     awardCharacterXp(this.characterState, 70 + completedBattle.enemy.threat * 25);
 
-    if (claimedReward.cardId) {
-      this.addPrisoner(claimedReward.cardId, 1);
-    }
+    for (const cardId of getCapturedCardIds(claimedReward)) this.addPrisoner(cardId, 1);
 
     if (this.currentEnemySpawnId) {
       this.world.defeatEnemy(this.currentEnemySpawnId);
@@ -1073,6 +1325,24 @@ export class GameSession {
         this.currentWarbandEnemyId,
         this.currentWarbandAllyId,
       );
+    }
+
+    if (this.villageBattleContext) {
+      const context = this.villageBattleContext; const state = this.villageStates[context.locationId];
+      if (context.kind === "defense" && state) {
+        const quest = ensureVillageQuest(state, this.worldSeed, getGameDay(this.timeState));
+        if (quest.type === "night_bandits" && quest.status === "active") this.rewardVillageQuest(state, quest);
+      } else if (context.kind === "raid" && state) {
+        const stock = this.economyState.markets[context.locationId] ?? [];
+        for (const entry of stock.slice(0, 4)) { const stolen = Math.min(entry.quantity, Math.max(1, Math.ceil(entry.quantity * 0.4))); if (stolen > 0) { entry.quantity -= stolen; addToInventory(this.inventory, entry.itemId, stolen); } }
+        state.condition = "looted"; state.recoveryDay = getGameDay(this.timeState) + 7; state.population = Math.max(20, Math.floor(state.population * 0.9)); state.prosperity = Math.max(0, state.prosperity - 22); state.militia = Math.max(0, Math.floor(state.militia * 0.35)); state.recruitmentOffers = [];
+      } else if (context.kind === "villager") {
+        for (const entry of context.cargo ?? []) addToInventory(this.inventory, entry.itemId, entry.quantity);
+        const villager = this.economyState.villagers.find((candidate) => candidate.id === context.villagerId);
+        const origin = this.world.map.locations.find((location) => location.id === context.locationId);
+        if (villager && origin) { villager.inventory = []; villager.progress = 0; villager.x = origin.x; villager.y = origin.y; }
+        if (state) state.prosperity = Math.max(0, state.prosperity - 3);
+      }
     }
 
     if (this.dungeonRun) {
@@ -1114,6 +1384,7 @@ export class GameSession {
     this.currentWarbandAllyId = null;
     this.currentWarbandEnemyId = null;
     this.pendingVictoryReward = null;
+    this.villageBattleContext = null;
     this.advanceTime(45);
     this.notify();
     return claimedReward;
@@ -1200,9 +1471,6 @@ export class GameSession {
   }
 
   async save(repository: SaveRepository): Promise<boolean> {
-    const location = this.world.nearbyLocation;
-    if (location?.type !== "city") return false;
-
     await repository.write({
       version: 1,
       worldRevision: 5,
@@ -1213,7 +1481,7 @@ export class GameSession {
         mapId: this.world.state.mapId,
         x: this.world.state.x,
         y: this.world.state.y,
-        nearbyLocationId: location.id,
+        nearbyLocationId: this.world.state.nearbyLocationId,
         exploredSectors: this.world.state.exploredSectors,
         waypoint: this.waypoint,
         warbands: this.world.state.warbands,
@@ -1227,6 +1495,20 @@ export class GameSession {
       prisoners: this.prisoners,
       leadershipLevel: this.leadershipLevel,
       characterState: this.characterState,
+      runProfile: this.runProfile,
+      cityStates: this.cityStates,
+      villageStates: this.villageStates,
+      activeBattle: this.mode === "battle" && this.battle ? {
+        enemyId: this.battle.enemy.id,
+        enemy: this.battle.enemy,
+        enemySpawnId: this.currentEnemySpawnId,
+        locationId: this.currentLocationBattleId,
+        warbandBattleId: this.currentWarbandBattleId,
+        warbandAllyId: this.currentWarbandAllyId,
+        warbandEnemyId: this.currentWarbandEnemyId,
+        dungeonRun: this.dungeonRun ? { ...this.dungeonRun, enemyIds: [...this.dungeonRun.enemyIds] } : null,
+        villageContext: this.villageBattleContext ? structuredClone(this.villageBattleContext) : null,
+      } : null,
       completedLocationIds: [...this.completedLocationIds],
       equippedItemId: this.equippedItemId,
       rightHandItemId: this.rightHandItemId,
@@ -1520,6 +1802,7 @@ export class GameSession {
   }
 
   private processDailyUpkeep(day: number): void {
+    this.processVillageWorldState(day);
     const wagesDue = day % 7 === 1 ? this.weeklyWageCost : 0;
     const wagesPaid = Math.min(this.gold, wagesDue);
     this.gold -= wagesPaid;
@@ -1549,6 +1832,24 @@ export class GameSession {
       foodConsumed,
       moraleChange: this.survivalState.morale - previousMorale,
     };
+  }
+
+  private processVillageWorldState(day: number): void {
+    for (const state of Object.values(this.villageStates)) {
+      if (state.condition === "looted" && state.recoveryDay && day >= state.recoveryDay) { state.condition = "recovering"; state.recoveryDay = day + 5; }
+      else if (state.condition === "recovering") {
+        state.population += Math.max(2, Math.ceil(state.population * 0.015)); state.prosperity = Math.min(100, state.prosperity + 2); state.militia += 1;
+        if (state.recoveryDay && day >= state.recoveryDay) { state.condition = "normal"; state.recoveryDay = null; }
+      }
+      if (state.condition !== "normal") continue;
+      const location = this.world.map.locations.find((candidate) => candidate.id === state.locationId); if (!location) continue;
+      const banditNearby = this.world.state.enemies.some((enemy) => enemy.active && Math.hypot(enemy.x - location.x, enemy.y - location.y) < 260);
+      const villageFaction = this.factionState.locationFactions[state.locationId];
+      const hostileLordNearby = this.world.state.warbands.some((warband) => warband.state !== "destroyed" && warband.type === "lord" && areFactionsHostile(warband.factionId, villageFaction, this.factionState) && Math.hypot(warband.x - location.x, warband.y - location.y) < 220);
+      if (!(banditNearby || hostileLordNearby) || hashValue(`${this.worldSeed}:${state.locationId}:${day}:raid`) % 100 >= 35) continue;
+      state.condition = "looted"; state.recoveryDay = day + 6; state.population = Math.max(20, Math.floor(state.population * 0.94)); state.prosperity = Math.max(0, state.prosperity - (hostileLordNearby ? 16 : 11)); state.militia = Math.max(0, state.militia - (hostileLordNearby ? 12 : 7));
+      for (const stock of this.economyState.markets[state.locationId] ?? []) stock.quantity = Math.floor(stock.quantity * 0.45);
+    }
   }
 
   private canCarryItem(itemId: string, quantity: number): boolean {
@@ -1729,6 +2030,9 @@ export class GameSession {
       destinationId: target.id,
       progress: 0,
       speed: 48,
+      leaderCardId: "wache",
+      leaderLevel: 2,
+      unitIds: ["village_levy", "militia_shieldbearer"],
       inventory: [
         { itemId: "bread", quantity: 4 },
         { itemId: "wine", quantity: 2 },
@@ -1792,8 +2096,10 @@ export class GameSession {
       this.warband,
       archetype,
       this.hero,
-      { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp },
+      { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp, fieldSlots: this.battleFieldSlots },
       getTerrainBattleModifiers(this.currentTerrain),
+      undefined,
+      { playerLevel: this.characterState.level, warbandThreat: this.warbandThreatRating },
     );
     this.mode = "battle";
     this.notify();
@@ -1892,6 +2198,10 @@ function createWarbandBattleDeck(warband: WorldWarbandState): CardInstance[] {
 
 export function getPrisonerRecruitGoldCost(tier: number): number {
   return Math.max(10, tier * 10);
+}
+
+function getCapturedCardIds(reward: BattleReward): string[] {
+  return reward.capturedCardIds ?? (reward.cardId ? [reward.cardId] : []);
 }
 
 export function getPrisonerRecruitXpCost(tier: number): number {

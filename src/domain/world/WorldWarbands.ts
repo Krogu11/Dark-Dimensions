@@ -97,6 +97,7 @@ export function normalizeWorldWarbands(
     )
     .map((warband) => ({
       ...warband,
+      leaderCardId: warband.leaderCardId ?? selectWarbandLeader(warband.unitIds),
       leaderLevel: warband.leaderLevel ?? 1,
       equipmentItemIds: [...(warband.equipmentItemIds ?? [])],
       targetWarbandId:
@@ -160,7 +161,7 @@ export function createWarbandFromSpawn(
     maxPursuitDistance: template.maxPursuitDistance,
     respawnHours: template.respawnHours,
     respawnRemainingHours: 0,
-    leaderCardId: template.leaderCardId,
+    leaderCardId: template.leaderCardId ?? selectWarbandLeader(template.unitIds),
     leaderLevel: template.leaderLevel ?? 1,
     equipmentItemIds: [...template.equipmentItemIds],
     patrolPoints: spawn.patrolPoints?.map((point) => ({ ...point })),
@@ -173,6 +174,14 @@ export function createWarbandFromSpawn(
     experience: 0,
     lootItemIds: [...template.lootItemIds],
   };
+}
+
+function selectWarbandLeader(unitIds: string[]): string {
+  return [...unitIds].sort((leftId, rightId) => {
+    const left = getCardDefinition(leftId);
+    const right = getCardDefinition(rightId);
+    return right.tier - left.tier || right.atk + right.def - left.atk - left.def;
+  })[0];
 }
 
 export function estimateWarbandStrength(warband: WorldWarbandState): number {

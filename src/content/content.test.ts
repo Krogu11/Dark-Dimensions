@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { cardsById, contentPack } from "./content";
 
 describe("unit upgrade trees", () => {
+  it("offers an early-game tier 1 unit for every playable race", () => {
+    for (const race of ["human", "orc", "kobold", "undead", "machine", "elemental", "beast"]) {
+      expect(contentPack.cards.some((card) => card.race === race && card.tier === 1)).toBe(true);
+    }
+  });
+
   it("references existing source and target cards", () => {
     for (const upgrade of contentPack.unitUpgrades) {
       expect(cardsById.has(upgrade.fromCardId)).toBe(true);
@@ -45,6 +51,7 @@ describe("unit upgrade trees", () => {
       "necromancer",
       "death_paladin",
       "cave_geomancer",
+      "banshee",
     ]);
     const upgradeSources = new Set(
       contentPack.unitUpgrades.map(({ fromCardId }) => fromCardId),
@@ -55,7 +62,7 @@ describe("unit upgrade trees", () => {
     }
   });
 
-  it("keeps unit tiers aligned with upgrade levels", () => {
+  it("keeps unit tiers aligned with upgrade paths", () => {
     for (const card of contentPack.cards) {
       expect(card.tier).toBeGreaterThanOrEqual(1);
       expect(card.tier).toBeLessThanOrEqual(6);
@@ -65,10 +72,10 @@ describe("unit upgrade trees", () => {
 
     for (const upgrade of contentPack.unitUpgrades) {
       const source = cardsById.get(upgrade.fromCardId)!;
-      expect(upgrade.requiredLevel).toBe(source.tier + 1);
       for (const option of upgrade.options) {
         const target = cardsById.get(option)!;
         expect(target.tier).toBeGreaterThanOrEqual(source.tier + 1);
+        expect(target.race).toBe(source.race);
       }
     }
   });

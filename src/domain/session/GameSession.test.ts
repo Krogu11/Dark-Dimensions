@@ -46,16 +46,20 @@ describe("GameSession roster", () => {
     const session = new GameSession();
     session.recruit("village_levy");
     const recruit = session.warband[0];
-    recruit.level = 2;
+    recruit.xp = 125;
+    recruit.currentHp = 450;
 
-    expect(session.upgradeUnit(recruit.uid, "levy_spearman")).toBe("success");
-    expect(recruit.cardId).toBe("levy_spearman");
-    recruit.level = 3;
+    expect(session.upgradeUnit(recruit.uid, "swordsman")).toBe("success");
+    expect(recruit.cardId).toBe("swordsman");
+    expect(recruit.xp).toBe(25);
+    expect(recruit.currentHp / getCardDefinition("swordsman").maxHp).toBeCloseTo(0.5, 1);
+    recruit.xp = 175;
 
     expect(session.upgradeUnit(recruit.uid, "soldier")).toBe("success");
     expect(recruit.cardId).toBe("soldier");
     expect(recruit.level).toBe(1);
-    expect(recruit.currentHp).toBe(getCardDefinition("soldier").maxHp);
+    expect(recruit.xp).toBe(25);
+    expect(recruit.currentHp).toBeLessThan(getCardDefinition("soldier").maxHp);
   });
 
   it("allows roster changes away from cities", () => {
@@ -73,6 +77,8 @@ describe("GameSession roster", () => {
     const session = new GameSession();
     session.recruit("village_levy");
     const recruit = session.warband[0];
+    session.recruit("village_levy");
+    const reserve = session.warband[1];
     session.beginBattle(session.world.state.enemies[0].id);
     session.battle!.deployedUnitUids.add(recruit.uid);
     session.battle!.outcome = "victory";
@@ -81,6 +87,7 @@ describe("GameSession roster", () => {
     session.finishVictory();
 
     expect(recruit.xp).toBe(60);
+    expect(reserve.xp).toBe(0);
     expect(session.hero.currentHp).toBe(session.heroMaxHp);
   });
 
@@ -181,6 +188,25 @@ describe("GameSession roster", () => {
     expect(inventoryQuantity(session.inventory, definition.outputItemId)).toBe(
       outputBefore + definition.outputQuantity,
     );
+  });
+
+  it("trades item quantities and transfers gold through the saved merchant purse", () => {
+    const session = new GameSession(112234);
+    session.gold = 10_000;
+    const profile = session.marketProfile!;
+    const offer = profile.offers.find((candidate) => candidate.stock >= 3)!;
+    const playerBefore = inventoryQuantity(session.inventory, offer.itemId);
+    const merchantBefore = session.economyState.merchantGold[profile.locationId!];
+    const buyPrice = session.getBuyPrice(offer.itemId);
+
+    expect(session.buyItem(offer.itemId, 3)).toBe("success");
+    expect(inventoryQuantity(session.inventory, offer.itemId)).toBe(playerBefore + 3);
+    expect(session.economyState.merchantGold[profile.locationId!]).toBe(merchantBefore + buyPrice * 3);
+
+    const sellPrice = session.getSellPrice(offer.itemId);
+    expect(session.sellItem(offer.itemId, 2)).toBe("success");
+    expect(inventoryQuantity(session.inventory, offer.itemId)).toBe(playerBefore + 1);
+    expect(session.economyState.merchantGold[profile.locationId!]).toBe(merchantBefore + buyPrice * 3 - sellPrice * 2);
   });
 
   it("depletes finite market stock and raises scarcity prices", () => {
@@ -490,6 +516,59 @@ describe("GameSession roster", () => {
     expect(restored.leftHandItemId).toBe("simple_shield");
   });
 
+  it("writes an Ironman autosave outside cities", async () => {
+    const session = new GameSession(262626);
+    session.world.state.nearbyLocationId = null;
+    let storedSave: SaveGame | null = null;
+    const repository: SaveRepository = {
+      read: async () => storedSave,
+      write: async (save) => { storedSave = structuredClone(save); },
+      delete: async () => { storedSave = null; },
+    };
+
+    expect(await session.save(repository)).toBe(true);
+    expect(storedSave).not.toBeNull();
+    expect(storedSave!.player.nearbyLocationId).toBeNull();
+  });
+
+  it("persists generated city population, garrison, and prosperity", async () => {
+    const session = new GameSession(282828);
+    const cityId = Object.keys(session.cityStates)[0];
+    session.cityStates[cityId].prosperity = 91;
+    let storedSave: SaveGame | null = null;
+    const repository: SaveRepository = {
+      read: async () => storedSave,
+      write: async (save) => { storedSave = structuredClone(save); },
+      delete: async () => { storedSave = null; },
+    };
+
+    await session.save(repository);
+    const restored = new GameSession(1);
+    restored.restore(storedSave!);
+
+    expect(restored.cityStates[cityId]).toEqual(session.cityStates[cityId]);
+  });
+
+  it("restores an active Ironman battle checkpoint into the same encounter", async () => {
+    const session = new GameSession(272727);
+    const enemy = session.world.state.enemies[0];
+    session.beginBattle(enemy.id);
+    let storedSave: SaveGame | null = null;
+    const repository: SaveRepository = {
+      read: async () => storedSave,
+      write: async (save) => { storedSave = structuredClone(save); },
+      delete: async () => { storedSave = null; },
+    };
+
+    await session.save(repository);
+    expect(storedSave!.activeBattle?.enemySpawnId).toBe(enemy.id);
+
+    const restored = new GameSession(1);
+    restored.restore(storedSave!);
+    expect(restored.mode).toBe("battle");
+    expect(restored.battle?.enemy.id).toBe(session.battle?.enemy.id);
+  });
+
   it("uses action time and reduces visibility after dark", () => {
     const session = new GameSession(717171);
     session.gold = 1_000;
@@ -534,7 +613,7 @@ describe("GameSession roster", () => {
     });
   });
 
-  it("scales weekly wages by unit tier and level", () => {
+  it("scales weekly wages by unit tier only", () => {
     const levy = createCardInstance("village_levy");
     const spearman = createCardInstance("levy_spearman");
     const soldier = createCardInstance("soldier");
@@ -545,8 +624,8 @@ describe("GameSession roster", () => {
 
     expect(getWeeklyUnitWage(levy)).toBe(1);
     expect(getWeeklyUnitWage(spearman)).toBe(3);
-    expect(getWeeklyUnitWage(soldier)).toBe(8);
-    expect(getWeeklyUnitWage(crusader)).toBe(16);
+    expect(getWeeklyUnitWage(soldier)).toBe(7);
+    expect(getWeeklyUnitWage(crusader)).toBe(14);
   });
 
   it("naturally regenerates surviving troops while time passes", () => {

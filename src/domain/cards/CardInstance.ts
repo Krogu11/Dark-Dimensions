@@ -51,13 +51,13 @@ export function xpNeededForNextLevel(level: number): number {
   return 50 + level * 50;
 }
 
+export function xpNeededForUnitUpgrade(tier: number): number {
+  return 50 + Math.max(1, Math.floor(tier)) * 50;
+}
+
 export function awardXp(card: CardInstance, amount: number): boolean {
+  const requirement = xpNeededForUnitUpgrade(getCardDefinition(card.cardId).tier);
+  const wasReady = card.xp >= requirement;
   card.xp += amount;
-  let leveledUp = false;
-  while (card.xp >= xpNeededForNextLevel(card.level)) {
-    card.xp -= xpNeededForNextLevel(card.level);
-    card.level += 1;
-    leveledUp = true;
-  }
-  return leveledUp;
+  return !wasReady && card.xp >= requirement;
 }

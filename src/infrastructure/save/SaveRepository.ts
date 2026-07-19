@@ -7,8 +7,12 @@ import type { FactionState } from "../../domain/quests/Factions";
 import type { GameTimeState } from "../../domain/time/GameClock";
 import type { SurvivalState } from "../../domain/survival/Survival";
 import type { CharacterState } from "../../domain/character/CharacterProgression";
+import type { RunProfile } from "../../domain/character/CharacterOrigins";
 import type { PrisonerStack } from "../../domain/session/GameSession";
 import type { WorldMonsterRaidState } from "../../domain/world/WorldSimulation";
+import type { CityStates } from "../../domain/world/Cities";
+import type { VillageStates } from "../../domain/world/Villages";
+import type { EnemyArchetype } from "../../domain/content/schemas";
 import type {
   WorldWarbandBattleState,
   WorldWarbandState,
@@ -39,6 +43,20 @@ export interface SaveGame {
   hero?: CardInstance;
   leadershipLevel?: number;
   characterState?: CharacterState;
+  runProfile?: RunProfile | null;
+  cityStates?: CityStates;
+  villageStates?: VillageStates;
+  activeBattle?: {
+    enemyId: string;
+    enemy?: EnemyArchetype;
+    enemySpawnId: string | null;
+    locationId: string | null;
+    warbandBattleId: string | null;
+    warbandAllyId: string | null;
+    warbandEnemyId: string | null;
+    dungeonRun: { locationId: string; stage: number; totalStages: number; enemyIds: string[] } | null;
+    villageContext?: { kind: "defense" | "raid" | "villager"; locationId: string; villagerId?: string; cargo?: InventoryStack[] } | null;
+  } | null;
   completedLocationIds?: string[];
   equippedItemId?: string | null;
   rightHandItemId?: string | null;

@@ -229,6 +229,7 @@ export class WorldScene extends Phaser.Scene {
     this.createWarbands();
     this.createWarbandBattles();
     this.createCaravans();
+    this.createVillagerAnimation();
     this.createVillagers();
     this.createPlayer();
     this.createWaypoint();
@@ -1125,19 +1126,39 @@ export class WorldScene extends Phaser.Scene {
 
   private createVillagers(): void {
     for (const villager of gameSession.economyState.villagers) {
-      const shadow = this.add.ellipse(0, 8, 18, 8, 0x000000, 0.38);
-      const body = this.add
-        .circle(0, 0, 6, 0x8d7147, 0.98)
-        .setStrokeStyle(2, 0xd0b47a, 0.9);
-      const pack = this.add.rectangle(7, 2, 7, 9, 0x493821, 1);
+      const shadow = this.add.ellipse(0, 10, 29, 8, 0x000000, 0.38);
+      const sprite = this.add.sprite(0, -4, "villager-trader-0").play("villager-trader-walk");
+      const origin = gameSession.world.map.locations.find((location) => location.id === villager.originId);
+      const destination = gameSession.world.map.locations.find((location) => location.id === villager.destinationId);
+      sprite.setScale(destination && origin && destination.x < origin.x ? -1 : 1, 1);
       const marker = this.add.container(villager.x, villager.y, [
         shadow,
-        pack,
-        body,
+        sprite,
       ]);
       marker.setDepth(6);
       this.villagerMarkers.set(villager.id, marker);
     }
+  }
+
+  private createVillagerAnimation(): void {
+    if (this.textures.exists("villager-trader-0")) return;
+    for (let frame = 0; frame < 4; frame += 1) {
+      const graphics = this.make.graphics({ x: 0, y: 0 }, false);
+      const step = frame % 2 === 0 ? -1 : 1;
+      graphics.fillStyle(0x000000, 0).fillRect(0, 0, 42, 42);
+      graphics.fillStyle(0x382b1c, 1).fillRoundedRect(18, 22, 19, 10, 2);
+      graphics.lineStyle(2, 0xb68c49, 1).strokeRoundedRect(18, 22, 19, 10, 2);
+      graphics.fillStyle(0xc59a4e, 1).fillTriangle(19, 22, 27, 14, 36, 22);
+      graphics.fillStyle(0x171712, 1).fillCircle(22 + step, 33, 4).fillCircle(34 - step, 33, 4);
+      graphics.fillStyle(0x70583a, 1).fillRect(8, 14 + Math.abs(step), 9, 15);
+      graphics.fillStyle(0xd0b47a, 1).fillCircle(12, 10 + Math.abs(step), 5);
+      graphics.fillStyle(0x4a3924, 1).fillRect(4, 16, 5, 11);
+      graphics.lineStyle(3, 0x6c5535, 1).lineBetween(11, 28, 9 + step * 2, 37).lineBetween(15, 28, 17 - step * 2, 37);
+      graphics.lineStyle(2, 0xa98246, 1).lineBetween(16, 20, 22, 26);
+      graphics.generateTexture(`villager-trader-${frame}`, 42, 42);
+      graphics.destroy();
+    }
+    this.anims.create({ key: "villager-trader-walk", frames: [0, 1, 2, 3].map((frame) => ({ key: `villager-trader-${frame}` })), frameRate: 7, repeat: -1 });
   }
 
   private updateVillagerMarkers(): void {

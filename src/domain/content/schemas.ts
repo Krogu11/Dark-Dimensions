@@ -210,11 +210,42 @@ export const worldMapSchema = z.object({
 
 export const combatRulesSchema = z.object({
   summonsPerTurn: z.literal(3),
+  rewards: z.object({
+    baseGold: z.number().int().nonnegative(),
+    goldPerThreat: z.number().int().nonnegative(),
+    goldPerDefeatedUnit: z.number().int().nonnegative(),
+    itemChanceMultiplier: z.number().nonnegative(),
+    itemChanceBonus: z.number().min(0).max(1),
+    minimumItemRolls: z.number().int().min(0).max(10),
+    captureBaseChance: z.number().min(0).max(1),
+    captureChancePerDefeatedUnit: z.number().min(0).max(1),
+    captureChanceCap: z.number().min(0).max(1),
+    captureTierPenalty: z.number().min(0).max(1),
+    guaranteedCaptureAfterDefeatedUnits: z.number().int().min(1),
+    maximumCaptures: z.number().int().min(1).max(5),
+  }),
+});
+
+export const terrainBattlefieldSchema = z.object({
+  image: z.string().min(1),
+  focus: z.object({
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+  }).default({ x: 50, y: 50 }),
 });
 
 export const cardDefinitionSchema = z.object({
   id: z.string().min(1),
   nameKey: z.string().min(1),
+  descriptionKey: z.string().min(1).optional(),
+  portraitImage: z.string().min(1).optional(),
+  cardImage: z.string().min(1).optional(),
+  imageFocus: z
+    .object({
+      x: z.number().min(0).max(100),
+      y: z.number().min(0).max(100),
+    })
+    .optional(),
   race: z.string().min(1),
   rarity: z.enum(["common", "uncommon", "rare", "epic", "legendary"]),
   tier: z.number().int().min(1).max(6),
@@ -229,13 +260,31 @@ export const cardDefinitionSchema = z.object({
       "burn_weakest_300",
       "shield_self_400",
       "rally_all_150",
+      "human_guard_all_180",
+      "orc_rage_self_250",
+      "kobold_pack_100",
+      "undead_drain_200",
+      "beast_pack_120",
+      "human_first_aid_180",
+      "human_brace_160",
+      "human_volley_120",
+      "orc_bloodrage_180",
+      "orc_overrun_160",
+      "kobold_trap_140",
+      "undead_reanimate_30",
+      "machine_repair_180",
+      "machine_armor_all_140",
+      "elemental_frost_140",
+      "elemental_chain_160",
+      "beast_first_strike_140",
+      "beast_hunt_160",
     ])
     .optional(),
 });
 
 export const unitUpgradeSchema = z.object({
   fromCardId: z.string().min(1),
-  requiredLevel: z.number().int().positive(),
+  requiredLevel: z.number().int().positive().optional(),
   options: z.array(z.string().min(1)).min(1).max(3),
 });
 
@@ -243,6 +292,13 @@ export const itemDefinitionSchema = z.object({
   id: z.string().min(1),
   nameKey: z.string().min(1),
   descriptionKey: z.string().min(1),
+  itemImage: z.string().min(1).optional(),
+  imageFocus: z
+    .object({
+      x: z.number().min(0).max(100),
+      y: z.number().min(0).max(100),
+    })
+    .optional(),
   type: z.enum(["resource", "tradeGood", "consumable", "equipment"]),
   baseValue: z.number().int().positive(),
   weight: z.number().nonnegative(),
@@ -272,6 +328,8 @@ export const tradeRecipeSchema = z.object({
 export const enemyArchetypeSchema = z.object({
   id: z.string().min(1),
   nameKey: z.string().min(1),
+  leaderCardId: z.string().min(1).optional(),
+  leaderLevel: z.number().int().positive().optional(),
   deck: z.array(z.string().min(1)).min(1),
   goldReward: z.number().int().nonnegative(),
   threat: z.number().int().min(1).max(5),
@@ -294,6 +352,7 @@ export const enemyArchetypeSchema = z.object({
 export const contentPackSchema = z.object({
   version: z.literal(1),
   combatRules: combatRulesSchema,
+  terrainBattlefields: z.record(z.string(), terrainBattlefieldSchema).default({}),
   cards: z.array(cardDefinitionSchema),
   items: z.array(itemDefinitionSchema),
   tradeRecipes: z.array(tradeRecipeSchema),

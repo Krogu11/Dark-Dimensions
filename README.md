@@ -9,8 +9,9 @@ npm install
 npm run dev
 ```
 
-Move on the world map with WASD or the arrow keys. Saving is enabled only
-while the player is inside a city.
+Move on the world map with WASD or the arrow keys. Each run uses one Ironman
+autosave. Entering locations and starting or surviving battles saves progress;
+death permanently ends the run.
 
 ## Validation
 

@@ -1,491 +1,3070 @@
 {
   "version": 1,
   "combatRules": {
-    "summonsPerTurn": 3
+    "summonsPerTurn": 3,
+    "rewards": {
+      "baseGold": 12,
+      "goldPerThreat": 10,
+      "goldPerDefeatedUnit": 4,
+      "itemChanceMultiplier": 2.2,
+      "itemChanceBonus": 0.08,
+      "minimumItemRolls": 2,
+      "captureBaseChance": 0.4,
+      "captureChancePerDefeatedUnit": 0.05,
+      "captureChanceCap": 0.7,
+      "captureTierPenalty": 0.05,
+      "guaranteedCaptureAfterDefeatedUnits": 3,
+      "maximumCaptures": 2
+    }
+  },
+  "terrainBattlefields": {
+    "tundra": {
+      "image": "/assets/terrain/battle/tundra.webp",
+      "focus": {
+        "x": 50,
+        "y": 50
+      }
+    }
   },
   "cards": [
-    { "id": "player_wanderer", "nameKey": "card.playerWanderer.name", "race": "hero", "rarity": "common", "tier": 1, "initiative": 5, "atk": 700, "def": 700, "maxHp": 2200, "battleEffect": "rally_all_150" },
-    { "id": "village_levy", "nameKey": "card.villageLevy.name", "race": "human", "rarity": "common", "tier": 1, "initiative": 5, "atk": 300, "def": 250, "maxHp": 900, "recruitCost": 12 },
-    { "id": "levy_spearman", "nameKey": "card.levySpearman.name", "race": "human", "rarity": "common", "tier": 2, "initiative": 5, "atk": 450, "def": 350, "maxHp": 1050 },
-    { "id": "novice_archer", "nameKey": "card.noviceArcher.name", "race": "human", "rarity": "common", "tier": 2, "initiative": 6, "atk": 500, "def": 200, "maxHp": 850 },
-    { "id": "shrine_acolyte", "nameKey": "card.shrineAcolyte.name", "race": "human", "rarity": "common", "tier": 2, "initiative": 5, "atk": 250, "def": 600, "maxHp": 950 },
-    { "id": "militia_shieldbearer", "nameKey": "card.militiaShieldbearer.name", "race": "human", "rarity": "common", "tier": 2, "initiative": 4, "atk": 380, "def": 520, "maxHp": 1200 },
-    { "id": "village_slinger", "nameKey": "card.villageSlinger.name", "race": "human", "rarity": "common", "tier": 1, "initiative": 6, "atk": 420, "def": 180, "maxHp": 780 },
-    { "id": "kobold_jung", "nameKey": "card.koboldJung.name", "race": "kobold", "rarity": "common", "tier": 1, "initiative": 6, "atk": 300, "def": 150, "maxHp": 850 },
-    { "id": "kobold_speer", "nameKey": "card.koboldSpeer.name", "race": "kobold", "rarity": "common", "tier": 2, "initiative": 6, "atk": 500, "def": 300, "maxHp": 1000 },
-    { "id": "kobold_trapper", "nameKey": "card.koboldTrapper.name", "race": "kobold", "rarity": "common", "tier": 2, "initiative": 7, "atk": 560, "def": 220, "maxHp": 920 },
-    { "id": "goblin", "nameKey": "card.goblin.name", "race": "kobold", "rarity": "common", "tier": 3, "initiative": 6, "atk": 650, "def": 400, "maxHp": 1250 },
-    { "id": "kobold_shaman", "nameKey": "card.koboldShaman.name", "race": "kobold", "rarity": "uncommon", "tier": 3, "initiative": 6, "atk": 650, "def": 750, "maxHp": 1350, "battleEffect": "heal_lowest_300" },
-    { "id": "tunnel_guard", "nameKey": "card.tunnelGuard.name", "race": "kobold", "rarity": "uncommon", "tier": 3, "initiative": 5, "atk": 850, "def": 1200, "maxHp": 1900 },
-    { "id": "kobold_hauptmann", "nameKey": "card.koboldCaptain.name", "race": "kobold", "rarity": "uncommon", "tier": 4, "initiative": 6, "atk": 1100, "def": 650, "maxHp": 1750, "battleEffect": "rally_all_150" },
-    { "id": "ork_rekrut", "nameKey": "card.orkRecruit.name", "race": "orc", "rarity": "common", "tier": 2, "initiative": 4, "atk": 800, "def": 500, "maxHp": 1450 },
-    { "id": "orc_tracker", "nameKey": "card.orcTracker.name", "race": "orc", "rarity": "common", "tier": 3, "initiative": 5, "atk": 950, "def": 420, "maxHp": 1350 },
-    { "id": "orc", "nameKey": "card.orcWarrior.name", "race": "orc", "rarity": "common", "tier": 3, "initiative": 5, "atk": 1400, "def": 800, "maxHp": 2100 },
-    { "id": "skelett", "nameKey": "card.skeleton.name", "race": "undead", "rarity": "common", "tier": 2, "initiative": 3, "atk": 500, "def": 350, "maxHp": 1100 },
-    { "id": "grave_archer", "nameKey": "card.graveArcher.name", "race": "undead", "rarity": "common", "tier": 3, "initiative": 4, "atk": 760, "def": 300, "maxHp": 1050 },
-    { "id": "restless_spirit", "nameKey": "card.restlessSpirit.name", "race": "undead", "rarity": "common", "tier": 2, "initiative": 3, "atk": 650, "def": 650, "maxHp": 1000 },
-    { "id": "soldier", "nameKey": "card.soldier.name", "race": "human", "rarity": "common", "tier": 3, "initiative": 5, "atk": 1200, "def": 1000, "maxHp": 1900 },
-    { "id": "wache", "nameKey": "card.townGuard.name", "race": "human", "rarity": "common", "tier": 4, "initiative": 5, "atk": 900, "def": 1100, "maxHp": 1850 },
-    { "id": "bogenschutze", "nameKey": "card.archer.name", "race": "human", "rarity": "common", "tier": 3, "initiative": 5, "atk": 1000, "def": 600, "maxHp": 1500 },
-    { "id": "priest", "nameKey": "card.priest.name", "race": "human", "rarity": "common", "tier": 3, "initiative": 4, "atk": 800, "def": 1500, "maxHp": 1700, "battleEffect": "heal_lowest_300" },
-    { "id": "pikeman", "nameKey": "card.pikeman.name", "race": "human", "rarity": "uncommon", "tier": 3, "initiative": 5, "atk": 1350, "def": 1050, "maxHp": 2150 },
-    { "id": "longbowman", "nameKey": "card.longbowman.name", "race": "human", "rarity": "uncommon", "tier": 3, "initiative": 7, "atk": 1350, "def": 620, "maxHp": 1750 },
-    { "id": "battle_monk", "nameKey": "card.battleMonk.name", "race": "human", "rarity": "uncommon", "tier": 3, "initiative": 6, "atk": 1050, "def": 1450, "maxHp": 2100, "battleEffect": "heal_lowest_300" },
-    { "id": "feuer_geist", "nameKey": "card.fireSpirit.name", "race": "elemental", "rarity": "common", "tier": 2, "initiative": 6, "atk": 800, "def": 450, "maxHp": 1150, "battleEffect": "burn_weakest_300" },
-    { "id": "frost_wisp", "nameKey": "card.frostWisp.name", "race": "elemental", "rarity": "common", "tier": 2, "initiative": 7, "atk": 620, "def": 700, "maxHp": 1150 },
-    { "id": "storm_wisp", "nameKey": "card.stormWisp.name", "race": "elemental", "rarity": "common", "tier": 2, "initiative": 8, "atk": 900, "def": 380, "maxHp": 1050, "battleEffect": "burn_weakest_300" },
-    { "id": "riesenbat", "nameKey": "card.giantBat.name", "race": "beast", "rarity": "common", "tier": 2, "initiative": 8, "atk": 600, "def": 500, "maxHp": 1050 },
-    { "id": "dire_wolf", "nameKey": "card.direWolf.name", "race": "beast", "rarity": "common", "tier": 2, "initiative": 8, "atk": 900, "def": 450, "maxHp": 1350 },
-    { "id": "swamp_serpent", "nameKey": "card.swampSerpent.name", "race": "beast", "rarity": "uncommon", "tier": 3, "initiative": 7, "atk": 1150, "def": 900, "maxHp": 2050 },
-    { "id": "eisenwachter", "nameKey": "card.ironWarden.name", "race": "machine", "rarity": "common", "tier": 3, "initiative": 1, "atk": 800, "def": 1600, "maxHp": 2200, "battleEffect": "shield_self_400" },
-    { "id": "clockwork_scout", "nameKey": "card.clockworkScout.name", "race": "machine", "rarity": "common", "tier": 2, "initiative": 2, "atk": 700, "def": 900, "maxHp": 1500 },
-    { "id": "brass_guardian", "nameKey": "card.brassGuardian.name", "race": "machine", "rarity": "uncommon", "tier": 4, "initiative": 1, "atk": 1200, "def": 1900, "maxHp": 2700, "battleEffect": "shield_self_400" },
-    { "id": "ember_raider", "nameKey": "card.emberRaider.name", "race": "orc", "rarity": "uncommon", "tier": 4, "initiative": 5, "atk": 1500, "def": 850, "maxHp": 2300 },
-    { "id": "grave_warden", "nameKey": "card.graveWarden.name", "race": "undead", "rarity": "uncommon", "tier": 4, "initiative": 2, "atk": 1300, "def": 1900, "maxHp": 2600 },
-    { "id": "kobold_jaeger", "nameKey": "card.koboldHunter.name", "race": "kobold", "rarity": "uncommon", "tier": 4, "initiative": 6, "atk": 900, "def": 500, "maxHp": 1450 },
-    { "id": "cave_geomancer", "nameKey": "card.caveGeomancer.name", "race": "kobold", "rarity": "rare", "tier": 5, "initiative": 6, "atk": 1250, "def": 1600, "maxHp": 2400, "battleEffect": "shield_self_400" },
-    { "id": "kobold_koenig", "nameKey": "card.koboldKing.name", "race": "kobold", "rarity": "rare", "tier": 5, "initiative": 7, "atk": 1700, "def": 950, "maxHp": 2450 },
-    { "id": "ork_berserker", "nameKey": "card.orcBerserker.name", "race": "orc", "rarity": "uncommon", "tier": 3, "initiative": 5, "atk": 1650, "def": 650, "maxHp": 2200 },
-    { "id": "orc_wolf_rider", "nameKey": "card.orcWolfRider.name", "race": "orc", "rarity": "uncommon", "tier": 4, "initiative": 6, "atk": 1550, "def": 650, "maxHp": 2050 },
-    { "id": "orc_ironhide", "nameKey": "card.orcIronhide.name", "race": "orc", "rarity": "rare", "tier": 4, "initiative": 4, "atk": 1750, "def": 1750, "maxHp": 3200 },
-    { "id": "ork_kriegsherr", "nameKey": "card.orcWarlord.name", "race": "orc", "rarity": "rare", "tier": 5, "initiative": 5, "atk": 2250, "def": 1350, "maxHp": 3100 },
-    { "id": "knochenwachter", "nameKey": "card.boneWarden.name", "race": "undead", "rarity": "uncommon", "tier": 3, "initiative": 3, "atk": 1050, "def": 1450, "maxHp": 2300 },
-    { "id": "wraith", "nameKey": "card.wraith.name", "race": "undead", "rarity": "uncommon", "tier": 4, "initiative": 3, "atk": 1350, "def": 850, "maxHp": 1850 },
-    { "id": "bone_knight", "nameKey": "card.boneKnight.name", "race": "undead", "rarity": "rare", "tier": 4, "initiative": 3, "atk": 1800, "def": 1700, "maxHp": 3100 },
-    { "id": "banshee", "nameKey": "card.banshee.name", "race": "undead", "rarity": "rare", "tier": 5, "initiative": 4, "atk": 1950, "def": 950, "maxHp": 2300, "battleEffect": "burn_weakest_300" },
-    { "id": "lich", "nameKey": "card.lich.name", "race": "undead", "rarity": "rare", "tier": 6, "initiative": 3, "atk": 1650, "def": 1250, "maxHp": 2500 },
-    { "id": "knight", "nameKey": "card.knight.name", "race": "human", "rarity": "uncommon", "tier": 5, "initiative": 5, "atk": 1500, "def": 1350, "maxHp": 2500 },
-    { "id": "shieldguard", "nameKey": "card.shieldguard.name", "race": "human", "rarity": "rare", "tier": 5, "initiative": 3, "atk": 1000, "def": 2250, "maxHp": 3100 },
-    { "id": "sniper", "nameKey": "card.sniper.name", "race": "human", "rarity": "rare", "tier": 5, "initiative": 7, "atk": 1500, "def": 700, "maxHp": 1900 },
-    { "id": "ranger", "nameKey": "card.ranger.name", "race": "human", "rarity": "uncommon", "tier": 4, "initiative": 6, "atk": 1250, "def": 900, "maxHp": 2100 },
-    { "id": "banner_knight", "nameKey": "card.bannerKnight.name", "race": "human", "rarity": "rare", "tier": 5, "initiative": 5, "atk": 1750, "def": 1750, "maxHp": 3000, "battleEffect": "rally_all_150" },
-    { "id": "royal_arbalest", "nameKey": "card.royalArbalest.name", "race": "human", "rarity": "rare", "tier": 5, "initiative": 6, "atk": 1900, "def": 900, "maxHp": 2200 },
-    { "id": "crusader", "nameKey": "card.crusader.name", "race": "human", "rarity": "rare", "tier": 4, "initiative": 5, "atk": 1800, "def": 1600, "maxHp": 2900 },
-    { "id": "high_priest", "nameKey": "card.highPriest.name", "race": "human", "rarity": "rare", "tier": 4, "initiative": 4, "atk": 1100, "def": 2100, "maxHp": 2700 },
-    { "id": "flame_elemental", "nameKey": "card.flameElemental.name", "race": "elemental", "rarity": "uncommon", "tier": 3, "initiative": 7, "atk": 1500, "def": 850, "maxHp": 2050 },
-    { "id": "ice_elemental", "nameKey": "card.iceElemental.name", "race": "elemental", "rarity": "uncommon", "tier": 3, "initiative": 6, "atk": 1200, "def": 1450, "maxHp": 2200 },
-    { "id": "storm_elemental", "nameKey": "card.stormElemental.name", "race": "elemental", "rarity": "rare", "tier": 4, "initiative": 7, "atk": 2050, "def": 950, "maxHp": 2450, "battleEffect": "burn_weakest_300" },
-    { "id": "phoenix", "nameKey": "card.phoenix.name", "race": "elemental", "rarity": "epic", "tier": 4, "initiative": 8, "atk": 2100, "def": 1550, "maxHp": 3000 },
-    { "id": "blood_bat", "nameKey": "card.bloodBat.name", "race": "beast", "rarity": "uncommon", "tier": 3, "initiative": 9, "atk": 1200, "def": 650, "maxHp": 1700 },
-    { "id": "alpha_wolf", "nameKey": "card.alphaWolf.name", "race": "beast", "rarity": "uncommon", "tier": 3, "initiative": 9, "atk": 1450, "def": 780, "maxHp": 2050, "battleEffect": "rally_all_150" },
-    { "id": "cave_troll", "nameKey": "card.caveTroll.name", "race": "beast", "rarity": "rare", "tier": 4, "initiative": 7, "atk": 1850, "def": 1550, "maxHp": 3600 },
-    { "id": "nightwing", "nameKey": "card.nightwing.name", "race": "beast", "rarity": "rare", "tier": 4, "initiative": 8, "atk": 1800, "def": 1050, "maxHp": 2400 },
-    { "id": "wyvern", "nameKey": "card.wyvern.name", "race": "beast", "rarity": "epic", "tier": 4, "initiative": 9, "atk": 2550, "def": 1350, "maxHp": 3300 },
-    { "id": "golem", "nameKey": "card.golem.name", "race": "machine", "rarity": "rare", "tier": 5, "initiative": 1, "atk": 2100, "def": 2400, "maxHp": 3400 },
-    { "id": "siege_golem", "nameKey": "card.siegeGolem.name", "race": "machine", "rarity": "rare", "tier": 4, "initiative": 1, "atk": 1950, "def": 2600, "maxHp": 3600 },
-    { "id": "cannon_golem", "nameKey": "card.cannonGolem.name", "race": "machine", "rarity": "epic", "tier": 5, "initiative": 2, "atk": 2500, "def": 2200, "maxHp": 3700 },
-    { "id": "ash_warlord", "nameKey": "card.ashWarlord.name", "race": "orc", "rarity": "epic", "tier": 5, "initiative": 6, "atk": 2600, "def": 1500, "maxHp": 3500 },
-    { "id": "blood_chieftain", "nameKey": "card.bloodChieftain.name", "race": "orc", "rarity": "epic", "tier": 5, "initiative": 6, "atk": 2450, "def": 1900, "maxHp": 3900, "battleEffect": "rally_all_150" },
-    { "id": "necromancer", "nameKey": "card.necromancer.name", "race": "undead", "rarity": "epic", "tier": 6, "initiative": 4, "atk": 2100, "def": 1700, "maxHp": 3100, "battleEffect": "heal_lowest_300" },
-    { "id": "death_paladin", "nameKey": "card.deathPaladin.name", "race": "undead", "rarity": "epic", "tier": 5, "initiative": 3, "atk": 2300, "def": 2200, "maxHp": 3600 }
+    {
+      "id": "player_wanderer",
+      "nameKey": "card.playerWanderer.name",
+      "portraitImage": "/assets/cards/player_wanderer/portrait.webp",
+      "race": "hero",
+      "rarity": "legendary",
+      "tier": 1,
+      "initiative": 5,
+      "atk": 420,
+      "def": 450,
+      "maxHp": 1050,
+      "battleEffect": "rally_all_150"
+    },
+    {
+      "id": "village_levy",
+      "nameKey": "card.villageLevy.name",
+      "portraitImage": "/assets/cards/village_levy/portrait.webp",
+      "cardImage": "/assets/cards/village_levy/card.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 54
+      },
+      "race": "human",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 5,
+      "atk": 330,
+      "def": 300,
+      "maxHp": 900,
+      "recruitCost": 12
+    },
+    {
+      "id": "levy_spearman",
+      "nameKey": "card.levySpearman.name",
+      "portraitImage": "/assets/cards/levy_spearman/portrait.webp",
+      "race": "human",
+      "rarity": "common",
+      "tier": 2,
+      "initiative": 5,
+      "atk": 580,
+      "def": 350,
+      "maxHp": 1080,
+      "battleEffect": "human_brace_160"
+    },
+    {
+      "id": "novice_archer",
+      "nameKey": "card.noviceArcher.name",
+      "portraitImage": "/assets/cards/novice_archer/portrait.webp",
+      "race": "human",
+      "rarity": "common",
+      "tier": 2,
+      "initiative": 6,
+      "atk": 600,
+      "def": 280,
+      "maxHp": 980,
+      "battleEffect": "human_volley_120"
+    },
+    {
+      "id": "shrine_acolyte",
+      "nameKey": "card.shrineAcolyte.name",
+      "portraitImage": "/assets/cards/shrine_acolyte/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "human",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 4,
+      "atk": 270,
+      "def": 390,
+      "maxHp": 850,
+      "battleEffect": "human_first_aid_180"
+    },
+    {
+      "id": "militia_shieldbearer",
+      "nameKey": "card.militiaShieldbearer.name",
+      "portraitImage": "/assets/cards/militia_shieldbearer/portrait.webp",
+      "race": "human",
+      "rarity": "common",
+      "tier": 2,
+      "initiative": 4,
+      "atk": 450,
+      "def": 650,
+      "maxHp": 1350,
+      "battleEffect": "human_guard_all_180"
+    },
+    {
+      "id": "village_slinger",
+      "nameKey": "card.villageSlinger.name",
+      "portraitImage": "/assets/cards/village_slinger/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "human",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 6,
+      "atk": 360,
+      "def": 180,
+      "maxHp": 780,
+      "battleEffect": "human_volley_120"
+    },
+    {
+      "id": "kobold_jung",
+      "nameKey": "card.koboldJung.name",
+      "portraitImage": "/assets/cards/kobold_jung/portrait.webp",
+      "race": "kobold",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 7,
+      "atk": 300,
+      "def": 180,
+      "maxHp": 760,
+      "battleEffect": "kobold_pack_100"
+    },
+    {
+      "id": "kobold_speer",
+      "nameKey": "card.koboldSpeer.name",
+      "portraitImage": "/assets/cards/kobold_speer/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "kobold",
+      "rarity": "common",
+      "tier": 2,
+      "initiative": 7,
+      "atk": 520,
+      "def": 300,
+      "maxHp": 1030,
+      "battleEffect": "kobold_pack_100"
+    },
+    {
+      "id": "kobold_trapper",
+      "nameKey": "card.koboldTrapper.name",
+      "portraitImage": "/assets/cards/kobold_trapper/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "kobold",
+      "rarity": "common",
+      "tier": 2,
+      "initiative": 7,
+      "atk": 440,
+      "def": 390,
+      "maxHp": 980,
+      "battleEffect": "kobold_trap_140"
+    },
+    {
+      "id": "goblin",
+      "nameKey": "card.goblin.name",
+      "portraitImage": "/assets/cards/goblin/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "kobold",
+      "rarity": "common",
+      "tier": 3,
+      "initiative": 6,
+      "atk": 650,
+      "def": 500,
+      "maxHp": 1450
+    },
+    {
+      "id": "kobold_shaman",
+      "nameKey": "card.koboldShaman.name",
+      "portraitImage": "/assets/cards/kobold_shaman/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "kobold",
+      "rarity": "uncommon",
+      "tier": 3,
+      "initiative": 6,
+      "atk": 650,
+      "def": 750,
+      "maxHp": 1450,
+      "battleEffect": "heal_lowest_300"
+    },
+    {
+      "id": "tunnel_guard",
+      "nameKey": "card.tunnelGuard.name",
+      "portraitImage": "/assets/cards/tunnel_guard/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "kobold",
+      "rarity": "uncommon",
+      "tier": 3,
+      "initiative": 5,
+      "atk": 850,
+      "def": 1150,
+      "maxHp": 1900
+    },
+    {
+      "id": "kobold_hauptmann",
+      "nameKey": "card.koboldCaptain.name",
+      "portraitImage": "/assets/cards/kobold_hauptmann/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "kobold",
+      "rarity": "uncommon",
+      "tier": 4,
+      "initiative": 6,
+      "atk": 1100,
+      "def": 800,
+      "maxHp": 2100,
+      "battleEffect": "rally_all_150"
+    },
+    {
+      "id": "ork_rekrut",
+      "nameKey": "card.orkRecruit.name",
+      "race": "orc",
+      "rarity": "common",
+      "tier": 2,
+      "initiative": 5,
+      "atk": 590,
+      "def": 370,
+      "maxHp": 1220,
+      "battleEffect": "orc_bloodrage_180"
+    },
+    {
+      "id": "orc_tracker",
+      "nameKey": "card.orcTracker.name",
+      "race": "orc",
+      "rarity": "common",
+      "tier": 2,
+      "initiative": 6,
+      "atk": 550,
+      "def": 290,
+      "maxHp": 1080,
+      "battleEffect": "orc_overrun_160"
+    },
+    {
+      "id": "orc",
+      "nameKey": "card.orcWarrior.name",
+      "race": "orc",
+      "rarity": "common",
+      "tier": 3,
+      "initiative": 5,
+      "atk": 930,
+      "def": 620,
+      "maxHp": 1850,
+      "battleEffect": "orc_bloodrage_180"
+    },
+    {
+      "id": "skelett",
+      "nameKey": "card.skeleton.name",
+      "race": "undead",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 4,
+      "atk": 330,
+      "def": 260,
+      "maxHp": 900,
+      "battleEffect": "undead_reanimate_30"
+    },
+    {
+      "id": "grave_archer",
+      "nameKey": "card.graveArcher.name",
+      "race": "undead",
+      "rarity": "common",
+      "tier": 3,
+      "initiative": 4,
+      "atk": 760,
+      "def": 500,
+      "maxHp": 1450
+    },
+    {
+      "id": "restless_spirit",
+      "nameKey": "card.restlessSpirit.name",
+      "race": "undead",
+      "rarity": "common",
+      "tier": 2,
+      "initiative": 3,
+      "atk": 650,
+      "def": 650,
+      "maxHp": 1000,
+      "battleEffect": "undead_drain_200"
+    },
+    {
+      "id": "soldier",
+      "nameKey": "card.soldier.name",
+      "portraitImage": "/assets/cards/soldier/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "human",
+      "rarity": "common",
+      "tier": 3,
+      "initiative": 5,
+      "atk": 1050,
+      "def": 1000,
+      "maxHp": 1900
+    },
+    {
+      "id": "wache",
+      "nameKey": "card.townGuard.name",
+      "race": "human",
+      "rarity": "common",
+      "tier": 4,
+      "initiative": 5,
+      "atk": 1000,
+      "def": 1100,
+      "maxHp": 2100
+    },
+    {
+      "id": "bogenschutze",
+      "nameKey": "card.archer.name",
+      "portraitImage": "/assets/cards/bogenschutze/portrait.webp",
+      "cardImage": "/assets/cards/bogenschutze/card.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "human",
+      "rarity": "common",
+      "tier": 3,
+      "initiative": 5,
+      "atk": 1000,
+      "def": 600,
+      "maxHp": 1500
+    },
+    {
+      "id": "priest",
+      "nameKey": "card.priest.name",
+      "portraitImage": "/assets/cards/priest/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "human",
+      "rarity": "common",
+      "tier": 3,
+      "initiative": 4,
+      "atk": 800,
+      "def": 1150,
+      "maxHp": 1700,
+      "battleEffect": "heal_lowest_300"
+    },
+    {
+      "id": "pikeman",
+      "nameKey": "card.pikeman.name",
+      "portraitImage": "/assets/cards/pikeman/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "human",
+      "rarity": "uncommon",
+      "tier": 3,
+      "initiative": 5,
+      "atk": 1050,
+      "def": 1050,
+      "maxHp": 2050
+    },
+    {
+      "id": "longbowman",
+      "nameKey": "card.longbowman.name",
+      "portraitImage": "/assets/cards/longbowman/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "human",
+      "rarity": "uncommon",
+      "tier": 3,
+      "initiative": 7,
+      "atk": 1050,
+      "def": 620,
+      "maxHp": 1750
+    },
+    {
+      "id": "battle_monk",
+      "nameKey": "card.battleMonk.name",
+      "portraitImage": "/assets/cards/battle_monk/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "human",
+      "rarity": "uncommon",
+      "tier": 3,
+      "initiative": 6,
+      "atk": 1050,
+      "def": 1150,
+      "maxHp": 2050,
+      "battleEffect": "heal_lowest_300"
+    },
+    {
+      "id": "feuer_geist",
+      "nameKey": "card.fireSpirit.name",
+      "race": "elemental",
+      "rarity": "common",
+      "tier": 2,
+      "initiative": 6,
+      "atk": 650,
+      "def": 450,
+      "maxHp": 1150,
+      "battleEffect": "burn_weakest_300"
+    },
+    {
+      "id": "frost_wisp",
+      "nameKey": "card.frostWisp.name",
+      "race": "elemental",
+      "rarity": "common",
+      "tier": 2,
+      "initiative": 7,
+      "atk": 620,
+      "def": 700,
+      "maxHp": 1150
+    },
+    {
+      "id": "storm_wisp",
+      "nameKey": "card.stormWisp.name",
+      "race": "elemental",
+      "rarity": "common",
+      "tier": 2,
+      "initiative": 8,
+      "atk": 650,
+      "def": 380,
+      "maxHp": 1050,
+      "battleEffect": "burn_weakest_300"
+    },
+    {
+      "id": "riesenbat",
+      "nameKey": "card.giantBat.name",
+      "portraitImage": "/assets/cards/riesenbat/portrait.webp",
+      "race": "beast",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 8,
+      "atk": 350,
+      "def": 220,
+      "maxHp": 800,
+      "battleEffect": "beast_first_strike_140"
+    },
+    {
+      "id": "dire_wolf",
+      "nameKey": "card.direWolf.name",
+      "portraitImage": "/assets/cards/dire_wolf/portrait.webp",
+      "race": "beast",
+      "rarity": "common",
+      "tier": 2,
+      "initiative": 8,
+      "atk": 560,
+      "def": 360,
+      "maxHp": 1100,
+      "battleEffect": "beast_pack_120"
+    },
+    {
+      "id": "swamp_serpent",
+      "nameKey": "card.swampSerpent.name",
+      "race": "beast",
+      "rarity": "uncommon",
+      "tier": 3,
+      "initiative": 7,
+      "atk": 1050,
+      "def": 900,
+      "maxHp": 2050
+    },
+    {
+      "id": "eisenwachter",
+      "nameKey": "card.ironWarden.name",
+      "race": "machine",
+      "rarity": "common",
+      "tier": 3,
+      "initiative": 1,
+      "atk": 800,
+      "def": 1150,
+      "maxHp": 2050,
+      "battleEffect": "shield_self_400"
+    },
+    {
+      "id": "clockwork_scout",
+      "nameKey": "card.clockworkScout.name",
+      "race": "machine",
+      "rarity": "common",
+      "tier": 2,
+      "initiative": 2,
+      "atk": 650,
+      "def": 750,
+      "maxHp": 1450
+    },
+    {
+      "id": "brass_guardian",
+      "nameKey": "card.brassGuardian.name",
+      "race": "machine",
+      "rarity": "uncommon",
+      "tier": 4,
+      "initiative": 1,
+      "atk": 1200,
+      "def": 1650,
+      "maxHp": 2700,
+      "battleEffect": "shield_self_400"
+    },
+    {
+      "id": "ember_raider",
+      "nameKey": "card.emberRaider.name",
+      "race": "orc",
+      "rarity": "uncommon",
+      "tier": 4,
+      "initiative": 5,
+      "atk": 1500,
+      "def": 850,
+      "maxHp": 2300
+    },
+    {
+      "id": "grave_warden",
+      "nameKey": "card.graveWarden.name",
+      "race": "undead",
+      "rarity": "uncommon",
+      "tier": 4,
+      "initiative": 2,
+      "atk": 1300,
+      "def": 1650,
+      "maxHp": 2600
+    },
+    {
+      "id": "kobold_jaeger",
+      "nameKey": "card.koboldHunter.name",
+      "portraitImage": "/assets/cards/kobold_jaeger/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "kobold",
+      "rarity": "uncommon",
+      "tier": 4,
+      "initiative": 6,
+      "atk": 1000,
+      "def": 800,
+      "maxHp": 2100
+    },
+    {
+      "id": "cave_geomancer",
+      "nameKey": "card.caveGeomancer.name",
+      "portraitImage": "/assets/cards/cave_geomancer/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "kobold",
+      "rarity": "rare",
+      "tier": 5,
+      "initiative": 6,
+      "atk": 1450,
+      "def": 1600,
+      "maxHp": 2850,
+      "battleEffect": "shield_self_400"
+    },
+    {
+      "id": "kobold_koenig",
+      "nameKey": "card.koboldKing.name",
+      "portraitImage": "/assets/cards/kobold_koenig/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "kobold",
+      "rarity": "rare",
+      "tier": 5,
+      "initiative": 7,
+      "atk": 1700,
+      "def": 1250,
+      "maxHp": 2850
+    },
+    {
+      "id": "ork_berserker",
+      "nameKey": "card.orcBerserker.name",
+      "race": "orc",
+      "rarity": "uncommon",
+      "tier": 3,
+      "initiative": 6,
+      "atk": 1020,
+      "def": 500,
+      "maxHp": 1700,
+      "battleEffect": "orc_bloodrage_180"
+    },
+    {
+      "id": "orc_wolf_rider",
+      "nameKey": "card.orcWolfRider.name",
+      "race": "orc",
+      "rarity": "uncommon",
+      "tier": 4,
+      "initiative": 6,
+      "atk": 1500,
+      "def": 800,
+      "maxHp": 2100
+    },
+    {
+      "id": "orc_ironhide",
+      "nameKey": "card.orcIronhide.name",
+      "race": "orc",
+      "rarity": "rare",
+      "tier": 4,
+      "initiative": 4,
+      "atk": 1500,
+      "def": 1650,
+      "maxHp": 2850
+    },
+    {
+      "id": "ork_kriegsherr",
+      "nameKey": "card.orcWarlord.name",
+      "race": "orc",
+      "rarity": "rare",
+      "tier": 5,
+      "initiative": 5,
+      "atk": 2050,
+      "def": 1350,
+      "maxHp": 3100
+    },
+    {
+      "id": "knochenwachter",
+      "nameKey": "card.boneWarden.name",
+      "race": "undead",
+      "rarity": "uncommon",
+      "tier": 3,
+      "initiative": 3,
+      "atk": 1050,
+      "def": 1150,
+      "maxHp": 2050
+    },
+    {
+      "id": "wraith",
+      "nameKey": "card.wraith.name",
+      "race": "undead",
+      "rarity": "uncommon",
+      "tier": 4,
+      "initiative": 3,
+      "atk": 1350,
+      "def": 850,
+      "maxHp": 2100
+    },
+    {
+      "id": "bone_knight",
+      "nameKey": "card.boneKnight.name",
+      "race": "undead",
+      "rarity": "rare",
+      "tier": 4,
+      "initiative": 3,
+      "atk": 1500,
+      "def": 1650,
+      "maxHp": 2850
+    },
+    {
+      "id": "banshee",
+      "nameKey": "card.banshee.name",
+      "race": "undead",
+      "rarity": "rare",
+      "tier": 5,
+      "initiative": 4,
+      "atk": 1950,
+      "def": 1250,
+      "maxHp": 2850,
+      "battleEffect": "burn_weakest_300"
+    },
+    {
+      "id": "lich",
+      "nameKey": "card.lich.name",
+      "race": "undead",
+      "rarity": "rare",
+      "tier": 6,
+      "initiative": 3,
+      "atk": 1650,
+      "def": 1250,
+      "maxHp": 2850
+    },
+    {
+      "id": "knight",
+      "nameKey": "card.knight.name",
+      "race": "human",
+      "rarity": "uncommon",
+      "tier": 5,
+      "initiative": 5,
+      "atk": 1500,
+      "def": 1350,
+      "maxHp": 2850
+    },
+    {
+      "id": "shieldguard",
+      "nameKey": "card.shieldguard.name",
+      "race": "human",
+      "rarity": "rare",
+      "tier": 5,
+      "initiative": 3,
+      "atk": 1450,
+      "def": 2250,
+      "maxHp": 3100
+    },
+    {
+      "id": "sniper",
+      "nameKey": "card.sniper.name",
+      "race": "human",
+      "rarity": "rare",
+      "tier": 5,
+      "initiative": 7,
+      "atk": 1500,
+      "def": 1250,
+      "maxHp": 2850
+    },
+    {
+      "id": "ranger",
+      "nameKey": "card.ranger.name",
+      "portraitImage": "/assets/cards/ranger/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "human",
+      "rarity": "uncommon",
+      "tier": 4,
+      "initiative": 6,
+      "atk": 1250,
+      "def": 900,
+      "maxHp": 2100
+    },
+    {
+      "id": "banner_knight",
+      "nameKey": "card.bannerKnight.name",
+      "race": "human",
+      "rarity": "rare",
+      "tier": 5,
+      "initiative": 5,
+      "atk": 1750,
+      "def": 1750,
+      "maxHp": 3000,
+      "battleEffect": "rally_all_150"
+    },
+    {
+      "id": "royal_arbalest",
+      "nameKey": "card.royalArbalest.name",
+      "race": "human",
+      "rarity": "rare",
+      "tier": 5,
+      "initiative": 6,
+      "atk": 1900,
+      "def": 1250,
+      "maxHp": 2850
+    },
+    {
+      "id": "crusader",
+      "nameKey": "card.crusader.name",
+      "portraitImage": "/assets/cards/crusader/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "human",
+      "rarity": "rare",
+      "tier": 4,
+      "initiative": 5,
+      "atk": 1500,
+      "def": 1600,
+      "maxHp": 2850
+    },
+    {
+      "id": "high_priest",
+      "nameKey": "card.highPriest.name",
+      "portraitImage": "/assets/cards/high_priest/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "human",
+      "rarity": "rare",
+      "tier": 4,
+      "initiative": 4,
+      "atk": 1100,
+      "def": 1650,
+      "maxHp": 2700
+    },
+    {
+      "id": "flame_elemental",
+      "nameKey": "card.flameElemental.name",
+      "race": "elemental",
+      "rarity": "uncommon",
+      "tier": 3,
+      "initiative": 6,
+      "atk": 980,
+      "def": 540,
+      "maxHp": 1650,
+      "battleEffect": "elemental_chain_160"
+    },
+    {
+      "id": "ice_elemental",
+      "nameKey": "card.iceElemental.name",
+      "race": "elemental",
+      "rarity": "uncommon",
+      "tier": 3,
+      "initiative": 6,
+      "atk": 1050,
+      "def": 1150,
+      "maxHp": 2050
+    },
+    {
+      "id": "storm_elemental",
+      "nameKey": "card.stormElemental.name",
+      "race": "elemental",
+      "rarity": "rare",
+      "tier": 4,
+      "initiative": 7,
+      "atk": 1500,
+      "def": 950,
+      "maxHp": 2450,
+      "battleEffect": "burn_weakest_300"
+    },
+    {
+      "id": "phoenix",
+      "nameKey": "card.phoenix.name",
+      "race": "elemental",
+      "rarity": "epic",
+      "tier": 4,
+      "initiative": 8,
+      "atk": 1500,
+      "def": 1550,
+      "maxHp": 2850
+    },
+    {
+      "id": "blood_bat",
+      "nameKey": "card.bloodBat.name",
+      "race": "beast",
+      "rarity": "uncommon",
+      "tier": 3,
+      "initiative": 9,
+      "atk": 1050,
+      "def": 650,
+      "maxHp": 1700
+    },
+    {
+      "id": "alpha_wolf",
+      "nameKey": "card.alphaWolf.name",
+      "race": "beast",
+      "rarity": "uncommon",
+      "tier": 3,
+      "initiative": 9,
+      "atk": 1050,
+      "def": 780,
+      "maxHp": 2050,
+      "battleEffect": "rally_all_150"
+    },
+    {
+      "id": "cave_troll",
+      "nameKey": "card.caveTroll.name",
+      "race": "beast",
+      "rarity": "rare",
+      "tier": 4,
+      "initiative": 7,
+      "atk": 1500,
+      "def": 1550,
+      "maxHp": 2850
+    },
+    {
+      "id": "nightwing",
+      "nameKey": "card.nightwing.name",
+      "race": "beast",
+      "rarity": "rare",
+      "tier": 4,
+      "initiative": 8,
+      "atk": 1500,
+      "def": 1050,
+      "maxHp": 2400
+    },
+    {
+      "id": "wyvern",
+      "nameKey": "card.wyvern.name",
+      "race": "beast",
+      "rarity": "epic",
+      "tier": 4,
+      "initiative": 9,
+      "atk": 1500,
+      "def": 1350,
+      "maxHp": 2850
+    },
+    {
+      "id": "golem",
+      "nameKey": "card.golem.name",
+      "race": "machine",
+      "rarity": "rare",
+      "tier": 5,
+      "initiative": 1,
+      "atk": 2050,
+      "def": 2250,
+      "maxHp": 3400
+    },
+    {
+      "id": "siege_golem",
+      "nameKey": "card.siegeGolem.name",
+      "race": "machine",
+      "rarity": "rare",
+      "tier": 4,
+      "initiative": 1,
+      "atk": 1500,
+      "def": 1650,
+      "maxHp": 2850
+    },
+    {
+      "id": "cannon_golem",
+      "nameKey": "card.cannonGolem.name",
+      "race": "machine",
+      "rarity": "epic",
+      "tier": 5,
+      "initiative": 2,
+      "atk": 2050,
+      "def": 2200,
+      "maxHp": 3700
+    },
+    {
+      "id": "ash_warlord",
+      "nameKey": "card.ashWarlord.name",
+      "race": "orc",
+      "rarity": "epic",
+      "tier": 5,
+      "initiative": 6,
+      "atk": 2050,
+      "def": 1500,
+      "maxHp": 3500
+    },
+    {
+      "id": "blood_chieftain",
+      "nameKey": "card.bloodChieftain.name",
+      "race": "orc",
+      "rarity": "epic",
+      "tier": 5,
+      "initiative": 6,
+      "atk": 2050,
+      "def": 1900,
+      "maxHp": 3800,
+      "battleEffect": "rally_all_150"
+    },
+    {
+      "id": "necromancer",
+      "nameKey": "card.necromancer.name",
+      "race": "undead",
+      "rarity": "epic",
+      "tier": 6,
+      "initiative": 4,
+      "atk": 2050,
+      "def": 1700,
+      "maxHp": 3100,
+      "battleEffect": "heal_lowest_300"
+    },
+    {
+      "id": "death_paladin",
+      "nameKey": "card.deathPaladin.name",
+      "race": "undead",
+      "rarity": "epic",
+      "tier": 5,
+      "initiative": 3,
+      "atk": 2050,
+      "def": 2200,
+      "maxHp": 3600
+    },
+    {
+      "id": "swordsman",
+      "nameKey": "cards.swordsman.name",
+      "descriptionKey": "cards.swordsman.description",
+      "portraitImage": "/assets/cards/swordsman/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "human",
+      "rarity": "uncommon",
+      "tier": 2,
+      "initiative": 5,
+      "atk": 610,
+      "def": 330,
+      "maxHp": 1080,
+      "battleEffect": "human_brace_160"
+    },
+    {
+      "id": "noble_recruit",
+      "nameKey": "cards.noble_recruit.name",
+      "descriptionKey": "cards.noble_recruit.description",
+      "portraitImage": "/assets/cards/noble_recruit/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "human",
+      "rarity": "uncommon",
+      "tier": 2,
+      "initiative": 6,
+      "atk": 520,
+      "def": 480,
+      "maxHp": 1200,
+      "battleEffect": "rally_all_150"
+    },
+    {
+      "id": "mounted_squire",
+      "nameKey": "cards.mounted_squire.name",
+      "descriptionKey": "cards.mounted_squire.description",
+      "portraitImage": "/assets/cards/mounted_squire/portrait.webp",
+      "imageFocus": {
+        "x": 0,
+        "y": 43
+      },
+      "race": "human",
+      "rarity": "rare",
+      "tier": 3,
+      "initiative": 7,
+      "atk": 850,
+      "def": 750,
+      "maxHp": 1800,
+      "battleEffect": "rally_all_150"
+    },
+    {
+      "id": "lancer",
+      "nameKey": "cards.lancer.name",
+      "descriptionKey": "cards.lancer.description",
+      "race": "human",
+      "rarity": "epic",
+      "tier": 4,
+      "initiative": 7,
+      "atk": 1450,
+      "def": 900,
+      "maxHp": 2450,
+      "battleEffect": "human_volley_120"
+    },
+    {
+      "id": "royal_cavalier",
+      "nameKey": "cards.royal_cavalier.name",
+      "descriptionKey": "cards.royal_cavalier.description",
+      "race": "human",
+      "rarity": "legendary",
+      "tier": 5,
+      "initiative": 7,
+      "atk": 1900,
+      "def": 1500,
+      "maxHp": 3300,
+      "battleEffect": "rally_all_150"
+    },
+    {
+      "id": "halberdier",
+      "nameKey": "cards.halberdier.name",
+      "descriptionKey": "cards.halberdier.description",
+      "portraitImage": "/assets/cards/halberdier/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "human",
+      "rarity": "epic",
+      "tier": 4,
+      "initiative": 5,
+      "atk": 1400,
+      "def": 1250,
+      "maxHp": 2600,
+      "battleEffect": "human_brace_160"
+    },
+    {
+      "id": "royal_guard",
+      "nameKey": "cards.royal_guard.name",
+      "descriptionKey": "cards.royal_guard.description",
+      "race": "human",
+      "rarity": "legendary",
+      "tier": 5,
+      "initiative": 5,
+      "atk": 1720,
+      "def": 2150,
+      "maxHp": 3500,
+      "battleEffect": "human_guard_all_180"
+    },
+    {
+      "id": "orc_youngblood",
+      "nameKey": "cards.orc_youngblood.name",
+      "descriptionKey": "cards.orc_youngblood.description",
+      "race": "orc",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 5,
+      "atk": 400,
+      "def": 180,
+      "maxHp": 900,
+      "battleEffect": "orc_bloodrage_180"
+    },
+    {
+      "id": "kobold_slinger",
+      "nameKey": "cards.kobold_slinger.name",
+      "descriptionKey": "cards.kobold_slinger.description",
+      "portraitImage": "/assets/cards/kobold_slinger/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "race": "kobold",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 8,
+      "atk": 340,
+      "def": 140,
+      "maxHp": 740,
+      "battleEffect": "kobold_trap_140"
+    },
+    {
+      "id": "scrap_automaton",
+      "nameKey": "cards.scrap_automaton.name",
+      "descriptionKey": "cards.scrap_automaton.description",
+      "race": "machine",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 2,
+      "atk": 300,
+      "def": 440,
+      "maxHp": 1020,
+      "battleEffect": "shield_self_400"
+    },
+    {
+      "id": "maintenance_drone",
+      "nameKey": "cards.maintenance_drone.name",
+      "descriptionKey": "cards.maintenance_drone.description",
+      "race": "machine",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 4,
+      "atk": 270,
+      "def": 350,
+      "maxHp": 820,
+      "battleEffect": "machine_repair_180"
+    },
+    {
+      "id": "ember_spark",
+      "nameKey": "cards.ember_spark.name",
+      "descriptionKey": "cards.ember_spark.description",
+      "race": "elemental",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 7,
+      "atk": 410,
+      "def": 140,
+      "maxHp": 740,
+      "battleEffect": "burn_weakest_300"
+    },
+    {
+      "id": "frost_spark",
+      "nameKey": "cards.frost_spark.name",
+      "descriptionKey": "cards.frost_spark.description",
+      "race": "elemental",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 5,
+      "atk": 310,
+      "def": 260,
+      "maxHp": 820,
+      "battleEffect": "elemental_frost_140"
+    },
+    {
+      "id": "storm_spark",
+      "nameKey": "cards.storm_spark.name",
+      "descriptionKey": "cards.storm_spark.description",
+      "race": "elemental",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 8,
+      "atk": 380,
+      "def": 160,
+      "maxHp": 760,
+      "battleEffect": "elemental_chain_160"
+    },
+    {
+      "id": "stray_wolf",
+      "nameKey": "cards.stray_wolf.name",
+      "descriptionKey": "cards.stray_wolf.description",
+      "race": "beast",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 7,
+      "atk": 390,
+      "def": 230,
+      "maxHp": 880,
+      "battleEffect": "beast_hunt_160"
+    },
+    {
+      "id": "giant_rat",
+      "nameKey": "cards.giant_rat.name",
+      "descriptionKey": "cards.giant_rat.description",
+      "race": "beast",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 7,
+      "atk": 330,
+      "def": 180,
+      "maxHp": 800,
+      "battleEffect": "beast_pack_120"
+    },
+    {
+      "id": "cave_bat",
+      "nameKey": "cards.cave_bat.name",
+      "descriptionKey": "cards.cave_bat.description",
+      "race": "beast",
+      "rarity": "uncommon",
+      "tier": 2,
+      "initiative": 8,
+      "atk": 500,
+      "def": 300,
+      "maxHp": 980,
+      "battleEffect": "beast_first_strike_140"
+    },
+    {
+      "id": "lost_soul",
+      "nameKey": "cards.lost_soul.name",
+      "descriptionKey": "cards.lost_soul.description",
+      "race": "undead",
+      "rarity": "common",
+      "tier": 1,
+      "initiative": 6,
+      "atk": 300,
+      "def": 220,
+      "maxHp": 800,
+      "battleEffect": "undead_drain_200"
+    },
+    {
+      "id": "plague_rat",
+      "nameKey": "cards.plague_rat.name",
+      "descriptionKey": "cards.plague_rat.description",
+      "race": "beast",
+      "rarity": "uncommon",
+      "tier": 2,
+      "initiative": 7,
+      "atk": 500,
+      "def": 280,
+      "maxHp": 1000,
+      "battleEffect": "beast_pack_120"
+    },
+    {
+      "id": "alpha_rat",
+      "nameKey": "cards.alpha_rat.name",
+      "descriptionKey": "cards.alpha_rat.description",
+      "race": "beast",
+      "rarity": "rare",
+      "tier": 3,
+      "initiative": 7,
+      "atk": 820,
+      "def": 560,
+      "maxHp": 1600,
+      "battleEffect": "beast_hunt_160"
+    }
   ],
   "items": [
-    { "id": "wood", "nameKey": "item.wood.name", "descriptionKey": "item.wood.description", "type": "resource", "baseValue": 5, "weight": 3 },
-    { "id": "iron", "nameKey": "item.iron.name", "descriptionKey": "item.iron.description", "type": "resource", "baseValue": 10, "weight": 3 },
-    { "id": "copper", "nameKey": "item.copper.name", "descriptionKey": "item.copper.description", "type": "resource", "baseValue": 13, "weight": 3 },
-    { "id": "silver", "nameKey": "item.silver.name", "descriptionKey": "item.silver.description", "type": "resource", "baseValue": 24, "weight": 2.5 },
-    { "id": "gold_ore", "nameKey": "item.goldOre.name", "descriptionKey": "item.goldOre.description", "type": "resource", "baseValue": 42, "weight": 2.5 },
-    { "id": "coal", "nameKey": "item.coal.name", "descriptionKey": "item.coal.description", "type": "resource", "baseValue": 7, "weight": 2 },
-    { "id": "stone", "nameKey": "item.stone.name", "descriptionKey": "item.stone.description", "type": "resource", "baseValue": 4, "weight": 4 },
-    { "id": "wheat", "nameKey": "item.wheat.name", "descriptionKey": "item.wheat.description", "type": "resource", "baseValue": 4, "weight": 1, "foodUnits": 60 },
-    { "id": "grapes", "nameKey": "item.grapes.name", "descriptionKey": "item.grapes.description", "type": "resource", "baseValue": 7, "weight": 1 },
-    { "id": "sheep", "nameKey": "item.sheep.name", "descriptionKey": "item.sheep.description", "type": "resource", "baseValue": 28, "weight": 8 },
-    { "id": "cattle", "nameKey": "item.cattle.name", "descriptionKey": "item.cattle.description", "type": "resource", "baseValue": 45, "weight": 12 },
-    { "id": "pigs", "nameKey": "item.pigs.name", "descriptionKey": "item.pigs.description", "type": "resource", "baseValue": 34, "weight": 9 },
-    { "id": "milk", "nameKey": "item.milk.name", "descriptionKey": "item.milk.description", "type": "resource", "baseValue": 6, "weight": 1.2, "foodUnits": 20 },
-    { "id": "fish", "nameKey": "item.fish.name", "descriptionKey": "item.fish.description", "type": "resource", "baseValue": 8, "weight": 1.2, "foodUnits": 30 },
-    { "id": "clay", "nameKey": "item.clay.name", "descriptionKey": "item.clay.description", "type": "resource", "baseValue": 5, "weight": 3 },
-    { "id": "herbs", "nameKey": "item.herbs.name", "descriptionKey": "item.herbs.description", "type": "resource", "baseValue": 9, "weight": 0.4 },
-    { "id": "flour", "nameKey": "item.flour.name", "descriptionKey": "item.flour.description", "type": "tradeGood", "baseValue": 9, "weight": 0.8 },
-    { "id": "bread", "nameKey": "item.bread.name", "descriptionKey": "item.bread.description", "type": "tradeGood", "baseValue": 14, "weight": 0.7, "foodUnits": 40 },
-    { "id": "wine", "nameKey": "item.wine.name", "descriptionKey": "item.wine.description", "type": "tradeGood", "baseValue": 26, "weight": 1.2 },
-    { "id": "wool", "nameKey": "item.wool.name", "descriptionKey": "item.wool.description", "type": "tradeGood", "baseValue": 15, "weight": 1 },
-    { "id": "meat", "nameKey": "item.meat.name", "descriptionKey": "item.meat.description", "type": "tradeGood", "baseValue": 16, "weight": 1.5, "foodUnits": 35 },
-    { "id": "dried_meat", "nameKey": "item.driedMeat.name", "descriptionKey": "item.driedMeat.description", "type": "tradeGood", "baseValue": 28, "weight": 1.2, "foodUnits": 60 },
-    { "id": "cheese", "nameKey": "item.cheese.name", "descriptionKey": "item.cheese.description", "type": "tradeGood", "baseValue": 22, "weight": 1, "foodUnits": 45 },
-    { "id": "leather", "nameKey": "item.leather.name", "descriptionKey": "item.leather.description", "type": "tradeGood", "baseValue": 24, "weight": 1.5 },
-    { "id": "pottery", "nameKey": "item.pottery.name", "descriptionKey": "item.pottery.description", "type": "tradeGood", "baseValue": 18, "weight": 2 },
-    { "id": "travel_rations", "nameKey": "item.travelRations.name", "descriptionKey": "item.travelRations.description", "type": "consumable", "baseValue": 18, "weight": 1, "foodUnits": 50 },
-    { "id": "healing_poultice", "nameKey": "item.healingPoultice.name", "descriptionKey": "item.healingPoultice.description", "type": "consumable", "baseValue": 22, "weight": 0.5, "effect": "heal_300" },
-    { "id": "wooden_club", "nameKey": "item.woodenClub.name", "descriptionKey": "item.woodenClub.description", "type": "equipment", "baseValue": 10, "weight": 2, "equipmentSlot": "rightHand", "weaponType": "club", "statBonus": { "atk": 45 } },
-    { "id": "rusty_sword", "nameKey": "item.rustySword.name", "descriptionKey": "item.rustySword.description", "type": "equipment", "baseValue": 48, "weight": 2.2, "equipmentSlot": "rightHand", "weaponType": "sword", "statBonus": { "atk": 95 } },
-    { "id": "militia_spear", "nameKey": "item.militiaSpear.name", "descriptionKey": "item.militiaSpear.description", "type": "equipment", "baseValue": 72, "weight": 2.6, "equipmentSlot": "rightHand", "weaponType": "spear", "statBonus": { "atk": 125 } },
-    { "id": "hunting_bow", "nameKey": "item.huntingBow.name", "descriptionKey": "item.huntingBow.description", "type": "equipment", "baseValue": 92, "weight": 1.7, "equipmentSlot": "rightHand", "weaponType": "bow", "statBonus": { "atk": 140 } },
-    { "id": "iron_mace", "nameKey": "item.ironMace.name", "descriptionKey": "item.ironMace.description", "type": "equipment", "baseValue": 155, "weight": 3.3, "equipmentSlot": "rightHand", "weaponType": "mace", "statBonus": { "atk": 210 } },
-    { "id": "steel_sword", "nameKey": "item.steelSword.name", "descriptionKey": "item.steelSword.description", "type": "equipment", "baseValue": 360, "weight": 2.7, "equipmentSlot": "rightHand", "weaponType": "sword", "statBonus": { "atk": 330 } },
-    { "id": "war_axe", "nameKey": "item.warAxe.name", "descriptionKey": "item.warAxe.description", "type": "equipment", "baseValue": 520, "weight": 3.8, "equipmentSlot": "rightHand", "weaponType": "axe", "statBonus": { "atk": 430 } },
-    { "id": "knightly_longsword", "nameKey": "item.knightlyLongsword.name", "descriptionKey": "item.knightlyLongsword.description", "type": "equipment", "baseValue": 960, "weight": 3, "equipmentSlot": "rightHand", "weaponType": "sword", "statBonus": { "atk": 620 } },
-    { "id": "obsidian_blade", "nameKey": "item.obsidianBlade.name", "descriptionKey": "item.obsidianBlade.description", "type": "equipment", "baseValue": 1900, "weight": 2.4, "equipmentSlot": "rightHand", "weaponType": "sword", "statBonus": { "atk": 920 } },
-    { "id": "simple_shield", "nameKey": "item.simpleShield.name", "descriptionKey": "item.simpleShield.description", "type": "equipment", "baseValue": 42, "weight": 3, "equipmentSlot": "leftHand", "weaponType": "shield", "statBonus": { "def": 100 } },
-    { "id": "kite_shield", "nameKey": "item.kiteShield.name", "descriptionKey": "item.kiteShield.description", "type": "equipment", "baseValue": 180, "weight": 4.5, "equipmentSlot": "leftHand", "weaponType": "shield", "statBonus": { "def": 260 } },
-    { "id": "tower_shield", "nameKey": "item.towerShield.name", "descriptionKey": "item.towerShield.description", "type": "equipment", "baseValue": 420, "weight": 7, "equipmentSlot": "leftHand", "weaponType": "shield", "statBonus": { "def": 460 } },
-    { "id": "runed_aegis", "nameKey": "item.runedAegis.name", "descriptionKey": "item.runedAegis.description", "type": "equipment", "baseValue": 1400, "weight": 5.5, "equipmentSlot": "leftHand", "weaponType": "shield", "statBonus": { "def": 760 } },
-    { "id": "iron_talisman", "nameKey": "item.ironTalisman.name", "descriptionKey": "item.ironTalisman.description", "type": "equipment", "baseValue": 74, "weight": 1, "equipmentSlot": "accessory", "statBonus": { "atk": 100 } },
-    { "id": "warding_charm", "nameKey": "item.wardingCharm.name", "descriptionKey": "item.wardingCharm.description", "type": "equipment", "baseValue": 78, "weight": 0.8, "equipmentSlot": "accessory", "statBonus": { "def": 120 } }
+    {
+      "id": "wood",
+      "nameKey": "item.wood.name",
+      "descriptionKey": "item.wood.description",
+      "itemImage": "/assets/items/wood/item.png",
+      "type": "resource",
+      "baseValue": 5,
+      "weight": 3
+    },
+    {
+      "id": "iron",
+      "nameKey": "item.iron.name",
+      "descriptionKey": "item.iron.description",
+      "itemImage": "/assets/items/iron/item.png",
+      "type": "resource",
+      "baseValue": 10,
+      "weight": 3
+    },
+    {
+      "id": "copper",
+      "nameKey": "item.copper.name",
+      "descriptionKey": "item.copper.description",
+      "itemImage": "/assets/items/copper/item.png",
+      "type": "resource",
+      "baseValue": 13,
+      "weight": 3
+    },
+    {
+      "id": "silver",
+      "nameKey": "item.silver.name",
+      "descriptionKey": "item.silver.description",
+      "itemImage": "/assets/items/silver/item.png",
+      "type": "resource",
+      "baseValue": 24,
+      "weight": 2.5
+    },
+    {
+      "id": "gold_ore",
+      "nameKey": "item.goldOre.name",
+      "descriptionKey": "item.goldOre.description",
+      "itemImage": "/assets/items/gold_ore/item.png",
+      "type": "resource",
+      "baseValue": 42,
+      "weight": 2.5
+    },
+    {
+      "id": "coal",
+      "nameKey": "item.coal.name",
+      "descriptionKey": "item.coal.description",
+      "itemImage": "/assets/items/coal/item.png",
+      "type": "resource",
+      "baseValue": 7,
+      "weight": 2
+    },
+    {
+      "id": "stone",
+      "nameKey": "item.stone.name",
+      "descriptionKey": "item.stone.description",
+      "itemImage": "/assets/items/stone/item.png",
+      "type": "resource",
+      "baseValue": 4,
+      "weight": 4
+    },
+    {
+      "id": "wheat",
+      "nameKey": "item.wheat.name",
+      "descriptionKey": "item.wheat.description",
+      "itemImage": "/assets/items/wheat/item.png",
+      "type": "resource",
+      "baseValue": 4,
+      "weight": 1,
+      "foodUnits": 60
+    },
+    {
+      "id": "grapes",
+      "nameKey": "item.grapes.name",
+      "descriptionKey": "item.grapes.description",
+      "itemImage": "/assets/items/grapes/item.png",
+      "type": "resource",
+      "baseValue": 7,
+      "weight": 1
+    },
+    {
+      "id": "sheep",
+      "nameKey": "item.sheep.name",
+      "descriptionKey": "item.sheep.description",
+      "itemImage": "/assets/items/sheep/item.png",
+      "type": "resource",
+      "baseValue": 28,
+      "weight": 8
+    },
+    {
+      "id": "cattle",
+      "nameKey": "item.cattle.name",
+      "descriptionKey": "item.cattle.description",
+      "itemImage": "/assets/items/cattle/item.png",
+      "type": "resource",
+      "baseValue": 45,
+      "weight": 12
+    },
+    {
+      "id": "pigs",
+      "nameKey": "item.pigs.name",
+      "descriptionKey": "item.pigs.description",
+      "itemImage": "/assets/items/pigs/item.png",
+      "type": "resource",
+      "baseValue": 34,
+      "weight": 9
+    },
+    {
+      "id": "milk",
+      "nameKey": "item.milk.name",
+      "descriptionKey": "item.milk.description",
+      "itemImage": "/assets/items/milk/item.png",
+      "type": "resource",
+      "baseValue": 6,
+      "weight": 1.2,
+      "foodUnits": 20
+    },
+    {
+      "id": "fish",
+      "nameKey": "item.fish.name",
+      "descriptionKey": "item.fish.description",
+      "itemImage": "/assets/items/fish/item.png",
+      "type": "resource",
+      "baseValue": 8,
+      "weight": 1.2,
+      "foodUnits": 30
+    },
+    {
+      "id": "clay",
+      "nameKey": "item.clay.name",
+      "descriptionKey": "item.clay.description",
+      "itemImage": "/assets/items/clay/item.png",
+      "type": "resource",
+      "baseValue": 5,
+      "weight": 3
+    },
+    {
+      "id": "herbs",
+      "nameKey": "item.herbs.name",
+      "descriptionKey": "item.herbs.description",
+      "itemImage": "/assets/items/herbs/item.png",
+      "type": "resource",
+      "baseValue": 9,
+      "weight": 0.4
+    },
+    {
+      "id": "flour",
+      "nameKey": "item.flour.name",
+      "descriptionKey": "item.flour.description",
+      "itemImage": "/assets/items/flour/item.png",
+      "type": "tradeGood",
+      "baseValue": 9,
+      "weight": 0.8
+    },
+    {
+      "id": "bread",
+      "nameKey": "item.bread.name",
+      "descriptionKey": "item.bread.description",
+      "itemImage": "/assets/items/bread/item.png",
+      "type": "tradeGood",
+      "baseValue": 14,
+      "weight": 0.7,
+      "foodUnits": 40
+    },
+    {
+      "id": "wine",
+      "nameKey": "item.wine.name",
+      "descriptionKey": "item.wine.description",
+      "itemImage": "/assets/items/wine/item.png",
+      "type": "tradeGood",
+      "baseValue": 26,
+      "weight": 1.2
+    },
+    {
+      "id": "wool",
+      "nameKey": "item.wool.name",
+      "descriptionKey": "item.wool.description",
+      "itemImage": "/assets/items/wool/item.png",
+      "type": "tradeGood",
+      "baseValue": 15,
+      "weight": 1
+    },
+    {
+      "id": "meat",
+      "nameKey": "item.meat.name",
+      "descriptionKey": "item.meat.description",
+      "itemImage": "/assets/items/meat/item.png",
+      "type": "tradeGood",
+      "baseValue": 16,
+      "weight": 1.5,
+      "foodUnits": 35
+    },
+    {
+      "id": "dried_meat",
+      "nameKey": "item.driedMeat.name",
+      "descriptionKey": "item.driedMeat.description",
+      "itemImage": "/assets/items/dried_meat/item.png",
+      "type": "tradeGood",
+      "baseValue": 28,
+      "weight": 1.2,
+      "foodUnits": 60
+    },
+    {
+      "id": "cheese",
+      "nameKey": "item.cheese.name",
+      "descriptionKey": "item.cheese.description",
+      "itemImage": "/assets/items/cheese/item.png",
+      "type": "tradeGood",
+      "baseValue": 22,
+      "weight": 1,
+      "foodUnits": 45
+    },
+    {
+      "id": "leather",
+      "nameKey": "item.leather.name",
+      "descriptionKey": "item.leather.description",
+      "itemImage": "/assets/items/leather/item.png",
+      "type": "tradeGood",
+      "baseValue": 24,
+      "weight": 1.5
+    },
+    {
+      "id": "pottery",
+      "nameKey": "item.pottery.name",
+      "descriptionKey": "item.pottery.description",
+      "itemImage": "/assets/items/pottery/item.png",
+      "type": "tradeGood",
+      "baseValue": 18,
+      "weight": 2
+    },
+    {
+      "id": "travel_rations",
+      "nameKey": "item.travelRations.name",
+      "descriptionKey": "item.travelRations.description",
+      "itemImage": "/assets/items/travel_rations/item.png",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "type": "consumable",
+      "baseValue": 18,
+      "weight": 1,
+      "foodUnits": 50
+    },
+    {
+      "id": "healing_poultice",
+      "nameKey": "item.healingPoultice.name",
+      "descriptionKey": "item.healingPoultice.description",
+      "itemImage": "/assets/items/healing_poultice/item.png",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
+      "type": "consumable",
+      "baseValue": 22,
+      "weight": 0.5,
+      "effect": "heal_300"
+    },
+    {
+      "id": "wooden_club",
+      "nameKey": "item.woodenClub.name",
+      "descriptionKey": "item.woodenClub.description",
+      "itemImage": "/assets/items/wooden_club/item.png",
+      "type": "equipment",
+      "baseValue": 10,
+      "weight": 2,
+      "equipmentSlot": "rightHand",
+      "weaponType": "club",
+      "statBonus": {
+        "atk": 45
+      }
+    },
+    {
+      "id": "rusty_sword",
+      "nameKey": "item.rustySword.name",
+      "descriptionKey": "item.rustySword.description",
+      "itemImage": "/assets/items/rusty_sword/item.png",
+      "type": "equipment",
+      "baseValue": 48,
+      "weight": 2.2,
+      "equipmentSlot": "rightHand",
+      "weaponType": "sword",
+      "statBonus": {
+        "atk": 95
+      }
+    },
+    {
+      "id": "militia_spear",
+      "nameKey": "item.militiaSpear.name",
+      "descriptionKey": "item.militiaSpear.description",
+      "itemImage": "/assets/items/militia_spear/item.png",
+      "type": "equipment",
+      "baseValue": 72,
+      "weight": 2.6,
+      "equipmentSlot": "rightHand",
+      "weaponType": "spear",
+      "statBonus": {
+        "atk": 125
+      }
+    },
+    {
+      "id": "hunting_bow",
+      "nameKey": "item.huntingBow.name",
+      "descriptionKey": "item.huntingBow.description",
+      "itemImage": "/assets/items/hunting_bow/item.png",
+      "type": "equipment",
+      "baseValue": 92,
+      "weight": 1.7,
+      "equipmentSlot": "rightHand",
+      "weaponType": "bow",
+      "statBonus": {
+        "atk": 140
+      }
+    },
+    {
+      "id": "iron_mace",
+      "nameKey": "item.ironMace.name",
+      "descriptionKey": "item.ironMace.description",
+      "itemImage": "/assets/items/iron_mace/item.png",
+      "type": "equipment",
+      "baseValue": 155,
+      "weight": 3.3,
+      "equipmentSlot": "rightHand",
+      "weaponType": "mace",
+      "statBonus": {
+        "atk": 210
+      }
+    },
+    {
+      "id": "steel_sword",
+      "nameKey": "item.steelSword.name",
+      "descriptionKey": "item.steelSword.description",
+      "itemImage": "/assets/items/steel_sword/item.png",
+      "type": "equipment",
+      "baseValue": 360,
+      "weight": 2.7,
+      "equipmentSlot": "rightHand",
+      "weaponType": "sword",
+      "statBonus": {
+        "atk": 330
+      }
+    },
+    {
+      "id": "war_axe",
+      "nameKey": "item.warAxe.name",
+      "descriptionKey": "item.warAxe.description",
+      "itemImage": "/assets/items/war_axe/item.png",
+      "type": "equipment",
+      "baseValue": 520,
+      "weight": 3.8,
+      "equipmentSlot": "rightHand",
+      "weaponType": "axe",
+      "statBonus": {
+        "atk": 430
+      }
+    },
+    {
+      "id": "knightly_longsword",
+      "nameKey": "item.knightlyLongsword.name",
+      "descriptionKey": "item.knightlyLongsword.description",
+      "itemImage": "/assets/items/knightly_longsword/item.png",
+      "type": "equipment",
+      "baseValue": 960,
+      "weight": 3,
+      "equipmentSlot": "rightHand",
+      "weaponType": "sword",
+      "statBonus": {
+        "atk": 620
+      }
+    },
+    {
+      "id": "obsidian_blade",
+      "nameKey": "item.obsidianBlade.name",
+      "descriptionKey": "item.obsidianBlade.description",
+      "itemImage": "/assets/items/obsidian_blade/item.png",
+      "type": "equipment",
+      "baseValue": 1900,
+      "weight": 2.4,
+      "equipmentSlot": "rightHand",
+      "weaponType": "sword",
+      "statBonus": {
+        "atk": 920
+      }
+    },
+    {
+      "id": "simple_shield",
+      "nameKey": "item.simpleShield.name",
+      "descriptionKey": "item.simpleShield.description",
+      "itemImage": "/assets/items/simple_shield/item.png",
+      "type": "equipment",
+      "baseValue": 42,
+      "weight": 3,
+      "equipmentSlot": "leftHand",
+      "weaponType": "shield",
+      "statBonus": {
+        "def": 100
+      }
+    },
+    {
+      "id": "kite_shield",
+      "nameKey": "item.kiteShield.name",
+      "descriptionKey": "item.kiteShield.description",
+      "itemImage": "/assets/items/kite_shield/item.png",
+      "type": "equipment",
+      "baseValue": 180,
+      "weight": 4.5,
+      "equipmentSlot": "leftHand",
+      "weaponType": "shield",
+      "statBonus": {
+        "def": 260
+      }
+    },
+    {
+      "id": "tower_shield",
+      "nameKey": "item.towerShield.name",
+      "descriptionKey": "item.towerShield.description",
+      "itemImage": "/assets/items/tower_shield/item.png",
+      "type": "equipment",
+      "baseValue": 420,
+      "weight": 7,
+      "equipmentSlot": "leftHand",
+      "weaponType": "shield",
+      "statBonus": {
+        "def": 460
+      }
+    },
+    {
+      "id": "runed_aegis",
+      "nameKey": "item.runedAegis.name",
+      "descriptionKey": "item.runedAegis.description",
+      "itemImage": "/assets/items/runed_aegis/item.png",
+      "type": "equipment",
+      "baseValue": 1400,
+      "weight": 5.5,
+      "equipmentSlot": "leftHand",
+      "weaponType": "shield",
+      "statBonus": {
+        "def": 760
+      }
+    },
+    {
+      "id": "iron_talisman",
+      "nameKey": "item.ironTalisman.name",
+      "descriptionKey": "item.ironTalisman.description",
+      "itemImage": "/assets/items/iron_talisman/item.png",
+      "type": "equipment",
+      "baseValue": 74,
+      "weight": 1,
+      "equipmentSlot": "accessory",
+      "statBonus": {
+        "atk": 100
+      }
+    },
+    {
+      "id": "warding_charm",
+      "nameKey": "item.wardingCharm.name",
+      "descriptionKey": "item.wardingCharm.description",
+      "itemImage": "/assets/items/warding_charm/item.png",
+      "type": "equipment",
+      "baseValue": 78,
+      "weight": 0.8,
+      "equipmentSlot": "accessory",
+      "statBonus": {
+        "def": 120
+      }
+    }
   ],
   "tradeRecipes": [
-    { "id": "mill_flour", "inputItemId": "wheat", "inputQuantity": 3, "goldCost": 3, "outputItemId": "flour", "outputQuantity": 2 },
-    { "id": "bake_bread", "inputItemId": "flour", "inputQuantity": 2, "goldCost": 4, "outputItemId": "bread", "outputQuantity": 2 },
-    { "id": "press_wine", "inputItemId": "grapes", "inputQuantity": 3, "goldCost": 7, "outputItemId": "wine", "outputQuantity": 1 },
-    { "id": "shear_sheep", "inputItemId": "sheep", "inputQuantity": 1, "goldCost": 5, "outputItemId": "wool", "outputQuantity": 3 },
-    { "id": "butcher_cattle", "inputItemId": "cattle", "inputQuantity": 1, "goldCost": 7, "outputItemId": "meat", "outputQuantity": 4 },
-    { "id": "butcher_pigs", "inputItemId": "pigs", "inputQuantity": 1, "goldCost": 6, "outputItemId": "meat", "outputQuantity": 3 },
-    { "id": "make_cheese", "inputItemId": "milk", "inputQuantity": 3, "goldCost": 5, "outputItemId": "cheese", "outputQuantity": 1 },
-    { "id": "tan_leather", "inputItemId": "cattle", "inputQuantity": 1, "goldCost": 8, "outputItemId": "leather", "outputQuantity": 2 },
-    { "id": "dry_meat", "inputItemId": "meat", "inputQuantity": 2, "goldCost": 5, "outputItemId": "dried_meat", "outputQuantity": 1 },
-    { "id": "fire_pottery", "inputItemId": "clay", "inputQuantity": 3, "goldCost": 5, "outputItemId": "pottery", "outputQuantity": 2 },
-    { "id": "pack_rations", "inputItemId": "bread", "inputQuantity": 1, "goldCost": 2, "outputItemId": "travel_rations", "outputQuantity": 2 }
+    {
+      "id": "mill_flour",
+      "inputItemId": "wheat",
+      "inputQuantity": 3,
+      "goldCost": 3,
+      "outputItemId": "flour",
+      "outputQuantity": 2
+    },
+    {
+      "id": "bake_bread",
+      "inputItemId": "flour",
+      "inputQuantity": 2,
+      "goldCost": 4,
+      "outputItemId": "bread",
+      "outputQuantity": 2
+    },
+    {
+      "id": "press_wine",
+      "inputItemId": "grapes",
+      "inputQuantity": 3,
+      "goldCost": 7,
+      "outputItemId": "wine",
+      "outputQuantity": 1
+    },
+    {
+      "id": "shear_sheep",
+      "inputItemId": "sheep",
+      "inputQuantity": 1,
+      "goldCost": 5,
+      "outputItemId": "wool",
+      "outputQuantity": 3
+    },
+    {
+      "id": "butcher_cattle",
+      "inputItemId": "cattle",
+      "inputQuantity": 1,
+      "goldCost": 7,
+      "outputItemId": "meat",
+      "outputQuantity": 4
+    },
+    {
+      "id": "butcher_pigs",
+      "inputItemId": "pigs",
+      "inputQuantity": 1,
+      "goldCost": 6,
+      "outputItemId": "meat",
+      "outputQuantity": 3
+    },
+    {
+      "id": "make_cheese",
+      "inputItemId": "milk",
+      "inputQuantity": 3,
+      "goldCost": 5,
+      "outputItemId": "cheese",
+      "outputQuantity": 1
+    },
+    {
+      "id": "tan_leather",
+      "inputItemId": "cattle",
+      "inputQuantity": 1,
+      "goldCost": 8,
+      "outputItemId": "leather",
+      "outputQuantity": 2
+    },
+    {
+      "id": "dry_meat",
+      "inputItemId": "meat",
+      "inputQuantity": 2,
+      "goldCost": 5,
+      "outputItemId": "dried_meat",
+      "outputQuantity": 1
+    },
+    {
+      "id": "fire_pottery",
+      "inputItemId": "clay",
+      "inputQuantity": 3,
+      "goldCost": 5,
+      "outputItemId": "pottery",
+      "outputQuantity": 2
+    },
+    {
+      "id": "pack_rations",
+      "inputItemId": "bread",
+      "inputQuantity": 1,
+      "goldCost": 2,
+      "outputItemId": "travel_rations",
+      "outputQuantity": 2
+    }
   ],
   "unitUpgrades": [
-    { "fromCardId": "village_levy", "requiredLevel": 2, "options": ["levy_spearman", "novice_archer", "militia_shieldbearer"] },
-    { "fromCardId": "village_slinger", "requiredLevel": 2, "options": ["novice_archer", "kobold_trapper"] },
-    { "fromCardId": "levy_spearman", "requiredLevel": 3, "options": ["soldier", "wache", "pikeman"] },
-    { "fromCardId": "novice_archer", "requiredLevel": 3, "options": ["bogenschutze", "ranger", "longbowman"] },
-    { "fromCardId": "militia_shieldbearer", "requiredLevel": 3, "options": ["wache", "battle_monk"] },
-    { "fromCardId": "shrine_acolyte", "requiredLevel": 3, "options": ["priest", "battle_monk"] },
-    { "fromCardId": "kobold_jung", "requiredLevel": 2, "options": ["kobold_speer", "goblin", "kobold_trapper"] },
-    { "fromCardId": "kobold_trapper", "requiredLevel": 3, "options": ["kobold_jaeger", "kobold_shaman"] },
-    { "fromCardId": "kobold_speer", "requiredLevel": 3, "options": ["goblin", "kobold_jaeger", "tunnel_guard"] },
-    { "fromCardId": "goblin", "requiredLevel": 4, "options": ["kobold_hauptmann", "kobold_jaeger"] },
-    { "fromCardId": "kobold_shaman", "requiredLevel": 4, "options": ["cave_geomancer", "kobold_koenig"] },
-    { "fromCardId": "tunnel_guard", "requiredLevel": 4, "options": ["cave_geomancer", "kobold_koenig"] },
-    { "fromCardId": "kobold_hauptmann", "requiredLevel": 5, "options": ["kobold_koenig", "cave_geomancer"] },
-    { "fromCardId": "kobold_jaeger", "requiredLevel": 5, "options": ["kobold_koenig"] },
-    { "fromCardId": "ork_rekrut", "requiredLevel": 3, "options": ["orc", "ork_berserker", "orc_tracker"] },
-    { "fromCardId": "orc_tracker", "requiredLevel": 4, "options": ["orc_wolf_rider", "ember_raider"] },
-    { "fromCardId": "orc", "requiredLevel": 4, "options": ["ork_kriegsherr", "ember_raider", "orc_ironhide"] },
-    { "fromCardId": "ork_berserker", "requiredLevel": 4, "options": ["ork_kriegsherr", "ember_raider", "blood_chieftain"] },
-    { "fromCardId": "orc_wolf_rider", "requiredLevel": 5, "options": ["blood_chieftain", "ash_warlord"] },
-    { "fromCardId": "orc_ironhide", "requiredLevel": 5, "options": ["blood_chieftain", "ork_kriegsherr"] },
-    { "fromCardId": "skelett", "requiredLevel": 3, "options": ["knochenwachter", "grave_warden", "grave_archer"] },
-    { "fromCardId": "grave_archer", "requiredLevel": 4, "options": ["wraith", "banshee"] },
-    { "fromCardId": "restless_spirit", "requiredLevel": 3, "options": ["wraith", "banshee"] },
-    { "fromCardId": "knochenwachter", "requiredLevel": 4, "options": ["lich", "grave_warden", "bone_knight"] },
-    { "fromCardId": "wraith", "requiredLevel": 5, "options": ["banshee", "necromancer"] },
-    { "fromCardId": "bone_knight", "requiredLevel": 5, "options": ["death_paladin", "necromancer"] },
-    { "fromCardId": "banshee", "requiredLevel": 6, "options": ["necromancer", "lich"] },
-    { "fromCardId": "soldier", "requiredLevel": 4, "options": ["knight", "wache", "banner_knight"] },
-    { "fromCardId": "wache", "requiredLevel": 5, "options": ["shieldguard", "knight", "banner_knight"] },
-    { "fromCardId": "pikeman", "requiredLevel": 4, "options": ["knight", "banner_knight"] },
-    { "fromCardId": "bogenschutze", "requiredLevel": 4, "options": ["sniper", "ranger", "royal_arbalest"] },
-    { "fromCardId": "longbowman", "requiredLevel": 4, "options": ["sniper", "royal_arbalest"] },
-    { "fromCardId": "ranger", "requiredLevel": 5, "options": ["sniper", "royal_arbalest"] },
-    { "fromCardId": "battle_monk", "requiredLevel": 4, "options": ["crusader", "high_priest"] },
-    { "fromCardId": "priest", "requiredLevel": 4, "options": ["crusader", "high_priest"] },
-    { "fromCardId": "feuer_geist", "requiredLevel": 3, "options": ["flame_elemental", "ember_raider"] },
-    { "fromCardId": "frost_wisp", "requiredLevel": 3, "options": ["ice_elemental", "storm_elemental"] },
-    { "fromCardId": "storm_wisp", "requiredLevel": 3, "options": ["storm_elemental", "flame_elemental"] },
-    { "fromCardId": "flame_elemental", "requiredLevel": 4, "options": ["phoenix", "ash_warlord", "storm_elemental"] },
-    { "fromCardId": "ice_elemental", "requiredLevel": 4, "options": ["phoenix", "storm_elemental"] },
-    { "fromCardId": "riesenbat", "requiredLevel": 3, "options": ["blood_bat", "nightwing"] },
-    { "fromCardId": "dire_wolf", "requiredLevel": 3, "options": ["alpha_wolf", "cave_troll"] },
-    { "fromCardId": "swamp_serpent", "requiredLevel": 4, "options": ["cave_troll", "wyvern"] },
-    { "fromCardId": "blood_bat", "requiredLevel": 4, "options": ["nightwing", "wyvern"] },
-    { "fromCardId": "alpha_wolf", "requiredLevel": 4, "options": ["cave_troll", "wyvern"] },
-    { "fromCardId": "eisenwachter", "requiredLevel": 4, "options": ["golem", "siege_golem", "brass_guardian"] },
-    { "fromCardId": "clockwork_scout", "requiredLevel": 3, "options": ["brass_guardian", "eisenwachter"] },
-    { "fromCardId": "brass_guardian", "requiredLevel": 5, "options": ["golem", "cannon_golem"] },
-    { "fromCardId": "ember_raider", "requiredLevel": 5, "options": ["ash_warlord", "ork_kriegsherr", "blood_chieftain"] },
-    { "fromCardId": "grave_warden", "requiredLevel": 5, "options": ["death_paladin", "lich", "necromancer"] }
+    {
+      "fromCardId": "village_levy",
+      "requiredLevel": 2,
+      "options": [
+        "swordsman",
+        "militia_shieldbearer"
+      ]
+    },
+    {
+      "fromCardId": "swordsman",
+      "requiredLevel": 3,
+      "options": [
+        "soldier",
+        "pikeman"
+      ]
+    },
+    {
+      "fromCardId": "militia_shieldbearer",
+      "requiredLevel": 3,
+      "options": [
+        "wache",
+        "battle_monk"
+      ]
+    },
+    {
+      "fromCardId": "soldier",
+      "requiredLevel": 4,
+      "options": [
+        "halberdier",
+        "ranger"
+      ]
+    },
+    {
+      "fromCardId": "halberdier",
+      "requiredLevel": 5,
+      "options": [
+        "royal_guard"
+      ]
+    },
+    {
+      "fromCardId": "village_slinger",
+      "requiredLevel": 2,
+      "options": [
+        "novice_archer"
+      ]
+    },
+    {
+      "fromCardId": "novice_archer",
+      "requiredLevel": 3,
+      "options": [
+        "bogenschutze",
+        "longbowman"
+      ]
+    },
+    {
+      "fromCardId": "bogenschutze",
+      "requiredLevel": 4,
+      "options": [
+        "ranger"
+      ]
+    },
+    {
+      "fromCardId": "longbowman",
+      "requiredLevel": 4,
+      "options": [
+        "sniper",
+        "royal_arbalest"
+      ]
+    },
+    {
+      "fromCardId": "noble_recruit",
+      "requiredLevel": 3,
+      "options": [
+        "mounted_squire"
+      ]
+    },
+    {
+      "fromCardId": "mounted_squire",
+      "requiredLevel": 4,
+      "options": [
+        "lancer"
+      ]
+    },
+    {
+      "fromCardId": "lancer",
+      "requiredLevel": 5,
+      "options": [
+        "royal_cavalier"
+      ]
+    },
+    {
+      "fromCardId": "shrine_acolyte",
+      "requiredLevel": 2,
+      "options": [
+        "priest",
+        "battle_monk"
+      ]
+    },
+    {
+      "fromCardId": "priest",
+      "requiredLevel": 4,
+      "options": [
+        "high_priest",
+        "crusader"
+      ]
+    },
+    {
+      "fromCardId": "orc_youngblood",
+      "requiredLevel": 2,
+      "options": [
+        "ork_rekrut",
+        "orc_tracker"
+      ]
+    },
+    {
+      "fromCardId": "ork_rekrut",
+      "requiredLevel": 3,
+      "options": [
+        "orc",
+        "ork_berserker"
+      ]
+    },
+    {
+      "fromCardId": "orc_tracker",
+      "requiredLevel": 3,
+      "options": [
+        "orc_wolf_rider",
+        "ember_raider"
+      ]
+    },
+    {
+      "fromCardId": "orc",
+      "requiredLevel": 4,
+      "options": [
+        "orc_ironhide",
+        "orc_wolf_rider"
+      ]
+    },
+    {
+      "fromCardId": "ork_berserker",
+      "requiredLevel": 4,
+      "options": [
+        "ember_raider",
+        "orc_ironhide"
+      ]
+    },
+    {
+      "fromCardId": "orc_ironhide",
+      "requiredLevel": 5,
+      "options": [
+        "ork_kriegsherr",
+        "blood_chieftain"
+      ]
+    },
+    {
+      "fromCardId": "orc_wolf_rider",
+      "requiredLevel": 5,
+      "options": [
+        "ash_warlord",
+        "blood_chieftain"
+      ]
+    },
+    {
+      "fromCardId": "kobold_jung",
+      "requiredLevel": 2,
+      "options": [
+        "kobold_speer",
+        "kobold_trapper"
+      ]
+    },
+    {
+      "fromCardId": "kobold_slinger",
+      "requiredLevel": 2,
+      "options": [
+        "kobold_trapper"
+      ]
+    },
+    {
+      "fromCardId": "kobold_speer",
+      "requiredLevel": 3,
+      "options": [
+        "goblin",
+        "tunnel_guard"
+      ]
+    },
+    {
+      "fromCardId": "kobold_trapper",
+      "requiredLevel": 3,
+      "options": [
+        "kobold_shaman",
+        "goblin"
+      ]
+    },
+    {
+      "fromCardId": "goblin",
+      "requiredLevel": 4,
+      "options": [
+        "kobold_hauptmann",
+        "kobold_jaeger"
+      ]
+    },
+    {
+      "fromCardId": "kobold_hauptmann",
+      "requiredLevel": 5,
+      "options": [
+        "kobold_koenig"
+      ]
+    },
+    {
+      "fromCardId": "kobold_shaman",
+      "requiredLevel": 4,
+      "options": [
+        "kobold_hauptmann"
+      ]
+    },
+    {
+      "fromCardId": "kobold_jaeger",
+      "requiredLevel": 5,
+      "options": [
+        "kobold_koenig",
+        "cave_geomancer"
+      ]
+    },
+    {
+      "fromCardId": "tunnel_guard",
+      "requiredLevel": 4,
+      "options": [
+        "kobold_hauptmann",
+        "kobold_jaeger"
+      ]
+    },
+    {
+      "fromCardId": "skelett",
+      "requiredLevel": 2,
+      "options": [
+        "restless_spirit"
+      ]
+    },
+    {
+      "fromCardId": "lost_soul",
+      "requiredLevel": 2,
+      "options": [
+        "restless_spirit"
+      ]
+    },
+    {
+      "fromCardId": "restless_spirit",
+      "requiredLevel": 3,
+      "options": [
+        "grave_archer",
+        "knochenwachter"
+      ]
+    },
+    {
+      "fromCardId": "knochenwachter",
+      "requiredLevel": 4,
+      "options": [
+        "grave_warden",
+        "bone_knight"
+      ]
+    },
+    {
+      "fromCardId": "grave_warden",
+      "requiredLevel": 5,
+      "options": [
+        "death_paladin",
+        "banshee"
+      ]
+    },
+    {
+      "fromCardId": "grave_archer",
+      "requiredLevel": 4,
+      "options": [
+        "wraith"
+      ]
+    },
+    {
+      "fromCardId": "wraith",
+      "requiredLevel": 5,
+      "options": [
+        "banshee"
+      ]
+    },
+    {
+      "fromCardId": "bone_knight",
+      "requiredLevel": 5,
+      "options": [
+        "death_paladin"
+      ]
+    },
+    {
+      "fromCardId": "scrap_automaton",
+      "requiredLevel": 2,
+      "options": [
+        "clockwork_scout"
+      ]
+    },
+    {
+      "fromCardId": "maintenance_drone",
+      "requiredLevel": 2,
+      "options": [
+        "clockwork_scout"
+      ]
+    },
+    {
+      "fromCardId": "clockwork_scout",
+      "requiredLevel": 3,
+      "options": [
+        "eisenwachter"
+      ]
+    },
+    {
+      "fromCardId": "eisenwachter",
+      "requiredLevel": 4,
+      "options": [
+        "brass_guardian",
+        "siege_golem"
+      ]
+    },
+    {
+      "fromCardId": "brass_guardian",
+      "requiredLevel": 5,
+      "options": [
+        "golem",
+        "cannon_golem"
+      ]
+    },
+    {
+      "fromCardId": "ember_spark",
+      "requiredLevel": 2,
+      "options": [
+        "feuer_geist"
+      ]
+    },
+    {
+      "fromCardId": "frost_spark",
+      "requiredLevel": 2,
+      "options": [
+        "frost_wisp"
+      ]
+    },
+    {
+      "fromCardId": "storm_spark",
+      "requiredLevel": 2,
+      "options": [
+        "storm_wisp"
+      ]
+    },
+    {
+      "fromCardId": "feuer_geist",
+      "requiredLevel": 3,
+      "options": [
+        "flame_elemental"
+      ]
+    },
+    {
+      "fromCardId": "frost_wisp",
+      "requiredLevel": 3,
+      "options": [
+        "ice_elemental"
+      ]
+    },
+    {
+      "fromCardId": "storm_wisp",
+      "requiredLevel": 3,
+      "options": [
+        "storm_elemental"
+      ]
+    },
+    {
+      "fromCardId": "flame_elemental",
+      "requiredLevel": 4,
+      "options": [
+        "phoenix"
+      ]
+    },
+    {
+      "fromCardId": "ice_elemental",
+      "requiredLevel": 4,
+      "options": [
+        "storm_elemental",
+        "phoenix"
+      ]
+    },
+    {
+      "fromCardId": "stray_wolf",
+      "requiredLevel": 2,
+      "options": [
+        "dire_wolf"
+      ]
+    },
+    {
+      "fromCardId": "giant_rat",
+      "requiredLevel": 2,
+      "options": [
+        "plague_rat"
+      ]
+    },
+    {
+      "fromCardId": "plague_rat",
+      "requiredLevel": 3,
+      "options": [
+        "alpha_rat"
+      ]
+    },
+    {
+      "fromCardId": "riesenbat",
+      "requiredLevel": 2,
+      "options": [
+        "cave_bat"
+      ]
+    },
+    {
+      "fromCardId": "cave_bat",
+      "requiredLevel": 3,
+      "options": [
+        "blood_bat"
+      ]
+    },
+    {
+      "fromCardId": "dire_wolf",
+      "requiredLevel": 3,
+      "options": [
+        "alpha_wolf",
+        "swamp_serpent"
+      ]
+    },
+    {
+      "fromCardId": "alpha_wolf",
+      "requiredLevel": 4,
+      "options": [
+        "nightwing",
+        "wyvern"
+      ]
+    },
+    {
+      "fromCardId": "swamp_serpent",
+      "requiredLevel": 4,
+      "options": [
+        "cave_troll",
+        "wyvern"
+      ]
+    },
+    {
+      "fromCardId": "battle_monk",
+      "requiredLevel": 4,
+      "options": [
+        "crusader"
+      ]
+    }
   ],
   "enemies": [
     {
       "id": "road_reavers",
       "nameKey": "enemy.roadReavers.name",
-      "deck": ["ork_rekrut", "kobold_speer", "orc_tracker"],
+      "deck": [
+        "orc_youngblood",
+        "orc_youngblood",
+        "giant_rat"
+      ],
       "goldReward": 24,
       "threat": 1,
       "dropTable": [
-        { "cardId": "ork_rekrut", "chance": 0.32 },
-        { "cardId": "kobold_speer", "chance": 0.22 },
-        { "cardId": "orc_tracker", "chance": 0.12 }
+        {
+          "cardId": "ork_rekrut",
+          "chance": 0.32
+        },
+        {
+          "cardId": "kobold_speer",
+          "chance": 0.22
+        },
+        {
+          "cardId": "orc_tracker",
+          "chance": 0.12
+        }
       ],
       "itemDropTable": [
-        { "itemId": "iron", "chance": 0.28, "minimum": 1, "maximum": 2 },
-        { "itemId": "rusty_sword", "chance": 0.035, "minimum": 1, "maximum": 1 },
-        { "itemId": "healing_poultice", "chance": 0.06, "minimum": 1, "maximum": 1 }
+        {
+          "itemId": "iron",
+          "chance": 0.28,
+          "minimum": 1,
+          "maximum": 2
+        },
+        {
+          "itemId": "rusty_sword",
+          "chance": 0.035,
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "itemId": "healing_poultice",
+          "chance": 0.06,
+          "minimum": 1,
+          "maximum": 1
+        }
       ]
     },
     {
       "id": "kobold_foragers",
       "nameKey": "enemy.koboldForagers.name",
-      "deck": ["kobold_jung", "kobold_trapper", "kobold_speer"],
+      "deck": [
+        "kobold_jung",
+        "kobold_jung",
+        "kobold_slinger"
+      ],
       "goldReward": 18,
       "threat": 1,
       "dropTable": [
-        { "cardId": "kobold_jung", "chance": 0.42 },
-        { "cardId": "kobold_trapper", "chance": 0.24 },
-        { "cardId": "goblin", "chance": 0.14 }
+        {
+          "cardId": "kobold_jung",
+          "chance": 0.42
+        },
+        {
+          "cardId": "kobold_trapper",
+          "chance": 0.24
+        },
+        {
+          "cardId": "goblin",
+          "chance": 0.14
+        }
       ],
       "itemDropTable": [
-        { "itemId": "leather", "chance": 0.35, "minimum": 1, "maximum": 2 },
-        { "itemId": "simple_shield", "chance": 0.025, "minimum": 1, "maximum": 1 }
+        {
+          "itemId": "leather",
+          "chance": 0.35,
+          "minimum": 1,
+          "maximum": 2
+        },
+        {
+          "itemId": "simple_shield",
+          "chance": 0.025,
+          "minimum": 1,
+          "maximum": 1
+        }
       ]
     },
     {
       "id": "hungry_wolves",
       "nameKey": "enemy.hungryWolves.name",
-      "deck": ["dire_wolf", "dire_wolf", "riesenbat"],
+      "deck": [
+        "stray_wolf",
+        "stray_wolf",
+        "riesenbat"
+      ],
       "goldReward": 12,
       "threat": 1,
       "dropTable": [
-        { "cardId": "dire_wolf", "chance": 0.34 },
-        { "cardId": "riesenbat", "chance": 0.18 }
+        {
+          "cardId": "dire_wolf",
+          "chance": 0.34
+        },
+        {
+          "cardId": "riesenbat",
+          "chance": 0.18
+        }
       ],
       "itemDropTable": [
-        { "itemId": "meat", "chance": 0.38, "minimum": 1, "maximum": 2 },
-        { "itemId": "leather", "chance": 0.18, "minimum": 1, "maximum": 1 }
+        {
+          "itemId": "meat",
+          "chance": 0.38,
+          "minimum": 1,
+          "maximum": 2
+        },
+        {
+          "itemId": "leather",
+          "chance": 0.18,
+          "minimum": 1,
+          "maximum": 1
+        }
       ]
     },
     {
       "id": "desperate_militia",
       "nameKey": "enemy.desperateMilitia.name",
-      "deck": ["village_slinger", "militia_shieldbearer", "village_levy"],
+      "deck": [
+        "village_slinger",
+        "militia_shieldbearer",
+        "village_levy"
+      ],
       "goldReward": 16,
       "threat": 1,
       "dropTable": [
-        { "cardId": "village_slinger", "chance": 0.3 },
-        { "cardId": "militia_shieldbearer", "chance": 0.24 }
+        {
+          "cardId": "village_slinger",
+          "chance": 0.3
+        },
+        {
+          "cardId": "militia_shieldbearer",
+          "chance": 0.24
+        }
       ],
       "itemDropTable": [
-        { "itemId": "bread", "chance": 0.22, "minimum": 1, "maximum": 2 },
-        { "itemId": "wooden_club", "chance": 0.08, "minimum": 1, "maximum": 1 },
-        { "itemId": "travel_rations", "chance": 0.12, "minimum": 1, "maximum": 1 }
+        {
+          "itemId": "bread",
+          "chance": 0.22,
+          "minimum": 1,
+          "maximum": 2
+        },
+        {
+          "itemId": "wooden_club",
+          "chance": 0.08,
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "itemId": "travel_rations",
+          "chance": 0.12,
+          "minimum": 1,
+          "maximum": 1
+        }
       ]
     },
     {
       "id": "gloam_stalkers",
       "nameKey": "enemy.gloamStalkers.name",
-      "deck": ["riesenbat", "restless_spirit", "goblin", "kobold_trapper"],
+      "deck": [
+        "riesenbat",
+        "lost_soul",
+        "kobold_trapper"
+      ],
       "goldReward": 30,
       "threat": 2,
       "dropTable": [
-        { "cardId": "riesenbat", "chance": 0.3 },
-        { "cardId": "restless_spirit", "chance": 0.2 },
-        { "cardId": "kobold_trapper", "chance": 0.16 }
+        {
+          "cardId": "riesenbat",
+          "chance": 0.3
+        },
+        {
+          "cardId": "restless_spirit",
+          "chance": 0.2
+        },
+        {
+          "cardId": "kobold_trapper",
+          "chance": 0.16
+        }
       ],
       "itemDropTable": [
-        { "itemId": "herbs", "chance": 0.3, "minimum": 1, "maximum": 2 },
-        { "itemId": "warding_charm", "chance": 0.025, "minimum": 1, "maximum": 1 }
+        {
+          "itemId": "herbs",
+          "chance": 0.3,
+          "minimum": 1,
+          "maximum": 2
+        },
+        {
+          "itemId": "warding_charm",
+          "chance": 0.025,
+          "minimum": 1,
+          "maximum": 1
+        }
       ]
     },
     {
       "id": "swamp_lurkers",
       "nameKey": "enemy.swampLurkers.name",
-      "deck": ["swamp_serpent", "dire_wolf", "frost_wisp", "kobold_shaman"],
+      "deck": [
+        "swamp_serpent",
+        "dire_wolf",
+        "frost_wisp",
+        "kobold_shaman"
+      ],
       "goldReward": 32,
       "threat": 2,
       "dropTable": [
-        { "cardId": "swamp_serpent", "chance": 0.14 },
-        { "cardId": "frost_wisp", "chance": 0.18 },
-        { "cardId": "kobold_shaman", "chance": 0.08 }
+        {
+          "cardId": "swamp_serpent",
+          "chance": 0.14
+        },
+        {
+          "cardId": "frost_wisp",
+          "chance": 0.18
+        },
+        {
+          "cardId": "kobold_shaman",
+          "chance": 0.08
+        }
       ],
       "itemDropTable": [
-        { "itemId": "fish", "chance": 0.3, "minimum": 1, "maximum": 3 },
-        { "itemId": "herbs", "chance": 0.24, "minimum": 1, "maximum": 2 }
+        {
+          "itemId": "fish",
+          "chance": 0.3,
+          "minimum": 1,
+          "maximum": 3
+        },
+        {
+          "itemId": "herbs",
+          "chance": 0.24,
+          "minimum": 1,
+          "maximum": 2
+        }
       ]
     },
     {
       "id": "ash_brood",
       "nameKey": "enemy.ashBrood.name",
-      "deck": ["feuer_geist", "storm_wisp", "ork_rekrut", "orc_tracker"],
+      "deck": [
+        "feuer_geist",
+        "storm_wisp",
+        "ork_rekrut",
+        "orc_tracker"
+      ],
       "goldReward": 34,
       "threat": 2,
       "dropTable": [
-        { "cardId": "feuer_geist", "chance": 0.22 },
-        { "cardId": "storm_wisp", "chance": 0.18 },
-        { "cardId": "orc_tracker", "chance": 0.14 }
+        {
+          "cardId": "feuer_geist",
+          "chance": 0.22
+        },
+        {
+          "cardId": "storm_wisp",
+          "chance": 0.18
+        },
+        {
+          "cardId": "orc_tracker",
+          "chance": 0.14
+        }
       ],
       "itemDropTable": [
-        { "itemId": "coal", "chance": 0.34, "minimum": 1, "maximum": 3 },
-        { "itemId": "iron", "chance": 0.18, "minimum": 1, "maximum": 2 }
+        {
+          "itemId": "coal",
+          "chance": 0.34,
+          "minimum": 1,
+          "maximum": 3
+        },
+        {
+          "itemId": "iron",
+          "chance": 0.18,
+          "minimum": 1,
+          "maximum": 2
+        }
       ]
     },
     {
       "id": "kobold_ambushers",
       "nameKey": "enemy.koboldAmbushers.name",
-      "deck": ["kobold_trapper", "kobold_jaeger", "kobold_speer", "goblin"],
+      "deck": [
+        "kobold_trapper",
+        "kobold_jaeger",
+        "kobold_speer",
+        "goblin"
+      ],
       "goldReward": 36,
       "threat": 2,
       "dropTable": [
-        { "cardId": "kobold_jaeger", "chance": 0.12 },
-        { "cardId": "kobold_trapper", "chance": 0.22 },
-        { "cardId": "tunnel_guard", "chance": 0.06 }
+        {
+          "cardId": "kobold_jaeger",
+          "chance": 0.12
+        },
+        {
+          "cardId": "kobold_trapper",
+          "chance": 0.22
+        },
+        {
+          "cardId": "tunnel_guard",
+          "chance": 0.06
+        }
       ],
       "itemDropTable": [
-        { "itemId": "copper", "chance": 0.24, "minimum": 1, "maximum": 2 },
-        { "itemId": "militia_spear", "chance": 0.04, "minimum": 1, "maximum": 1 },
-        { "itemId": "leather", "chance": 0.26, "minimum": 1, "maximum": 2 }
+        {
+          "itemId": "copper",
+          "chance": 0.24,
+          "minimum": 1,
+          "maximum": 2
+        },
+        {
+          "itemId": "militia_spear",
+          "chance": 0.04,
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "itemId": "leather",
+          "chance": 0.26,
+          "minimum": 1,
+          "maximum": 2
+        }
       ]
     },
     {
       "id": "vault_scavengers",
       "nameKey": "enemy.vaultScavengers.name",
-      "deck": ["skelett", "eisenwachter", "clockwork_scout", "grave_archer"],
+      "deck": [
+        "scrap_automaton",
+        "maintenance_drone",
+        "clockwork_scout"
+      ],
       "goldReward": 38,
       "threat": 3,
       "dropTable": [
-        { "cardId": "skelett", "chance": 0.24 },
-        { "cardId": "clockwork_scout", "chance": 0.16 },
-        { "cardId": "eisenwachter", "chance": 0.08 },
-        { "cardId": "grave_archer", "chance": 0.18 }
+        {
+          "cardId": "skelett",
+          "chance": 0.24
+        },
+        {
+          "cardId": "clockwork_scout",
+          "chance": 0.16
+        },
+        {
+          "cardId": "eisenwachter",
+          "chance": 0.08
+        },
+        {
+          "cardId": "grave_archer",
+          "chance": 0.18
+        }
       ],
       "itemDropTable": [
-        { "itemId": "iron", "chance": 0.45, "minimum": 1, "maximum": 3 },
-        { "itemId": "iron_mace", "chance": 0.035, "minimum": 1, "maximum": 1 },
-        { "itemId": "iron_talisman", "chance": 0.03, "minimum": 1, "maximum": 1 }
+        {
+          "itemId": "iron",
+          "chance": 0.45,
+          "minimum": 1,
+          "maximum": 3
+        },
+        {
+          "itemId": "iron_mace",
+          "chance": 0.035,
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "itemId": "iron_talisman",
+          "chance": 0.03,
+          "minimum": 1,
+          "maximum": 1
+        }
       ]
     },
     {
       "id": "grave_procession",
       "nameKey": "enemy.graveProcession.name",
-      "deck": ["knochenwachter", "grave_warden", "grave_archer", "restless_spirit"],
+      "deck": [
+        "knochenwachter",
+        "grave_warden",
+        "grave_archer",
+        "restless_spirit"
+      ],
       "goldReward": 46,
       "threat": 3,
       "dropTable": [
-        { "cardId": "knochenwachter", "chance": 0.16 },
-        { "cardId": "grave_warden", "chance": 0.08 },
-        { "cardId": "wraith", "chance": 0.06 }
+        {
+          "cardId": "knochenwachter",
+          "chance": 0.16
+        },
+        {
+          "cardId": "grave_warden",
+          "chance": 0.08
+        },
+        {
+          "cardId": "wraith",
+          "chance": 0.06
+        }
       ],
       "itemDropTable": [
-        { "itemId": "silver", "chance": 0.12, "minimum": 1, "maximum": 1 },
-        { "itemId": "warding_charm", "chance": 0.035, "minimum": 1, "maximum": 1 }
+        {
+          "itemId": "silver",
+          "chance": 0.12,
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "itemId": "warding_charm",
+          "chance": 0.035,
+          "minimum": 1,
+          "maximum": 1
+        }
       ]
     },
     {
       "id": "orc_hunters",
       "nameKey": "enemy.orcHunters.name",
-      "deck": ["orc_tracker", "orc_wolf_rider", "dire_wolf", "ork_berserker"],
+      "deck": [
+        "orc_tracker",
+        "orc_wolf_rider",
+        "dire_wolf",
+        "ork_berserker"
+      ],
       "goldReward": 48,
       "threat": 3,
       "dropTable": [
-        { "cardId": "orc_wolf_rider", "chance": 0.1 },
-        { "cardId": "ork_berserker", "chance": 0.1 },
-        { "cardId": "dire_wolf", "chance": 0.22 }
+        {
+          "cardId": "orc_wolf_rider",
+          "chance": 0.1
+        },
+        {
+          "cardId": "ork_berserker",
+          "chance": 0.1
+        },
+        {
+          "cardId": "dire_wolf",
+          "chance": 0.22
+        }
       ],
       "itemDropTable": [
-        { "itemId": "meat", "chance": 0.32, "minimum": 1, "maximum": 3 },
-        { "itemId": "war_axe", "chance": 0.025, "minimum": 1, "maximum": 1 },
-        { "itemId": "iron", "chance": 0.25, "minimum": 1, "maximum": 2 }
+        {
+          "itemId": "meat",
+          "chance": 0.32,
+          "minimum": 1,
+          "maximum": 3
+        },
+        {
+          "itemId": "war_axe",
+          "chance": 0.025,
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "itemId": "iron",
+          "chance": 0.25,
+          "minimum": 1,
+          "maximum": 2
+        }
       ]
     },
     {
       "id": "storm_callers",
       "nameKey": "enemy.stormCallers.name",
-      "deck": ["storm_wisp", "frost_wisp", "ice_elemental", "storm_elemental"],
+      "deck": [
+        "storm_spark",
+        "frost_wisp",
+        "storm_wisp"
+      ],
       "goldReward": 50,
       "threat": 3,
       "dropTable": [
-        { "cardId": "storm_wisp", "chance": 0.22 },
-        { "cardId": "ice_elemental", "chance": 0.1 },
-        { "cardId": "storm_elemental", "chance": 0.04 }
+        {
+          "cardId": "storm_wisp",
+          "chance": 0.22
+        },
+        {
+          "cardId": "ice_elemental",
+          "chance": 0.1
+        },
+        {
+          "cardId": "storm_elemental",
+          "chance": 0.04
+        }
       ],
       "itemDropTable": [
-        { "itemId": "silver", "chance": 0.14, "minimum": 1, "maximum": 2 },
-        { "itemId": "healing_poultice", "chance": 0.08, "minimum": 1, "maximum": 1 }
+        {
+          "itemId": "silver",
+          "chance": 0.14,
+          "minimum": 1,
+          "maximum": 2
+        },
+        {
+          "itemId": "healing_poultice",
+          "chance": 0.08,
+          "minimum": 1,
+          "maximum": 1
+        }
       ]
     },
     {
       "id": "rusted_sentinels",
       "nameKey": "enemy.rustedSentinels.name",
-      "deck": ["eisenwachter", "brass_guardian", "orc_ironhide", "clockwork_scout"],
+      "deck": [
+        "eisenwachter",
+        "brass_guardian",
+        "orc_ironhide",
+        "clockwork_scout"
+      ],
       "goldReward": 52,
       "threat": 4,
       "dropTable": [
-        { "cardId": "eisenwachter", "chance": 0.12 },
-        { "cardId": "brass_guardian", "chance": 0.06 },
-        { "cardId": "orc_ironhide", "chance": 0.04 }
+        {
+          "cardId": "eisenwachter",
+          "chance": 0.12
+        },
+        {
+          "cardId": "brass_guardian",
+          "chance": 0.06
+        },
+        {
+          "cardId": "orc_ironhide",
+          "chance": 0.04
+        }
       ],
       "itemDropTable": [
-        { "itemId": "silver", "chance": 0.18, "minimum": 1, "maximum": 2 },
-        { "itemId": "tower_shield", "chance": 0.025, "minimum": 1, "maximum": 1 },
-        { "itemId": "iron_talisman", "chance": 0.05, "minimum": 1, "maximum": 1 }
+        {
+          "itemId": "silver",
+          "chance": 0.18,
+          "minimum": 1,
+          "maximum": 2
+        },
+        {
+          "itemId": "tower_shield",
+          "chance": 0.025,
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "itemId": "iron_talisman",
+          "chance": 0.05,
+          "minimum": 1,
+          "maximum": 1
+        }
       ]
     },
     {
       "id": "black_banner_knights",
       "nameKey": "enemy.blackBannerKnights.name",
-      "deck": ["knight", "banner_knight", "royal_arbalest", "battle_monk"],
+      "deck": [
+        "knight",
+        "banner_knight",
+        "royal_arbalest",
+        "battle_monk"
+      ],
       "goldReward": 64,
       "threat": 4,
       "dropTable": [
-        { "cardId": "knight", "chance": 0.08 },
-        { "cardId": "banner_knight", "chance": 0.045 },
-        { "cardId": "royal_arbalest", "chance": 0.045 }
+        {
+          "cardId": "knight",
+          "chance": 0.08
+        },
+        {
+          "cardId": "banner_knight",
+          "chance": 0.045
+        },
+        {
+          "cardId": "royal_arbalest",
+          "chance": 0.045
+        }
       ],
       "itemDropTable": [
-        { "itemId": "gold_ore", "chance": 0.08, "minimum": 1, "maximum": 1 },
-        { "itemId": "knightly_longsword", "chance": 0.02, "minimum": 1, "maximum": 1 },
-        { "itemId": "kite_shield", "chance": 0.035, "minimum": 1, "maximum": 1 },
-        { "itemId": "iron_talisman", "chance": 0.05, "minimum": 1, "maximum": 1 }
+        {
+          "itemId": "gold_ore",
+          "chance": 0.08,
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "itemId": "knightly_longsword",
+          "chance": 0.02,
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "itemId": "kite_shield",
+          "chance": 0.035,
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "itemId": "iron_talisman",
+          "chance": 0.05,
+          "minimum": 1,
+          "maximum": 1
+        }
       ]
     },
     {
       "id": "troll_den",
       "nameKey": "enemy.trollDen.name",
-      "deck": ["cave_troll", "swamp_serpent", "alpha_wolf", "dire_wolf"],
+      "deck": [
+        "cave_troll",
+        "swamp_serpent",
+        "alpha_wolf",
+        "dire_wolf"
+      ],
       "goldReward": 58,
       "threat": 4,
       "dropTable": [
-        { "cardId": "cave_troll", "chance": 0.055 },
-        { "cardId": "alpha_wolf", "chance": 0.1 },
-        { "cardId": "swamp_serpent", "chance": 0.12 }
+        {
+          "cardId": "cave_troll",
+          "chance": 0.055
+        },
+        {
+          "cardId": "alpha_wolf",
+          "chance": 0.1
+        },
+        {
+          "cardId": "swamp_serpent",
+          "chance": 0.12
+        }
       ],
       "itemDropTable": [
-        { "itemId": "meat", "chance": 0.45, "minimum": 2, "maximum": 5 },
-        { "itemId": "leather", "chance": 0.24, "minimum": 1, "maximum": 3 }
+        {
+          "itemId": "meat",
+          "chance": 0.45,
+          "minimum": 2,
+          "maximum": 5
+        },
+        {
+          "itemId": "leather",
+          "chance": 0.24,
+          "minimum": 1,
+          "maximum": 3
+        }
       ]
     },
     {
       "id": "necromancer_cabal",
       "nameKey": "enemy.necromancerCabal.name",
-      "deck": ["necromancer", "banshee", "bone_knight", "lich"],
+      "deck": [
+        "necromancer",
+        "banshee",
+        "bone_knight",
+        "lich"
+      ],
       "goldReward": 78,
       "threat": 5,
       "dropTable": [
-        { "cardId": "necromancer", "chance": 0.035 },
-        { "cardId": "banshee", "chance": 0.045 },
-        { "cardId": "bone_knight", "chance": 0.055 },
-        { "cardId": "lich", "chance": 0.035 }
+        {
+          "cardId": "necromancer",
+          "chance": 0.035
+        },
+        {
+          "cardId": "banshee",
+          "chance": 0.045
+        },
+        {
+          "cardId": "bone_knight",
+          "chance": 0.055
+        },
+        {
+          "cardId": "lich",
+          "chance": 0.035
+        }
       ],
       "itemDropTable": [
-        { "itemId": "silver", "chance": 0.28, "minimum": 1, "maximum": 3 },
-        { "itemId": "warding_charm", "chance": 0.07, "minimum": 1, "maximum": 1 }
+        {
+          "itemId": "silver",
+          "chance": 0.28,
+          "minimum": 1,
+          "maximum": 3
+        },
+        {
+          "itemId": "warding_charm",
+          "chance": 0.07,
+          "minimum": 1,
+          "maximum": 1
+        }
       ]
     },
     {
       "id": "wyvern_kin",
       "nameKey": "enemy.wyvernKin.name",
-      "deck": ["wyvern", "nightwing", "storm_elemental", "alpha_wolf"],
+      "deck": [
+        "wyvern",
+        "nightwing",
+        "storm_elemental",
+        "alpha_wolf"
+      ],
       "goldReward": 82,
       "threat": 5,
       "dropTable": [
-        { "cardId": "wyvern", "chance": 0.03 },
-        { "cardId": "nightwing", "chance": 0.07 },
-        { "cardId": "storm_elemental", "chance": 0.04 }
+        {
+          "cardId": "wyvern",
+          "chance": 0.03
+        },
+        {
+          "cardId": "nightwing",
+          "chance": 0.07
+        },
+        {
+          "cardId": "storm_elemental",
+          "chance": 0.04
+        }
       ],
       "itemDropTable": [
-        { "itemId": "gold_ore", "chance": 0.1, "minimum": 1, "maximum": 2 },
-        { "itemId": "obsidian_blade", "chance": 0.012, "minimum": 1, "maximum": 1 },
-        { "itemId": "healing_poultice", "chance": 0.12, "minimum": 1, "maximum": 2 }
+        {
+          "itemId": "gold_ore",
+          "chance": 0.1,
+          "minimum": 1,
+          "maximum": 2
+        },
+        {
+          "itemId": "obsidian_blade",
+          "chance": 0.012,
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "itemId": "healing_poultice",
+          "chance": 0.12,
+          "minimum": 1,
+          "maximum": 2
+        }
       ]
     },
     {
       "id": "iron_colossus_guard",
       "nameKey": "enemy.ironColossusGuard.name",
-      "deck": ["cannon_golem", "siege_golem", "golem", "brass_guardian"],
+      "deck": [
+        "cannon_golem",
+        "siege_golem",
+        "golem",
+        "brass_guardian"
+      ],
       "goldReward": 88,
       "threat": 5,
       "dropTable": [
-        { "cardId": "cannon_golem", "chance": 0.025 },
-        { "cardId": "siege_golem", "chance": 0.04 },
-        { "cardId": "golem", "chance": 0.05 }
+        {
+          "cardId": "cannon_golem",
+          "chance": 0.025
+        },
+        {
+          "cardId": "siege_golem",
+          "chance": 0.04
+        },
+        {
+          "cardId": "golem",
+          "chance": 0.05
+        }
       ],
       "itemDropTable": [
-        { "itemId": "iron", "chance": 0.5, "minimum": 2, "maximum": 5 },
-        { "itemId": "gold_ore", "chance": 0.08, "minimum": 1, "maximum": 1 },
-        { "itemId": "runed_aegis", "chance": 0.014, "minimum": 1, "maximum": 1 },
-        { "itemId": "iron_talisman", "chance": 0.075, "minimum": 1, "maximum": 1 }
+        {
+          "itemId": "iron",
+          "chance": 0.5,
+          "minimum": 2,
+          "maximum": 5
+        },
+        {
+          "itemId": "gold_ore",
+          "chance": 0.08,
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "itemId": "runed_aegis",
+          "chance": 0.014,
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "itemId": "iron_talisman",
+          "chance": 0.075,
+          "minimum": 1,
+          "maximum": 1
+        }
       ]
     }
   ]

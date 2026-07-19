@@ -3,15 +3,24 @@
 ## Product direction
 
 Dark Dimensions is a difficult, RNG-heavy card RPG played on a freely
-traversable world map. Cities are the only save points. Defeat restores the
-latest city save.
+traversable world map. Runs use a single Ironman autosave. Entering a location
+and crossing into or out of battle writes the autosave automatically. Defeat
+permanently ends the run and deletes that save.
 
 The initial combat contract is:
 
-- Three summons per turn.
-- Summoning or recalling a monster consumes one summon action.
+- Three tactical actions per turn.
+- Summoning, recalling, or drawing one additional card consumes one tactical action.
+- The opening hand contains five cards, each round draws one free card, and the hand limit is seven.
 - DEF passively reduces incoming damage on every attack.
-- Both warbands attack automatically when the round is resolved.
+- Units choose random targets by default; authored cards may prefer wounded, weak,
+  armored, or other specialized targets.
+- Both formations attack automatically when the round is resolved.
+- Each side has a leader behind its formation. Leaders act every round but never
+  occupy a unit slot; the player selects the hero's action before resolution.
+- Damage beyond a defeated unit's remaining HP pierces through to its leader.
+- An empty formation exposes its leader to direct attacks.
+- A side loses when its leader dies or it has no living units on field, hand, or draw pile.
 - Monsters have persistent HP between battles.
 - A monster reaching zero HP is permanently removed from the deck.
 - Surviving monsters can only be healed in cities by paying gold.
@@ -20,7 +29,7 @@ The initial combat contract is:
 
 Each new game creates a seed-based world containing cities, villages, castles,
 dungeons, landmarks, wild regions, roads, encounter zones, and hostile patrols.
-The seed is stored in city saves so loading recreates exactly the same map.
+The seed is stored in the Ironman autosave so loading recreates exactly the same map.
 
 The same seed generates plains, forests, swamps, deserts, mountains, lakes,
 rivers, and a coastal sea boundary. `WorldTerrain.ts` owns terrain lookup,
@@ -72,9 +81,14 @@ stronger patrols continue to pursue.
 - Dungeon HP, casualties, XP, gold, and captured cards persist between depths.
 - After a cleared depth, the player may descend or retreat with current spoils.
 - Only the final depth marks the dungeon cleared and awards its completion bonus.
-- Completed location events are stored in city saves.
+- Completed location events are stored in the Ironman autosave.
 - Cities must be entered from the world map before their services become
   available.
+- City names are assembled deterministically from curated dark-fantasy word
+  lists, with duplicate protection inside each generated world.
+- Every city owns persistent population, garrison, prosperity, and a reserved
+  future lord assignment. Initial values derive from the world seed and nearby
+  settlements; mutable values persist in the Ironman autosave.
 - The city hub groups its market, recruitment, contracts, healers, and save
   service in one protected menu.
 - City markets separate stalls, workshops, and player cargo into focused tabs.
@@ -86,7 +100,7 @@ stronger patrols continue to pursue.
 - Enemy archetypes define independent card and item drop tables with exact
   probabilities and quantity ranges.
 - Captured enemy cards continue to enter the reserve or active Warband.
-- Inventory items stack and persist in city saves.
+- Inventory items stack and persist in the Ironman autosave.
 - The economy uses reusable standard goods such as wood, iron, copper, stone,
   wheat, livestock, flour, bread, wine, wool, meat, milk, cheese, and leather.
 - Twelve generated villages each specialize in one raw product and also sell
@@ -104,7 +118,7 @@ stronger patrols continue to pursue.
 - Large merchant caravans travel exclusively between cities with broader cargo.
 - Both trader types carry limited stock and can be traded with when approached.
 - Market inventories, scarcity, replenishment timers, caravan positions, and
-  village trader positions are persisted in city saves.
+  village trader positions are persisted in the Ironman autosave.
 - Consumables can restore a wounded surviving unit outside combat.
 - The hero has one equipment slot whose item modifies real battle ATK or DEF.
 - The Loot Almanac exposes exact card and item drop chances in the game UI.
@@ -123,7 +137,7 @@ stronger patrols continue to pursue.
   patrols to catch.
 - Food goods have weight, finite settlement stock, caravan stock, and normal
   scarcity-based market pricing.
-- The latest daily upkeep report and survival state persist in city saves.
+- The latest daily upkeep report and survival state persist in the Ironman autosave.
 
 ## Factions and contracts
 
@@ -138,15 +152,15 @@ stronger patrols continue to pursue.
 - Bounties count only victories against the requested enemy archetype.
 - Escort contracts require the assigned caravan and player to reach the target
   settlement together.
-- Contract progress, completion, rewards, and reputation persist in city saves.
+- Contract progress, completion, rewards, and reputation persist in the Ironman autosave.
 
 ## Tactical battle loop
 
-1. Spend up to three summon actions on units or recalls.
-2. Arrange the deployed warband while considering each unit's passive DEF.
-3. Resolve the round to let both warbands choose lanes and attack automatically.
-4. Apply all planned attacks simultaneously, then remove defeated units.
-5. Begin a new round with refreshed summon actions and replenished hands.
+1. Spend up to three tactical actions on summons, recalls, or additional draws.
+2. Choose the hero's attack or support command.
+3. Resolve the round; units acquire random or card-specific targets without fixed lanes.
+4. Apply initiative groups, piercing overflow, leader actions, and defeat checks.
+5. Begin a new round with refreshed actions and one free draw.
 
 Monster definitions may provide on-summon effects such as healing, direct
 damage, shields, or army-wide attack buffs. Consumable battle items are reserved
@@ -155,7 +169,9 @@ for a later inventory system and are not part of the current combat loop.
 ## Warband progression
 
 - A new game starts with no recruitable unit cards.
-- The immortal hero card always joins battle and consumes no Warband slot.
+- The immortal hero leads behind the formation and consumes no unit slot.
+- Formation capacity starts at three and rises by one every two Leadership levels,
+  to a maximum of seven.
 - Leadership 1 allows five active unit cards.
 - Ten additional unit cards may be held in reserve.
 - New city recruits are weak human units and enter the reserve first.
@@ -188,7 +204,9 @@ remain identical across desktop and mobile.
 
 ## Persistence
 
-The web build stores save games in IndexedDB, not cookies or localStorage.
+The web build stores one Ironman autosave in IndexedDB, not cookies or localStorage.
+Manual saves are not exposed. Active battle checkpoints force a reloaded run
+back into its pending encounter, preventing a page reload from escaping combat.
 The `SaveRepository` interface allows a future Tauri desktop build to use
 normal files in the operating system's application-data directory.
 
