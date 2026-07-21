@@ -23,7 +23,7 @@ describe("WorldGenerator", () => {
   });
 
   it("generates cities, villages, castles, dungeons and roaming enemies", () => {
-    const world = generateWorldMap(98765, contentPack.enemies);
+    const world = generateWorldMap(98765, contentPack.enemies, contentPack.nobles);
     const locationTypes = world.locations.map((location) => location.type);
 
     expect(locationTypes).toEqual(
@@ -38,6 +38,10 @@ describe("WorldGenerator", () => {
     );
     expect(world.enemies.length).toBeGreaterThanOrEqual(36);
     expect(world.warbandSpawns?.length ?? 0).toBeGreaterThan(12);
+    for (const factionId of ["ember_crown", "gloam_compact", "iron_concord"]) {
+      const nobles = (world.warbandSpawns ?? []).filter((spawn) => spawn.id.includes(factionId) || spawn.nobleProfileId?.startsWith(factionId.split("_")[0]));
+      expect(nobles.filter((spawn) => spawn.nobleRank === "king")).toHaveLength(1);
+    }
     expect(
       (world.warbandSpawns ?? []).every(
         (spawn) => Math.hypot(spawn.x - world.start.x, spawn.y - world.start.y) >= 1350,
@@ -120,7 +124,7 @@ describe("WorldGenerator", () => {
       expect(road.points.at(-1)).not.toMatchObject({ x: city.x, y: city.y });
     }
     expect(world.locations[0]).toMatchObject({
-      id: "city_0",
+      id: "soul_temple",
       x: world.start.x,
       y: world.start.y,
     });

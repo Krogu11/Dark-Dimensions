@@ -89,11 +89,10 @@ stronger patrols continue to pursue.
 - Every city owns persistent population, garrison, prosperity, and a reserved
   future lord assignment. Initial values derive from the world seed and nearby
   settlements; mutable values persist in the Ironman autosave.
-- The city hub groups its market, recruitment, contracts, healers, and save
-  service in one protected menu.
-- City markets separate stalls, workshops, and player cargo into focused tabs.
-- The market-stall tab places merchant stock and player inventory side by side,
-  enabling direct buying and selling without changing screens.
+- The city hub groups its market, finite recruitment roster, contracts, healers,
+  and character service in one protected menu.
+- City markets place merchant stock and player inventory side by side, enabling
+  direct buying and selling without changing screens.
 
 ## Loot and economy
 
@@ -120,8 +119,8 @@ stronger patrols continue to pursue.
 - Market inventories, scarcity, replenishment timers, caravan positions, and
   village trader positions are persisted in the Ironman autosave.
 - Consumables can restore a wounded surviving unit outside combat.
-- The hero has one equipment slot whose item modifies real battle ATK or DEF.
-- The Loot Almanac exposes exact card and item drop chances in the game UI.
+- The hero has right-hand, left-hand, and accessory equipment whose bonuses feed
+  into battle ATK or DEF.
 
 ## Warband survival
 
@@ -130,7 +129,7 @@ stronger patrols continue to pursue.
   rations all contribute to the shared food supply.
 - Food goods use persistent capacity stacks, such as a wheat sack changing from
   `60/60` to `48/60` after feeding twelve characters for one day.
-- Every non-hero troop receives a daily wage; larger rosters cost more to retain.
+- Every non-hero troop contributes to a weekly payroll; higher tiers cost more.
 - Fully paid and fed parties recover morale over time.
 - Missing food or wages causes immediate, scaling morale losses.
 - Morale modifies world travel speed, making neglected armies easier for hostile
@@ -170,21 +169,24 @@ for a later inventory system and are not part of the current combat loop.
 
 - A new game starts with no recruitable unit cards.
 - The immortal hero leads behind the formation and consumes no unit slot.
-- Formation capacity starts at three and rises by one every two Leadership levels,
-  to a maximum of seven.
-- Leadership 1 allows five active unit cards.
-- Ten additional unit cards may be held in reserve.
-- New city recruits are weak human units and enter the reserve first.
+- Battle formation capacity starts at three and rises with Leadership, to a
+  maximum of seven deployed cards.
+- Warband roster capacity derives from Charisma and Leadership.
+- There is currently no separate reserve roster.
+- New city recruits enter the active Warband when a slot is available.
 - The human troop tree starts with Village Levy, then branches into Levy
   Spearman or Novice Archer before splitting into further specializations.
 - Only active Warband units are drawn in battle.
 - Deployed survivors gain XP after victory.
 - Every obtainable creature belongs to a multi-tier upgrade tree.
+- Deployed survivors earn direct tier-based XP. Upgrade requirements follow
+  `50 + tier × 50`; upgrades preserve excess XP and current health percentage.
 - Experienced units choose between authored upgrade branches in a
   Mount-and-Blade-style progression.
-- Dropped enemy cards enter the reserve when capacity is available.
+- Captured enemy cards become prisoners and can later be recruited or sold.
 - Warband and reserve management is available anywhere on the world map.
-- Recruitment, healing, and saving remain city-only services.
+- Recruitment, healing, and prisoner sales remain city-only services. Saving is
+  automatic under the Ironman rules.
 - Recalling a non-hero field monster to the hand consumes one summon action.
 
 ## Technical boundaries

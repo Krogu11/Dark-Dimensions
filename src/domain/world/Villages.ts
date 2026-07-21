@@ -12,6 +12,7 @@ export interface VillageState {
   militia: number;
   prosperity: number;
   relation: number;
+  lordId: string | null;
   condition: VillageCondition;
   recoveryDay: number | null;
   lastHelpedWeek: number;
@@ -22,7 +23,7 @@ export interface VillageState {
 
 export interface VillageQuest {
   week: number;
-  type: "delivery" | "night_bandits";
+  type: "delivery" | "night_bandits" | "atonement";
   status: "available" | "active" | "ready" | "completed";
   itemId: string | null;
   quantity: number;
@@ -41,7 +42,7 @@ export function createVillageStates(seed: number, map: WorldMapDefinition): Vill
     const population = Math.round((180 + hash(seed, `${village.id}:population`) % 720) / 10) * 10;
     const militia = Math.max(8, Math.round((population * 0.055 + prosperity * 0.28) / 2) * 2);
     const productionItemId = createMarketProfile(seed, village)?.productionItemId ?? "wheat";
-    return [village.id, { locationId: village.id, linkedCityId: city.id, productionItemId, population, militia, prosperity, relation: 0, condition: "normal" as const, recoveryDay: null, lastHelpedWeek: 0 }];
+    return [village.id, { locationId: village.id, linkedCityId: city.id, productionItemId, population, militia, prosperity, relation: 0, lordId: null, condition: "normal" as const, recoveryDay: null, lastHelpedWeek: 0 }];
   }));
 }
 
@@ -56,6 +57,7 @@ export function normalizeVillageStates(states: VillageStates | undefined, seed: 
       militia: Math.max(0, Math.floor(saved.militia)),
       prosperity: clamp(Math.floor(saved.prosperity), 0, 100),
       relation: clamp(Math.floor(saved.relation), -100, 100),
+      lordId: saved.lordId ?? null,
       lastHelpedWeek: Math.max(0, Math.floor(saved.lastHelpedWeek)),
       recruitmentOffers: saved.recruitmentOffers?.filter((id) => contentPack.cards.some((card) => card.id === id && card.race === "human" && card.tier <= 2)),
     };
@@ -92,7 +94,9 @@ export function ensureVillageQuest(village: VillageState, seed: number, day: num
   const delivery = hash(seed, `${village.locationId}:${week}:elder`) % 2 === 0;
   const requested = ["iron", "wood", "wheat", "stone", "herbs"].filter((id) => id !== village.productionItemId);
   const itemId = requested[hash(seed, `${village.locationId}:${week}:item`) % requested.length];
-  village.elderQuest = delivery
+  village.elderQuest = village.relation < 0
+    ? { week, type: "atonement", status: "available", itemId, quantity: 6 + hash(seed, `${village.locationId}:${week}:atonement`) % 5, rewardGold: 0, rewardRelation: 18 }
+    : delivery
     ? { week, type: "delivery", status: "available", itemId, quantity: 3 + hash(seed, `${village.locationId}:${week}:quantity`) % 3, rewardGold: 30 + hash(seed, `${village.locationId}:${week}:gold`) % 24, rewardRelation: 7 }
     : { week, type: "night_bandits", status: "available", itemId: null, quantity: 0, rewardGold: 45 + hash(seed, `${village.locationId}:${week}:gold`) % 30, rewardRelation: 10 };
   return village.elderQuest;

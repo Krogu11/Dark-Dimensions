@@ -1,5 +1,6 @@
 import { openDB } from "idb";
 import type { SaveGame, SaveRepository } from "./SaveRepository";
+import type { MetaProgressionState } from "../../domain/progression/MetaProgression";
 
 const databasePromise = openDB("dark-dimensions", 1, {
   upgrade(database) {
@@ -23,5 +24,15 @@ export class IndexedDbSaveRepository implements SaveRepository {
   async delete(): Promise<void> {
     const database = await databasePromise;
     await database.delete("saves", "primary");
+  }
+
+  async readMeta(): Promise<MetaProgressionState | null> {
+    const database = await databasePromise;
+    return (await database.get("saves", "meta")) ?? null;
+  }
+
+  async writeMeta(meta: MetaProgressionState): Promise<void> {
+    const database = await databasePromise;
+    await database.put("saves", structuredClone(meta), "meta");
   }
 }

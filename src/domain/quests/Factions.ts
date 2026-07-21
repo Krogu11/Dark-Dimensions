@@ -14,6 +14,38 @@ export type FactionRelation = "allied" | "friendly" | "neutral" | "hostile";
 export type QuestType = "delivery" | "bounty" | "escort";
 export type QuestStatus = "available" | "active" | "ready" | "completed";
 
+export interface FactionProfile {
+  id: FactionId;
+  rulerName: string;
+  rulerTitle: string;
+  motto: string;
+  lore: string;
+}
+
+export const FACTION_PROFILES: Record<FactionId, FactionProfile> = {
+  ember_crown: {
+    id: "ember_crown",
+    rulerName: "Edric Ashborne IV",
+    rulerTitle: "King of the Ember Crown",
+    motto: "From ash, order.",
+    lore: "The Ember Crown was forged when the western marcher houses united beneath a single fire-lit throne. Its fertile heartlands and old roads make it wealthy, but every noble oath is measured against the king's law. Ember lords prize lineage, cavalry and public honor; insults are remembered almost as carefully as debts.",
+  },
+  gloam_compact: {
+    id: "gloam_compact",
+    rulerName: "Vaelor Noct",
+    rulerTitle: "Veiled King of the Gloam Compact",
+    motto: "What is hidden endures.",
+    lore: "The Gloam Compact binds forest courts, dusk-born merchant houses and secretive border clans through bargains older than its throne. Its king rules by keeping rival powers in balance rather than by open decree. Compact lords favor scouts, spies and sudden wars fought beneath the cover of ancient woods.",
+  },
+  iron_concord: {
+    id: "iron_concord",
+    rulerName: "Torren Voss",
+    rulerTitle: "High King of the Iron Concord",
+    motto: "Stone remembers. Iron answers.",
+    lore: "The Iron Concord grew from mountain holds that survived the first dimensional fractures behind sealed gates. Its people value craft, discipline and promises witnessed in steel. The High King governs through a council of fortress lords whose armies are slow to gather, difficult to break and relentless once committed.",
+  },
+};
+
 export interface QuestState {
   id: string;
   type: QuestType;
@@ -33,6 +65,9 @@ export interface QuestState {
 
 export interface FactionState {
   reputation: Record<FactionId, number>;
+  wanted: Record<FactionId, number>;
+  atWar: Record<FactionId, boolean>;
+  lordRelations: Record<string, number>;
   locationFactions: Record<string, FactionId>;
   quests: QuestState[];
 }
@@ -83,6 +118,17 @@ export function createFactionState(
       gloam_compact: 0,
       iron_concord: 0,
     },
+    wanted: {
+      ember_crown: 0,
+      gloam_compact: 0,
+      iron_concord: 0,
+    },
+    atWar: {
+      ember_crown: false,
+      gloam_compact: false,
+      iron_concord: false,
+    },
+    lordRelations: {},
     locationFactions,
     quests,
   };
@@ -126,6 +172,7 @@ export function getFactionRelation(
   if (left === PLAYER_FACTION_ID || right === PLAYER_FACTION_ID) {
     const factionId = left === PLAYER_FACTION_ID ? right : left;
     if (!isFactionId(factionId)) return "neutral";
+    if (factionState?.atWar?.[factionId]) return "hostile";
     const reputation = factionState?.reputation[factionId] ?? 0;
     if (reputation <= -20) return "hostile";
     if (reputation >= 35) return "allied";

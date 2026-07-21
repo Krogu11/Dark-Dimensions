@@ -14,6 +14,7 @@ import {
 } from "../domain/cards/CardInstance";
 import type { InventoryStack } from "../domain/economy/Economy";
 import { gameSession, type VictoryClaimSelection } from "../domain/session/GameSession";
+import { playUiSound } from "./UiSoundEffects";
 
 interface BattleScreenProps {
   battle: BattleSimulation;
@@ -152,6 +153,11 @@ export function BattleScreen({
   const isAnimating = activeEvent !== null;
   const pendingLeaderCommand = battle.leaderActionProgression.find((command) => command.id === pendingLeaderCommandId);
   const leaderTargetSide = pendingLeaderCommand?.effect === "attack" ? "enemy" : pendingLeaderCommand?.effect === "healLowest" ? "player" : null;
+
+  useEffect(() => {
+    if (activeEvent?.type === "attack") playUiSound("claw");
+    if (activeEvent?.type === "destroyed") playUiSound("enemy-death");
+  }, [activeEvent]);
 
   if (battle.outcome === "victory" && !isAnimating && !visualSnapshot) {
     if (victoryStep === "units" && pendingReward) {
@@ -477,12 +483,13 @@ function BattleAftermathSummary({
                   damageDealt: 0,
                   hpLost: 0,
                   destroyed: card.currentHp <= 0,
+                  wounded: false,
                 };
                 const upgrade = upgradesByCardId.get(card.cardId);
                 const upgradeReady = Boolean(upgrade && card.xp >= xpNeededForUnitUpgrade(definition.tier));
                 return (
                   <article
-                    className={`aftermath-unit ${stats.destroyed ? "lost" : ""}`}
+                    className={`aftermath-unit ${stats.wounded ? "wounded" : stats.destroyed ? "lost" : ""}`}
                     key={card.uid}
                   >
                     <div>
@@ -500,7 +507,7 @@ function BattleAftermathSummary({
                       <div><dt>{t("battle.healthLost")}</dt><dd>{stats.hpLost}</dd></div>
                       <div>
                         <dt>{t("battle.loss")}</dt>
-                        <dd>{stats.destroyed ? t("battle.yes") : t("battle.no")}</dd>
+                        <dd>{stats.wounded ? t("battle.wounded") : stats.destroyed ? t("battle.dead") : t("battle.no")}</dd>
                       </div>
                     </dl>
                   </article>
@@ -936,6 +943,10 @@ function LeaderPortrait({
       </span>
       <span className="portrait-copy">
         <strong>{t(definition.nameKey)}</strong>
+        <span className="portrait-stats" aria-label={`ATK ${battle.getAttack(card)}, DEF ${battle.getDefense(card)}`}>
+          <b>ATK {battle.getAttack(card)}</b>
+          <b>DEF {battle.getDefense(card)}</b>
+        </span>
         <span className="portrait-hp"><i style={{ width: `${healthPercent}%` }} /></span>
         <em>{displayedHp}/{battle.getMaxHp(card)} HP</em>
       </span>

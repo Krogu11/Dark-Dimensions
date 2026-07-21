@@ -14,6 +14,49 @@ import { BattleSimulation } from "../battle/BattleSimulation";
 import { GameSession } from "./GameSession";
 
 describe("GameSession roster", () => {
+  it("applies persistent supply, capacity, and morale upgrades to a new run", () => {
+    const session = new GameSession(314159);
+    session.metaProgression.upgrades.roadRations = 2;
+    session.metaProgression.upgrades.deepPockets = 2;
+    session.metaProgression.upgrades.bannerMorale = 2;
+    session.metaProgression.upgrades.startingAttributes = 1;
+
+    session.beginNewRun({ name: "Test", raceId: "human", originId: "cityWard", upbringingId: "artisan", turningPointId: "oath", portraitId: "wanderer", startedAt: new Date(0).toISOString() });
+
+    expect(session.foodCapacity).toBeGreaterThanOrEqual(150);
+    expect(session.maxCargoWeight).toBe(130);
+    expect(session.morale).toBe(80);
+    expect(session.characterState.attributePoints).toBe(1);
+  });
+
+  it("records encountered battle units without claiming ownership", () => {
+    const session = new GameSession(123456);
+    const enemy = session.world.state.enemies[0];
+
+    session.beginBattle(enemy.id);
+
+    const enemyIds = [
+      session.battle!.enemyLeader.cardId,
+      ...session.battle!.enemyHand.map((card) => card.cardId),
+      ...session.battle!.enemyField.map((card) => card.cardId),
+      ...session.battle!.enemyDrawPile.map((card) => card.cardId),
+    ];
+    expect(enemyIds.every((cardId) => session.metaProgression.seenUnitIds.includes(cardId))).toBe(true);
+    expect(enemyIds.some((cardId) => session.metaProgression.ownedUnitIds.includes(cardId))).toBe(false);
+  });
+
+  it("marks prisoners as owned only after they join the warband", () => {
+    const session = new GameSession(123457);
+    session.prisoners = [{ cardId: "village_levy", quantity: 1 }];
+    session.metaProgression.seenUnitIds.push("village_levy");
+    session.gold = 1_000;
+    session.characterState.xp = 1_000;
+
+    expect(session.metaProgression.ownedUnitIds).not.toContain("village_levy");
+    expect(session.recruitPrisoner("village_levy")).toBe("success");
+    expect(session.metaProgression.ownedUnitIds).toContain("village_levy");
+  });
+
   it("starts with only the immortal hero", () => {
     const session = new GameSession();
 
@@ -422,6 +465,10 @@ describe("GameSession roster", () => {
 
   it("uses positive local reputation for better market prices", () => {
     const session = new GameSession(121212);
+    const city = session.world.map.locations.find((location) => location.type === "city")!;
+    session.world.state.x = city.x;
+    session.world.state.y = city.y;
+    session.world.state.nearbyLocationId = city.id;
     const itemId = session.marketProfile!.offers[0].itemId;
     const priceBefore = session.getBuyPrice(itemId);
     session.factionState.reputation[session.currentFactionId!] = 50;
@@ -638,6 +685,47 @@ describe("GameSession roster", () => {
     session.advanceTime(60);
 
     expect(recruit.currentHp).toBe(104);
+  });
+
+  it("waits in fixed simulation steps and preserves fractional recovery", () => {
+    const session = new GameSession(343435);
+    for (const enemy of session.world.state.enemies) enemy.active = false;
+    session.gold = 1_000;
+    session.recruit("village_levy");
+    const recruit = session.warband[0];
+    recruit.currentHp = 100;
+    const timeBefore = session.timeState.totalMinutes;
+
+    for (let index = 0; index < 15; index += 1) session.waitWorld(0.1);
+    session.stopWaiting();
+
+    expect(session.timeState.totalMinutes).toBeCloseTo(timeBefore + 18);
+    expect(recruit.currentHp).toBe(101);
+    expect(session.isWaiting).toBe(false);
+  });
+
+  it("keeps a wounded battle casualty in the warband at one HP", () => {
+    const session = new GameSession(343436);
+    session.gold = 1_000;
+    session.recruit("village_levy");
+    const recruit = session.warband[0];
+    session.beginBattle(session.world.state.enemies[0].id);
+    if (!session.battle) throw new Error("Expected battle");
+    recruit.currentHp = 0;
+    session.battle.unitStats.set(recruit.uid, {
+      damageDealt: 0,
+      hpLost: 900,
+      destroyed: true,
+      wounded: true,
+    });
+    vi.spyOn(session.battle, "rollReward").mockReturnValue({ gold: 0, cardId: null, items: [] });
+    session.battle.outcome = "victory";
+
+    session.claimVictoryReward({ continueDungeon: false, takeCard: false, itemIds: [] });
+
+    expect(session.warband).toContain(recruit);
+    expect(recruit.currentHp).toBeGreaterThan(0);
+    expect(recruit.currentHp).toBeLessThan(10);
   });
 
   it("loses morale and travel speed when weekly wages and food are missing", () => {
@@ -859,6 +947,17 @@ function createSessionWarband(
     targetX: x,
     targetY: y,
     unitIds,
+    recruitmentCardIds: [...unitIds],
+    roster: unitIds.map((cardId) => createCardInstance(cardId)),
+    gold: 50,
+    rations: 20,
+    prisoners: [],
+    victories: 0,
+    logisticsHours: 0,
+    nobleRank: null,
+    nobleProfileId: null,
+    personality: "just" as const,
+    activity: "patrolling" as const,
     speed: 180,
     detectionRadius: 600,
     aggressionRadius: 520,

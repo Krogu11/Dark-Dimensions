@@ -9,7 +9,7 @@ import type { SurvivalState } from "../../domain/survival/Survival";
 import type { CharacterState } from "../../domain/character/CharacterProgression";
 import type { RunProfile } from "../../domain/character/CharacterOrigins";
 import type { PrisonerStack } from "../../domain/session/GameSession";
-import type { WorldMonsterRaidState } from "../../domain/world/WorldSimulation";
+import type { DungeonSiteState, WorldBattleSiteState, WorldChronicleEntry, WorldEnemyState, WorldMonsterRaidState } from "../../domain/world/WorldSimulation";
 import type { CityStates } from "../../domain/world/Cities";
 import type { VillageStates } from "../../domain/world/Villages";
 import type { EnemyArchetype } from "../../domain/content/schemas";
@@ -17,6 +17,7 @@ import type {
   WorldWarbandBattleState,
   WorldWarbandState,
 } from "../../domain/world/WorldWarbands";
+import type { MetaProgressionState } from "../../domain/progression/MetaProgression";
 
 export interface SaveGame {
   version: 1;
@@ -33,6 +34,10 @@ export interface SaveGame {
     warbands?: WorldWarbandState[];
     warbandBattles?: WorldWarbandBattleState[];
     monsterRaids?: WorldMonsterRaidState[];
+    battleSites?: WorldBattleSiteState[];
+    chronicle?: WorldChronicleEntry[];
+    enemies?: WorldEnemyState[];
+    dungeonSites?: DungeonSiteState[];
   };
   gold?: number;
   deck?: CardInstance[];
@@ -40,6 +45,10 @@ export interface SaveGame {
   warband?: CardInstance[];
   reserve?: CardInstance[];
   prisoners?: PrisonerStack[];
+  soulsGatheredThisRun?: number;
+  villagersAttackedThisRun?: number;
+  humanSoulsOfferedThisRun?: number;
+  soulQuestCompleted?: boolean;
   hero?: CardInstance;
   leadershipLevel?: number;
   characterState?: CharacterState;
@@ -74,4 +83,9 @@ export interface SaveRepository {
   read(): Promise<SaveGame | null>;
   write(save: SaveGame): Promise<void>;
   delete(): Promise<void>;
+}
+
+export interface MetaSaveRepository {
+  readMeta(): Promise<MetaProgressionState | null>;
+  writeMeta(meta: MetaProgressionState): Promise<void>;
 }

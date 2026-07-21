@@ -1,6 +1,8 @@
 import type {
   EnemyArchetype,
   MapLocation,
+  NobleProfile,
+  NobleRank,
   TerrainRiver,
   TerrainRoad,
   TerrainCell,
@@ -217,6 +219,7 @@ export function createWorldSeed(): number {
 export function generateWorldMap(
   seed: number,
   enemyArchetypes: EnemyArchetype[],
+  nobleProfiles: NobleProfile[] = [],
 ): WorldMapDefinition {
   const random = createRandom(seed);
   const cityNameRandom = createRandom(seed ^ 0x43a17f2b);
@@ -242,19 +245,19 @@ export function generateWorldMap(
     terrainCells,
     0,
     {
-      minimumX: 520,
-      maximumX: Math.min(1500, width * 0.18),
-      minimumY: Math.floor(height * 0.38),
-      maximumY: Math.floor(height * 0.62),
+      minimumX: Math.floor(width * 0.46),
+      maximumX: Math.floor(width * 0.54),
+      minimumY: Math.floor(height * 0.44),
+      maximumY: Math.floor(height * 0.56),
       avoidMountains: true,
     },
   );
   const usedCityNames = new Set<string>();
   const locations: MapLocation[] = [
-    createLocation("city", 0, start.x, start.y, random, undefined, undefined, generateUniqueCityName(cityNameRandom, usedCityNames)),
+    { id: "soul_temple", type: "soulTemple", nameKey: "location.soulTemple.name", descriptionKey: "location.soulTemple.description", x: start.x, y: start.y, radius: 155 },
   ];
 
-  for (let index = 1; index < LOCATION_COUNTS.city; index += 1) {
+  for (let index = 0; index < LOCATION_COUNTS.city; index += 1) {
     const position = findLocationPosition(
       random,
       width,
@@ -367,6 +370,7 @@ export function generateWorldMap(
     terrainCells,
     terrainRivers,
     terrainRoads,
+    nobleProfiles,
   );
   const encounterZones = locations
     .filter((location) => location.type === "dungeon" || location.type === "wilds")
@@ -425,6 +429,7 @@ function createFactionWarbands(
   terrainCells: TerrainCell[],
   terrainRivers: TerrainRiver[],
   terrainRoads: TerrainRoad[],
+  nobleProfiles: NobleProfile[],
 ): { warbandTemplates: WarbandTemplate[]; warbandSpawns: WarbandSpawn[] } {
   const settlements = locations.filter((location) =>
     ["city", "village", "castle"].includes(location.type),
@@ -445,10 +450,24 @@ function createFactionWarbands(
   for (const [factionId, ownedLocations] of factionLocations) {
     templates.push(...createFactionWarbandTemplates(factionId));
     const cities = ownedLocations.filter((location) => location.type === "city");
-    const castles = ownedLocations.filter((location) => location.type === "castle");
-    const strongholds = [...cities, ...castles];
+    const villages = ownedLocations.filter((location) => location.type === "village");
+    const capital = [...cities].sort(
+      (left, right) => Math.hypot(right.x - start.x, right.y - start.y) - Math.hypot(left.x - start.x, left.y - start.y),
+    )[0];
+    const nobleSeats: Array<{ home: MapLocation; rank: NobleRank; index: number }> = [];
+    if (capital) nobleSeats.push({ home: capital, rank: "king", index: 0 });
+    cities.filter((city) => city.id !== capital?.id).forEach((home, index) =>
+      nobleSeats.push({ home, rank: "baron", index }),
+    );
+    const countSeats = [...villages]
+      .sort((left, right) => left.x - right.x || left.y - right.y)
+      .filter((_, index) => index % 3 === 0);
+    countSeats.forEach((home, index) => nobleSeats.push({ home, rank: "count", index }));
 
-    for (const home of strongholds.slice(0, 5)) {
+    for (const seat of nobleSeats) {
+      const profile = selectNobleProfile(nobleProfiles, factionId, seat.rank, seat.index);
+      const rankTitle = seat.rank === "king" ? "King" : seat.rank === "baron" ? "Baron" : "Count";
+      const fallbackName = createProceduralNobleName(factionId, seat.rank, seat.index);
       pushWarbandSpawn(
         spawns,
         createWarbandSpawn(
@@ -456,15 +475,47 @@ function createFactionWarbands(
           width,
           height,
           start,
-          home,
+          seat.home,
           `${factionId}_lord`,
-          `lord_${home.id}`,
+          `${seat.rank}_${seat.home.id}`,
           terrainZones,
           terrainCells,
           terrainRivers,
           terrainRoads,
-          2400,
-          roamingPoints(home, width, height, random, 5),
+          seat.rank === "king" ? 3600 : seat.rank === "baron" ? 2800 : 1900,
+          roamingPoints(seat.home, width, height, random, seat.rank === "king" ? 7 : 5),
+          {
+            nobleRank: seat.rank,
+            nobleProfileId: profile?.id,
+            displayName: `${rankTitle} ${profile?.displayName ?? fallbackName}`,
+            leaderCardId: profile?.leaderCardId,
+            leaderLevel: profile?.leaderLevel ?? (seat.rank === "king" ? 6 : seat.rank === "baron" ? 4 : 3),
+          },
+        ),
+      );
+    }
+    const hunterHome = [...cities, ...ownedLocations.filter((location) => location.type === "castle")].sort(
+      (left, right) =>
+        Math.hypot(right.x - start.x, right.y - start.y) -
+        Math.hypot(left.x - start.x, left.y - start.y),
+    )[0];
+    if (hunterHome) {
+      pushWarbandSpawn(
+        spawns,
+        createWarbandSpawn(
+          random,
+          width,
+          height,
+          start,
+          hunterHome,
+          `${factionId}_bounty_hunters`,
+          `bounty_hunters_${factionId}`,
+          terrainZones,
+          terrainCells,
+          terrainRivers,
+          terrainRoads,
+          4200,
+          [{ x: hunterHome.x, y: hunterHome.y }],
         ),
       );
     }
@@ -492,6 +543,25 @@ function createFactionWarbandTemplates(factionId: FactionId): WarbandTemplate[] 
       leaderLevel: 4,
       equipmentItemIds: ["steel_sword", "kite_shield", "iron_talisman"],
       lootItemIds: ["iron", "silver", "travel_rations", "steel_sword"],
+      bountyHunter: false,
+    },
+    {
+      id: `${factionId}_bounty_hunters`,
+      nameKey: `${factionNameKey}.bountyHunters`,
+      type: "elite",
+      factionId,
+      unitIds: ["wache", "pikeman", "longbowman", "knight"],
+      speed: 176,
+      detectionRadius: 1180,
+      aggressionRadius: 1040,
+      aggression: 1,
+      maxPursuitDistance: 4200,
+      respawnHours: 72,
+      leaderCardId: "banner_knight",
+      leaderLevel: 5,
+      equipmentItemIds: ["steel_sword", "kite_shield"],
+      lootItemIds: ["iron", "silver", "travel_rations"],
+      bountyHunter: true,
     },
   ];
 }
@@ -510,6 +580,7 @@ function createWarbandSpawn(
   terrainRoads: TerrainRoad[],
   allowedRadius: number,
   patrolPoints?: Array<{ x: number; y: number }>,
+  noble?: Pick<WarbandSpawn, "nobleRank" | "nobleProfileId" | "displayName" | "leaderCardId" | "leaderLevel">,
 ): WarbandSpawn | null {
   if (
     Math.hypot(home.x - start.x, home.y - start.y) <
@@ -542,7 +613,29 @@ function createWarbandSpawn(
     patrolPoints: patrolPoints?.length ? patrolPoints : [{ x: home.x, y: home.y }],
     allowedRadius,
     spawnChance: 1,
+    ...noble,
   };
+}
+
+function selectNobleProfile(
+  profiles: NobleProfile[],
+  factionId: FactionId,
+  rank: NobleRank,
+  index: number,
+): NobleProfile | undefined {
+  const candidates = profiles.filter((profile) => profile.factionId === factionId && profile.rank === rank);
+  return candidates[index % candidates.length];
+}
+
+const PROCEDURAL_NOBLE_NAMES: Record<FactionId, string[]> = {
+  ember_crown: ["Aldric Vane", "Marwen Ashford", "Cedric Brand", "Elayne Pyre", "Rowan Cinder", "Talia Hearth", "Gareth Ember", "Sabine Rook"],
+  gloam_compact: ["Orren Vale", "Sable Morcant", "Theron Dusk", "Ysra Noct", "Corvin Shade", "Mara Vey", "Lucan Gloam", "Neris Thorn"],
+  iron_concord: ["Borin Holt", "Helena Voss", "Garran Stone", "Mira Kest", "Doran Anvil", "Petra Flint", "Oskar Rime", "Vera Steel"],
+};
+
+function createProceduralNobleName(factionId: FactionId, rank: NobleRank, index: number): string {
+  const names = PROCEDURAL_NOBLE_NAMES[factionId];
+  return names[(index + (rank === "count" ? 3 : rank === "baron" ? 1 : 0)) % names.length];
 }
 
 function pushWarbandSpawn(

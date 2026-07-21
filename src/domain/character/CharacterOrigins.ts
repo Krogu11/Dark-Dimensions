@@ -42,7 +42,7 @@ export const RACES: RaceOption[] = [
     id: "human",
     name: "Human",
     description: "Adaptable survivors who still hold the old roads.",
-    effect: "No penalties. Begin with +20 gold.",
+    effect: "Begin with +20 gold and five Village Levies.",
     goldBonus: 20,
     unlocked: true,
   },
@@ -119,4 +119,3 @@ export function applyChoiceBonuses(state: CharacterState, profile: RunProfile): 
     }
   }
 }
-

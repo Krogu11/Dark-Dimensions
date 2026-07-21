@@ -24,6 +24,104 @@
         "x": 50,
         "y": 50
       }
+    },
+    "plains": {
+      "image": "/assets/terrain/battle/plains.webp",
+      "focus": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    "forest": {
+      "image": "/assets/terrain/battle/forest.webp",
+      "focus": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    "darkForest": {
+      "image": "/assets/terrain/battle/darkForest.webp",
+      "focus": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    "pineForest": {
+      "image": "/assets/terrain/battle/pineForest.webp",
+      "focus": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    "snowMountain": {
+      "image": "/assets/terrain/battle/snowMountain.webp",
+      "focus": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    "swamp": {
+      "image": "/assets/terrain/battle/swamp.webp",
+      "focus": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    "bog": {
+      "image": "/assets/terrain/battle/bog.webp",
+      "focus": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    "desert": {
+      "image": "/assets/terrain/battle/desert.webp",
+      "focus": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    "badlands": {
+      "image": "/assets/terrain/battle/badlands.webp",
+      "focus": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    "steppe": {
+      "image": "/assets/terrain/battle/steppe.webp",
+      "focus": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    "grassland": {
+      "image": "/assets/terrain/battle/grassland.webp",
+      "focus": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    "heath": {
+      "image": "/assets/terrain/battle/heath.webp",
+      "focus": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    "mountain": {
+      "image": "/assets/terrain/battle/mountain.webp",
+      "focus": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    "hills": {
+      "image": "/assets/terrain/battle/hills.webp",
+      "focus": {
+        "x": 50,
+        "y": 50
+      }
     }
   },
   "cards": [
@@ -31,6 +129,11 @@
       "id": "player_wanderer",
       "nameKey": "card.playerWanderer.name",
       "portraitImage": "/assets/cards/player_wanderer/portrait.webp",
+      "cardImage": "/assets/cards/player_wanderer/card.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 50
+      },
       "race": "hero",
       "rarity": "legendary",
       "tier": 1,
@@ -3067,5 +3170,39 @@
         }
       ]
     }
+  ],
+  "nobles": [
+    { "id": "ember_king", "factionId": "ember_crown", "rank": "king", "displayName": "Edric Ashborne IV", "leaderCardId": "crusader", "leaderLevel": 6 },
+    { "id": "ember_baron_aldric", "factionId": "ember_crown", "rank": "baron", "displayName": "Aldric Vane", "leaderCardId": "mounted_squire", "leaderLevel": 4 },
+    { "id": "ember_baron_marwen", "factionId": "ember_crown", "rank": "baron", "displayName": "Marwen Ashford", "leaderCardId": "crusader", "leaderLevel": 4 },
+    { "id": "ember_baron_cedric", "factionId": "ember_crown", "rank": "baron", "displayName": "Cedric Brand", "leaderCardId": "noble_recruit", "leaderLevel": 4 },
+    { "id": "ember_baron_elayne", "factionId": "ember_crown", "rank": "baron", "displayName": "Elayne Pyre", "leaderCardId": "priest", "leaderLevel": 4 },
+    { "id": "ember_count_rowan", "factionId": "ember_crown", "rank": "count", "displayName": "Rowan Cinder", "leaderCardId": "noble_recruit", "leaderLevel": 3 },
+    { "id": "ember_count_talia", "factionId": "ember_crown", "rank": "count", "displayName": "Talia Hearth", "leaderCardId": "ranger", "leaderLevel": 3 },
+    { "id": "ember_count_gareth", "factionId": "ember_crown", "rank": "count", "displayName": "Gareth Ember", "leaderCardId": "mounted_squire", "leaderLevel": 3 },
+    { "id": "ember_count_sabine", "factionId": "ember_crown", "rank": "count", "displayName": "Sabine Rook", "leaderCardId": "priest", "leaderLevel": 3 },
+    { "id": "ember_count_lucan", "factionId": "ember_crown", "rank": "count", "displayName": "Lucan Bale", "leaderCardId": "noble_recruit", "leaderLevel": 3 },
+
+    { "id": "gloam_king", "factionId": "gloam_compact", "rank": "king", "displayName": "Vaelor Noct", "leaderCardId": "ranger", "leaderLevel": 6 },
+    { "id": "gloam_baron_orren", "factionId": "gloam_compact", "rank": "baron", "displayName": "Orren Vale", "leaderCardId": "ranger", "leaderLevel": 4 },
+    { "id": "gloam_baron_sable", "factionId": "gloam_compact", "rank": "baron", "displayName": "Sable Morcant", "leaderCardId": "priest", "leaderLevel": 4 },
+    { "id": "gloam_baron_theron", "factionId": "gloam_compact", "rank": "baron", "displayName": "Theron Dusk", "leaderCardId": "mounted_squire", "leaderLevel": 4 },
+    { "id": "gloam_baron_ysra", "factionId": "gloam_compact", "rank": "baron", "displayName": "Ysra Noct", "leaderCardId": "high_priest", "leaderLevel": 4 },
+    { "id": "gloam_count_corvin", "factionId": "gloam_compact", "rank": "count", "displayName": "Corvin Shade", "leaderCardId": "ranger", "leaderLevel": 3 },
+    { "id": "gloam_count_mara", "factionId": "gloam_compact", "rank": "count", "displayName": "Mara Vey", "leaderCardId": "priest", "leaderLevel": 3 },
+    { "id": "gloam_count_lucan", "factionId": "gloam_compact", "rank": "count", "displayName": "Lucan Gloam", "leaderCardId": "noble_recruit", "leaderLevel": 3 },
+    { "id": "gloam_count_neris", "factionId": "gloam_compact", "rank": "count", "displayName": "Neris Thorn", "leaderCardId": "mounted_squire", "leaderLevel": 3 },
+    { "id": "gloam_count_selene", "factionId": "gloam_compact", "rank": "count", "displayName": "Selene Morn", "leaderCardId": "ranger", "leaderLevel": 3 },
+
+    { "id": "iron_king", "factionId": "iron_concord", "rank": "king", "displayName": "Torren Voss", "leaderCardId": "high_priest", "leaderLevel": 6 },
+    { "id": "iron_baron_borin", "factionId": "iron_concord", "rank": "baron", "displayName": "Borin Holt", "leaderCardId": "crusader", "leaderLevel": 4 },
+    { "id": "iron_baron_helena", "factionId": "iron_concord", "rank": "baron", "displayName": "Helena Voss", "leaderCardId": "mounted_squire", "leaderLevel": 4 },
+    { "id": "iron_baron_garran", "factionId": "iron_concord", "rank": "baron", "displayName": "Garran Stone", "leaderCardId": "noble_recruit", "leaderLevel": 4 },
+    { "id": "iron_baron_mira", "factionId": "iron_concord", "rank": "baron", "displayName": "Mira Kest", "leaderCardId": "priest", "leaderLevel": 4 },
+    { "id": "iron_count_doran", "factionId": "iron_concord", "rank": "count", "displayName": "Doran Anvil", "leaderCardId": "crusader", "leaderLevel": 3 },
+    { "id": "iron_count_petra", "factionId": "iron_concord", "rank": "count", "displayName": "Petra Flint", "leaderCardId": "mounted_squire", "leaderLevel": 3 },
+    { "id": "iron_count_oskar", "factionId": "iron_concord", "rank": "count", "displayName": "Oskar Rime", "leaderCardId": "noble_recruit", "leaderLevel": 3 },
+    { "id": "iron_count_vera", "factionId": "iron_concord", "rank": "count", "displayName": "Vera Steel", "leaderCardId": "high_priest", "leaderLevel": 3 },
+    { "id": "iron_count_hakon", "factionId": "iron_concord", "rank": "count", "displayName": "Hakon Forge", "leaderCardId": "crusader", "leaderLevel": 3 }
   ]
 }

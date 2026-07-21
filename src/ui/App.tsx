@@ -21,6 +21,13 @@ import { PauseMenu } from "./PauseMenu";
 import { TitleMusic } from "./TitleMusic";
 import type { RunProfile } from "../domain/character/CharacterOrigins";
 import { getTerrainBattleModifiers } from "../domain/world/WorldTerrain";
+import { SoulTempleMenu } from "./SoulTempleMenu";
+import { SoulCallingTutorial, SoulQuestCompletion } from "./SoulCallingTutorial";
+import { LordMenu } from "./LordMenu";
+import { SoulQuestTracker } from "./SoulQuestTracker";
+import { focusWorldCamera } from "../phaser/WorldCameraEvents";
+import type { MapLocation } from "../domain/content/schemas";
+import type { WorldWarbandState } from "../domain/world/WorldWarbands";
 
 const WarbandManager = lazy(() => import("./WarbandManager"));
 const RecruitmentScreen = lazy(() => import("./RecruitmentScreen"));
@@ -28,6 +35,7 @@ const InventoryMarket = lazy(() => import("./InventoryMarket"));
 const QuestBoard = lazy(() => import("./QuestBoard"));
 const StrategicMap = lazy(() => import("./StrategicMap"));
 const CharacterSheet = lazy(() => import("./CharacterSheet"));
+const FactionCodex = lazy(() => import("./FactionCodex"));
 const saveRepository = new IndexedDbSaveRepository();
 
 export function App() {
@@ -39,7 +47,12 @@ export function App() {
   const [characterOpen, setCharacterOpen] = useState(false);
   const [cityMenuOpen, setCityMenuOpen] = useState(false);
   const [villageMenuOpen, setVillageMenuOpen] = useState(false);
+  const [soulTempleOpen, setSoulTempleOpen] = useState(false);
+  const [soulTutorialOpen, setSoulTutorialOpen] = useState(false);
+  const [soulCompletionOpen, setSoulCompletionOpen] = useState(false);
+  const [lordMenuOpen, setLordMenuOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
+  const [factionCodexOpen, setFactionCodexOpen] = useState(false);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [startMenuOpen, setStartMenuOpen] = useState(true);
   const [characterCreatorOpen, setCharacterCreatorOpen] = useState(false);
@@ -53,6 +66,7 @@ export function App() {
   const autosaveQueue = useRef<Promise<void>>(Promise.resolve());
   const lastAutosavedLocation = useRef<string | null>(null);
   const previousMode = useRef(gameSession.mode);
+  const previousSoulQuestCompleted = useRef(gameSession.soulQuestCompleted);
   const nearbyLocation = gameSession.world.nearbyLocation;
   const nearbyCaravan = gameSession.nearbyCaravan;
   const selectedWarband = gameSession.interactableSelectedWarband;
@@ -97,10 +111,13 @@ export function App() {
   const hasCharacterLevelUp =
     gameSession.characterState.attributePoints > 0 ||
     gameSession.characterState.skillPoints > 0;
+  const encyclopediaRevision = `${gameSession.metaProgression.seenUnitIds.join("|")}::${gameSession.metaProgression.ownedUnitIds.join("|")}`;
 
   useEffect(
     () =>
       gameSession.subscribe(() => {
+        if (!previousSoulQuestCompleted.current && gameSession.soulQuestCompleted) setSoulCompletionOpen(true);
+        previousSoulQuestCompleted.current = gameSession.soulQuestCompleted;
         if (gameSession.mode === "battle") {
           setWarbandOpen(false);
           setRecruitmentOpen(false);
@@ -109,7 +126,10 @@ export function App() {
           setCharacterOpen(false);
           setCityMenuOpen(false);
           setVillageMenuOpen(false);
+          setSoulTempleOpen(false);
+          setLordMenuOpen(false);
           setMapOpen(false);
+          setFactionCodexOpen(false);
         }
         refresh((value) => value + 1);
       }),
@@ -128,7 +148,12 @@ export function App() {
       characterOpen ||
       cityMenuOpen ||
       villageMenuOpen ||
-      mapOpen;
+      soulTempleOpen ||
+      soulTutorialOpen ||
+      soulCompletionOpen ||
+      lordMenuOpen ||
+      mapOpen ||
+      factionCodexOpen;
     return () => {
       gameSession.uiBlocked = false;
     };
@@ -141,15 +166,30 @@ export function App() {
     questOpen,
     characterOpen,
     cityMenuOpen,
+    villageMenuOpen,
+    soulTempleOpen,
+    soulTutorialOpen,
+    soulCompletionOpen,
+    lordMenuOpen,
     mapOpen,
+    factionCodexOpen,
   ]);
 
   useEffect(() => {
-    void saveRepository.read().then((save) => {
+    void Promise.all([saveRepository.read(), saveRepository.readMeta()]).then(([save, meta]) => {
+      gameSession.setMetaProgression(meta, [
+        ...(save?.hero ? [save.hero.cardId] : []),
+        ...(save?.warband ?? []).map((card) => card.cardId),
+      ]);
       setStoredSave(save);
       setReady(true);
     });
   }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    void saveRepository.writeMeta(gameSession.metaProgression);
+  }, [ready, encyclopediaRevision]);
 
   useEffect(() => {
     if (!sessionStarted) return;
@@ -184,7 +224,8 @@ export function App() {
         characterOpen ||
         cityMenuOpen ||
         villageMenuOpen ||
-        mapOpen
+        mapOpen ||
+        factionCodexOpen
       ) {
         return;
       }
@@ -203,8 +244,20 @@ export function App() {
     characterOpen,
     cityMenuOpen,
     villageMenuOpen,
+    soulTempleOpen,
     mapOpen,
+    factionCodexOpen,
   ]);
+
+  function focusLocationFromCodex(location: MapLocation): void {
+    setFactionCodexOpen(false);
+    focusWorldCamera(location.x, location.y);
+  }
+
+  function focusLordFromCodex(lord: WorldWarbandState): void {
+    setFactionCodexOpen(false);
+    focusWorldCamera(lord.x, lord.y);
+  }
 
   function continueGame(): void {
     if (!sessionStarted && storedSave) gameSession.restore(storedSave);
@@ -228,6 +281,7 @@ export function App() {
     setRunEnded(false);
     setCharacterCreatorOpen(false);
     setStartMenuOpen(false);
+    setSoulTutorialOpen(true);
     await writeAutosave();
   }
 
@@ -250,6 +304,11 @@ export function App() {
     window.setTimeout(() => setSaveMessage(null), 2600);
   }
 
+  function persistMeta(): void {
+    void saveRepository.writeMeta(gameSession.metaProgression);
+    queueAutosave("Soul temple");
+  }
+
   function followSelectedWarband(): void {
     if (!selectedWarband) return;
     gameSession.pursueWarband(selectedWarband.id);
@@ -264,14 +323,11 @@ export function App() {
     gameSession.joinWarbandBattle(selectedWarband.activeBattleId, selectedWarband.id);
   }
 
-  function talkToSelectedWarband(kind: "talk" | "info"): void {
+  function attackSelectedWarband(): void {
     if (!selectedWarband) return;
-    setSaveMessage(
-      t(`world.warbandInteraction.${kind}Result`, {
-        name: t(selectedWarband.nameKey),
-      }),
-    );
-    window.setTimeout(() => setSaveMessage(null), 3200);
+    const startsWar = selectedWarband.type === "lord" && !gameSession.factionState.atWar[selectedWarband.factionId];
+    if (!window.confirm(startsWar ? `Attack ${selectedWarband.displayName ?? "this lord"}? This declares war on the entire faction.` : `Attack ${selectedWarband.displayName ?? "this warband"}?`)) return;
+    if (gameSession.challengeWarband(selectedWarband.id)) setLordMenuOpen(false);
   }
 
   function prepareVictory(): ReturnType<typeof gameSession.prepareVictoryReward> {
@@ -376,7 +432,7 @@ export function App() {
 
   return (
     <main className="game-shell">
-      <TitleMusic active={startMenuOpen || characterCreatorOpen} />
+      <TitleMusic active />
       {ready ? (
         <GameCanvas key={gameSession.worldSeed} />
       ) : (
@@ -404,6 +460,7 @@ export function App() {
           activeGold={gameSession.gold}
           activeWarbandCount={gameSession.warband.length}
           activeWarbandCapacity={gameSession.warbandCapacity}
+          metaProgression={gameSession.metaProgression}
           onContinue={continueGame}
           onNewRun={openCharacterCreator}
         />
@@ -443,6 +500,7 @@ export function App() {
             <span className="hud-label">{t("hud.gold")}</span>
             <strong>{gameSession.gold}</strong>
           </span>
+          {gameSession.highestWantedLevel > 0 ? <span className="hud-chip wanted-chip" title="Faction hunters become active at 25 wanted; lords join the hunt at 50."><span className="hud-icon">✥</span><span className="hud-label">{gameSession.outlawTitle}</span><strong>{gameSession.highestWantedLevel}</strong></span> : null}
           <span className="hud-chip" title={t("warband.capacity")}>
             <span className="hud-icon">{"\u2694"}</span>
             <span className="hud-label">{t("hud.deck")}</span>
@@ -474,6 +532,13 @@ export function App() {
         </div>
       </header>
 
+      {gameSession.isWaiting ? (
+        <div className="waiting-indicator" role="status">
+          <strong>{t("hud.waiting")}</strong>
+          <span>{t("hud.waitingHint")}</span>
+        </div>
+      ) : null}
+
       <aside
         className={`context-prompt ${
           selectedWarband || nearbyLocation || nearbyCaravan ? "" : "hidden"
@@ -482,7 +547,7 @@ export function App() {
         <span className="eyebrow">{t("hud.region")}</span>
         <h1>
           {selectedWarband
-            ? t(selectedWarband.nameKey)
+            ? selectedWarband.displayName ?? t(selectedWarband.nameKey)
             : nearbyLocation
             ? t(nearbyLocation.nameKey)
             : nearbyCaravan
@@ -593,22 +658,8 @@ export function App() {
                   )}
                 </button>
               ) : null}
-              {selectedWarbandRelation !== "hostile" ? (
-                <>
-                  <button
-                    className="button ghost"
-                    onClick={() => talkToSelectedWarband("talk")}
-                  >
-                    {t("world.warbandInteraction.talk")}
-                  </button>
-                  <button
-                    className="button ghost"
-                    onClick={() => talkToSelectedWarband("info")}
-                  >
-                    {t("world.warbandInteraction.info")}
-                  </button>
-                </>
-              ) : null}
+              {selectedWarband.type === "lord" ? <button className="button ghost" onClick={() => setLordMenuOpen(true)}>Talk</button> : null}
+              <button className="button danger" disabled={Boolean(selectedWarband.activeBattleId)} onClick={attackSelectedWarband}>Attack</button>
               <button
                 className="button ghost"
                 onClick={() => gameSession.selectWarband(null)}
@@ -646,8 +697,9 @@ export function App() {
           </div>
         ) : null}
         {nearbyLocation?.type === "village" && gameSession.mode === "world" ? <div className="location-actions"><button className="button primary" onClick={() => setVillageMenuOpen(true)}>Enter village</button></div> : null}
+        {nearbyLocation?.type === "soulTemple" && gameSession.mode === "world" ? <div className="location-actions"><button className="button primary" onClick={() => setSoulTempleOpen(true)}>Enter Soul Temple</button></div> : null}
         {nearbyLocation &&
-        nearbyLocation.type !== "city" &&
+        nearbyLocation.type !== "city" && nearbyLocation.type !== "soulTemple" &&
         gameSession.mode === "world" ? (
           <div className="location-actions">
             {nearbyLocation.type === "dungeon" ? (
@@ -773,10 +825,26 @@ export function App() {
               <small>{t("character.short")}</small>
               {hasCharacterLevelUp ? <em>+</em> : null}
             </button>
+            <button
+              className="side-menu-button"
+              disabled={!ready || gameSession.mode !== "world"}
+              onClick={() => {
+                setSideMenuOpen(false);
+                setFactionCodexOpen(true);
+              }}
+              title="NPCs, factions and known fiefs"
+            >
+              <span>♛</span>
+              <small>NPCs &amp; Factions</small>
+            </button>
           </nav>
           {saveMessage ? <span className="toast">{saveMessage}</span> : null}
         </aside>
       ) : null}
+      {sessionStarted && gameSession.mode === "world" && !startMenuOpen && !characterCreatorOpen && !pauseMenuOpen && !warbandOpen && !recruitmentOpen && !inventoryOpen && !questOpen && !characterOpen && !cityMenuOpen && !villageMenuOpen && !lordMenuOpen && !soulTempleOpen && !mapOpen && !factionCodexOpen && !soulTutorialOpen && !soulCompletionOpen ? <SoulQuestTracker /> : null}
+      {soulTutorialOpen ? <SoulCallingTutorial onComplete={() => setSoulTutorialOpen(false)} /> : null}
+      {soulCompletionOpen ? <SoulQuestCompletion onClose={() => setSoulCompletionOpen(false)} /> : null}
+      {lordMenuOpen && selectedWarband?.type === "lord" ? <LordMenu lord={selectedWarband} onChanged={() => queueAutosave("Lord audience")} onAttack={attackSelectedWarband} onClose={() => setLordMenuOpen(false)} /> : null}
       {cityMenuOpen && nearbyLocation?.type === "city" ? (
         <CityMenu
           city={nearbyLocation}
@@ -826,6 +894,7 @@ export function App() {
           />
         </Suspense>
       ) : null}
+      {soulTempleOpen && nearbyLocation?.type === "soulTemple" ? <SoulTempleMenu onChanged={persistMeta} onLeave={() => setSoulTempleOpen(false)} /> : null}
       {villageMenuOpen && nearbyLocation?.type === "village" ? <VillageMenu village={nearbyLocation} message={saveMessage} onMarket={() => openCityService(setInventoryOpen)} onRecruit={() => openCityService(setRecruitmentOpen)} onElder={() => undefined} onHelp={helpCurrentVillage} onWaitNight={waitInCurrentVillage} onRaid={raidCurrentVillage} onLeave={() => setVillageMenuOpen(false)} /> : null}
       {recruitmentOpen ? (
         <Suspense fallback={<div className="loading">{t("app.loading")}</div>}>
@@ -863,6 +932,15 @@ export function App() {
       {mapOpen ? (
         <Suspense fallback={<div className="loading">{t("app.loading")}</div>}>
           <StrategicMap onClose={() => setMapOpen(false)} />
+        </Suspense>
+      ) : null}
+      {factionCodexOpen ? (
+        <Suspense fallback={<div className="loading">{t("app.loading")}</div>}>
+          <FactionCodex
+            onFocusLocation={focusLocationFromCodex}
+            onFocusLord={focusLordFromCodex}
+            onClose={() => setFactionCodexOpen(false)}
+          />
         </Suspense>
       ) : null}
     </main>

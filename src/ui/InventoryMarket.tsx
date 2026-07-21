@@ -4,6 +4,7 @@ import { itemsById } from "../content/content";
 import type { InventoryStack, MarketOffer } from "../domain/economy/Economy";
 import { gameSession } from "../domain/session/GameSession";
 import type { ItemDefinition } from "../domain/content/schemas";
+import { playUiSound } from "./UiSoundEffects";
 
 interface InventoryMarketProps {
   onClose: () => void;
@@ -71,7 +72,10 @@ export default function InventoryMarket({ onClose, onTrade, returnToCity = false
       ? gameSession.buyItem(selectedEntry.item.id, quantity)
       : gameSession.sellItem(selectedEntry.item.id, quantity);
     setMessage(t(result === "success" ? (selected.side === "merchant" ? "trade.bought" : "trade.sold") : `trade.${result}`));
-    if (result === "success") onTrade?.();
+    if (result === "success") {
+      playUiSound("buy-sell");
+      onTrade?.();
+    }
     redraw((value) => value + 1);
   }
 
@@ -108,7 +112,7 @@ export default function InventoryMarket({ onClose, onTrade, returnToCity = false
             <div className="market-selection"><span>{selected.side === "merchant" ? t("trade.buying") : t("trade.selling")}</span><strong>{t(selectedEntry.item.nameKey)}</strong><small>{t(selectedEntry.item.descriptionKey)}</small></div>
             <div className="quantity-picker"><span>{t("trade.quantity")}</span>{([1, 5, "max"] as QuantityMode[]).map((value) => <button key={value} className={quantityMode === value ? "active" : ""} onClick={() => setQuantityMode(value)}>{value === "max" ? t("trade.max") : value}</button>)}</div>
             <div className="trade-total"><span>{selectedQuantity(selectedEntry, selected.side)} × {selectedEntry.price}g</span><strong>{selectedQuantity(selectedEntry, selected.side) * selectedEntry.price}g</strong></div>
-            <button className="market-confirm" disabled={maxQuantity(selectedEntry, selected.side) <= 0} onClick={trade}>{selected.side === "merchant" ? t("trade.buyNow") : t("trade.sellNow")}</button>
+            <button className="market-confirm" data-ui-sound="none" disabled={maxQuantity(selectedEntry, selected.side) <= 0} onClick={trade}>{selected.side === "merchant" ? t("trade.buyNow") : t("trade.sellNow")}</button>
           </> : <p className="market-prompt">{t("trade.selectPrompt")}</p>}
         </footer>
         {message ? <div className="market-message">{message}</div> : null}

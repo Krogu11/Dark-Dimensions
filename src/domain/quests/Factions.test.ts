@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { contentPack } from "../../content/content";
 import { createEconomyState } from "../economy/Economy";
 import { generateWorldMap } from "../world/WorldGenerator";
-import { createFactionState } from "./Factions";
+import { createFactionState, FACTION_IDS, FACTION_PROFILES } from "./Factions";
 
 describe("procedural factions and quests", () => {
   it("recreates ownership and contracts from the same seed", () => {
@@ -49,6 +49,15 @@ describe("procedural factions and quests", () => {
 
     for (const settlement of settlements) {
       expect(factions.locationFactions[settlement.id]).toBeDefined();
+    }
+  });
+
+  it("provides a sovereign identity and lore for every faction", () => {
+    for (const factionId of FACTION_IDS) {
+      expect(FACTION_PROFILES[factionId]).toMatchObject({ id: factionId });
+      expect(FACTION_PROFILES[factionId].rulerName.length).toBeGreaterThan(3);
+      expect(FACTION_PROFILES[factionId].rulerTitle).toContain("King");
+      expect(FACTION_PROFILES[factionId].lore.length).toBeGreaterThan(100);
     }
   });
 });

@@ -108,6 +108,12 @@ export interface TerrainBattleModifiers {
   enemyDefense: number;
 }
 
+const TERRAIN_INDEX_SIZE = 480;
+const TERRAIN_PATH_INDEX_PADDING = 96;
+type IndexedPathSegment = { start: { x: number; y: number }; end: { x: number; y: number }; width: number };
+const TERRAIN_CELL_INDEX = new WeakMap<object, Map<string, TerrainCell[]>>();
+const TERRAIN_PATH_INDEX = new WeakMap<object, Map<string, IndexedPathSegment[]>>();
+
 export function getTerrainAt(
   map: WorldMapDefinition,
   x: number,
@@ -117,11 +123,7 @@ export function getTerrainAt(
 
   if (isPositionOnRoad(map, x, y)) return "road";
 
-  if (
-    map.terrainRivers.some((river) =>
-      isPositionNearPath(river.points, river.width, x, y),
-    )
-  ) {
+  if (isPositionOnIndexedPaths(map.terrainRivers, x, y)) {
     return "river";
   }
 
@@ -225,9 +227,7 @@ export function isWorldPositionTraversable(
 ): boolean {
   if (!isInsidePlayableBounds(map, x, y, radius)) return false;
   if (getTerrainCellAt(map, x, y) === "lake") return false;
-  const crossesRiver = map.terrainRivers.some((river) =>
-    isPositionNearPath(river.points, river.width, x, y, radius),
-  );
+  const crossesRiver = isPositionOnIndexedPaths(map.terrainRivers, x, y, radius);
   return !crossesRiver || isPositionOnRoad(map, x, y, radius);
 }
 
@@ -236,8 +236,26 @@ function getTerrainCellAt(
   x: number,
   y: number,
 ): TerrainCell["type"] | null {
-  for (let index = map.terrainCells.length - 1; index >= 0; index -= 1) {
-    const cell = map.terrainCells[index];
+  let spatialIndex = TERRAIN_CELL_INDEX.get(map.terrainCells);
+  if (!spatialIndex) {
+    spatialIndex = new Map();
+    for (const cell of map.terrainCells) {
+      const minimumColumn = Math.floor(cell.x / TERRAIN_INDEX_SIZE);
+      const maximumColumn = Math.floor((cell.x + cell.size) / TERRAIN_INDEX_SIZE);
+      const minimumRow = Math.floor(cell.y / TERRAIN_INDEX_SIZE);
+      const maximumRow = Math.floor((cell.y + cell.size) / TERRAIN_INDEX_SIZE);
+      for (let column = minimumColumn; column <= maximumColumn; column += 1) for (let row = minimumRow; row <= maximumRow; row += 1) {
+        const key = `${column}:${row}`;
+        const bucket = spatialIndex.get(key) ?? [];
+        bucket.push(cell);
+        spatialIndex.set(key, bucket);
+      }
+    }
+    TERRAIN_CELL_INDEX.set(map.terrainCells, spatialIndex);
+  }
+  const candidates = spatialIndex.get(`${Math.floor(x / TERRAIN_INDEX_SIZE)}:${Math.floor(y / TERRAIN_INDEX_SIZE)}`) ?? [];
+  for (let index = candidates.length - 1; index >= 0; index -= 1) {
+    const cell = candidates[index];
     if (x >= cell.x && y >= cell.y && x < cell.x + cell.size && y < cell.y + cell.size) {
       return cell.type;
     }
@@ -295,9 +313,31 @@ export function isPositionOnRoad(
   y: number,
   padding = 0,
 ): boolean {
-  return map.terrainRoads.some((road) =>
-    isPositionNearPath(road.points, road.width, x, y, padding),
-  );
+  return isPositionOnIndexedPaths(map.terrainRoads, x, y, padding);
+}
+
+function isPositionOnIndexedPaths(paths: WorldMapDefinition["terrainRoads"] | WorldMapDefinition["terrainRivers"], x: number, y: number, padding = 0): boolean {
+  let spatialIndex = TERRAIN_PATH_INDEX.get(paths);
+  if (!spatialIndex) {
+    spatialIndex = new Map();
+    for (const path of paths) for (let index = 0; index < path.points.length - 1; index += 1) {
+      const segment = { start: path.points[index], end: path.points[index + 1], width: path.width };
+      const inset = path.width / 2 + TERRAIN_PATH_INDEX_PADDING;
+      const minimumColumn = Math.floor((Math.min(segment.start.x, segment.end.x) - inset) / TERRAIN_INDEX_SIZE);
+      const maximumColumn = Math.floor((Math.max(segment.start.x, segment.end.x) + inset) / TERRAIN_INDEX_SIZE);
+      const minimumRow = Math.floor((Math.min(segment.start.y, segment.end.y) - inset) / TERRAIN_INDEX_SIZE);
+      const maximumRow = Math.floor((Math.max(segment.start.y, segment.end.y) + inset) / TERRAIN_INDEX_SIZE);
+      for (let column = minimumColumn; column <= maximumColumn; column += 1) for (let row = minimumRow; row <= maximumRow; row += 1) {
+        const key = `${column}:${row}`;
+        const bucket = spatialIndex.get(key) ?? [];
+        bucket.push(segment);
+        spatialIndex.set(key, bucket);
+      }
+    }
+    TERRAIN_PATH_INDEX.set(paths, spatialIndex);
+  }
+  const candidates = spatialIndex.get(`${Math.floor(x / TERRAIN_INDEX_SIZE)}:${Math.floor(y / TERRAIN_INDEX_SIZE)}`) ?? [];
+  return candidates.some((segment) => distanceToSegment(x, y, segment.start.x, segment.start.y, segment.end.x, segment.end.y) <= segment.width / 2 + padding);
 }
 
 export function isPositionNearPath(

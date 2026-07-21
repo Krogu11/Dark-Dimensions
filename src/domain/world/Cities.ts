@@ -13,7 +13,7 @@ export interface CityState {
 export type CityStates = Record<string, CityState>;
 
 export function createCityStates(seed: number, map: WorldMapDefinition): CityStates {
-  const cities = map.locations.filter((location) => location.type === "city");
+  const cities = map.locations.filter((location) => location.type === "city" || location.type === "soulTemple");
   const villages = map.locations.filter((location) => location.type === "village");
   return Object.fromEntries(cities.map((city) => {
     const nearbyVillages = villages.filter((village) =>

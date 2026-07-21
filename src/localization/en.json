@@ -21,13 +21,138 @@
     "noSave": "No saved campaign found. Begin a new journey.",
     "open": "Menu"
   },
+  "encyclopedia": {
+    "eyebrow": "The Wanderer's archive",
+    "title": "Unit Encyclopedia",
+    "subtitle": "Every creature encountered is remembered across all runs. Only those who served in your Warband reveal their full nature.",
+    "menuHint": "Review encountered creatures and former companions",
+    "close": "Close archive",
+    "seen": "Encountered",
+    "owned": "Commanded",
+    "commanded": "Former Warband unit",
+    "search": "Search discovered units...",
+    "tier": "Tier {{tier}}",
+    "unrecorded": "Unrecorded creature",
+    "unknownTitle": "Unknown creature",
+    "unknownText": "Encounter this unit somewhere in the Shattered Realms to reveal its identity.",
+    "observed": "Encountered, never commanded",
+    "observedText": "Recruit this unit into your Warband to reveal its attributes, abilities, and possible advancement paths.",
+    "ability": "Battle ability",
+    "upgrades": "Advancement paths",
+    "finalTier": "No further advancement recorded",
+    "noDescription": "No surviving account describes this unit.",
+    "empty": "No entries match these filters.",
+    "filters": {
+      "all": "All discoveries",
+      "seen": "Encountered",
+      "owned": "Commanded",
+      "unknown": "Unknown",
+      "allRaces": "All peoples",
+      "allTiers": "All tiers"
+    }
+  },
+  "soulTemple": {
+    "eyebrow": "Beyond all worlds",
+    "title": "Soul Temple",
+    "description": "A sanctuary outside mortal time, where sacrifice becomes legacy and every awakened soul follows the next Wanderer.",
+    "souls": "Bound souls",
+    "acrossRuns": "Carried across every run",
+    "prisoners": "Prisoners",
+    "awaitingTithe": "Awaiting judgement",
+    "awakened": "Awakened",
+    "legacyNodes": "Known constellation nodes",
+    "godOfSouls": "The God of Souls",
+    "eternalWitness": "Keeper of the passage",
+    "servicesLabel": "Temple chambers",
+    "defaultMessage": "The God of Souls awaits his tithe.",
+    "leave": "Leave temple",
+    "tier": "Tier {{tier}}",
+    "sacrificeValue": "{{count}} captive(s) · {{value}} souls each",
+    "boundSouls": "{{count}} souls were bound to your legacy.",
+    "bindOne": "Bind one soul",
+    "bindAll": "Sacrifice all",
+    "noPrisoners": "The altar stands empty",
+    "noPrisonersText": "Only prisoners brought alive to the Soul Temple can be offered.",
+    "restorationEyebrow": "Sanctuary rite",
+    "restorationTitle": "Restoration of Flesh",
+    "restorationText": "Restore the Wanderer and every surviving member of the Warband before returning to the mortal road.",
+    "goldAvailable": "Gold carried",
+    "restorationCost": "Ritual cost",
+    "restored": "The flesh of your Warband was restored.",
+    "restorationUnavailable": "The restoration rite cannot be performed.",
+    "restoreFor": "Restore all · {{cost}} gold",
+    "fullyHealed": "Warband fully healed",
+    "bannerNote": "Every week, three warriors answer from peoples whose covenants have been awakened. Their service is purchased with persistent souls.",
+    "callFor": "Call for {{cost}} souls",
+    "rank": "Rank {{rank}} / {{max}}",
+    "mastered": "Mastered",
+    "needSouls": "Requires {{cost}} souls",
+    "awakenFor": "Awaken · {{cost}} souls",
+    "awakenedMessage": "{{upgrade}} was awakened.",
+    "hiddenPathsHint": "Further paths reveal themselves only after the preceding node awakens.",
+    "services": {
+      "sacrifice": { "eyebrow": "The price of eternity", "title": "Sacrificial Altar", "description": "Offer living prisoners and bind their souls to progression that survives the death of a run." },
+      "tree": { "eyebrow": "Legacy between worlds", "title": "Soul Constellation", "description": "Awaken connected nodes and uncover hidden paths through the darkness beyond the veil." },
+      "altar": { "eyebrow": "Oaths beyond blood", "title": "Foreign Banners", "description": "Call warriors from peoples whose covenants your soul has secured." },
+      "restoration": { "eyebrow": "Mercy at a price", "title": "Restoration", "description": "Spend mortal gold to mend the bodies of those who still live." }
+    },
+    "branches": {
+      "wanderer": { "name": "The Wanderer", "subtitle": "Body, will and survival" },
+      "warband": { "name": "The Banner", "subtitle": "Troops, supplies and command" },
+      "fortune": { "name": "Grave Fortune", "subtitle": "Loot, trade and captives" },
+      "peoples": { "name": "The Covenants", "subtitle": "Foreign peoples and forbidden allies" }
+    },
+    "recruitResult": {
+      "success": "{{unit}} answered the call and joined your Warband.",
+      "notEnoughSouls": "You do not possess enough bound souls.",
+      "capacityFull": "Your Warband cannot receive another unit.",
+      "notAvailable": "This warrior no longer answers the altar.",
+      "invalid": "The covenant rejects this request.",
+      "notInCity": "The ritual cannot be performed here.",
+      "notEnoughGold": "The ritual lacks its mortal payment.",
+      "notEnoughXp": "Your Wanderer lacks the experience to command this soul."
+    },
+    "upgrades": {
+      "soulVitality": { "name": "Undying Spark", "description": "+5% maximum Wanderer HP per rank." },
+      "soulMight": { "name": "Soulforged Might", "description": "+3% base Wanderer ATK per rank." },
+      "soulGuard": { "name": "Soulbound Aegis", "description": "+3% base Wanderer DEF per rank." },
+      "soulReflex": { "name": "Quickened Soul", "description": "+1 Wanderer initiative per rank." },
+      "soulRecovery": { "name": "Echoes of Renewal", "description": "+10% Warband healing on the world map per rank." },
+      "deathDefiance": { "name": "Death's Refusal", "description": "+3% chance for defeated units to survive wounded per rank." },
+      "startingAttributes": { "name": "Ascendant Vessel", "description": "+1 unspent attribute point at the beginning of every run per rank." },
+      "startingGold": { "name": "Tithe of the Road", "description": "+25 starting gold per rank." },
+      "roadRations": { "name": "Provisioned Passage", "description": "+1 full ration stack at the beginning of every run per rank." },
+      "startingTroops": { "name": "Called Banners", "description": "+1 random starting unit from your chosen people per rank." },
+      "deepPockets": { "name": "Burdened Souls", "description": "+15 maximum cargo weight per rank." },
+      "warbandCapacity": { "name": "Greater Warband", "description": "+2 maximum Warband size per rank." },
+      "bannerMorale": { "name": "Banner of Remembrance", "description": "+5 starting morale per rank." },
+      "frugalHost": { "name": "Oaths Before Coin", "description": "Reduces weekly Warband wages by 5% per rank." },
+      "drillmaster": { "name": "Memory of Battle", "description": "+10% combat XP for deployed units per rank." },
+      "resilientRanks": { "name": "The Unbroken Host", "description": "+2% wounded-survival chance for Warband units per rank." },
+      "fieldSlots": { "name": "Widened Formation", "description": "+1 battlefield unit slot per rank, up to the battle limit." },
+      "graveTithe": { "name": "Grave Tithe", "description": "+10% gold gained from victories per rank." },
+      "scavenger": { "name": "Hands Among Ashes", "description": "+4 percentage points to every enemy item drop roll per rank." },
+      "merchantFavor": { "name": "Whispered Bargains", "description": "Improves buying and selling prices by 2% per rank." },
+      "captor": { "name": "Chains of the Victor", "description": "+2.5 percentage points to capture rolls per rank." },
+      "soulHarvest": { "name": "Deep Harvest", "description": "+10% souls gained from sacrifice per rank." },
+      "foreignWhispers": { "name": "Voices Beyond Mankind", "description": "Reveals the first covenants with foreign peoples." },
+      "kobold": { "name": "Kobold Covenant", "description": "Unlocks Kobolds as Wanderers and Foreign Banner recruits." },
+      "orc": { "name": "Orcish Oath", "description": "Unlocks Orcs as Wanderers and Foreign Banner recruits." },
+      "revenant": { "name": "Revenant Passage", "description": "Unlocks Revenants as Wanderers and Undead altar recruits." },
+      "beastPact": { "name": "Pact of Fang and Claw", "description": "Allows Beast units to answer the Foreign Banners." },
+      "machinePact": { "name": "Covenant of Iron", "description": "Allows Machine units to answer the Foreign Banners." },
+      "elementalPact": { "name": "Elemental Concord", "description": "Allows Elemental units to answer the Foreign Banners." }
+    }
+  },
   "hud": {
     "region": "The Shattered Realms",
     "unknown": "The wilds",
     "save": "Save in city",
     "saved": "Journey saved",
     "saveBlocked": "Progress is saved automatically in Ironman mode.",
-    "controls": "WASD move · Arrow keys pan camera · Space recenters",
+    "controls": "WASD move · Arrow keys pan camera · Hold Space to wait · R recenters",
+    "waiting": "Waiting",
+    "waitingHint": "Time passes · wounded units recover",
     "danger": "Danger",
     "safe": "Sanctuary",
     "menu": "Campaign menu",
@@ -126,7 +251,8 @@
         "merchantEscort": "Ember Trade Escort",
         "militia": "Ember Local Militia",
         "army": "Ember Crown Army",
-        "elite": "Ember Crown Vanguard"
+        "elite": "Ember Crown Vanguard",
+        "bountyHunters": "Cinder Hounds"
       },
       "gloam_compact": {
         "lord": "Gloam Compact Lord",
@@ -135,7 +261,8 @@
         "merchantEscort": "Gloam Trade Escort",
         "militia": "Gloam Local Militia",
         "army": "Gloam Compact Army",
-        "elite": "Gloam Compact Chosen"
+        "elite": "Gloam Compact Chosen",
+        "bountyHunters": "Veiled Knives"
       },
       "iron_concord": {
         "lord": "Iron Concord Lord",
@@ -144,7 +271,8 @@
         "merchantEscort": "Iron Trade Escort",
         "militia": "Iron Local Militia",
         "army": "Iron Concord Army",
-        "elite": "Iron Concord Hammer"
+        "elite": "Iron Concord Hammer",
+        "bountyHunters": "Iron Pursuit"
       }
     }
   },
@@ -575,6 +703,7 @@
     "noCardReward": "No card survived the spoils.",
     "instructions": "Summon units, arrange your warband, then resolve the automatic battle round.",
     "dead": "Dead",
+    "wounded": "Wounded",
     "hp": "HP"
   },
   "locationActions": {
@@ -968,6 +1097,10 @@
     }
   },
   "location": {
+    "soulTemple": {
+      "name": "Soul Temple",
+      "description": "A sanctuary outside the laws of the realm, where prisoners become power that survives death."
+    },
     "hollowmere": {
       "name": "Hollowmere",
       "description": "A walled refuge built around a well that never reflects the moon."

@@ -11,6 +11,8 @@ import {
   type TurningPointId,
   type UpbringingId,
 } from "../domain/character/CharacterOrigins";
+import { gameSession } from "../domain/session/GameSession";
+import { isRaceUnlocked } from "../domain/progression/MetaProgression";
 
 type CreationStep = "identity" | "race" | "origin" | "upbringing" | "turningPoint" | "summary";
 const STEPS: CreationStep[] = ["identity", "race", "origin", "upbringing", "turningPoint", "summary"];
@@ -52,7 +54,7 @@ export function CharacterCreator({ onCancel, onConfirm }: CharacterCreatorProps)
         <div className="creator-art"><div className="creator-silhouette">{profile.name.slice(0, 1).toUpperCase()}</div><span>{RACES.find((race) => race.id === raceId)?.name}</span><strong>{profile.name}</strong></div>
         <div className="creator-content">
           {step === "identity" ? <><span className="eyebrow">Name the wanderer</span><h2>Identity</h2><p>This name will be written into the history of the run.</p><label className="creator-name">Character name<input value={name} maxLength={28} autoFocus onChange={(event) => setName(event.target.value)} /></label></> : null}
-          {step === "race" ? <OptionGrid title="Choose a race" intro="Other peoples remember your deeds. Meet their conditions to unlock new beginnings." options={RACES} selected={raceId} onSelect={(id) => setRaceId(id as RaceId)} /> : null}
+          {step === "race" ? <OptionGrid title="Choose a race" intro="Other peoples remember your deeds. Bind enough souls to unlock new beginnings." options={RACES.map((race) => ({ ...race, unlocked: isRaceUnlocked(gameSession.metaProgression, race.id), unlockCondition: `Unlock at the Soul Temple (${race.id === "kobold" ? 40 : race.id === "orc" ? 60 : 100} souls).` }))} selected={raceId} onSelect={(id) => setRaceId(id as RaceId)} /> : null}
           {step === "origin" ? <OptionGrid title="Choose an origin" intro="Where you came from changes what you carry and how you face the world." options={ORIGINS} selected={originId} onSelect={(id) => setOriginId(id as OriginId)} /> : null}
           {step === "upbringing" ? <OptionGrid title="How were you raised?" intro="Your early years left habits that no training can fully replace." options={UPBRINGINGS} selected={upbringingId} onSelect={(id) => setUpbringingId(id as UpbringingId)} /> : null}
           {step === "turningPoint" ? <OptionGrid title="What changed everything?" intro="Every journey begins with a wound, a promise, or an unanswered question." options={TURNING_POINTS} selected={turningPointId} onSelect={(id) => setTurningPointId(id as TurningPointId)} /> : null}

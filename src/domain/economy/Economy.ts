@@ -122,7 +122,7 @@ export function createEconomyState(
 ): EconomyState {
   const markets: Record<string, InventoryStack[]> = {};
   const settlements = map.locations.filter(
-    (location) => location.type === "city" || location.type === "village",
+    (location) => location.type === "city" || location.type === "village" || location.type === "soulTemple",
   );
   for (const location of settlements) {
     markets[location.id] = createInitialStock(seed, location, map);
@@ -325,7 +325,7 @@ export function createMarketProfile(
   map?: WorldMapDefinition,
   cityState?: CityState | null,
 ): MarketProfile | null {
-  if (location.type !== "city" && location.type !== "village") return null;
+  if (location.type !== "city" && location.type !== "village" && location.type !== "soulTemple") return null;
   const locationHash = hashValue(`${seed}:${location.id}`);
   const resourceId = getLocationResource(seed, location.id, map);
   const stock =

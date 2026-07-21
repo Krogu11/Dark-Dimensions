@@ -96,6 +96,7 @@ import {
   getDailyFoodRequirement,
   type SurvivalState,
 } from "../survival/Survival";
+import { buyMetaUpgrade, createMetaProgression, isAltarRaceUnlocked, metaRank, normalizeMetaProgression, soulValueForTier, type MetaProgressionState, type MetaUpgradeId } from "../progression/MetaProgression";
 
 type SessionListener = () => void;
 export type GameMode = "world" | "battle";
@@ -110,6 +111,7 @@ export type RosterActionResult =
   | "notInCity"
   | "notEnoughGold"
   | "notEnoughXp"
+  | "notEnoughSouls"
   | "capacityFull"
   | "notAvailable"
   | "invalid";
@@ -151,6 +153,11 @@ export class GameSession {
   warband: CardInstance[] = [];
   reserve: CardInstance[] = [];
   prisoners: PrisonerStack[] = [];
+  soulsGatheredThisRun = 0;
+  villagersAttackedThisRun = 0;
+  humanSoulsOfferedThisRun = 0;
+  soulQuestCompleted = false;
+  metaProgression: MetaProgressionState = createMetaProgression();
   leadershipLevel = 1;
   characterState: CharacterState = createCharacterState();
   runProfile: RunProfile | null = null;
@@ -183,6 +190,10 @@ export class GameSession {
   private currentWarbandEnemyId: string | null = null;
   private pendingVictoryReward: BattleReward | null = null;
   private villageBattleContext: { kind: "defense" | "raid" | "villager"; locationId: string; villagerId?: string; cargo?: InventoryStack[] } | null = null;
+  private pendingWorldMinutes = 0;
+  private distanceSinceWorldReveal = 0;
+  private worldHealingProgress = 0;
+  private waiting = false;
   private listeners = new Set<SessionListener>();
 
   constructor(seed = createWorldSeed()) {
@@ -197,6 +208,7 @@ export class GameSession {
       this.economyState,
       contentPack.enemies,
     );
+    this.assignLordsToHoldings();
     this.hero = createPlayerCard();
     this.hero.currentHp = this.heroMaxHp;
     addToInventory(this.inventory, "travel_rations", 1);
@@ -206,7 +218,7 @@ export class GameSession {
     return (
       5 +
       this.characterState.attributes.charisma * 2 +
-      this.characterState.skills.leadership * 3
+      this.characterState.skills.leadership * 3 + metaRank(this.metaProgression, "warbandCapacity") * 2
     );
   }
 
@@ -215,7 +227,7 @@ export class GameSession {
   }
 
   get battleFieldSlots(): number {
-    return Math.min(7, 3 + Math.floor(Math.max(0, this.leadershipLevel - 1) / 2));
+    return Math.min(7, 3 + Math.floor(Math.max(0, this.leadershipLevel - 1) / 2) + metaRank(this.metaProgression, "fieldSlots"));
   }
 
   get warbandThreatRating(): number {
@@ -273,7 +285,8 @@ export class GameSession {
       90 +
       this.characterState.attributes.strength * 10 +
       this.characterState.skills.athletics * 8 +
-      this.characterState.skills.leadership * 5
+      this.characterState.skills.leadership * 5 +
+      metaRank(this.metaProgression, "deepPockets") * 15
     );
   }
 
@@ -308,7 +321,7 @@ export class GameSession {
   }
 
   get weeklyWageCost(): number {
-    return getWeeklyRosterWage(this.allUnits);
+    return Math.max(0, Math.ceil(getWeeklyRosterWage(this.allUnits) * (1 - metaRank(this.metaProgression, "frugalHost") * 0.05)));
   }
 
   get dailyFoodRequirement(): number {
@@ -365,7 +378,7 @@ export class GameSession {
   }
 
   get isInCity(): boolean {
-    return this.world.nearbyLocation?.type === "city";
+    return this.world.nearbyLocation?.type === "city" || this.world.nearbyLocation?.type === "soulTemple";
   }
 
   get canContinueDungeon(): boolean {
@@ -408,6 +421,105 @@ export class GameSession {
     return warband && this.canInteractWithWarband(warband.id) ? warband : null;
   }
 
+  getLordRelation(warbandId: string): number {
+    return this.factionState.lordRelations[warbandId] ?? 0;
+  }
+
+  getLordDomain(warbandId: string): MapLocation[] {
+    const lord = this.world.getWarband(warbandId);
+    if (!lord || lord.type !== "lord") return [];
+    const factionLords = this.world.state.warbands.filter(
+      (candidate) => candidate.type === "lord" && candidate.factionId === lord.factionId,
+    );
+    return this.world.map.locations.filter((location) => {
+      if (
+        !["city", "village", "castle"].includes(location.type) ||
+        this.factionState.locationFactions[location.id] !== lord.factionId
+      ) return false;
+      const appointedLordId = location.type === "city"
+        ? this.cityStates[location.id]?.lordId
+        : location.type === "village"
+          ? this.villageStates[location.id]?.lordId
+          : null;
+      if (appointedLordId) return appointedLordId === lord.id;
+      const eligibleLords = location.type === "castle"
+        ? factionLords.filter((candidate) => candidate.nobleRank === "king" || candidate.nobleRank === "baron")
+        : factionLords;
+      const nearestLord = eligibleLords.reduce<typeof lord | null>((nearest, candidate) => {
+        const candidateSeat = candidate.homeLocationId
+          ? this.world.map.locations.find((seat) => seat.id === candidate.homeLocationId)
+          : null;
+        if (!candidateSeat) return nearest;
+        if (!nearest) return candidate;
+        const nearestSeat = nearest.homeLocationId
+          ? this.world.map.locations.find((seat) => seat.id === nearest.homeLocationId)
+          : null;
+        return !nearestSeat || Math.hypot(candidateSeat.x - location.x, candidateSeat.y - location.y) < Math.hypot(nearestSeat.x - location.x, nearestSeat.y - location.y)
+          ? candidate
+          : nearest;
+      }, null);
+      return nearestLord?.id === lord.id;
+    });
+  }
+
+  giftLord(warbandId: string): boolean {
+    const lord = this.world.getWarband(warbandId);
+    if (!lord || lord.type !== "lord" || !this.canInteractWithWarband(warbandId) || this.gold < 50) return false;
+    this.gold -= 50;
+    this.factionState.lordRelations[warbandId] = Math.min(100, this.getLordRelation(warbandId) + 8);
+    this.factionState.reputation[lord.factionId] = Math.min(100, this.factionState.reputation[lord.factionId] + 2);
+    this.advanceTime(10);
+    this.notify();
+    return true;
+  }
+
+  requestLordAid(warbandId: string): boolean {
+    const lord = this.world.getWarband(warbandId);
+    if (!lord || lord.type !== "lord" || !this.canInteractWithWarband(warbandId)) return false;
+    if (this.getLordRelation(warbandId) < 20 || this.factionState.reputation[lord.factionId] < 10) return false;
+    if ((lord.lastAidDay ?? 0) > 0 && this.gameDay - (lord.lastAidDay ?? 0) < 7) return false;
+    lord.lastAidDay = this.gameDay;
+    addToInventory(this.inventory, "travel_rations", 2);
+    this.survivalState.morale = clampMorale(this.survivalState.morale + 6);
+    this.notify();
+    return true;
+  }
+
+  getFactionBountyPayment(factionId: FactionId): number {
+    const wanted = this.factionState.wanted[factionId];
+    if (this.factionState.atWar[factionId]) return Math.max(300, wanted * 5);
+    return wanted > 0 ? Math.max(40, wanted * 4) : 0;
+  }
+
+  settleBountyWithLord(warbandId: string): boolean {
+    const lord = this.world.getWarband(warbandId);
+    if (!lord || lord.type !== "lord" || !this.canInteractWithWarband(warbandId)) return false;
+    const cost = this.getFactionBountyPayment(lord.factionId);
+    if (cost <= 0 || this.gold < cost) return false;
+    this.gold -= cost;
+    this.factionState.wanted[lord.factionId] = 0;
+    this.factionState.atWar[lord.factionId] = false;
+    this.factionState.reputation[lord.factionId] = Math.min(0, this.factionState.reputation[lord.factionId] + 10);
+    this.factionState.lordRelations[warbandId] = Math.min(100, this.getLordRelation(warbandId) + 4);
+    this.advanceTime(20);
+    this.notify();
+    return true;
+  }
+
+  challengeWarband(warbandId: string): boolean {
+    const warband = this.world.getWarband(warbandId);
+    if (!warband || !this.canInteractWithWarband(warbandId)) return false;
+    if (warband.type === "lord") this.declareWarOnFaction(warband.factionId);
+    return this.beginDirectWarbandBattle(warbandId);
+  }
+
+  declareWarOnFaction(factionId: FactionId): void {
+    this.factionState.atWar[factionId] = true;
+    this.factionState.wanted[factionId] = Math.max(60, this.factionState.wanted[factionId]);
+    this.factionState.reputation[factionId] = Math.min(-60, this.factionState.reputation[factionId]);
+    this.notify();
+  }
+
   get heroCombatBonuses(): { heroAtk: number; heroDef: number } {
     const equipmentBonuses = this.equippedItemIds.reduce(
       (total, itemId) => {
@@ -430,6 +542,31 @@ export class GameSession {
     };
   }
 
+  get battleCombatBonuses() {
+    return {
+      ...this.heroCombatBonuses,
+      heroAtk: Math.round(this.heroCombatBonuses.heroAtk + getCardDefinition(this.hero.cardId).atk * metaRank(this.metaProgression, "soulMight") * 0.03),
+      heroDef: Math.round(this.heroCombatBonuses.heroDef + getCardDefinition(this.hero.cardId).def * metaRank(this.metaProgression, "soulGuard") * 0.03),
+      heroInitiative: metaRank(this.metaProgression, "soulReflex"),
+      heroMaxHp: this.heroMaxHp,
+      fieldSlots: this.battleFieldSlots,
+      woundSurvivalChance: Math.min(
+        0.5,
+        0.12 + this.characterState.skills.woundTreatment * 0.04 + metaRank(this.metaProgression, "deathDefiance") * 0.03 + metaRank(this.metaProgression, "resilientRanks") * 0.02,
+      ),
+    };
+  }
+
+  private get enemyScalingContext() {
+    return {
+      playerLevel: this.characterState.level,
+      warbandThreat: this.warbandThreatRating,
+      rewardGoldMultiplier: 1 + metaRank(this.metaProgression, "graveTithe") * 0.1,
+      itemChanceBonus: metaRank(this.metaProgression, "scavenger") * 0.04,
+      captureChanceBonus: metaRank(this.metaProgression, "captor") * 0.025,
+    };
+  }
+
   get equippedItemIds(): string[] {
     return [
       this.rightHandItemId,
@@ -439,11 +576,11 @@ export class GameSession {
   }
 
   get heroMaxHp(): number {
-    return (
+    return Math.round((
       getCardDefinition(this.hero.cardId).maxHp +
       this.characterState.attributes.strength * 80 +
       this.characterState.skills.ironflesh * 140
-    );
+    ) * (1 + metaRank(this.metaProgression, "soulVitality") * 0.05));
   }
 
   get characterLevelLabel(): string {
@@ -453,6 +590,13 @@ export class GameSession {
   get marketProfile(): MarketProfile | null {
     const location = this.world.nearbyLocation;
     if (location) {
+      const factionId = this.factionState.locationFactions[location.id];
+      const factionReputation = factionId ? this.factionState.reputation[factionId] : 0;
+      const villageRelation = this.villageStates[location.id]?.relation ?? 0;
+      if (
+        (location.type === "village" && (villageRelation <= -50 || factionReputation <= -60)) ||
+        (location.type === "city" && factionReputation <= -80)
+      ) return null;
       return createMarketProfile(
         this.worldSeed,
         location,
@@ -487,6 +631,47 @@ export class GameSession {
       : 0;
   }
 
+  get currentWantedLevel(): number {
+    return this.currentFactionId ? (this.factionState.wanted[this.currentFactionId] ?? 0) : 0;
+  }
+
+  get highestWantedLevel(): number {
+    return Math.max(0, ...Object.values(this.factionState.wanted));
+  }
+
+  get outlawTitle(): string {
+    if (Object.values(this.factionState.atWar).some(Boolean)) return "At War";
+    const wanted = this.highestWantedLevel;
+    if (wanted >= 80) return "Realm Enemy";
+    if (wanted >= 60) return "Outlaw";
+    if (wanted >= 25) return "Wanted";
+    if (wanted > 0) return "Suspected Raider";
+    return "Unwanted";
+  }
+
+  get currentLocalRelation(): number {
+    const locationId = this.world.nearbyLocation?.id;
+    return locationId ? (this.villageStates[locationId]?.relation ?? 0) : 0;
+  }
+
+  getVillageServiceAccess(locationId: string): {
+    market: boolean;
+    recruits: boolean;
+    elder: boolean;
+    help: boolean;
+  } {
+    const state = this.villageStates[locationId];
+    const factionId = this.factionState.locationFactions[locationId];
+    const factionReputation = factionId ? this.factionState.reputation[factionId] : 0;
+    const available = Boolean(state && state.condition !== "looted");
+    return {
+      market: available && state.relation > -50 && factionReputation > -60,
+      recruits: available && state.relation >= -20 && factionReputation >= -30,
+      elder: available && (state.relation < 0 || (state.relation >= -10 && factionReputation >= -20)),
+      help: available && state.relation >= -10 && factionReputation >= -20,
+    };
+  }
+
   get activeQuests(): QuestState[] {
     return this.factionState.quests.filter(
       (quest) => quest.status === "active" || quest.status === "ready",
@@ -511,9 +696,13 @@ export class GameSession {
   }
 
   restore(save: SaveGame): void {
+    this.pendingWorldMinutes = 0;
+    this.worldHealingProgress = 0;
+    this.waiting = false;
+    this.distanceSinceWorldReveal = 0;
     this.worldSeed = save.worldSeed ?? hashLegacySeed(save.savedAt);
     this.world = new WorldSimulation(
-      generateWorldMap(this.worldSeed, contentPack.enemies),
+      generateWorldMap(this.worldSeed, contentPack.enemies, contentPack.nobles),
       save.worldRevision === 5 ? save.player : undefined,
     );
     this.cityStates = normalizeCityStates(save.cityStates, this.worldSeed, this.world.map);
@@ -531,6 +720,9 @@ export class GameSession {
     );
     if (save.factionState) {
       generatedFactionState.reputation = save.factionState.reputation;
+      generatedFactionState.wanted = { ...generatedFactionState.wanted, ...(save.factionState.wanted ?? {}) };
+      generatedFactionState.atWar = { ...generatedFactionState.atWar, ...(save.factionState.atWar ?? {}) };
+      generatedFactionState.lordRelations = { ...(save.factionState.lordRelations ?? {}) };
       for (const quest of generatedFactionState.quests) {
         const previousQuest = save.factionState.quests.find(
           (candidate) =>
@@ -543,6 +735,7 @@ export class GameSession {
       }
     }
     this.factionState = generatedFactionState;
+    this.assignLordsToHoldings();
     for (const quest of this.factionState.quests) {
       if (quest.itemId) quest.itemId = migrateItemId(quest.itemId);
     }
@@ -579,9 +772,15 @@ export class GameSession {
       }
       card.level = 1;
     }
+    this.markUnitOwned(this.hero.cardId);
+    for (const card of this.warband) this.markUnitOwned(card.cardId);
     this.leadershipLevel = hasCurrentRoster ? (save.leadershipLevel ?? 1) : 1;
     this.characterState = normalizeCharacterState(save.characterState);
     this.runProfile = save.runProfile ?? null;
+    this.soulsGatheredThisRun = Math.max(0, save.soulsGatheredThisRun ?? 0);
+    this.villagersAttackedThisRun = Math.max(0, save.villagersAttackedThisRun ?? 0);
+    this.humanSoulsOfferedThisRun = Math.max(0, save.humanSoulsOfferedThisRun ?? 0);
+    this.soulQuestCompleted = save.soulQuestCompleted ?? false;
     const baseHeroMaxHp = getCardDefinition(this.hero.cardId).maxHp;
     this.hero.currentHp =
       !save.characterState && this.hero.currentHp >= baseHeroMaxHp
@@ -619,7 +818,15 @@ export class GameSession {
       this.villageBattleContext = checkpoint.villageContext ?? null;
       const archetype = enemiesById.get(checkpoint.enemyId) ?? checkpoint.enemy;
       if (archetype) {
-        this.startArchetypeBattle(archetype);
+        const campParty = checkpoint.enemySpawnId
+          ? this.world.state.enemies.find((enemy) => enemy.id === checkpoint.enemySpawnId)
+          : null;
+        this.startArchetypeBattle(
+          archetype,
+          campParty?.sourceLocationId
+            ? campParty.roster.map((unit) => structuredClone(unit))
+            : undefined,
+        );
       } else if (checkpoint.warbandBattleId) {
         this.joinWarbandBattle(checkpoint.warbandBattleId, checkpoint.warbandAllyId);
       }
@@ -628,6 +835,10 @@ export class GameSession {
   }
 
   reset(): void {
+    this.pendingWorldMinutes = 0;
+    this.worldHealingProgress = 0;
+    this.waiting = false;
+    this.distanceSinceWorldReveal = 0;
     this.worldSeed = createWorldSeed();
     this.world = this.createWorld(this.worldSeed);
     this.cityStates = createCityStates(this.worldSeed, this.world.map);
@@ -639,6 +850,7 @@ export class GameSession {
       this.economyState,
       contentPack.enemies,
     );
+    this.assignLordsToHoldings();
     this.nearbyCaravanId = null;
     this.selectedWarbandId = null;
     this.waypoint = null;
@@ -651,6 +863,10 @@ export class GameSession {
     this.warband = [];
     this.reserve = [];
     this.prisoners = [];
+    this.soulsGatheredThisRun = 0;
+    this.villagersAttackedThisRun = 0;
+    this.humanSoulsOfferedThisRun = 0;
+    this.soulQuestCompleted = false;
     this.leadershipLevel = 1;
     this.characterState = createCharacterState();
     this.runProfile = null;
@@ -678,7 +894,9 @@ export class GameSession {
   }
 
   beginNewRun(profile: RunProfile): void {
+    const meta = this.metaProgression;
     this.reset();
+    this.metaProgression = meta;
     this.runProfile = profile;
     applyChoiceBonuses(this.characterState, profile);
     for (const choice of getRunChoices(profile)) {
@@ -689,7 +907,18 @@ export class GameSession {
       if (choice.rightHandItemId) this.rightHandItemId = choice.rightHandItemId;
       if (choice.leftHandItemId) this.leftHandItemId = choice.leftHandItemId;
     }
+    this.gold += metaRank(this.metaProgression, "startingGold") * 25;
+    const rationRank = metaRank(this.metaProgression, "roadRations");
+    if (rationRank > 0) addToInventory(this.inventory, "travel_rations", rationRank);
+    this.survivalState.morale = clampMorale(this.survivalState.morale + metaRank(this.metaProgression, "bannerMorale") * 5);
+    this.characterState.attributePoints += metaRank(this.metaProgression, "startingAttributes");
+    if (profile.raceId === "human") {
+      for (let index = 0; index < 5; index += 1) this.addUnitToWarband(createCardInstance("village_levy"));
+    }
+    const starters = recruitableCards.filter((card) => card.race === profile.raceId && card.tier === 1 && !card.id.startsWith("player_"));
+    for (let index = 0; index < metaRank(this.metaProgression, "startingTroops") && starters.length; index += 1) this.addUnitToWarband(createCardInstance(starters[(this.worldSeed + index) % starters.length].id));
     this.hero.currentHp = this.heroMaxHp;
+    this.markUnitOwned(this.hero.cardId);
     this.notify();
   }
 
@@ -715,6 +944,7 @@ export class GameSession {
     const village = this.world.nearbyLocation;
     if (village?.type !== "village") return "notInCity";
     const state = this.villageStates[village.id];
+    if (!this.getVillageServiceAccess(village.id).recruits) return "notAvailable";
     const offers = state ? ensureVillageRecruitmentOffers(state, this.worldSeed, getGameDay(this.timeState)) : [];
     if (!state || state.condition === "looted" || !offers.includes(cardId)) return "notAvailable";
     const definition = getCardDefinition(cardId);
@@ -723,7 +953,7 @@ export class GameSession {
     if (this.warband.length >= this.warbandCapacity) return "capacityFull";
     if (this.gold < cost) return "notEnoughGold";
     this.gold -= cost;
-    this.warband.push(createCardInstance(cardId));
+    this.addUnitToWarband(createCardInstance(cardId));
     state.recruitmentOffers = offers.filter((id) => id !== cardId);
     this.advanceTime(20);
     this.notify();
@@ -733,7 +963,7 @@ export class GameSession {
   helpVillage(locationId: string): VillageHelpResult {
     const location = this.world.nearbyLocation;
     const state = this.villageStates[locationId];
-    if (!location || location.id !== locationId || location.type !== "village" || !state || state.condition === "looted") return "invalid";
+    if (!location || location.id !== locationId || location.type !== "village" || !state || !this.getVillageServiceAccess(locationId).help) return "invalid";
     const week = Math.floor((getGameDay(this.timeState) - 1) / 7) + 1;
     if (state.lastHelpedWeek >= week) return "alreadyHelped";
     state.lastHelpedWeek = week;
@@ -765,7 +995,7 @@ export class GameSession {
 
   acceptVillageQuest(locationId: string): boolean {
     const location = this.world.nearbyLocation; const state = this.villageStates[locationId];
-    if (!location || location.id !== locationId || location.type !== "village" || !state) return false;
+    if (!location || location.id !== locationId || location.type !== "village" || !state || !this.getVillageServiceAccess(locationId).elder) return false;
     const quest = ensureVillageQuest(state, this.worldSeed, getGameDay(this.timeState));
     if (quest.status !== "available") return false;
     quest.status = "active"; this.advanceTime(10); this.notify(); return true;
@@ -773,10 +1003,49 @@ export class GameSession {
 
   completeVillageDelivery(locationId: string): boolean {
     const location = this.world.nearbyLocation; const state = this.villageStates[locationId];
-    if (!location || location.id !== locationId || location.type !== "village" || !state) return false;
+    if (!location || location.id !== locationId || location.type !== "village" || !state || !this.getVillageServiceAccess(locationId).elder) return false;
     const quest = ensureVillageQuest(state, this.worldSeed, getGameDay(this.timeState));
     if (quest.type !== "delivery" || quest.status !== "active" || !quest.itemId || inventoryQuantity(this.inventory, quest.itemId) < quest.quantity) return false;
     removeFromInventory(this.inventory, quest.itemId, quest.quantity); this.rewardVillageQuest(state, quest); this.advanceTime(10); this.notify(); return true;
+  }
+
+  completeVillageAtonement(locationId: string): boolean {
+    const location = this.world.nearbyLocation; const state = this.villageStates[locationId];
+    if (!location || location.id !== locationId || location.type !== "village" || !state) return false;
+    const quest = ensureVillageQuest(state, this.worldSeed, getGameDay(this.timeState));
+    if (quest.type !== "atonement" || quest.status !== "active" || !quest.itemId || inventoryQuantity(this.inventory, quest.itemId) < quest.quantity) return false;
+    removeFromInventory(this.inventory, quest.itemId, quest.quantity);
+    quest.status = "completed";
+    state.relation = Math.min(0, state.relation + quest.rewardRelation);
+    const factionId = this.factionState.locationFactions[locationId];
+    if (factionId) {
+      this.factionState.reputation[factionId] = Math.min(0, this.factionState.reputation[factionId] + 6);
+      this.factionState.wanted[factionId] = Math.max(0, this.factionState.wanted[factionId] - 18);
+    }
+    this.advanceTime(60);
+    this.notify();
+    return true;
+  }
+
+  getVillageRestitutionCost(locationId: string): number {
+    const state = this.villageStates[locationId];
+    const factionId = this.factionState.locationFactions[locationId];
+    if (!state || state.relation >= 0 || !factionId) return 0;
+    return Math.max(30, Math.ceil((-state.relation * 2 + this.factionState.wanted[factionId]) * 1.5));
+  }
+
+  payVillageRestitution(locationId: string): boolean {
+    const state = this.villageStates[locationId];
+    const factionId = this.factionState.locationFactions[locationId];
+    const cost = this.getVillageRestitutionCost(locationId);
+    if (!state || !factionId || cost <= 0 || this.gold < cost || this.world.nearbyLocation?.id !== locationId) return false;
+    this.gold -= cost;
+    state.relation = Math.min(0, state.relation + 30);
+    this.factionState.reputation[factionId] = Math.min(0, this.factionState.reputation[factionId] + 5);
+    this.factionState.wanted[factionId] = Math.max(0, this.factionState.wanted[factionId] - 15);
+    this.advanceTime(30);
+    this.notify();
+    return true;
   }
 
   startVillageNightDefense(locationId: string): boolean {
@@ -794,7 +1063,10 @@ export class GameSession {
     if (!location || location.id !== locationId || location.type !== "village" || !state || state.condition === "looted") return false;
     const factionId = this.factionState.locationFactions[locationId];
     state.relation = Math.max(-100, state.relation - 50);
-    if (factionId) this.factionState.reputation[factionId] = Math.max(-100, this.factionState.reputation[factionId] - 20);
+    if (factionId) {
+      this.factionState.reputation[factionId] = Math.max(-100, this.factionState.reputation[factionId] - 20);
+      this.factionState.wanted[factionId] = Math.min(100, this.factionState.wanted[factionId] + 40);
+    }
     const count = Math.max(2, Math.min(8, Math.ceil(state.militia / 12)));
     const deck = Array.from({ length: count }, (_, index) => index % 3 === 2 && state.prosperity >= 45 ? "militia_shieldbearer" : index % 2 ? "village_slinger" : "village_levy");
     this.villageBattleContext = { kind: "raid", locationId };
@@ -806,8 +1078,20 @@ export class GameSession {
     const villager = this.nearbyCaravan;
     if (!villager || villager.kind !== "villager") return false;
     const origin = this.villageStates[villager.originId]; const factionId = this.factionState.locationFactions[villager.originId];
-    if (origin) origin.relation = Math.max(-100, origin.relation - 18);
-    if (factionId) this.factionState.reputation[factionId] = Math.max(-100, this.factionState.reputation[factionId] - 7);
+    this.villagersAttackedThisRun += 1;
+    if (origin) { origin.relation = Math.max(-100, origin.relation - 30); origin.prosperity = Math.max(0, origin.prosperity - 6); }
+    if (factionId) {
+      this.factionState.reputation[factionId] = Math.max(-100, this.factionState.reputation[factionId] - 15);
+      this.factionState.wanted[factionId] = Math.min(100, this.factionState.wanted[factionId] + 25);
+      this.world.recordChronicle(
+        `The Wanderer attacked villagers. ${this.villagersAttackedThisRun >= 2 ? "Faction lords have begun the hunt." : "The local faction has taken notice."}`,
+        [factionId],
+      );
+    }
+    this.survivalState.morale = clampMorale(this.survivalState.morale - 8);
+    const originLocation = this.world.map.locations.find((location) => location.id === villager.originId);
+    const nearbyCity = originLocation ? this.world.map.locations.filter((location) => location.type === "city").sort((a, b) => Math.hypot(a.x - originLocation.x, a.y - originLocation.y) - Math.hypot(b.x - originLocation.x, b.y - originLocation.y))[0] : null;
+    if (nearbyCity && this.cityStates[nearbyCity.id]) this.cityStates[nearbyCity.id].prosperity = Math.max(0, this.cityStates[nearbyCity.id].prosperity - 2);
     this.villageBattleContext = { kind: "villager", locationId: villager.originId, villagerId: villager.id, cargo: structuredClone(villager.inventory) };
     this.startArchetypeBattle({ id: `villager_${villager.id}`, nameKey: "trade.villagerName", leaderCardId: villager.leaderCardId ?? "village_levy", deck: villager.unitIds?.length ? villager.unitIds : ["village_slinger"], goldReward: 4, threat: 1, dropTable: [], itemDropTable: [] });
     return true;
@@ -820,21 +1104,21 @@ export class GameSession {
 
   get currentRecruitmentOffers(): string[] {
     const city = this.world.nearbyLocation;
-    if (city?.type !== "city") return [];
+    if (city?.type !== "city" && city?.type !== "soulTemple") return [];
     const state = this.cityStates[city.id];
     return state ? ensureRecruitmentOffers(state, this.worldSeed, getGameDay(this.timeState)) : [];
   }
 
   get currentRecruitmentRestockDay(): number | null {
     const city = this.world.nearbyLocation;
-    if (city?.type !== "city") return null;
+    if (city?.type !== "city" && city?.type !== "soulTemple") return null;
     this.currentRecruitmentOffers;
     return this.cityStates[city.id]?.recruitmentRestockDay ?? null;
   }
 
   recruitFromCityOffer(cardId: string): RosterActionResult {
     const city = this.world.nearbyLocation;
-    if (city?.type !== "city") return "notInCity";
+    if (city?.type !== "city" && city?.type !== "soulTemple") return "notInCity";
     const state = this.cityStates[city.id];
     const offers = state ? ensureRecruitmentOffers(state, this.worldSeed, getGameDay(this.timeState)) : [];
     if (!offers.includes(cardId)) return "notAvailable";
@@ -844,7 +1128,7 @@ export class GameSession {
     if (this.warband.length >= this.warbandCapacity) return "capacityFull";
     if (this.gold < cost) return "notEnoughGold";
     this.gold -= cost;
-    this.warband.push(createCardInstance(cardId));
+    this.addUnitToWarband(createCardInstance(cardId));
     state.recruitmentOffers = offers.filter((id) => id !== cardId);
     this.advanceTime(30);
     this.notify();
@@ -852,14 +1136,14 @@ export class GameSession {
   }
 
   recruit(cardId: string): RosterActionResult {
-    if (this.world.nearbyLocation?.type !== "city") return "notInCity";
+    if (!this.isInCity) return "notInCity";
     const definition = recruitableCards.find((card) => card.id === cardId);
     if (!definition?.recruitCost) return "invalid";
     if (this.warband.length >= this.warbandCapacity) return "capacityFull";
     if (this.gold < definition.recruitCost) return "notEnoughGold";
 
     this.gold -= definition.recruitCost;
-    this.warband.push(createCardInstance(cardId));
+    this.addUnitToWarband(createCardInstance(cardId));
     this.advanceTime(30);
     this.notify();
     return "success";
@@ -889,6 +1173,7 @@ export class GameSession {
     card.currentHp = Math.max(1, Math.round(upgradedDefinition.maxHp * healthRatio));
     card.level = 1;
     card.xp -= requiredXp;
+    this.markUnitOwned(targetCardId);
     this.advanceTime(20);
     this.notify();
     return "success";
@@ -911,15 +1196,56 @@ export class GameSession {
     this.pendingVictoryReward = null;
     this.battle = new BattleSimulation(
       this.warband,
-      archetype,
+      spawn.sourceLocationId
+        ? { ...archetype, threat: this.world.getEnemyThreatRating(spawn) }
+        : archetype,
       this.hero,
-      { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp, fieldSlots: this.battleFieldSlots },
+      this.battleCombatBonuses,
       getTerrainBattleModifiers(this.currentTerrain),
-      undefined,
-      { playerLevel: this.characterState.level, warbandThreat: this.warbandThreatRating },
+      spawn.sourceLocationId
+        ? spawn.roster.map((unit) => structuredClone(unit))
+        : undefined,
+      this.enemyScalingContext,
     );
+    this.registerBattleUnits(this.battle);
     this.mode = "battle";
     this.notify();
+  }
+
+  private beginDirectWarbandBattle(warbandId: string): boolean {
+    if (this.mode !== "world") return false;
+    const enemyWarband = this.world.getWarband(warbandId);
+    if (!enemyWarband || enemyWarband.state === "destroyed" || enemyWarband.state === "fighting") return false;
+    this.currentEnemySpawnId = null;
+    this.currentLocationBattleId = null;
+    this.currentWarbandBattleId = null;
+    this.currentWarbandAllyId = null;
+    this.currentWarbandEnemyId = enemyWarband.id;
+    this.dungeonRun = null;
+    this.pendingVictoryReward = null;
+    this.battle = new BattleSimulation(
+      this.warband,
+      {
+        id: `hunting_${enemyWarband.id}`,
+        nameKey: enemyWarband.nameKey,
+        leaderCardId: enemyWarband.leaderCardId ?? enemyWarband.unitIds[0],
+        leaderLevel: enemyWarband.leaderLevel,
+        deck: [...(enemyWarband.leaderCardId ? [enemyWarband.leaderCardId] : []), ...enemyWarband.unitIds],
+        goldReward: Math.max(8, Math.min(enemyWarband.gold, Math.round(enemyWarband.unitIds.length * 8))),
+        threat: Math.min(5, Math.max(1, Math.ceil(enemyWarband.unitIds.length / 2))),
+        dropTable: enemyWarband.unitIds.map((cardId) => ({ cardId, chance: 0.05 })),
+        itemDropTable: enemyWarband.lootItemIds.map((itemId) => ({ itemId, chance: 0.35, minimum: 1, maximum: 2 })),
+      },
+      this.hero,
+      this.battleCombatBonuses,
+      getTerrainBattleModifiers(this.currentTerrain),
+      createWarbandBattleDeck(enemyWarband),
+      this.enemyScalingContext,
+    );
+    this.registerBattleUnits(this.battle);
+    this.mode = "battle";
+    this.notify();
+    return true;
   }
 
   joinWarbandBattle(
@@ -950,11 +1276,12 @@ export class GameSession {
         this.warband,
         archetype,
         this.hero,
-        { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp, fieldSlots: this.battleFieldSlots },
+        this.battleCombatBonuses,
         getTerrainBattleModifiers(this.currentTerrain),
         undefined,
-        { playerLevel: this.characterState.level, warbandThreat: this.warbandThreatRating },
+        this.enemyScalingContext,
       );
+      this.registerBattleUnits(this.battle);
       this.mode = "battle";
       this.notify();
       return true;
@@ -1012,11 +1339,12 @@ export class GameSession {
         })),
       },
       this.hero,
-      { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp, fieldSlots: this.battleFieldSlots },
+      this.battleCombatBonuses,
       getTerrainBattleModifiers(this.currentTerrain),
       createWarbandBattleDeck(enemyWarband),
-      { playerLevel: this.characterState.level, warbandThreat: this.warbandThreatRating },
+      this.enemyScalingContext,
     );
+    this.registerBattleUnits(this.battle);
     this.mode = "battle";
     this.notify();
     return true;
@@ -1282,6 +1610,8 @@ export class GameSession {
     const reward = this.pendingVictoryReward ?? this.prepareVictoryReward();
     if (!reward) return null;
     const completedBattle = this.battle;
+    const battleSite = { x: this.world.state.x, y: this.world.state.y };
+    const createsStandaloneBattleSite = !this.currentWarbandBattleId;
     const dungeonStage = this.dungeonRun?.stage ?? 0;
     const claimedReward: BattleReward = {
       gold: reward.gold,
@@ -1295,12 +1625,15 @@ export class GameSession {
       addToInventory(this.inventory, item.itemId, item.quantity);
     }
 
+    for (const card of this.warband) {
+      if (completedBattle.unitStats.get(card.uid)?.wounded) card.currentHp = 1;
+    }
     this.warband = this.warband.filter((card) => card.currentHp > 0);
     for (const card of this.warband) {
       if (completedBattle.deployedUnitUids.has(card.uid)) {
         awardXp(
           card,
-          60 + dungeonStage * 15 + this.characterState.skills.trainer * 8,
+          Math.round((60 + dungeonStage * 15 + this.characterState.skills.trainer * 8) * (1 + metaRank(this.metaProgression, "drillmaster") * 0.1)),
         );
       }
     }
@@ -1309,6 +1642,8 @@ export class GameSession {
     for (const cardId of getCapturedCardIds(claimedReward)) this.addPrisoner(cardId, 1);
 
     if (this.currentEnemySpawnId) {
+      const defeatedParty = this.world.state.enemies.find((enemy) => enemy.id === this.currentEnemySpawnId);
+      if (defeatedParty?.sourceLocationId) defeatedParty.gold = Math.max(0, defeatedParty.gold - reward.gold);
       this.world.defeatEnemy(this.currentEnemySpawnId);
     }
 
@@ -1327,6 +1662,16 @@ export class GameSession {
       );
     }
 
+    if (!this.currentWarbandBattleId && this.currentWarbandEnemyId) {
+      const defeatedWarband = this.world.getWarband(this.currentWarbandEnemyId);
+      if (defeatedWarband) {
+        defeatedWarband.gold = Math.max(0, defeatedWarband.gold - reward.gold);
+        this.world.defeatWarband(defeatedWarband.id);
+        this.factionState.reputation[defeatedWarband.factionId] = Math.max(-100, this.factionState.reputation[defeatedWarband.factionId] - 10);
+        this.factionState.wanted[defeatedWarband.factionId] = Math.min(100, this.factionState.wanted[defeatedWarband.factionId] + 15);
+      }
+    }
+
     if (this.villageBattleContext) {
       const context = this.villageBattleContext; const state = this.villageStates[context.locationId];
       if (context.kind === "defense" && state) {
@@ -1338,10 +1683,8 @@ export class GameSession {
         state.condition = "looted"; state.recoveryDay = getGameDay(this.timeState) + 7; state.population = Math.max(20, Math.floor(state.population * 0.9)); state.prosperity = Math.max(0, state.prosperity - 22); state.militia = Math.max(0, Math.floor(state.militia * 0.35)); state.recruitmentOffers = [];
       } else if (context.kind === "villager") {
         for (const entry of context.cargo ?? []) addToInventory(this.inventory, entry.itemId, entry.quantity);
-        const villager = this.economyState.villagers.find((candidate) => candidate.id === context.villagerId);
-        const origin = this.world.map.locations.find((location) => location.id === context.locationId);
-        if (villager && origin) { villager.inventory = []; villager.progress = 0; villager.x = origin.x; villager.y = origin.y; }
-        if (state) state.prosperity = Math.max(0, state.prosperity - 3);
+        this.economyState.villagers = this.economyState.villagers.filter((candidate) => candidate.id !== context.villagerId);
+        if (state) { state.prosperity = Math.max(0, state.prosperity - 8); state.population = Math.max(20, state.population - 6); }
       }
     }
 
@@ -1352,6 +1695,7 @@ export class GameSession {
         this.pendingVictoryReward = null;
         this.startArchetypeBattle(enemiesById.get(nextEnemyId)!);
         this.advanceTime(45);
+        if (createsStandaloneBattleSite) this.world.recordBattleSite(battleSite.x, battleSite.y);
         this.notify();
         return claimedReward;
       }
@@ -1386,6 +1730,7 @@ export class GameSession {
     this.pendingVictoryReward = null;
     this.villageBattleContext = null;
     this.advanceTime(45);
+    if (createsStandaloneBattleSite) this.world.recordBattleSite(battleSite.x, battleSite.y);
     this.notify();
     return claimedReward;
   }
@@ -1423,14 +1768,14 @@ export class GameSession {
     if (stack.quantity <= 0) {
       this.prisoners = this.prisoners.filter((prisoner) => prisoner.quantity > 0);
     }
-    this.warband.push(createCardInstance(cardId));
+    this.addUnitToWarband(createCardInstance(cardId));
     this.advanceTime(30);
     this.notify();
     return "success";
   }
 
   sellPrisoner(cardId: string): RosterActionResult {
-    if (this.world.nearbyLocation?.type !== "city") return "notInCity";
+    if (!this.isInCity) return "notInCity";
     const stack = this.prisoners.find((prisoner) => prisoner.cardId === cardId);
     if (!stack || stack.quantity <= 0) return "invalid";
     const definition = getCardDefinition(cardId);
@@ -1444,27 +1789,99 @@ export class GameSession {
     return "success";
   }
 
+  setMetaProgression(meta: MetaProgressionState | null, savedWarbandCardIds: string[] = []): void {
+    this.metaProgression = normalizeMetaProgression(meta);
+    this.markUnitOwned(this.hero.cardId);
+    for (const card of this.warband) this.markUnitOwned(card.cardId);
+    for (const cardId of savedWarbandCardIds) this.markUnitOwned(cardId);
+    this.notify();
+  }
+
+  buySoulUpgrade(id: MetaUpgradeId): boolean {
+    const bought = buyMetaUpgrade(this.metaProgression, id);
+    if (bought) this.notify();
+    return bought;
+  }
+
+  sacrificePrisoner(cardId: string, quantity = 1): number {
+    if (this.world.nearbyLocation?.type !== "soulTemple") return 0;
+    const stack = this.prisoners.find((entry) => entry.cardId === cardId);
+    const amount = Math.min(Math.max(1, Math.floor(quantity)), stack?.quantity ?? 0);
+    if (!stack || amount <= 0) return 0;
+    const souls = Math.ceil(soulValueForTier(getCardDefinition(cardId).tier) * amount * (1 + metaRank(this.metaProgression, "soulHarvest") * 0.1));
+    stack.quantity -= amount;
+    this.prisoners = this.prisoners.filter((entry) => entry.quantity > 0);
+    this.metaProgression.souls += souls;
+    this.soulsGatheredThisRun += souls;
+    if (getCardDefinition(cardId).race === "human") this.humanSoulsOfferedThisRun += amount;
+    if (this.humanSoulsOfferedThisRun >= 3 && !this.soulQuestCompleted) { this.soulQuestCompleted = true; this.gold += 100; }
+    this.metaProgression.storyStage = Math.max(1, this.metaProgression.storyStage);
+    this.notify(); return souls;
+  }
+
+  get soulAltarOffers(): string[] {
+    if (this.world.nearbyLocation?.type !== "soulTemple") return [];
+    const week = Math.floor((getGameDay(this.timeState) - 1) / 7) + 1;
+    const candidates = recruitableCards.filter((card) => !card.id.startsWith("player_") && isAltarRaceUnlocked(this.metaProgression, card.race));
+    return [...candidates].sort((a, b) => altarHash(`${this.worldSeed}:${week}:${a.id}`) - altarHash(`${this.worldSeed}:${week}:${b.id}`)).slice(0, 3).map((card) => card.id);
+  }
+
+  soulAltarCost(cardId: string): number { return Math.max(2, Math.ceil(getRecruitmentCost(getCardDefinition(cardId)) / 10 * 1.25)); }
+
+  recruitFromSoulAltar(cardId: string): RosterActionResult {
+    if (!this.soulAltarOffers.includes(cardId)) return "notAvailable";
+    const week = Math.floor((this.gameDay - 1) / 7) + 1;
+    if (this.warband.some((card) => card.uid === `altar:${week}:${cardId}`)) return "notAvailable";
+    if (this.warband.length >= this.warbandCapacity) return "capacityFull";
+    const cost = this.soulAltarCost(cardId); if (this.metaProgression.souls < cost) return "notEnoughSouls";
+    this.metaProgression.souls -= cost; const card = createCardInstance(cardId); card.uid = `altar:${week}:${cardId}`; this.addUnitToWarband(card); this.notify(); return "success";
+  }
+
   private addPrisoner(cardId: string, quantity: number): void {
+    this.markUnitSeen(cardId);
     const existing = this.prisoners.find((prisoner) => prisoner.cardId === cardId);
     if (existing) existing.quantity += quantity;
     else this.prisoners.push({ cardId, quantity });
   }
 
+  private addUnitToWarband(card: CardInstance): void {
+    this.warband.push(card);
+    this.markUnitOwned(card.cardId);
+  }
+
+  private markUnitSeen(cardId: string): void {
+    if (!this.metaProgression.seenUnitIds.includes(cardId)) this.metaProgression.seenUnitIds.push(cardId);
+  }
+
+  private markUnitOwned(cardId: string): void {
+    this.markUnitSeen(cardId);
+    if (!this.metaProgression.ownedUnitIds.includes(cardId)) this.metaProgression.ownedUnitIds.push(cardId);
+  }
+
+  private registerBattleUnits(battle: BattleSimulation): void {
+    this.markUnitOwned(battle.hero.cardId);
+    for (const card of battle.playerDeck) this.markUnitOwned(card.cardId);
+    this.markUnitSeen(battle.enemyLeader.cardId);
+    for (const card of [...battle.enemyHand, ...battle.enemyField, ...battle.enemyDrawPile]) this.markUnitSeen(card.cardId);
+  }
+
   get healCost(): number {
-    const missingHp = this.allUnits.reduce((sum, card) => {
-      return sum + Math.max(0, getCardDefinition(card.cardId).maxHp - card.currentHp);
-    }, 0);
+    const missingHeroHp = Math.max(0, this.heroMaxHp - this.hero.currentHp);
+    const missingTroopHp = this.warband.reduce(
+      (sum, card) => sum + Math.max(0, getCardDefinition(card.cardId).maxHp - card.currentHp),
+      0,
+    );
+    const missingHp = missingHeroHp + missingTroopHp;
     return Math.ceil(missingHp / 100) * 2;
   }
 
   healDeck(): boolean {
-    if (this.world.nearbyLocation?.type !== "city") return false;
+    if (!this.isInCity) return false;
     const cost = this.healCost;
     if (cost <= 0 || cost > this.gold) return false;
     this.gold -= cost;
-    for (const card of this.allUnits) {
-      card.currentHp = getCardDefinition(card.cardId).maxHp;
-    }
+    this.hero.currentHp = this.heroMaxHp;
+    for (const card of this.warband) card.currentHp = getCardDefinition(card.cardId).maxHp;
     this.advanceTime(120);
     this.notify();
     return true;
@@ -1487,12 +1904,20 @@ export class GameSession {
         warbands: this.world.state.warbands,
         warbandBattles: this.world.state.warbandBattles,
         monsterRaids: this.world.state.monsterRaids,
+        battleSites: this.world.state.battleSites,
+        chronicle: this.world.state.chronicle,
+        enemies: this.world.state.enemies,
+        dungeonSites: this.world.state.dungeonSites,
       },
       gold: this.gold,
       hero: this.hero,
       warband: this.warband,
       reserve: [],
       prisoners: this.prisoners,
+      soulsGatheredThisRun: this.soulsGatheredThisRun,
+      villagersAttackedThisRun: this.villagersAttackedThisRun,
+      humanSoulsOfferedThisRun: this.humanSoulsOfferedThisRun,
+      soulQuestCompleted: this.soulQuestCompleted,
       leadershipLevel: this.leadershipLevel,
       characterState: this.characterState,
       runProfile: this.runProfile,
@@ -1525,7 +1950,48 @@ export class GameSession {
   }
 
   private createWorld(seed: number): WorldSimulation {
-    return new WorldSimulation(generateWorldMap(seed, contentPack.enemies));
+    return new WorldSimulation(generateWorldMap(seed, contentPack.enemies, contentPack.nobles));
+  }
+
+  private assignLordsToHoldings(): void {
+    for (const city of Object.values(this.cityStates)) city.lordId = null;
+    for (const village of Object.values(this.villageStates)) village.lordId = null;
+    for (const lord of this.world.state.warbands.filter((warband) => warband.type === "lord")) {
+      if (lord.homeLocationId && this.cityStates[lord.homeLocationId]) {
+        this.cityStates[lord.homeLocationId].lordId = lord.id;
+      }
+      if (lord.homeLocationId && this.villageStates[lord.homeLocationId]) {
+        this.villageStates[lord.homeLocationId].lordId = lord.id;
+      }
+    }
+    for (const city of Object.values(this.cityStates)) {
+      if (city.lordId) continue;
+      const location = this.world.map.locations.find((candidate) => candidate.id === city.locationId);
+      const factionId = this.factionState.locationFactions[city.locationId];
+      if (!location || !factionId) continue;
+      const higherNobles = this.world.state.warbands.filter(
+        (warband) => warband.type === "lord" && warband.factionId === factionId && warband.nobleRank !== "count",
+      );
+      city.lordId = higherNobles.sort((left, right) =>
+        Math.hypot(left.spawnX - location.x, left.spawnY - location.y) - Math.hypot(right.spawnX - location.x, right.spawnY - location.y),
+      )[0]?.id ?? null;
+    }
+    for (const village of Object.values(this.villageStates)) {
+      if (village.lordId) continue;
+      const location = this.world.map.locations.find((candidate) => candidate.id === village.locationId);
+      const factionId = this.factionState.locationFactions[village.locationId];
+      if (!location || !factionId) continue;
+      const counts = this.world.state.warbands.filter(
+        (warband) => warband.type === "lord" && warband.factionId === factionId && warband.nobleRank === "count",
+      );
+      const nearest = counts.sort((left, right) =>
+        Math.hypot(left.spawnX - location.x, left.spawnY - location.y) - Math.hypot(right.spawnX - location.x, right.spawnY - location.y),
+      )[0];
+      const fallback = this.world.state.warbands.find(
+        (warband) => warband.type === "lord" && warband.factionId === factionId,
+      );
+      village.lordId = nearest?.id ?? fallback?.id ?? null;
+    }
   }
 
   moveWorld(
@@ -1541,10 +2007,46 @@ export class GameSession {
       effectiveSpeed,
     );
     if (distance <= 0) return null;
-    this.world.revealAround(this.visibilityRadius);
+    this.distanceSinceWorldReveal += distance;
+    if (this.distanceSinceWorldReveal >= 36) {
+      this.world.revealAround(this.visibilityRadius);
+      this.distanceSinceWorldReveal = 0;
+    }
     const travelMinutes = (distance / effectiveSpeed) * 60;
     this.applyTerrainTravelFoodCost(travelMinutes);
-    return this.advanceTime(travelMinutes);
+    this.pendingWorldMinutes += travelMinutes;
+    if (this.pendingWorldMinutes < 6) return null;
+    const simulationMinutes = this.pendingWorldMinutes;
+    this.pendingWorldMinutes = 0;
+    return this.advanceTime(simulationMinutes);
+  }
+
+  get isWaiting(): boolean {
+    return this.waiting;
+  }
+
+  waitWorld(deltaSeconds: number): string | null {
+    if (this.mode !== "world" || this.uiBlocked || deltaSeconds <= 0) return null;
+    if (!this.waiting) {
+      this.waiting = true;
+      this.notify();
+    }
+    this.pendingWorldMinutes += deltaSeconds * 12;
+    if (this.pendingWorldMinutes < 6) return null;
+    const simulationMinutes = this.pendingWorldMinutes;
+    this.pendingWorldMinutes = 0;
+    return this.advanceTime(simulationMinutes);
+  }
+
+  stopWaiting(): void {
+    if (!this.waiting) return;
+    this.waiting = false;
+    if (this.pendingWorldMinutes > 0) {
+      const remainingMinutes = this.pendingWorldMinutes;
+      this.pendingWorldMinutes = 0;
+      this.advanceTime(remainingMinutes);
+    }
+    this.notify();
   }
 
   setWaypoint(x: number, y: number, labelKey?: string): void {
@@ -1772,6 +2274,10 @@ export class GameSession {
   }
 
   advanceTime(minutes: number): string | null {
+    if (this.pendingWorldMinutes > 0) {
+      minutes += this.pendingWorldMinutes;
+      this.pendingWorldMinutes = 0;
+    }
     if (minutes <= 0) {
       this.updateEconomy(0);
       return null;
@@ -1793,16 +2299,30 @@ export class GameSession {
       this.warbandThreatRating,
       [...this.economyState.caravans, ...this.economyState.villagers],
     );
-    this.world.updateWarbands(deltaHours, this.factionState);
+    const prosperityByLocationId: Record<string, number> = {};
+    for (const [locationId, state] of Object.entries(this.cityStates)) prosperityByLocationId[locationId] = state.prosperity;
+    for (const [locationId, state] of Object.entries(this.villageStates)) prosperityByLocationId[locationId] = state.prosperity;
+    const collidedWarbandId = this.world.updateWarbands(deltaHours, this.factionState, {
+      prosperityByLocationId,
+      blockedLocationIds: Object.values(this.villageStates)
+        .filter((state) => state.condition === "looted")
+        .map((state) => state.locationId),
+    });
     this.updateEconomy(deltaHours);
     if (collidedEnemyId && this.mode === "world") {
       this.beginBattle(collidedEnemyId);
+    } else if (collidedWarbandId && this.mode === "world") {
+      this.beginDirectWarbandBattle(collidedWarbandId);
     }
     return collidedEnemyId;
   }
 
   private processDailyUpkeep(day: number): void {
     this.processVillageWorldState(day);
+    this.processNpcLordEconomies(day);
+    for (const factionId of Object.keys(this.factionState.wanted) as FactionId[]) {
+      this.factionState.wanted[factionId] = Math.max(0, this.factionState.wanted[factionId] - 2);
+    }
     const wagesDue = day % 7 === 1 ? this.weeklyWageCost : 0;
     const wagesPaid = Math.min(this.gold, wagesDue);
     this.gold -= wagesPaid;
@@ -1834,6 +2354,37 @@ export class GameSession {
     };
   }
 
+  private processNpcLordEconomies(day: number): void {
+    for (const lord of this.world.state.warbands.filter((warband) => warband.type === "lord")) {
+      if (lord.state === "destroyed") continue;
+      const domain = this.getLordDomain(lord.id);
+      const baseIncome = domain.reduce((sum, holding) => {
+        if (holding.type === "city") return sum + Math.max(2, Math.floor((this.cityStates[holding.id]?.prosperity ?? 20) / 12));
+        if (holding.type === "village") return sum + Math.max(1, Math.floor((this.villageStates[holding.id]?.prosperity ?? 20) / 28));
+        return sum + 1;
+      }, 0);
+      const rankMultiplier = lord.nobleRank === "king" ? 1.25 : lord.nobleRank === "baron" ? 1.1 : 1;
+      const dailyIncome = Math.max(1, Math.floor(baseIncome * rankMultiplier));
+      lord.gold += dailyIncome;
+      lord.rations += Math.max(1, Math.ceil(domain.filter((holding) => holding.type === "village").length / 2));
+      if (day % 7 !== 1) continue;
+      const wages = getWeeklyRosterWage(lord.roster);
+      if (lord.gold >= wages) {
+        lord.gold -= wages;
+        continue;
+      }
+      lord.gold = 0;
+      if (lord.roster.length > 4) {
+        const deserter = [...lord.roster].sort((left, right) =>
+          getCardDefinition(left.cardId).tier - getCardDefinition(right.cardId).tier || left.xp - right.xp,
+        )[0];
+        lord.roster = lord.roster.filter((unit) => unit.uid !== deserter.uid);
+        lord.unitIds = lord.roster.map((unit) => unit.cardId);
+        this.world.recordChronicle(`${lord.displayName ?? lord.nameKey} lost soldiers after failing to pay wages.`, [lord.factionId]);
+      }
+    }
+  }
+
   private processVillageWorldState(day: number): void {
     for (const state of Object.values(this.villageStates)) {
       if (state.condition === "looted" && state.recoveryDay && day >= state.recoveryDay) { state.condition = "recovering"; state.recoveryDay = day + 5; }
@@ -1849,6 +2400,10 @@ export class GameSession {
       if (!(banditNearby || hostileLordNearby) || hashValue(`${this.worldSeed}:${state.locationId}:${day}:raid`) % 100 >= 35) continue;
       state.condition = "looted"; state.recoveryDay = day + 6; state.population = Math.max(20, Math.floor(state.population * 0.94)); state.prosperity = Math.max(0, state.prosperity - (hostileLordNearby ? 16 : 11)); state.militia = Math.max(0, state.militia - (hostileLordNearby ? 12 : 7));
       for (const stock of this.economyState.markets[state.locationId] ?? []) stock.quantity = Math.floor(stock.quantity * 0.45);
+      this.world.recordChronicle(
+        `${location.nameKey} was plundered and can no longer provide recruits.`,
+        villageFaction ? [villageFaction] : [],
+      );
     }
   }
 
@@ -1907,6 +2462,8 @@ export class GameSession {
       inventoryQuantity(stock, itemId),
     );
     const reputationBonus = Math.max(0, this.currentFactionReputation) * 0.003;
+    const reputationPenalty = Math.max(0, -this.currentFactionReputation) * 0.004;
+    const localPenalty = Math.max(0, -this.currentLocalRelation) * 0.003;
     const tradeBonus = this.characterState.skills.trade * 0.025;
     const stack = this.inventory.find((entry) => entry.itemId === itemId);
     const foodUnits = itemsById.get(itemId)?.foodUnits;
@@ -1918,7 +2475,7 @@ export class GameSession {
       1,
       Math.floor(
         basePrice *
-          (1 + Math.min(0.15, reputationBonus) + tradeBonus) *
+          (1 + Math.min(0.15, reputationBonus) + tradeBonus + metaRank(this.metaProgression, "merchantFavor") * 0.02 - Math.min(0.3, reputationPenalty + localPenalty)) *
           fillRatio,
       ),
     );
@@ -1930,12 +2487,14 @@ export class GameSession {
     );
     if (!offer) return 0;
     const reputationDiscount = Math.max(0, this.currentFactionReputation) * 0.004;
+    const reputationSurcharge = Math.max(0, -this.currentFactionReputation) * 0.005;
+    const localSurcharge = Math.max(0, -this.currentLocalRelation) * 0.004;
     const tradeDiscount = this.characterState.skills.trade * 0.025;
     return Math.max(
       1,
       Math.ceil(
         offer.buyPrice *
-          (1 - Math.min(0.2, reputationDiscount) - Math.min(0.15, tradeDiscount)),
+          (1 - Math.min(0.2, reputationDiscount) - Math.min(0.15, tradeDiscount) - metaRank(this.metaProgression, "merchantFavor") * 0.02 + Math.min(0.4, reputationSurcharge + localSurcharge)),
       ),
     );
   }
@@ -2090,17 +2649,18 @@ export class GameSession {
     return candidates[hashValue(`${this.worldSeed}:${location.id}:${threatOffset}`) % candidates.length];
   }
 
-  private startArchetypeBattle(archetype: EnemyArchetype): void {
+  private startArchetypeBattle(archetype: EnemyArchetype, enemyDeck?: CardInstance[]): void {
     this.pendingVictoryReward = null;
     this.battle = new BattleSimulation(
       this.warband,
       archetype,
       this.hero,
-      { ...this.heroCombatBonuses, heroMaxHp: this.heroMaxHp, fieldSlots: this.battleFieldSlots },
+      this.battleCombatBonuses,
       getTerrainBattleModifiers(this.currentTerrain),
-      undefined,
-      { playerLevel: this.characterState.level, warbandThreat: this.warbandThreatRating },
+      enemyDeck,
+      this.enemyScalingContext,
     );
+    this.registerBattleUnits(this.battle);
     this.mode = "battle";
     this.notify();
   }
@@ -2123,11 +2683,20 @@ export class GameSession {
 
   private applyWorldMapHealing(minutes: number): void {
     if (minutes <= 0) return;
+    const woundedUnits = this.allUnits.filter((card) => {
+      if (card.currentHp <= 0) return false;
+      return card.currentHp < getCardDefinition(card.cardId).maxHp;
+    });
+    if (woundedUnits.length === 0) {
+      this.worldHealingProgress = 0;
+      return;
+    }
     const rank = this.characterState.skills.woundTreatment;
-    const healing = Math.floor((minutes / 60) * (4 + rank * 8));
+    this.worldHealingProgress += (minutes / 60) * (4 + rank * 8) * (1 + metaRank(this.metaProgression, "soulRecovery") * 0.1);
+    const healing = Math.floor(this.worldHealingProgress);
     if (healing <= 0) return;
-    for (const card of this.allUnits) {
-      if (card.currentHp <= 0) continue;
+    this.worldHealingProgress -= healing;
+    for (const card of woundedUnits) {
       const maxHp = getCardDefinition(card.cardId).maxHp;
       card.currentHp = Math.min(maxHp, card.currentHp + healing);
     }
@@ -2176,7 +2745,16 @@ function normalizePrisoners(prisoners: PrisonerStack[] | undefined): PrisonerSta
     }));
 }
 
+function altarHash(value: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) { hash ^= value.charCodeAt(index); hash = Math.imul(hash, 16777619); }
+  return hash >>> 0;
+}
+
 function createWarbandBattleDeck(warband: WorldWarbandState): CardInstance[] {
+  if (warband.roster?.length) {
+    return warband.roster.map((unit) => structuredClone(unit));
+  }
   const cards = [
     ...(warband.leaderCardId
       ? [
@@ -2189,11 +2767,7 @@ function createWarbandBattleDeck(warband: WorldWarbandState): CardInstance[] {
       : []),
     ...warband.unitIds.map((cardId) => createCardInstance(cardId)),
   ];
-  return cards.map((card) => {
-    const definition = getCardDefinition(card.cardId);
-    card.currentHp = definition.maxHp;
-    return card;
-  });
+  return cards;
 }
 
 export function getPrisonerRecruitGoldCost(tier: number): number {

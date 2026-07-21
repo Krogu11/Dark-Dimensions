@@ -29,18 +29,24 @@ export interface BattleUnitStats {
   damageDealt: number;
   hpLost: number;
   destroyed: boolean;
+  wounded: boolean;
 }
 
 export interface CombatBonuses {
   heroAtk: number;
   heroDef: number;
+  heroInitiative?: number;
   heroMaxHp?: number;
   fieldSlots?: number;
+  woundSurvivalChance?: number;
 }
 
 export interface EnemyScalingContext {
   playerLevel: number;
   warbandThreat: number;
+  rewardGoldMultiplier?: number;
+  itemChanceBonus?: number;
+  captureChanceBonus?: number;
 }
 
 const DEFAULT_TERRAIN_MODIFIERS: TerrainBattleModifiers = {
@@ -86,6 +92,9 @@ export class BattleSimulation {
   readonly animationEvents: BattleAnimationEvent[] = [];
   readonly unitStats = new Map<string, BattleUnitStats>();
   readonly defeatedEnemyCardIds: string[] = [];
+  private readonly rewardGoldMultiplier: number;
+  private readonly itemChanceBonus: number;
+  private readonly captureChanceBonus: number;
   private readonly defeatedEnemyUids = new Set<string>();
   private readonly attackBonuses = new Map<string, number>();
   private readonly defenseBonuses = new Map<string, number>();
@@ -106,6 +115,9 @@ export class BattleSimulation {
     enemyDeckOverride?: CardInstance[],
     enemyScaling: EnemyScalingContext = { playerLevel: 1, warbandThreat: 1 },
   ) {
+    this.rewardGoldMultiplier = enemyScaling.rewardGoldMultiplier ?? 1;
+    this.itemChanceBonus = enemyScaling.itemChanceBonus ?? 0;
+    this.captureChanceBonus = enemyScaling.captureChanceBonus ?? 0;
     this.playerFieldSlots = Math.max(3, Math.min(7, combatBonuses.fieldSlots ?? 3));
     this.enemyFieldSlots = Math.max(2, Math.min(7, 2 + enemy.threat));
     this.drawPile = shuffleCards(playerDeck.filter((card) => card.currentHp > 0));
@@ -212,7 +224,7 @@ export class BattleSimulation {
   }
 
   getInitiative(card: CardInstance): number {
-    return getCardDefinition(card.cardId).initiative + Math.floor((card.level - 1) / 2);
+    return getCardDefinition(card.cardId).initiative + Math.floor((card.level - 1) / 2) + (card === this.hero ? this.combatBonuses.heroInitiative ?? 0 : 0);
   }
 
   resolveRound(): void {
@@ -264,10 +276,10 @@ export class BattleSimulation {
   rollReward(): BattleReward {
     const rules = contentPack.combatRules.rewards;
     const defeatedCount = this.defeatedEnemyCardIds.length;
-    const gold = Math.max(
+    const gold = Math.round(Math.max(
       this.enemy.goldReward,
       rules.baseGold + this.enemy.threat * rules.goldPerThreat + defeatedCount * rules.goldPerDefeatedUnit,
-    );
+    ) * this.rewardGoldMultiplier);
     const captures = this.rollCapturedUnits(rules);
     const items = this.rollLootItems(rules);
     return { gold, cardId: captures[0] ?? null, capturedCardIds: captures, items };
@@ -280,7 +292,7 @@ export class BattleSimulation {
     for (const cardId of candidates) {
       if (captures.length >= rules.maximumCaptures) break;
       const tier = getCardDefinition(cardId).tier;
-      const chance = Math.max(0.05, Math.min(rules.captureChanceCap, rules.captureBaseChance + groupBonus - Math.max(0, tier - 1) * rules.captureTierPenalty));
+      const chance = Math.max(0.05, Math.min(rules.captureChanceCap, rules.captureBaseChance + this.captureChanceBonus + groupBonus - Math.max(0, tier - 1) * rules.captureTierPenalty));
       if (Math.random() <= chance) captures.push(cardId);
     }
     if (!captures.length && candidates.length >= rules.guaranteedCaptureAfterDefeatedUnits) captures.push(candidates[0]);
@@ -289,7 +301,7 @@ export class BattleSimulation {
 
   private rollLootItems(rules: typeof contentPack.combatRules.rewards): Array<{ itemId: string; quantity: number }> {
     const rolled = this.enemy.itemDropTable
-      .filter((entry) => Math.random() <= Math.min(0.95, entry.chance * rules.itemChanceMultiplier + rules.itemChanceBonus))
+      .filter((entry) => Math.random() <= Math.min(0.95, entry.chance * rules.itemChanceMultiplier + rules.itemChanceBonus + this.itemChanceBonus))
       .map((entry) => ({ itemId: entry.itemId, quantity: entry.minimum + Math.floor(Math.random() * (entry.maximum - entry.minimum + 1)) }));
     while (rolled.length < rules.minimumItemRolls && this.enemy.itemDropTable.length) {
       const fallback = this.enemy.itemDropTable[Math.floor(Math.random() * this.enemy.itemDropTable.length)];
@@ -475,7 +487,11 @@ export class BattleSimulation {
 
   private collectDestroyedEvents(): void {
     for (const [side, cards] of [["player", this.playerField], ["enemy", this.enemyField]] as const) for (const card of cards) if (card.currentHp <= 0) {
-      this.animationEvents.push({ type: "destroyed", side, cardUid: card.uid, cardId: card.cardId }); this.ensureUnitStats(card).destroyed = true;
+      const stats = this.ensureUnitStats(card);
+      if (stats.destroyed) continue;
+      this.animationEvents.push({ type: "destroyed", side, cardUid: card.uid, cardId: card.cardId });
+      stats.destroyed = true;
+      stats.wounded = side === "player" && !card.isHero && Math.random() < (this.combatBonuses.woundSurvivalChance ?? 0);
       if (side === "enemy" && !this.defeatedEnemyUids.has(card.uid)) {
         this.defeatedEnemyUids.add(card.uid);
         this.defeatedEnemyCardIds.push(card.cardId);
@@ -488,7 +504,7 @@ export class BattleSimulation {
   private drawNaturalCard(animate = true): void { if (this.hand.length >= HAND_LIMIT) return; const card = this.drawPile.shift(); if (!card) return; this.hand.push(card); if (animate) this.animationEvents.push({ type: "draw", side: "player", cardUid: card.uid, cardId: card.cardId }); }
   private drawEnemyNaturalCard(animate = true): void { if (this.enemyHand.length >= HAND_LIMIT) return; const card = this.enemyDrawPile.shift(); if (!card) return; this.enemyHand.push(card); if (animate) this.animationEvents.push({ type: "draw", side: "enemy", cardUid: card.uid, cardId: card.cardId }); }
 
-  private ensureUnitStats(card: CardInstance): BattleUnitStats { const found = this.unitStats.get(card.uid); if (found) return found; const stats = { damageDealt: 0, hpLost: 0, destroyed: false }; this.unitStats.set(card.uid, stats); return stats; }
+  private ensureUnitStats(card: CardInstance): BattleUnitStats { const found = this.unitStats.get(card.uid); if (found) return found; const stats = { damageDealt: 0, hpLost: 0, destroyed: false, wounded: false }; this.unitStats.set(card.uid, stats); return stats; }
   private getLeader(side: BattleSide): CardInstance { return side === "player" ? this.hero : this.enemyLeader; }
   private isEnemyCard(card: CardInstance): boolean { return card === this.enemyLeader || this.enemyField.includes(card) || this.enemyHand.includes(card) || this.enemyDrawPile.includes(card); }
   private isCombatantActive(card: CardInstance): boolean { return card === this.hero || card === this.enemyLeader || this.playerField.includes(card) || this.enemyField.includes(card); }

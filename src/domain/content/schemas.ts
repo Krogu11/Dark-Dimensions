@@ -7,6 +7,7 @@ export const locationTypeSchema = z.enum([
   "dungeon",
   "landmark",
   "wilds",
+  "soulTemple",
 ]);
 
 export const mapLocationSchema = z.object({
@@ -76,6 +77,17 @@ export const warbandStateSchema = z.enum([
   "destroyed",
 ]);
 
+export const nobleRankSchema = z.enum(["king", "baron", "count"]);
+
+export const nobleProfileSchema = z.object({
+  id: z.string().min(1),
+  factionId: z.enum(["ember_crown", "gloam_compact", "iron_concord"]),
+  rank: nobleRankSchema,
+  displayName: z.string().min(1),
+  leaderCardId: z.string().min(1),
+  leaderLevel: z.number().int().positive().default(1),
+});
+
 export const warbandTemplateSchema = z.object({
   id: z.string().min(1),
   nameKey: z.string().min(1),
@@ -92,6 +104,7 @@ export const warbandTemplateSchema = z.object({
   leaderLevel: z.number().int().positive().optional(),
   equipmentItemIds: z.array(z.string().min(1)).default([]),
   lootItemIds: z.array(z.string().min(1)).default([]),
+  bountyHunter: z.boolean().default(false),
 });
 
 export const warbandSpawnSchema = z.object({
@@ -110,6 +123,11 @@ export const warbandSpawnSchema = z.object({
     .optional(),
   allowedRadius: z.number().positive().optional(),
   spawnChance: z.number().min(0).max(1).default(1),
+  nobleRank: nobleRankSchema.optional(),
+  nobleProfileId: z.string().min(1).optional(),
+  displayName: z.string().min(1).optional(),
+  leaderCardId: z.string().min(1).optional(),
+  leaderLevel: z.number().int().positive().optional(),
 });
 
 export const terrainZoneTypeSchema = z.enum([
@@ -358,6 +376,7 @@ export const contentPackSchema = z.object({
   tradeRecipes: z.array(tradeRecipeSchema),
   unitUpgrades: z.array(unitUpgradeSchema),
   enemies: z.array(enemyArchetypeSchema),
+  nobles: z.array(nobleProfileSchema).default([]),
 });
 
 export type ContentPack = z.infer<typeof contentPackSchema>;
@@ -372,6 +391,8 @@ export type WarbandTemplate = z.infer<typeof warbandTemplateSchema>;
 export type WarbandSpawn = z.infer<typeof warbandSpawnSchema>;
 export type WarbandType = z.infer<typeof warbandTypeSchema>;
 export type WarbandState = z.infer<typeof warbandStateSchema>;
+export type NobleRank = z.infer<typeof nobleRankSchema>;
+export type NobleProfile = z.infer<typeof nobleProfileSchema>;
 export type TerrainZoneType = z.infer<typeof terrainZoneTypeSchema>;
 export type TerrainZone = z.infer<typeof terrainZoneSchema>;
 export type TerrainCell = z.infer<typeof terrainCellSchema>;

@@ -105,4 +105,16 @@ describe("unit upgrade trees", () => {
     expect(itemIds.has("darkwood")).toBe(false);
     expect(itemIds.has("moon_herbs")).toBe(false);
   });
+
+  it("provides one portrayed king and editable noble leaders for every faction", () => {
+    for (const factionId of ["ember_crown", "gloam_compact", "iron_concord"] as const) {
+      const nobles = contentPack.nobles.filter((noble) => noble.factionId === factionId);
+      expect(nobles.filter((noble) => noble.rank === "king")).toHaveLength(1);
+      expect(nobles.some((noble) => noble.rank === "baron")).toBe(true);
+      expect(nobles.some((noble) => noble.rank === "count")).toBe(true);
+      for (const noble of nobles) {
+        expect(cardsById.get(noble.leaderCardId)?.portraitImage).toBeTruthy();
+      }
+    }
+  });
 });

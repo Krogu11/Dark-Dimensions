@@ -9,8 +9,12 @@ import {
   type FactionId,
 } from "../../domain/quests/Factions";
 import { isPositionNearPath } from "../../domain/world/WorldTerrain";
-import { estimateWarbandStrength } from "../../domain/world/WorldWarbands";
+import { estimateWarbandStrength, getLordPersonalityLabel, getNobleRankLabel, getNpcActivityLabel } from "../../domain/world/WorldWarbands";
 import i18n from "../../localization/i18n";
+import {
+  WORLD_CAMERA_FOCUS_EVENT,
+  type WorldCameraFocusDetail,
+} from "../WorldCameraEvents";
 import { consumeWorldZoom, requestWorldZoom } from "../input/WorldInput";
 
 const LOCATION_COLORS = {
@@ -20,6 +24,7 @@ const LOCATION_COLORS = {
   dungeon: 0x9f4a4a,
   landmark: 0x9c83b8,
   wilds: 0x66845b,
+  soulTemple: 0x7ee7e2,
 } as const;
 
 const LOCATION_TEXTURES = {
@@ -33,6 +38,7 @@ const LOCATION_TEXTURES = {
   elemental: "location-ash-rift",
   machine: "location-rusted-vault",
   outlaw: "location-outlaw-hideout",
+  soulTemple: "location-soul-temple",
 } as const;
 
 const LOCATION_ASSETS = {
@@ -46,6 +52,7 @@ const LOCATION_ASSETS = {
   elemental: "/assets/world/locations/ash-rift-map.png",
   machine: "/assets/world/locations/rusted-vault-map.png",
   outlaw: "/assets/world/locations/outlaw-hideout-map.png",
+  soulTemple: "/assets/world/locations/soul-temple-map.png",
 } as const;
 
 type LocationTextureKey = keyof typeof LOCATION_TEXTURES;
@@ -105,6 +112,18 @@ const LOCATION_SPRITE_CONFIG = {
     hitWidth: 172,
     hitHeight: 170,
   },
+  soulTemple: {
+    texture: LOCATION_TEXTURES.soulTemple,
+    width: 190,
+    height: 190,
+    y: 3,
+    originY: 0.58,
+    glowRadius: 82,
+    labelY: -102,
+    factionY: 92,
+    hitWidth: 218,
+    hitHeight: 214,
+  },
 } as const;
 
 const DUNGEON_SPRITE_CONFIG = {
@@ -147,9 +166,42 @@ const TERRAIN_COLORS = {
 
 const WORLD_BASESET_TEXTURE = "world-baseset";
 const WORLD_BASESET_ASSET = "/assets/world/environment/base-set.png";
-const TERRAIN_DECOR_REVISION = 2;
+const TERRAIN_DECOR_REVISION = 4;
 const TERRAIN_CHUNK_SIZE = 1200;
 const TERRAIN_CHUNK_VISIBILITY_MARGIN = 700;
+
+const VEGETATION_ASSETS = {
+  forestOak: "/assets/world/vegetation/forest-oak-cluster.svg",
+  forestPines: "/assets/world/vegetation/forest-pine-group.svg",
+  forestDeadTree: "/assets/world/vegetation/forest-dead-tree.svg",
+  plainsGrass: "/assets/world/vegetation/plains-grass.svg",
+  plainsShrub: "/assets/world/vegetation/plains-shrub.svg",
+  plainsStones: "/assets/world/vegetation/plains-standing-stones.svg",
+  mountainCrag: "/assets/world/vegetation/mountain-crag.svg",
+  mountainRidge: "/assets/world/vegetation/mountain-ridge.svg",
+  mountainBoulders: "/assets/world/vegetation/mountain-boulders.svg",
+} as const;
+
+type VegetationTextureKey = keyof typeof VEGETATION_ASSETS;
+
+interface VegetationSprite {
+  texture: VegetationTextureKey;
+  width: number;
+  height: number;
+  scale?: number;
+}
+
+const VEGETATION_SPRITES = {
+  forestOak: { texture: "forestOak", width: 128, height: 112, scale: .58 },
+  forestPines: { texture: "forestPines", width: 128, height: 118, scale: .58 },
+  forestDeadTree: { texture: "forestDeadTree", width: 96, height: 118, scale: .5 },
+  plainsGrass: { texture: "plainsGrass", width: 96, height: 64, scale: .42 },
+  plainsShrub: { texture: "plainsShrub", width: 112, height: 76, scale: .38 },
+  plainsStones: { texture: "plainsStones", width: 112, height: 92, scale: .4 },
+  mountainCrag: { texture: "mountainCrag", width: 144, height: 116, scale: .64 },
+  mountainRidge: { texture: "mountainRidge", width: 160, height: 96, scale: .58 },
+  mountainBoulders: { texture: "mountainBoulders", width: 112, height: 72, scale: .5 },
+} satisfies Record<string, VegetationSprite>;
 
 interface WorldDecorFrame {
   x: number;
@@ -179,6 +231,7 @@ interface TerrainChunk {
   y: number;
   size: number;
   textureKey: string;
+  cells: TerrainCell[];
   image?: Phaser.GameObjects.Image;
 }
 
@@ -189,6 +242,7 @@ export class WorldScene extends Phaser.Scene {
   private enemyMarkers = new Map<string, Phaser.GameObjects.Container>();
   private warbandMarkers = new Map<string, Phaser.GameObjects.Container>();
   private warbandBattleMarkers = new Map<string, Phaser.GameObjects.Container>();
+  private battleSiteMarkers = new Map<string, Phaser.GameObjects.Container>();
   private caravanMarkers = new Map<string, Phaser.GameObjects.Container>();
   private villagerMarkers = new Map<string, Phaser.GameObjects.Container>();
   private terrainChunks: TerrainChunk[] = [];
@@ -204,9 +258,32 @@ export class WorldScene extends Phaser.Scene {
   private keys!: Record<"up" | "down" | "left" | "right", Phaser.Input.Keyboard.Key>;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private centerCameraKey!: Phaser.Input.Keyboard.Key;
+  private waitKey!: Phaser.Input.Keyboard.Key;
   private lastLocationId: string | null = null;
   private lastCaravanId: string | null = null;
   private lastTimeBucket = -1;
+  private markerUpdateElapsed = 0;
+  private visibilityUpdateElapsed = 0;
+  private lastChunkCameraX = Number.NaN;
+  private lastChunkCameraY = Number.NaN;
+  private lastChunkZoom = Number.NaN;
+  private visibilityElement: HTMLElement | null = null;
+  private readonly handleCameraFocus = (event: Event): void => {
+    const { x, y } = (event as CustomEvent<WorldCameraFocusDetail>).detail;
+    this.cameraPanX = Phaser.Math.Clamp(
+      x - gameSession.world.state.x,
+      -gameSession.world.state.x,
+      gameSession.world.map.width - gameSession.world.state.x,
+    );
+    this.cameraPanY = Phaser.Math.Clamp(
+      y - gameSession.world.state.y,
+      -gameSession.world.state.y,
+      gameSession.world.map.height - gameSession.world.state.y,
+    );
+    this.cameras.main.centerOn(x, y);
+    this.updateVisibilityOrigin();
+    this.updateTerrainChunkVisibility();
+  };
 
   constructor() {
     super("world");
@@ -217,6 +294,9 @@ export class WorldScene extends Phaser.Scene {
       this.load.image(textureKey, LOCATION_ASSETS[assetKey as keyof typeof LOCATION_ASSETS]);
     }
     this.load.image(WORLD_BASESET_TEXTURE, WORLD_BASESET_ASSET);
+    for (const [textureKey, assetPath] of Object.entries(VEGETATION_ASSETS)) {
+      this.load.image(textureKey, assetPath);
+    }
   }
 
   create(): void {
@@ -228,6 +308,7 @@ export class WorldScene extends Phaser.Scene {
     this.createEnemies();
     this.createWarbands();
     this.createWarbandBattles();
+    this.createBattleSites();
     this.createCaravans();
     this.createVillagerAnimation();
     this.createVillagers();
@@ -235,6 +316,10 @@ export class WorldScene extends Phaser.Scene {
     this.createWaypoint();
     this.createEnemyTooltip();
     this.createInput();
+    document.addEventListener(WORLD_CAMERA_FOCUS_EVENT, this.handleCameraFocus);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      document.removeEventListener(WORLD_CAMERA_FOCUS_EVENT, this.handleCameraFocus);
+    });
 
     this.cameras.main
       .setBounds(0, 0, gameSession.world.map.width, gameSession.world.map.height)
@@ -256,7 +341,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    if (gameSession.mode !== "world" || gameSession.uiBlocked) return;
+    if (gameSession.mode !== "world" || gameSession.uiBlocked) {
+      gameSession.stopWaiting();
+      return;
+    }
 
     const zoomDelta = consumeWorldZoom();
     if (zoomDelta !== 0) {
@@ -276,26 +364,41 @@ export class WorldScene extends Phaser.Scene {
       Number(this.keys.down.isDown) - Number(this.keys.up.isDown);
 
     if (horizontal !== 0 || vertical !== 0) {
+      gameSession.stopWaiting();
       if (gameSession.waypoint) gameSession.cancelNavigation();
       gameSession.moveWorld(
         horizontal,
         vertical,
         Math.min(delta, 40) / 1000,
       );
+    } else if (this.waitKey.isDown) {
+      if (gameSession.waypoint) gameSession.cancelNavigation();
+      gameSession.waitWorld(Math.min(delta, 40) / 1000);
     } else {
+      gameSession.stopWaiting();
       gameSession.advanceNavigation(Math.min(delta, 40) / 1000);
     }
     this.player.setPosition(gameSession.world.state.x, gameSession.world.state.y);
     this.updateCamera(Math.min(delta, 40) / 1000);
+    this.interpolateVisibleNpcMarkers(Math.min(delta, 40) / 1000);
 
-    this.updateEnemyMarkers();
-    this.updateWarbandMarkers();
-    this.updateWarbandBattleMarkers();
-    this.updateEnemyTooltip();
-    this.updateCaravanMarkers();
-    this.updateVillagerMarkers();
-    this.updateWaypoint();
-    this.updateMarkerVisibility();
+    this.markerUpdateElapsed += delta;
+    this.visibilityUpdateElapsed += delta;
+    if (this.markerUpdateElapsed >= 33) {
+      this.markerUpdateElapsed %= 33;
+      this.updateEnemyMarkers();
+      this.updateWarbandMarkers();
+      this.updateWarbandBattleMarkers();
+      this.updateBattleSiteMarkers();
+      this.updateEnemyTooltip();
+      this.updateCaravanMarkers();
+      this.updateVillagerMarkers();
+      this.updateWaypoint();
+    }
+    if (this.visibilityUpdateElapsed >= 150) {
+      this.visibilityUpdateElapsed %= 150;
+      this.updateMarkerVisibility();
+    }
     if (gameSession.mode !== "world") return;
 
     let shouldNotify = false;
@@ -393,7 +496,17 @@ export class WorldScene extends Phaser.Scene {
           y,
           size: TERRAIN_CHUNK_SIZE,
           textureKey: `terrain_${TERRAIN_DECOR_REVISION}_${gameSession.worldSeed}_${column}_${row}`,
+          cells: [],
         });
+      }
+    }
+    for (const cell of map.terrainCells) {
+      const minimumColumn = Math.max(0, Math.floor(cell.x / TERRAIN_CHUNK_SIZE));
+      const maximumColumn = Math.min(columns - 1, Math.floor((cell.x + cell.size) / TERRAIN_CHUNK_SIZE));
+      const minimumRow = Math.max(0, Math.floor(cell.y / TERRAIN_CHUNK_SIZE));
+      const maximumRow = Math.min(rows - 1, Math.floor((cell.y + cell.size) / TERRAIN_CHUNK_SIZE));
+      for (let column = minimumColumn; column <= maximumColumn; column += 1) for (let row = minimumRow; row <= maximumRow; row += 1) {
+        this.terrainChunks[column * rows + row].cells.push(cell);
       }
     }
   }
@@ -412,32 +525,20 @@ export class WorldScene extends Phaser.Scene {
         throw new Error(`Could not create terrain texture ${chunk.textureKey}`);
       }
       const context = texture.getContext();
-      const baseSetImage = this.textures
-        .get(WORLD_BASESET_TEXTURE)
-        .getSourceImage() as HTMLImageElement;
+      const vegetationImages = Object.fromEntries(
+        Object.keys(VEGETATION_ASSETS).map((textureKey) => [
+          textureKey,
+          this.textures.get(textureKey).getSourceImage() as HTMLImageElement,
+        ]),
+      ) as Record<VegetationTextureKey, HTMLImageElement>;
       context.imageSmoothingEnabled = false;
       context.clearRect(0, 0, chunk.size, chunk.size);
-      for (const cell of map.terrainCells) {
-        if (
-          !this.doesRectIntersectChunk(
-            cell.x,
-            cell.y,
-            cell.size,
-            cell.size,
-            chunk.x,
-            chunk.y,
-          )
-        ) {
-          continue;
-        }
+      for (const cell of chunk.cells) {
         const localX = cell.x - chunk.x;
         const localY = cell.y - chunk.y;
-        context.globalAlpha = cell.type === "lake" ? 0.98 : 0.9;
-        context.fillStyle = this.colorToCss(TERRAIN_COLORS[cell.type]);
-        context.fillRect(localX, localY, cell.size + 1, cell.size + 1);
-        context.globalAlpha = 1;
+        this.drawTerrainCellGround(context, cell, localX, localY);
 
-        this.drawTerrainCellDetails(context, baseSetImage, cell, localX, localY);
+        this.drawTerrainCellDetails(context, vegetationImages, cell, localX, localY);
       }
       texture.refresh();
     }
@@ -452,12 +553,12 @@ export class WorldScene extends Phaser.Scene {
 
   private drawTerrainCellDetails(
     context: CanvasRenderingContext2D,
-    baseSetImage: HTMLImageElement,
+    vegetationImages: Record<VegetationTextureKey, HTMLImageElement>,
     cell: TerrainCell,
     localX: number,
     localY: number,
   ): void {
-    if (cell.type === "plains" || cell.type === "lake") return;
+    if (cell.type === "lake") return;
     const seed = Math.abs(
       Math.floor(cell.x * 17 + cell.y * 31 + gameSession.worldSeed * 13),
     );
@@ -469,17 +570,31 @@ export class WorldScene extends Phaser.Scene {
         localY +
         18 +
         (Math.floor(offsetSeed / 11) % Math.max(1, cell.size - 36));
-      this.drawTerrainDetail(context, baseSetImage, cell.type, x, y, offsetSeed);
+      this.drawTerrainDetail(context, vegetationImages, cell.type, x, y, offsetSeed);
     }
+  }
+
+  private drawTerrainCellGround(
+    context: CanvasRenderingContext2D,
+    cell: TerrainCell,
+    localX: number,
+    localY: number,
+  ): void {
+    const color = this.colorToCss(TERRAIN_COLORS[cell.type]);
+    context.fillStyle = color;
+    context.globalAlpha = cell.type === "lake" ? .98 : .9;
+    context.fillRect(localX, localY, cell.size + 1, cell.size + 1);
+    context.globalAlpha = 1;
   }
 
   private getTerrainCellDetailDensity(
     type: TerrainCell["type"],
     seed: number,
   ): number {
-    if (["forest", "darkForest", "pineForest"].includes(type)) return seed % 2 === 0 ? 2 : 1;
+    if (["forest", "darkForest", "pineForest"].includes(type)) return 3 + (seed % 3);
     if (type === "mountain" || type === "snowMountain") return seed % 3 === 0 ? 2 : 1;
-    if (type === "hills") return seed % 2 === 0 ? 1 : 0;
+    if (type === "hills") return seed % 4 === 0 ? 0 : 1 + (seed % 2);
+    if (type === "plains" || type === "grassland" || type === "heath") return 2 + (seed % 2);
     if (type === "tundra") return seed % 4 === 0 ? 1 : 0;
     if (type === "badlands" || type === "steppe") return seed % 5 === 0 ? 1 : 0;
     return 0;
@@ -487,7 +602,7 @@ export class WorldScene extends Phaser.Scene {
 
   private drawTerrainDetail(
     context: CanvasRenderingContext2D,
-    baseSetImage: HTMLImageElement,
+    vegetationImages: Record<VegetationTextureKey, HTMLImageElement>,
     type: TerrainCell["type"],
     x: number,
     y: number,
@@ -496,20 +611,28 @@ export class WorldScene extends Phaser.Scene {
     if (["forest", "darkForest", "pineForest"].includes(type)) {
       const frames =
         type === "darkForest"
-          ? [WORLD_DECOR_FRAMES.roundTree, WORLD_DECOR_FRAMES.broadTrees]
+          ? [VEGETATION_SPRITES.forestOak, VEGETATION_SPRITES.forestDeadTree]
           : type === "pineForest"
-            ? [WORLD_DECOR_FRAMES.pinePair, WORLD_DECOR_FRAMES.smallTree]
+            ? [VEGETATION_SPRITES.forestPines, VEGETATION_SPRITES.forestDeadTree]
             : [
-                WORLD_DECOR_FRAMES.roundTree,
-                WORLD_DECOR_FRAMES.broadTrees,
-                WORLD_DECOR_FRAMES.treeLine,
+                VEGETATION_SPRITES.forestOak,
+                VEGETATION_SPRITES.forestPines,
+                VEGETATION_SPRITES.forestDeadTree,
               ];
-      this.drawDecorFrame(context, baseSetImage, frames[seed % frames.length], x, y, seed);
+      this.drawVegetationSprite(context, vegetationImages, frames[seed % frames.length], x, y, seed);
+      return;
+    }
+
+    if (type === "plains" || type === "grassland" || type === "heath") {
+      const frames = type === "heath"
+        ? [VEGETATION_SPRITES.plainsShrub, VEGETATION_SPRITES.plainsStones, VEGETATION_SPRITES.plainsGrass]
+        : [VEGETATION_SPRITES.plainsGrass, VEGETATION_SPRITES.plainsShrub];
+      this.drawVegetationSprite(context, vegetationImages, frames[seed % frames.length], x, y, seed);
       return;
     }
 
     if (type === "badlands" || type === "steppe" || type === "tundra") {
-      this.drawDecorFrame(context, baseSetImage, WORLD_DECOR_FRAMES.stoneLine, x, y, seed);
+      this.drawVegetationSprite(context, vegetationImages, seed % 2 === 0 ? VEGETATION_SPRITES.plainsStones : VEGETATION_SPRITES.plainsGrass, x, y, seed);
       return;
     }
 
@@ -517,15 +640,38 @@ export class WorldScene extends Phaser.Scene {
       const frame =
         type === "hills"
           ? seed % 2 === 0
-            ? WORLD_DECOR_FRAMES.lowRocks
-            : WORLD_DECOR_FRAMES.smallRocks
+            ? VEGETATION_SPRITES.mountainBoulders
+            : VEGETATION_SPRITES.mountainRidge
           : type === "snowMountain"
-            ? WORLD_DECOR_FRAMES.snowyRidge
+            ? VEGETATION_SPRITES.mountainRidge
             : seed % 2 === 0
-              ? WORLD_DECOR_FRAMES.grayRocks
-              : WORLD_DECOR_FRAMES.tallRocks;
-      this.drawDecorFrame(context, baseSetImage, frame, x, y, seed);
+              ? VEGETATION_SPRITES.mountainCrag
+              : VEGETATION_SPRITES.mountainRidge;
+      this.drawVegetationSprite(context, vegetationImages, frame, x, y, seed);
     }
+  }
+
+  private drawVegetationSprite(
+    context: CanvasRenderingContext2D,
+    vegetationImages: Record<VegetationTextureKey, HTMLImageElement>,
+    sprite: VegetationSprite,
+    x: number,
+    y: number,
+    seed: number,
+  ): void {
+    const scale = (sprite.scale ?? 1) * (.82 + (seed % 7) * .055);
+    const width = Math.round(sprite.width * scale);
+    const height = Math.round(sprite.height * scale);
+    context.save();
+    context.globalAlpha = .72 + (seed % 4) * .07;
+    if (seed % 5 === 0) {
+      context.translate(Math.round(x), 0);
+      context.scale(-1, 1);
+      context.drawImage(vegetationImages[sprite.texture], Math.round(-width / 2), Math.round(y - height * .82), width, height);
+    } else {
+      context.drawImage(vegetationImages[sprite.texture], Math.round(x - width / 2), Math.round(y - height * .82), width, height);
+    }
+    context.restore();
   }
 
   private drawDecorFrame(
@@ -549,22 +695,6 @@ export class WorldScene extends Phaser.Scene {
       Math.round(y - height / 2),
       width,
       height,
-    );
-  }
-
-  private doesRectIntersectChunk(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    chunkX: number,
-    chunkY: number,
-  ): boolean {
-    return (
-      x + width >= chunkX &&
-      y + height >= chunkY &&
-      x <= chunkX + TERRAIN_CHUNK_SIZE &&
-      y <= chunkY + TERRAIN_CHUNK_SIZE
     );
   }
 
@@ -659,14 +789,14 @@ export class WorldScene extends Phaser.Scene {
           },
         );
 
-      this.tweens.add({
+      marker.setData("pulseTween", this.tweens.add({
         targets: glow,
         scale: 1.55,
         alpha: 0.02,
         duration: 1700 + location.x % 500,
         yoyo: true,
         repeat: -1,
-      });
+      }));
     }
   }
 
@@ -695,24 +825,25 @@ export class WorldScene extends Phaser.Scene {
       .container(0, 0, [glow, ring, core])
       .setDepth(9)
       .setVisible(false);
-    this.tweens.add({
+    this.waypointMarker.setData("pulseTween", this.tweens.add({
       targets: glow,
       scale: 1.45,
       alpha: 0.02,
       duration: 1200,
       yoyo: true,
       repeat: -1,
-    });
+    }));
   }
 
   private updateWaypoint(): void {
     this.waypointLine.clear();
     const waypoint = gameSession.waypoint;
     if (!waypoint) {
-      this.waypointMarker.setVisible(false);
+      this.setMarkerVisible(this.waypointMarker, false);
       return;
     }
-    this.waypointMarker.setPosition(waypoint.x, waypoint.y).setVisible(true);
+    this.waypointMarker.setPosition(waypoint.x, waypoint.y);
+    this.setMarkerVisible(this.waypointMarker, true);
     this.waypointLine.lineStyle(3, 0xd9b66f, 0.24);
     this.waypointLine.beginPath();
     this.waypointLine.moveTo(
@@ -772,14 +903,14 @@ export class WorldScene extends Phaser.Scene {
           },
         );
       this.enemyMarkers.set(enemy.id, marker);
-      this.tweens.add({
+      marker.setData("pulseTween", this.tweens.add({
         targets: glow,
         scale: 1.7,
         alpha: 0.02,
         duration: 900,
         yoyo: true,
         repeat: -1,
-      });
+      }));
     }
   }
 
@@ -787,8 +918,8 @@ export class WorldScene extends Phaser.Scene {
     for (const enemy of gameSession.world.state.enemies) {
       const marker = this.enemyMarkers.get(enemy.id);
       if (!marker) continue;
-      marker.setPosition(enemy.x, enemy.y);
-      marker.setVisible(enemy.active && this.isWithinSight(enemy.x, enemy.y));
+      this.setMarkerTarget(marker, enemy.x, enemy.y);
+      this.setMarkerVisible(marker, enemy.active && this.isWithinSight(enemy.x, enemy.y));
     }
   }
 
@@ -818,7 +949,10 @@ export class WorldScene extends Phaser.Scene {
     if (!enemy || !archetype) return;
 
     const cards = new Map<string, number>();
-    for (const cardId of archetype.deck) {
+    const visibleRoster = enemy.sourceLocationId
+      ? enemy.roster.map((unit) => unit.cardId)
+      : archetype.deck;
+    for (const cardId of visibleRoster) {
       cards.set(cardId, (cards.get(cardId) ?? 0) + 1);
     }
     const deck = [...cards]
@@ -829,9 +963,10 @@ export class WorldScene extends Phaser.Scene {
       .join(", ");
     this.enemyTooltipText.setText([
       i18n.t(archetype.nameKey).toUpperCase(),
-      `${i18n.t("world.enemyTooltip.threat")}: ${"◆".repeat(enemy.threat)}`,
+      `${i18n.t("world.enemyTooltip.threat")}: ${"◆".repeat(gameSession.world.getEnemyThreatRating(enemy))}`,
       `${i18n.t("world.enemyTooltip.troops")}: ${enemy.partySize}   ${i18n.t("world.enemyTooltip.speed")}: ${Math.round(enemy.speed)}`,
-      `${i18n.t("world.enemyTooltip.load")}: ${enemy.inventoryWeight.toFixed(1)}`,
+      `Activity: ${getNpcActivityLabel(enemy.activity)}`,
+      enemy.sourceLocationId ? `Loot: ${enemy.gold}   Supplies: ${enemy.rations}   Prisoners: ${enemy.prisoners.reduce((sum, stack) => sum + stack.quantity, 0)}` : `${i18n.t("world.enemyTooltip.load")}: ${enemy.inventoryWeight.toFixed(1)}`,
       `${i18n.t("world.enemyTooltip.warband")}: ${deck}`,
       i18n.t("world.enemyTooltip.click"),
     ]);
@@ -932,14 +1067,14 @@ export class WorldScene extends Phaser.Scene {
           },
         );
       this.warbandMarkers.set(warband.id, marker);
-      this.tweens.add({
+      marker.setData("pulseTween", this.tweens.add({
         targets: glow,
         scale: 1.55,
         alpha: 0.02,
         duration: 1200,
         yoyo: true,
         repeat: -1,
-      });
+      }));
     }
   }
 
@@ -947,9 +1082,10 @@ export class WorldScene extends Phaser.Scene {
     for (const warband of gameSession.world.state.warbands) {
       const marker = this.warbandMarkers.get(warband.id);
       if (!marker) continue;
-      marker.setPosition(warband.x, warband.y);
-      marker.setVisible(
+      this.setMarkerTarget(marker, warband.x, warband.y);
+      this.setMarkerVisible(marker,
         warband.state !== "destroyed" &&
+          (!warband.bountyHunter || (gameSession.factionState.wanted[warband.factionId] ?? 0) >= 25) &&
           this.isWithinSight(warband.x, warband.y, 80),
       );
     }
@@ -1007,14 +1143,14 @@ export class WorldScene extends Phaser.Scene {
         },
       );
     this.warbandBattleMarkers.set(battle.id, marker);
-    this.tweens.add({
+    marker.setData("pulseTween", this.tweens.add({
       targets: glow,
       scale: 1.7,
       alpha: 0.025,
       duration: 720,
       yoyo: true,
       repeat: -1,
-    });
+    }));
     return marker;
   }
 
@@ -1024,9 +1160,7 @@ export class WorldScene extends Phaser.Scene {
       activeIds.add(battle.id);
       const marker = this.ensureWarbandBattleMarker(battle.id);
       marker?.setPosition(battle.x, battle.y);
-      marker?.setVisible(
-        battle.state === "fighting" && this.isWithinSight(battle.x, battle.y, 180),
-      );
+      if (marker) this.setMarkerVisible(marker, battle.state === "fighting" && this.isWithinSight(battle.x, battle.y, 180));
     }
     for (const [battleId, marker] of this.warbandBattleMarkers) {
       if (activeIds.has(battleId)) continue;
@@ -1052,12 +1186,14 @@ export class WorldScene extends Phaser.Scene {
         )
       : null;
     this.enemyTooltipText.setText([
-      i18n.t(warband.nameKey).toUpperCase(),
+      (warband.displayName ?? i18n.t(warband.nameKey)).toUpperCase(),
       `${i18n.t("world.warbandTooltip.faction")}: ${i18n.t(`faction.${warband.factionId}.name`)}`,
       `${i18n.t("world.warbandTooltip.relation")}: ${i18n.t(`world.relation.${relation}`)}`,
       `${i18n.t("world.warbandTooltip.type")}: ${i18n.t(`world.warbandType.${warband.type}`)}`,
+      `${warband.type === "lord" ? `Rank: ${getNobleRankLabel(warband.nobleRank)}   Personality: ${getLordPersonalityLabel(warband.personality)}   ` : ""}Activity: ${getNpcActivityLabel(warband.activity)}`,
       `${i18n.t("world.warbandTooltip.strength")}: ${Math.round(estimateWarbandStrength(warband))}`,
       `${i18n.t("world.warbandTooltip.troops")}: ${warband.unitIds.length}   ${i18n.t("world.warbandTooltip.state")}: ${i18n.t(`world.warbandState.${warband.state}`)}`,
+      `Gold: ${warband.gold}   Supplies: ${warband.rations}   Prisoners: ${warband.prisoners.reduce((sum, stack) => sum + stack.quantity, 0)}`,
       `${i18n.t("world.warbandTooltip.target")}: ${target ? i18n.t(target.nameKey) : enemyTarget ? i18n.t("world.enemyTooltip.warband") : "—"}`,
       warband.activeBattleId
         ? i18n.t("world.warbandTooltip.joinBattle")
@@ -1105,22 +1241,22 @@ export class WorldScene extends Phaser.Scene {
       ]);
       marker.setDepth(7);
       this.caravanMarkers.set(caravan.id, marker);
-      this.tweens.add({
+      marker.setData("pulseTween", this.tweens.add({
         targets: glow,
         scale: 1.5,
         alpha: 0.025,
         duration: 1300,
         yoyo: true,
         repeat: -1,
-      });
+      }));
     }
   }
 
   private updateCaravanMarkers(): void {
     for (const caravan of gameSession.economyState.caravans) {
       const marker = this.caravanMarkers.get(caravan.id);
-      marker?.setPosition(caravan.x, caravan.y);
-      marker?.setVisible(this.isWithinSight(caravan.x, caravan.y));
+      if (marker) this.setMarkerTarget(marker, caravan.x, caravan.y);
+      if (marker) this.setMarkerVisible(marker, this.isWithinSight(caravan.x, caravan.y));
     }
   }
 
@@ -1162,10 +1298,58 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private updateVillagerMarkers(): void {
+    const activeIds = new Set(gameSession.economyState.villagers.map((villager) => villager.id));
     for (const villager of gameSession.economyState.villagers) {
       const marker = this.villagerMarkers.get(villager.id);
-      marker?.setPosition(villager.x, villager.y);
-      marker?.setVisible(this.isWithinSight(villager.x, villager.y));
+      if (marker) this.setMarkerTarget(marker, villager.x, villager.y);
+      if (marker) this.setMarkerVisible(marker, this.isWithinSight(villager.x, villager.y));
+    }
+    for (const [villagerId, marker] of this.villagerMarkers) {
+      if (activeIds.has(villagerId)) continue;
+      marker.destroy(true);
+      this.villagerMarkers.delete(villagerId);
+    }
+  }
+
+  private createBattleSites(): void {
+    for (const site of gameSession.world.state.battleSites) this.ensureBattleSiteMarker(site.id);
+  }
+
+  private ensureBattleSiteMarker(siteId: string): Phaser.GameObjects.Container | null {
+    const existing = this.battleSiteMarkers.get(siteId);
+    if (existing) return existing;
+    const site = gameSession.world.state.battleSites.find((candidate) => candidate.id === siteId);
+    if (!site) return null;
+    const glow = this.add.circle(0, 0, 20, 0x6e0909, 0.22);
+    const cross = this.add.graphics();
+    cross.lineStyle(7, 0x250303, 0.8);
+    cross.lineBetween(-13, -13, 13, 13);
+    cross.lineBetween(13, -13, -13, 13);
+    cross.lineStyle(4, 0xc52f2f, 1);
+    cross.lineBetween(-12, -12, 12, 12);
+    cross.lineBetween(12, -12, -12, 12);
+    const marker = this.add.container(site.x, site.y, [glow, cross]).setDepth(5);
+    this.battleSiteMarkers.set(site.id, marker);
+    return marker;
+  }
+
+  private updateBattleSiteMarkers(): void {
+    const activeIds = new Set<string>();
+    for (const site of gameSession.world.state.battleSites) {
+      activeIds.add(site.id);
+      const marker = this.ensureBattleSiteMarker(site.id);
+      marker?.setPosition(site.x, site.y);
+      if (marker) {
+        this.setMarkerVisible(
+          marker,
+          gameSession.world.isPositionExplored(site.x, site.y) || this.isWithinSight(site.x, site.y, 120),
+        );
+      }
+    }
+    for (const [siteId, marker] of this.battleSiteMarkers) {
+      if (activeIds.has(siteId)) continue;
+      marker.destroy(true);
+      this.battleSiteMarkers.delete(siteId);
     }
   }
 
@@ -1175,16 +1359,26 @@ export class WorldScene extends Phaser.Scene {
         location.type === "dungeon" &&
         !gameSession.world.isDungeonActive(location.id);
       const visible =
-        location.type === "city" || location.type === "village"
+        location.type === "city" || location.type === "village" || location.type === "soulTemple"
           ? true
           : location.type === "dungeon"
             ? !inactiveDungeon &&
               (gameSession.world.isPositionExplored(location.x, location.y) ||
                 this.isWithinSight(location.x, location.y, 80))
             : this.isWithinSight(location.x, location.y, 80);
-      this.locationMarkers
-        .get(location.id)
-        ?.setVisible(visible);
+      const marker = this.locationMarkers.get(location.id);
+      if (marker) this.setMarkerVisible(marker, visible);
+    }
+  }
+
+  private setMarkerVisible(marker: Phaser.GameObjects.Container, visible: boolean): void {
+    if (marker.visible !== visible) marker.setVisible(visible);
+    const tween = marker.getData("pulseTween") as Phaser.Tweens.Tween | undefined;
+    if (tween && tween.paused === visible) tween.paused = !visible;
+    for (const child of marker.list) {
+      if (!(child instanceof Phaser.GameObjects.Sprite) || !child.anims.isPlaying) continue;
+      if (visible && child.anims.isPaused) child.anims.resume();
+      else if (!visible && !child.anims.isPaused) child.anims.pause();
     }
   }
 
@@ -1194,7 +1388,7 @@ export class WorldScene extends Phaser.Scene {
     | (typeof LOCATION_SPRITE_CONFIG)[keyof typeof LOCATION_SPRITE_CONFIG]
     | (typeof DUNGEON_SPRITE_CONFIG & { texture: string })
     | null {
-    if (location.type === "city" || location.type === "village") {
+    if (location.type === "city" || location.type === "village" || location.type === "soulTemple") {
       return LOCATION_SPRITE_CONFIG[location.type];
     }
     if (location.type !== "dungeon") return null;
@@ -1250,13 +1444,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private isWithinSight(x: number, y: number, margin = 0): boolean {
-    return (
-      Math.hypot(
-        x - gameSession.world.state.x,
-        y - gameSession.world.state.y,
-      ) <=
-      gameSession.visibilityRadius + margin
-    );
+    const dx = x - gameSession.world.state.x;
+    const dy = y - gameSession.world.state.y;
+    const radius = gameSession.visibilityRadius + margin;
+    return dx * dx + dy * dy <= radius * radius;
   }
 
   private createInput(): void {
@@ -1268,9 +1459,8 @@ export class WorldScene extends Phaser.Scene {
       left: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
       right: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
     };
-    this.centerCameraKey = keyboard.addKey(
-      Phaser.Input.Keyboard.KeyCodes.SPACE,
-    );
+    this.centerCameraKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+    this.waitKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.input.on(
       Phaser.Input.Events.POINTER_WHEEL,
       (
@@ -1290,22 +1480,44 @@ export class WorldScene extends Phaser.Scene {
     );
   }
 
+  private setMarkerTarget(marker: Phaser.GameObjects.Container, x: number, y: number): void {
+    const distanceSquared = (marker.x - x) ** 2 + (marker.y - y) ** 2;
+    marker.setData("targetX", x);
+    marker.setData("targetY", y);
+    if (!marker.visible || distanceSquared > 320 * 320) marker.setPosition(x, y);
+  }
+
+  private interpolateVisibleNpcMarkers(deltaSeconds: number): void {
+    const blend = 1 - Math.exp(-14 * deltaSeconds);
+    for (const markers of [this.enemyMarkers, this.warbandMarkers, this.caravanMarkers, this.villagerMarkers]) {
+      for (const marker of markers.values()) {
+        if (!marker.visible) continue;
+        const targetX = marker.getData("targetX") as number | undefined;
+        const targetY = marker.getData("targetY") as number | undefined;
+        if (targetX === undefined || targetY === undefined) continue;
+        marker.setPosition(
+          Phaser.Math.Linear(marker.x, targetX, blend),
+          Phaser.Math.Linear(marker.y, targetY, blend),
+        );
+      }
+    }
+  }
+
   private updateCamera(deltaSeconds: number): void {
     const cameraHorizontal =
       Number(this.cursors.right.isDown) - Number(this.cursors.left.isDown);
     const cameraVertical =
       Number(this.cursors.down.isDown) - Number(this.cursors.up.isDown);
     const panSpeed = 720 / this.worldZoom;
-    const maximumPan = 1500 / this.worldZoom;
     this.cameraPanX = Phaser.Math.Clamp(
       this.cameraPanX + cameraHorizontal * panSpeed * deltaSeconds,
-      -maximumPan,
-      maximumPan,
+      -gameSession.world.state.x,
+      gameSession.world.map.width - gameSession.world.state.x,
     );
     this.cameraPanY = Phaser.Math.Clamp(
       this.cameraPanY + cameraVertical * panSpeed * deltaSeconds,
-      -maximumPan,
-      maximumPan,
+      -gameSession.world.state.y,
+      gameSession.world.map.height - gameSession.world.state.y,
     );
     if (Phaser.Input.Keyboard.JustDown(this.centerCameraKey)) {
       this.cameraPanX = 0;
@@ -1325,6 +1537,16 @@ export class WorldScene extends Phaser.Scene {
 
   private updateTerrainChunkVisibility(): void {
     const view = this.cameras.main.worldView;
+    const cameraX = view.centerX;
+    const cameraY = view.centerY;
+    if (
+      Math.abs(cameraX - this.lastChunkCameraX) < 72 &&
+      Math.abs(cameraY - this.lastChunkCameraY) < 72 &&
+      Math.abs(this.worldZoom - this.lastChunkZoom) < 0.001
+    ) return;
+    this.lastChunkCameraX = cameraX;
+    this.lastChunkCameraY = cameraY;
+    this.lastChunkZoom = this.worldZoom;
     const left = view.x - TERRAIN_CHUNK_VISIBILITY_MARGIN;
     const right = view.right + TERRAIN_CHUNK_VISIBILITY_MARGIN;
     const top = view.y - TERRAIN_CHUNK_VISIBILITY_MARGIN;
@@ -1348,9 +1570,9 @@ export class WorldScene extends Phaser.Scene {
     const camera = this.cameras.main;
     const screenX = (gameSession.world.state.x - camera.worldView.x) * camera.zoom;
     const screenY = (gameSession.world.state.y - camera.worldView.y) * camera.zoom;
-    const visibility = document.querySelector<HTMLElement>(".world-visibility");
-    visibility?.style.setProperty("--visibility-x", `${screenX}px`);
-    visibility?.style.setProperty("--visibility-y", `${screenY}px`);
+    this.visibilityElement ??= document.querySelector<HTMLElement>(".world-visibility");
+    this.visibilityElement?.style.setProperty("--visibility-x", `${Math.round(screenX)}px`);
+    this.visibilityElement?.style.setProperty("--visibility-y", `${Math.round(screenY)}px`);
   }
 
   private drawBridgeCrossings(graphics: Phaser.GameObjects.Graphics): void {

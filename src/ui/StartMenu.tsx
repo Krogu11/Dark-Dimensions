@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { SaveGame } from "../infrastructure/save/SaveRepository";
 import { characterXpNeededForNextLevel } from "../domain/character/CharacterProgression";
+import type { MetaProgressionState } from "../domain/progression/MetaProgression";
+import { UnitEncyclopedia } from "./UnitEncyclopedia";
 
 interface StartMenuProps {
   canContinue: boolean;
@@ -11,13 +13,15 @@ interface StartMenuProps {
   activeWarbandCount: number;
   activeWarbandCapacity: number;
   notice?: string;
+  metaProgression: MetaProgressionState;
   onContinue: () => void;
   onNewRun: () => void;
 }
 
-export function StartMenu({ canContinue, activeRun, save, activeGold, activeWarbandCount, activeWarbandCapacity, notice, onContinue, onNewRun }: StartMenuProps) {
+export function StartMenu({ canContinue, activeRun, save, activeGold, activeWarbandCount, activeWarbandCapacity, notice, metaProgression, onContinue, onNewRun }: StartMenuProps) {
   const { t } = useTranslation();
   const [confirmingNewRun, setConfirmingNewRun] = useState(false);
+  const [encyclopediaOpen, setEncyclopediaOpen] = useState(false);
   const profile = activeRun ? undefined : save?.runProfile;
   const character = activeRun ? undefined : save?.characterState;
   const level = character?.level ?? 1;
@@ -50,6 +54,7 @@ export function StartMenu({ canContinue, activeRun, save, activeGold, activeWarb
               <span>{confirmingNewRun ? "Abandon Run & Begin" : "New Run"}</span>
               <small>{confirmingNewRun ? "This cannot be undone" : "Forge another fate"}</small>
             </button>
+            <button className="menu-action" onClick={() => setEncyclopediaOpen(true)}><span>{t("encyclopedia.title")}</span><small>{t("encyclopedia.menuHint")}</small></button>
             {confirmingNewRun ? (
               <button className="start-menu-cancel" onClick={() => setConfirmingNewRun(false)}>Keep current run</button>
             ) : null}
@@ -80,6 +85,7 @@ export function StartMenu({ canContinue, activeRun, save, activeGold, activeWarb
         </aside>
       </div>
       <div className="start-menu-footer"><span>v0.1 · The Shattered Realms</span><span>Music: Ashen Keep</span></div>
+      {encyclopediaOpen ? <UnitEncyclopedia meta={metaProgression} onClose={() => setEncyclopediaOpen(false)} /> : null}
     </section>
   );
 }

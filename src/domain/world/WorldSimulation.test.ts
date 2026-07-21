@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { contentPack } from "../../content/content";
+import { createCardInstance, getCardDefinition } from "../cards/CardInstance";
 import type { CaravanState } from "../economy/Economy";
 import { generateWorldMap } from "./WorldGenerator";
 import { WorldSimulation } from "./WorldSimulation";
@@ -10,6 +11,20 @@ import {
 } from "./WorldTerrain";
 
 describe("WorldSimulation patrol behavior", () => {
+  it("keeps recent battle sites for twelve world hours", () => {
+    const world = generateWorldMap(303030, contentPack.enemies);
+    const simulation = new WorldSimulation(world);
+    simulation.recordBattleSite(900, 800);
+    simulation.recordBattleSite(910, 806);
+
+    expect(simulation.state.battleSites).toHaveLength(1);
+    expect(simulation.state.battleSites[0].remainingHours).toBe(12);
+    simulation.updateEnemies(11.9, 1);
+    expect(simulation.state.battleSites).toHaveLength(1);
+    simulation.updateEnemies(0.11, 1);
+    expect(simulation.state.battleSites).toHaveLength(0);
+  });
+
   it("makes clearly weaker patrols flee from the player", () => {
     const world = generateWorldMap(313131, contentPack.enemies);
     const simulation = new WorldSimulation(world);
@@ -191,6 +206,7 @@ describe("WorldSimulation patrol behavior", () => {
     expect(simulation.state.warbands.every((warband) => warband.state !== "fighting")).toBe(
       true,
     );
+    expect(simulation.state.chronicle[0]?.text).toContain("defeated");
   });
 
   it("respawns destroyed faction patrols at their home point", () => {
@@ -304,6 +320,28 @@ describe("WorldSimulation patrol behavior", () => {
       trader.inventory.reduce((sum, stack) => sum + stack.quantity, 0),
     ).toBeLessThan(14);
   });
+
+  it("persists camp rosters and resets defeated camps with Tier 1 units", () => {
+    const world = generateWorldMap(888888, contentPack.enemies);
+    const first = new WorldSimulation(world);
+    const camp = first.state.enemies.find((enemy) => enemy.sourceLocationId)!;
+    camp.roster[0].xp = 77;
+    camp.gold = 91;
+    const restored = new WorldSimulation(world, { enemies: structuredClone(first.state.enemies) });
+    const restoredCamp = restored.state.enemies.find((enemy) => enemy.id === camp.id)!;
+
+    expect(restoredCamp.roster[0].xp).toBe(77);
+    expect(restoredCamp.gold).toBe(91);
+
+    restoredCamp.prisoners.push({ cardId: "soldier", quantity: 1 });
+    restored.defeatEnemy(restoredCamp.id);
+    restoredCamp.respawnHours = 0;
+    restored.updateEnemies(0.1, 1);
+
+    expect(restoredCamp.active).toBe(true);
+    expect(restoredCamp.prisoners).toEqual([]);
+    expect(restoredCamp.roster.every((unit) => getCardDefinition(unit.cardId).tier === 1)).toBe(true);
+  });
 });
 
 function createTestWarband(
@@ -323,6 +361,17 @@ function createTestWarband(
     targetX: x,
     targetY: y,
     unitIds,
+    recruitmentCardIds: [...unitIds],
+    roster: unitIds.map((cardId) => createCardInstance(cardId)),
+    gold: 50,
+    rations: 20,
+    prisoners: [],
+    victories: 0,
+    logisticsHours: 0,
+    nobleRank: null,
+    nobleProfileId: null,
+    personality: "just",
+    activity: "patrolling",
     speed: 180,
     detectionRadius: 600,
     aggressionRadius: 520,

@@ -84,6 +84,21 @@ describe("BattleSimulation", () => {
     expect(secondLevy.currentHp).toBeLessThan(900);
   });
 
+  it("can mark an eligible player casualty as wounded when the unit falls", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const battle = new BattleSimulation(
+      createCardInstances(["village_levy"]),
+      createEnemy(["dire_wolf", "dire_wolf"]),
+      createPlayerCard(),
+      { heroAtk: 0, heroDef: 0, woundSurvivalChance: 0.12 },
+    );
+    const levy = battle.hand[0];
+    battle.summon(levy.uid);
+    battle.resolveRound();
+
+    expect(battle.unitStats.get(levy.uid)).toMatchObject({ destroyed: true, wounded: true });
+  });
+
   it("attacks the leader directly when its field is empty", () => {
     const battle = new BattleSimulation(createCardInstances(["cannon_golem"]), createEnemy(["village_levy", "village_levy"]), createPlayerCard());
     for (const enemy of battle.enemyField) enemy.currentHp = 0;

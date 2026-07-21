@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { contentPack } from "../content/content";
-import { contentPackSchema, type CardDefinition, type ContentPack, type ItemDefinition } from "../domain/content/schemas";
+import { contentPackSchema, type CardDefinition, type ContentPack, type ItemDefinition, type NobleProfile } from "../domain/content/schemas";
 import { xpNeededForUnitUpgrade } from "../domain/cards/CardInstance";
 
 const RACES = ["hero", "human", "orc", "kobold", "undead", "machine", "elemental", "beast"];
@@ -12,7 +12,7 @@ const ITEM_TYPES: ItemDefinition["type"][] = ["resource", "tradeGood", "consumab
 const WEAPON_TYPES = ["club", "sword", "axe", "mace", "spear", "bow", "shield"] as const;
 const EQUIPMENT_SLOTS = ["rightHand", "leftHand", "accessory"] as const;
 
-type StudioTab = "cards" | "items" | "terrains" | "economy";
+type StudioTab = "cards" | "nobles" | "items" | "terrains" | "economy";
 type AssetKind = "portrait" | "card" | "item" | "terrain";
 type AssetDraft = { kind: AssetKind; source: string; fileName: string };
 
@@ -22,6 +22,7 @@ export default function ContentStudio() {
   const [tab, setTab] = useState<StudioTab>("cards");
   const [selectedCardId, setSelectedCardId] = useState(draft.cards[0]?.id ?? "");
   const [selectedItemId, setSelectedItemId] = useState(draft.items[0]?.id ?? "");
+  const [selectedNobleId, setSelectedNobleId] = useState(draft.nobles[0]?.id ?? "");
   const [selectedTerrain, setSelectedTerrain] = useState<string>("tundra");
   const [search, setSearch] = useState("");
   const [raceFilter, setRaceFilter] = useState("all");
@@ -39,6 +40,8 @@ export default function ContentStudio() {
 
   const card = draft.cards.find((entry) => entry.id === selectedCardId) ?? draft.cards[0];
   const item = draft.items.find((entry) => entry.id === selectedItemId) ?? draft.items[0];
+  const noble = draft.nobles.find((entry) => entry.id === selectedNobleId) ?? draft.nobles[0];
+  const nobleLeader = noble ? draft.cards.find((entry) => entry.id === noble.leaderCardId) : undefined;
   const terrainDefinition = draft.terrainBattlefields[selectedTerrain];
   const focus = tab === "items" ? item?.imageFocus ?? { x: 50, y: 50 } : card?.imageFocus ?? { x: 50, y: 50 };
   const terrainFocus = assetDraft?.kind === "terrain" ? terrainAssetFocus : terrainDefinition?.focus ?? { x: 50, y: 50 };
@@ -61,6 +64,13 @@ export default function ContentStudio() {
     ).sort((a, b) => sort === "value" ? a.baseValue - b.baseValue : sort === "type" ? a.type.localeCompare(b.type) : (names[a.nameKey] ?? a.id).localeCompare(names[b.nameKey] ?? b.id));
   }, [draft.items, itemTypeFilter, names, search, sort]);
 
+  const nobles = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return draft.nobles.filter((entry) =>
+      !query || `${entry.id} ${entry.displayName} ${entry.factionId} ${entry.rank}`.toLowerCase().includes(query),
+    ).sort((left, right) => left.factionId.localeCompare(right.factionId) || ["king", "baron", "count"].indexOf(left.rank) - ["king", "baron", "count"].indexOf(right.rank) || left.displayName.localeCompare(right.displayName));
+  }, [draft.nobles, search]);
+
   useEffect(() => setAssetDraft(null), [selectedCardId, selectedItemId, selectedTerrain, tab]);
   useEffect(() => { setSearch(""); setSort("name"); }, [tab]);
 
@@ -74,6 +84,11 @@ export default function ContentStudio() {
     if (!item) return;
     setDraft((current) => ({ ...current, items: current.items.map((entry) => entry.id === item.id ? { ...entry, ...patch } : entry) }));
     dirty();
+  }
+  function updateNoble(patch: Partial<NobleProfile>): void {
+    if (!noble) return;
+    setDraft((current) => ({ ...current, nobles: current.nobles.map((entry) => entry.id === noble.id ? { ...entry, ...patch } : entry) }));
+    dirty("Noble profile changed · unsaved");
   }
   function updateRewardRule(key: keyof ContentPack["combatRules"]["rewards"], value: string): void {
     const parsed = Number(value);
@@ -109,6 +124,24 @@ export default function ContentStudio() {
     setDraft((current) => ({ ...current, items: [...current.items, created] }));
     setNames((current) => ({ ...current, [nameKey]: copy && source ? `${current[source.nameKey]} Copy` : "New Item", [descriptionKey]: copy && source ? current[source.descriptionKey] ?? "" : "" }));
     setSelectedItemId(id); dirty("New item created · unsaved");
+  }
+  function createNoble(copy: boolean): void {
+    const source = noble;
+    const id = uniqueId(copy && source ? `${source.id}_copy` : "new_noble", draft.nobles.map((entry) => entry.id));
+    const created: NobleProfile = copy && source
+      ? { ...structuredClone(source), id, displayName: `${source.displayName} Copy` }
+      : { id, factionId: "ember_crown", rank: "count", displayName: "New Noble", leaderCardId: draft.cards.find((entry) => entry.portraitImage)?.id ?? draft.cards[0].id, leaderLevel: 3 };
+    setDraft((current) => ({ ...current, nobles: [...current.nobles, created] }));
+    setSelectedNobleId(id);
+    dirty("New noble created · unsaved");
+  }
+
+  function removeNoble(): void {
+    if (!noble || !window.confirm(`Delete ${noble.displayName}?`)) return;
+    const remaining = draft.nobles.filter((entry) => entry.id !== noble.id);
+    setDraft((current) => ({ ...current, nobles: remaining }));
+    setSelectedNobleId(remaining[0]?.id ?? "");
+    dirty("Noble deleted · unsaved");
   }
 
   function rename(kind: "card" | "item", raw: string): void {
@@ -162,10 +195,11 @@ export default function ContentStudio() {
   async function saveContent(): Promise<void> {
     const parsed = contentPackSchema.safeParse(draft);
     if (!parsed.success) { setMessage(parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).slice(0, 4).join(" · ")); return; }
-    const duplicates = [...findDuplicates(draft.cards.map((entry) => entry.id)), ...findDuplicates(draft.items.map((entry) => entry.id))];
+    const duplicates = [...findDuplicates(draft.cards.map((entry) => entry.id)), ...findDuplicates(draft.items.map((entry) => entry.id)), ...findDuplicates(draft.nobles.map((entry) => entry.id))];
     if (duplicates.length) { setMessage(`Duplicate IDs: ${duplicates.join(", ")}`); return; }
     const broken = findBrokenReferences(draft); if (broken.length) { setMessage(`Missing references: ${broken.slice(0, 5).join(", ")}`); return; }
     const upgradeProblems = findUpgradeProblems(draft); if (upgradeProblems.length) { setMessage(`Invalid upgrade paths: ${upgradeProblems.slice(0, 4).join(" · ")}`); return; }
+    const nobleProblems = findNobleProblems(draft); if (nobleProblems.length) { setMessage(`Invalid nobility: ${nobleProblems.slice(0, 4).join(" · ")}`); return; }
     setSaving(true);
     try { const response = await fetch("/__content-studio/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pack: parsed.data, names }) }); const result = await response.json() as { error?: string }; if (!response.ok) throw new Error(result.error ?? "Save failed"); setMessage("Saved and validated · Vite will reload the updated content"); }
     catch (error) { setMessage(error instanceof Error ? error.message : "Save failed"); } finally { setSaving(false); }
@@ -178,12 +212,13 @@ export default function ContentStudio() {
   }
 
   return <main className="content-studio">
-    <header className="studio-header"><div><span>Dark Dimensions</span><h1>Content Studio</h1></div><nav className="studio-tabs">{(["cards", "items", "terrains", "economy"] as StudioTab[]).map((value) => <button key={value} className={tab === value ? "active" : ""} onClick={() => setTab(value)}>{value}</button>)}</nav><p>{message}</p><div className="studio-header-actions"><a className="button ghost" href="./">Return to game</a><button className="button primary" disabled={saving} onClick={() => void saveContent()}>{saving ? "Saving…" : "Validate & save"}</button></div></header>
+    <header className="studio-header"><div><span>Dark Dimensions</span><h1>Content Studio</h1></div><nav className="studio-tabs">{(["cards", "nobles", "items", "terrains", "economy"] as StudioTab[]).map((value) => <button key={value} className={tab === value ? "active" : ""} onClick={() => setTab(value)}>{value}</button>)}</nav><p>{message}</p><div className="studio-header-actions"><a className="button ghost" href="./">Return to game</a><button className="button primary" disabled={saving} onClick={() => void saveContent()}>{saving ? "Saving…" : "Validate & save"}</button></div></header>
 
     <aside className="studio-library">
-      {tab === "cards" || tab === "items" ? <input aria-label={`Search ${tab}`} placeholder={`Search ${tab}…`} value={search} onChange={(event) => setSearch(event.target.value)} /> : <strong className="studio-library-title">{tab === "economy" ? "Reward economy" : "Battlefield terrains"}</strong>}
+      {tab === "cards" || tab === "items" || tab === "nobles" ? <input aria-label={`Search ${tab}`} placeholder={`Search ${tab}…`} value={search} onChange={(event) => setSearch(event.target.value)} /> : <strong className="studio-library-title">{tab === "economy" ? "Reward economy" : "Battlefield terrains"}</strong>}
       {tab === "cards" ? <><div className="studio-filter-grid"><select aria-label="Filter race" value={raceFilter} onChange={(event) => setRaceFilter(event.target.value)}><option value="all">All races</option>{RACES.map((race) => <option key={race}>{race}</option>)}</select><select aria-label="Filter tier" value={tierFilter} onChange={(event) => setTierFilter(event.target.value)}><option value="all">All tiers</option>{[1,2,3,4,5,6].map((tier) => <option key={tier} value={tier}>Tier {tier}</option>)}</select><select aria-label="Sort cards" value={sort} onChange={(event) => setSort(event.target.value)}><option value="name">Name</option><option value="race">Race</option><option value="tier">Tier</option></select></div><CreateActions onNew={() => createCard(false)} onDuplicate={() => createCard(true)} /><Library entries={cards.map((entry) => ({ id: entry.id, title: names[entry.nameKey] ?? entry.id, meta: `${entry.race} · T${entry.tier} · ${entry.rarity}` }))} selectedId={card?.id} onSelect={setSelectedCardId} /></> : null}
       {tab === "items" ? <><div className="studio-filter-grid"><select aria-label="Filter item type" value={itemTypeFilter} onChange={(event) => setItemTypeFilter(event.target.value)}><option value="all">All item types</option>{ITEM_TYPES.map((type) => <option key={type}>{type}</option>)}</select><select aria-label="Sort items" value={sort} onChange={(event) => setSort(event.target.value)}><option value="name">Name</option><option value="type">Type</option><option value="value">Value</option></select></div><CreateActions onNew={() => createItem(false)} onDuplicate={() => createItem(true)} /><Library entries={items.map((entry) => ({ id: entry.id, title: names[entry.nameKey] ?? entry.id, meta: `${entry.type} · ${entry.baseValue}g · ${entry.weight} weight` }))} selectedId={item?.id} onSelect={setSelectedItemId} /></> : null}
+      {tab === "nobles" ? <><CreateActions onNew={() => createNoble(false)} onDuplicate={() => createNoble(true)} /><Library entries={nobles.map((entry) => ({ id: entry.id, title: entry.displayName, meta: `${entry.factionId} · ${entry.rank} · leader ${entry.leaderCardId}` }))} selectedId={noble?.id} onSelect={setSelectedNobleId} /></> : null}
       {tab === "terrains" ? <Library entries={TERRAINS.map((terrain) => ({ id: terrain, title: terrain, meta: draft.terrainBattlefields[terrain]?.image ? "Image assigned" : "Gradient fallback" }))} selectedId={selectedTerrain} onSelect={setSelectedTerrain} /> : null}
       {tab === "economy" ? <p className="studio-empty">These values control rewards for every battle. Enemy-specific gold and loot tables remain valid as minimums and source pools.</p> : null}
     </aside>
@@ -191,11 +226,12 @@ export default function ContentStudio() {
     <section className="studio-form">
       {tab === "cards" && card ? <><CardForm card={card} names={names} setNames={setNames} update={updateCard} updateNumber={updateCardNumber} rename={(value: string) => rename("card", value)} remove={() => remove("card")} chooseAsset={chooseAsset} applyAsset={applyAsset} assetDraft={assetDraft} focus={focus} saving={saving} dirty={dirty} /><UpgradePathEditor card={card} draft={draft} setDraft={setDraft} names={names} dirty={dirty} /></> : null}
       {tab === "items" && item ? <ItemForm item={item} names={names} setNames={setNames} update={updateItem} updateNumber={updateItemNumber} rename={(value: string) => rename("item", value)} remove={() => remove("item")} chooseAsset={chooseAsset} applyAsset={applyAsset} assetDraft={assetDraft} focus={focus} saving={saving} dirty={dirty} /> : null}
+      {tab === "nobles" && noble ? <NobleForm noble={noble} cards={draft.cards} names={names} update={updateNoble} remove={removeNoble} editLeader={() => { setSelectedCardId(noble.leaderCardId); setTab("cards"); }} /> : null}
       {tab === "terrains" ? <TerrainForm terrain={selectedTerrain} definition={terrainDefinition} preview={terrainPreview} focus={terrainFocus} assetDraft={assetDraft} saving={saving} chooseAsset={chooseAsset} applyAsset={applyAsset} updateFocus={updateTerrainFocus} /> : null}
       {tab === "economy" ? <RewardEconomyForm rules={draft.combatRules.rewards} update={updateRewardRule} /> : null}
     </section>
 
-    <aside className="studio-preview">{tab === "cards" && card ? <CardPreview card={card} name={names[card.nameKey] ?? card.id} image={assetDraft && assetDraft.kind !== "terrain" && assetDraft.kind !== "item" ? assetDraft.source : card.portraitImage} focus={focus} /> : null}{tab === "items" && item ? <ItemPreview item={item} name={names[item.nameKey] ?? item.id} image={assetDraft?.kind === "item" ? assetDraft.source : item.itemImage} focus={focus} /> : null}{tab === "terrains" ? <><span>Terrain status</span><h2>{selectedTerrain}</h2><p>{terrainDefinition?.image ? "Custom battlefield active" : "Using gradient fallback"}</p><div className="studio-paths"><small>Arena background</small><code>{terrainDefinition?.image ?? "Gradient fallback"}</code></div></> : null}{tab === "economy" ? <><span>Example victory</span><h2>{draft.combatRules.rewards.baseGold + draft.combatRules.rewards.goldPerThreat * 2 + draft.combatRules.rewards.goldPerDefeatedUnit * 5} gold</h2><p>Threat 2 · five defeated units</p><div className="studio-paths"><small>Guaranteed loot rolls</small><code>{draft.combatRules.rewards.minimumItemRolls}</code><small>Maximum prisoners</small><code>{draft.combatRules.rewards.maximumCaptures}</code></div></> : null}</aside>
+    <aside className="studio-preview">{tab === "cards" && card ? <CardPreview card={card} name={names[card.nameKey] ?? card.id} image={assetDraft && assetDraft.kind !== "terrain" && assetDraft.kind !== "item" ? assetDraft.source : card.portraitImage} focus={focus} /> : null}{tab === "nobles" && noble ? <NoblePreview noble={noble} leader={nobleLeader} leaderName={nobleLeader ? names[nobleLeader.nameKey] ?? nobleLeader.id : "Missing leader"} /> : null}{tab === "items" && item ? <ItemPreview item={item} name={names[item.nameKey] ?? item.id} image={assetDraft?.kind === "item" ? assetDraft.source : item.itemImage} focus={focus} /> : null}{tab === "terrains" ? <><span>Terrain status</span><h2>{selectedTerrain}</h2><p>{terrainDefinition?.image ? "Custom battlefield active" : "Using gradient fallback"}</p><div className="studio-paths"><small>Arena background</small><code>{terrainDefinition?.image ?? "Gradient fallback"}</code></div></> : null}{tab === "economy" ? <><span>Example victory</span><h2>{draft.combatRules.rewards.baseGold + draft.combatRules.rewards.goldPerThreat * 2 + draft.combatRules.rewards.goldPerDefeatedUnit * 5} gold</h2><p>Threat 2 · five defeated units</p><div className="studio-paths"><small>Guaranteed loot rolls</small><code>{draft.combatRules.rewards.minimumItemRolls}</code><small>Maximum prisoners</small><code>{draft.combatRules.rewards.maximumCaptures}</code></div></> : null}</aside>
   </main>;
 }
 
@@ -207,6 +243,19 @@ function RewardEconomyForm({ rules, update }: { rules: ContentPack["combatRules"
     ["captureTierPenalty", "Capture penalty per tier", 0.01], ["guaranteedCaptureAfterDefeatedUnits", "Guarantee after defeated units", 1], ["maximumCaptures", "Maximum prisoners", 1],
   ];
   return <><SectionTitle eyebrow="Global balancing" title="Battle rewards" /><div className="studio-form-grid">{fields.map(([key, label, step]) => <StudioField label={label} key={key}><input type="number" min="0" step={step} value={rules[key]} onChange={(event) => update(key, event.target.value)} /></StudioField>)}</div></>;
+}
+
+function NobleForm({ noble, cards, names, update, remove, editLeader }: { noble: NobleProfile; cards: CardDefinition[]; names: Record<string, string>; update: (patch: Partial<NobleProfile>) => void; remove: () => void; editLeader: () => void }) {
+  const orderedCards = [...cards].sort((left, right) => Number(Boolean(right.portraitImage)) - Number(Boolean(left.portraitImage)) || (names[left.nameKey] ?? left.id).localeCompare(names[right.nameKey] ?? right.id));
+  const leader = cards.find((card) => card.id === noble.leaderCardId);
+  return <><SectionTitle eyebrow="Noble profile" title={noble.displayName} onDelete={remove} /><div className="studio-form-grid">
+    <StudioField label="Profile id"><input value={noble.id} readOnly /></StudioField>
+    <StudioField label="Display name"><input value={noble.displayName} onChange={(event) => update({ displayName: event.target.value })} /></StudioField>
+    <StudioField label="Faction"><select value={noble.factionId} onChange={(event) => update({ factionId: event.target.value as NobleProfile["factionId"] })}><option value="ember_crown">Ember Crown</option><option value="gloam_compact">Gloam Compact</option><option value="iron_concord">Iron Concord</option></select></StudioField>
+    <StudioField label="Rank"><select value={noble.rank} onChange={(event) => update({ rank: event.target.value as NobleProfile["rank"] })}><option value="king">King</option><option value="baron">Baron · city</option><option value="count">Count · village domain</option></select></StudioField>
+    <StudioField label="Leader card" wide><select value={noble.leaderCardId} onChange={(event) => update({ leaderCardId: event.target.value })}>{orderedCards.map((card) => <option key={card.id} value={card.id}>{card.portraitImage ? "Portrait" : "No portrait"} · {names[card.nameKey] ?? card.id} · T{card.tier}</option>)}</select></StudioField>
+    <StudioField label="Leader level"><input type="number" min="1" max="20" value={noble.leaderLevel} onChange={(event) => update({ leaderLevel: Math.max(1, Number(event.target.value)) })} /></StudioField>
+  </div><section className="studio-assets studio-noble-help"><SectionTitle eyebrow="Leader artwork" title={leader?.portraitImage ? "Portrait assigned" : "Portrait missing"} /><p>The selected leader is a normal unit card. Edit that card to upload its portrait, battle card and focus point.</p><button type="button" onClick={editLeader}>Edit leader card &amp; portrait</button></section></>;
 }
 
 function CardForm({ card, names, setNames, update, updateNumber, rename, remove, chooseAsset, applyAsset, assetDraft, focus, saving, dirty }: any) {
@@ -231,6 +280,7 @@ function TerrainForm({ terrain, definition, preview, focus, assetDraft, saving, 
 
 function AssetSection({ title, description, kinds, assetDraft, focus, saving, chooseAsset, applyAsset, updateFocus }: any) { return <section className="studio-assets"><SectionTitle eyebrow="Artwork pipeline" title={title} /><div className="studio-upload-row">{kinds.map((kind: AssetKind) => <label className="studio-upload" key={kind}>Choose {kind} image<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => void chooseAsset(kind, event)} /></label>)}<span>{description}</span></div><div className="studio-focus-controls"><Range label="Horizontal focus" value={focus.x} onChange={(value) => updateFocus("x", value)} /><Range label="Vertical focus" value={focus.y} onChange={(value) => updateFocus("y", value)} /><button disabled={!assetDraft || !kinds.includes(assetDraft.kind) || saving} onClick={() => void applyAsset()}>{assetDraft && kinds.includes(assetDraft.kind) ? `Apply ${assetDraft.fileName}` : "Choose an image first"}</button></div></section> }
 function CardPreview({ card, name, image, focus }: { card: CardDefinition; name: string; image?: string; focus: {x:number;y:number} }) { return <><span>Live battle preview</span><article className="studio-portrait-preview"><div>{image ? <img src={image} alt="" style={{ objectPosition: `${focus.x}% ${focus.y}%` }} /> : <b>{name.slice(0,1)}</b>}</div><strong className={`rarity-name ${card.rarity}`}>{name}</strong><i><span /></i><small>{card.maxHp}/{card.maxHp} HP</small></article><article className="battle-card studio-card-preview"><strong className={`rarity-name ${card.rarity}`}>{name}</strong><span className="card-race">{card.race}</span><span className="card-level">T{card.tier}</span><span className="card-stats"><b>ATK {card.atk}</b><b>DEF {card.def}</b><b>INI {card.initiative}</b></span></article></> }
+function NoblePreview({ noble, leader, leaderName }: { noble: NobleProfile; leader?: CardDefinition; leaderName: string }) { const focus = leader?.imageFocus ?? { x: 50, y: 50 }; return <><span>Noble audience preview</span><article className="studio-portrait-preview studio-noble-preview"><div>{leader?.portraitImage ? <img src={leader.portraitImage} alt="" style={{ objectPosition: `${focus.x}% ${focus.y}%` }} /> : <b>{noble.displayName.slice(0,1)}</b>}</div><small>{noble.factionId.replaceAll("_", " ")}</small><strong>{noble.rank.toUpperCase()} {noble.displayName}</strong><i><span /></i><p>{leaderName} · Level {noble.leaderLevel}</p></article></> }
 function ItemPreview({ item, name, image, focus }: { item: ItemDefinition; name: string; image?: string; focus: {x:number;y:number} }) { return <><span>Live inventory preview</span><article className="studio-item-preview"><div>{image ? <img src={image} alt="" style={{ objectPosition: `${focus.x}% ${focus.y}%` }} /> : <b>{name.slice(0,1)}</b>}</div><small>{item.type}</small><strong>{name}</strong><p>{item.baseValue}g · {item.weight} weight</p>{item.type === "equipment" ? <em>ATK +{item.statBonus?.atk ?? 0} · DEF +{item.statBonus?.def ?? 0}</em> : null}</article></> }
 function Library({ entries, selectedId, onSelect }: { entries: {id:string;title:string;meta:string}[]; selectedId?: string; onSelect:(id:string)=>void }) { return <nav>{entries.map((entry) => <button className={entry.id === selectedId ? "selected" : ""} key={entry.id} onClick={() => onSelect(entry.id)}><strong>{entry.title}</strong><small>{entry.meta} · {entry.id}</small></button>)}{!entries.length ? <p className="studio-empty">No matching content.</p> : null}</nav> }
 function CreateActions({ onNew, onDuplicate }: {onNew:()=>void;onDuplicate:()=>void}) { return <div className="studio-create-actions"><button onClick={onNew}>+ New</button><button onClick={onDuplicate}>Duplicate</button></div> }
@@ -244,6 +294,7 @@ function findDuplicates(values: string[]): string[] { return values.filter((valu
 function findBrokenReferences(pack: ContentPack): string[] {
   const cards = new Set(pack.cards.map((entry) => entry.id)); const items = new Set(pack.items.map((entry) => entry.id)); const broken: string[] = [];
   for (const enemy of pack.enemies) { for (const id of [...enemy.deck, ...(enemy.leaderCardId ? [enemy.leaderCardId] : []), ...enemy.dropTable.map((drop) => drop.cardId)]) if (!cards.has(id)) broken.push(`enemy:${enemy.id}:card=${id}`); for (const drop of enemy.itemDropTable) if (!items.has(drop.itemId)) broken.push(`enemy:${enemy.id}:item=${drop.itemId}`); }
+  for (const noble of pack.nobles) if (!cards.has(noble.leaderCardId)) broken.push(`noble:${noble.id}:leader=${noble.leaderCardId}`);
   for (const upgrade of pack.unitUpgrades) for (const id of [upgrade.fromCardId, ...upgrade.options]) if (!cards.has(id)) broken.push(`upgrade:card=${id}`);
   for (const recipe of pack.tradeRecipes) for (const id of [recipe.inputItemId, recipe.outputItemId]) if (!items.has(id)) broken.push(`recipe:item=${id}`);
   return broken;
@@ -251,6 +302,14 @@ function findBrokenReferences(pack: ContentPack): string[] {
 function findUpgradeProblems(pack: ContentPack): string[] {
   const cards = new Map(pack.cards.map((card) => [card.id, card])); const problems: string[] = [];
   for (const path of pack.unitUpgrades) { const source = cards.get(path.fromCardId); if (!source) continue; for (const id of path.options) { const target = cards.get(id); if (!target) continue; if (source.race !== target.race) problems.push(`${source.id} → ${target.id} changes race`); if (target.tier <= source.tier) problems.push(`${source.id} → ${target.id} does not increase tier`); } }
+  return problems;
+}
+function findNobleProblems(pack: ContentPack): string[] {
+  const problems: string[] = [];
+  for (const factionId of ["ember_crown", "gloam_compact", "iron_concord"] as const) {
+    const kings = pack.nobles.filter((noble) => noble.factionId === factionId && noble.rank === "king");
+    if (kings.length !== 1) problems.push(`${factionId} requires exactly one king`);
+  }
   return problems;
 }
 function fileToDataUrl(file: File): Promise<string> { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error ?? new Error("Could not read image")); reader.readAsDataURL(file); }); }
