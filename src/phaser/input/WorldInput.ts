@@ -9,3 +9,7 @@ export function consumeWorldZoom(): number {
   pendingZoomDelta = 0;
   return delta;
 }
+
+export function getWorldTimeScale(controlHeld: boolean): 1 | 4 {
+  return controlHeld ? 4 : 1;
+}

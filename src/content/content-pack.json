@@ -1,20 +1,23 @@
 {
   "version": 1,
   "combatRules": {
-    "summonsPerTurn": 3,
+    "fieldSlots": 7,
+    "startingStrategicActions": 3,
+    "strategicActionsPerRound": 1,
+    "maximumStrategicActions": 9,
     "rewards": {
-      "baseGold": 12,
-      "goldPerThreat": 10,
-      "goldPerDefeatedUnit": 4,
-      "itemChanceMultiplier": 2.2,
+      "baseGold": 20,
+      "goldPerThreat": 5,
+      "goldPerDefeatedUnit": 10,
+      "itemChanceMultiplier": 1.8,
       "itemChanceBonus": 0.08,
-      "minimumItemRolls": 2,
+      "minimumItemRolls": 4,
       "captureBaseChance": 0.4,
       "captureChancePerDefeatedUnit": 0.05,
       "captureChanceCap": 0.7,
       "captureTierPenalty": 0.05,
       "guaranteedCaptureAfterDefeatedUnits": 3,
-      "maximumCaptures": 2
+      "maximumCaptures": 1
     }
   },
   "terrainBattlefields": {
@@ -132,7 +135,7 @@
       "cardImage": "/assets/cards/player_wanderer/card.webp",
       "imageFocus": {
         "x": 50,
-        "y": 50
+        "y": 42
       },
       "race": "hero",
       "rarity": "legendary",
@@ -141,7 +144,68 @@
       "atk": 420,
       "def": 450,
       "maxHp": 1050,
-      "battleEffect": "rally_all_150"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 60,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
+    },
+    {
+      "id": "player_vanguard",
+      "nameKey": "card.playerVanguard.name",
+      "portraitImage": "/assets/cards/player_vanguard/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 42
+      },
+      "race": "human",
+      "rarity": "legendary",
+      "tier": 1,
+      "initiative": 4,
+      "atk": 380,
+      "def": 540,
+      "maxHp": 1180,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 60,
+          "stat": "def",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
+    },
+    {
+      "id": "player_wayfinder",
+      "nameKey": "card.playerWayfinder.name",
+      "portraitImage": "/assets/cards/player_wayfinder/portrait.webp",
+      "imageFocus": {
+        "x": 50,
+        "y": 42
+      },
+      "race": "human",
+      "rarity": "legendary",
+      "tier": 1,
+      "initiative": 7,
+      "atk": 470,
+      "def": 390,
+      "maxHp": 960,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 100
+        }
+      ]
     },
     {
       "id": "village_levy",
@@ -159,20 +223,38 @@
       "atk": 330,
       "def": 300,
       "maxHp": 900,
-      "recruitCost": 12
+      "recruitCost": 12,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "shield",
+          "target": "self",
+          "value": 180
+        }
+      ]
     },
     {
       "id": "levy_spearman",
       "nameKey": "card.levySpearman.name",
       "portraitImage": "/assets/cards/levy_spearman/portrait.webp",
       "race": "human",
-      "rarity": "common",
+      "rarity": "uncommon",
       "tier": 2,
       "initiative": 5,
       "atk": 580,
       "def": 350,
       "maxHp": 1080,
-      "battleEffect": "human_brace_160"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 90,
+          "stat": "def",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "novice_archer",
@@ -185,7 +267,14 @@
       "atk": 600,
       "def": 280,
       "maxHp": 980,
-      "battleEffect": "human_volley_120"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 150
+        }
+      ]
     },
     {
       "id": "shrine_acolyte",
@@ -202,7 +291,15 @@
       "atk": 270,
       "def": 390,
       "maxHp": 850,
-      "battleEffect": "human_first_aid_180"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "heal",
+          "target": "lowestAlly",
+          "zone": "field",
+          "value": 140
+        }
+      ]
     },
     {
       "id": "militia_shieldbearer",
@@ -215,7 +312,17 @@
       "atk": 450,
       "def": 650,
       "maxHp": 1350,
-      "battleEffect": "human_guard_all_180"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 90,
+          "stat": "def",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "village_slinger",
@@ -232,7 +339,14 @@
       "atk": 360,
       "def": 180,
       "maxHp": 780,
-      "battleEffect": "human_volley_120"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 100
+        }
+      ]
     },
     {
       "id": "kobold_jung",
@@ -245,7 +359,17 @@
       "atk": 300,
       "def": 180,
       "maxHp": 760,
-      "battleEffect": "kobold_pack_100"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "sameRaceAllies",
+          "value": 60,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "kobold_speer",
@@ -262,7 +386,17 @@
       "atk": 520,
       "def": 300,
       "maxHp": 1030,
-      "battleEffect": "kobold_pack_100"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "sameRaceAllies",
+          "value": 90,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "kobold_trapper",
@@ -279,7 +413,17 @@
       "atk": 440,
       "def": 390,
       "maxHp": 980,
-      "battleEffect": "kobold_trap_140"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "strongestEnemy",
+          "value": 150,
+          "stat": "atk",
+          "modifier": "decrease",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "goblin",
@@ -295,7 +439,14 @@
       "initiative": 6,
       "atk": 650,
       "def": 500,
-      "maxHp": 1450
+      "maxHp": 1450,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "draw",
+          "value": 1
+        }
+      ]
     },
     {
       "id": "kobold_shaman",
@@ -312,7 +463,15 @@
       "atk": 650,
       "def": 750,
       "maxHp": 1450,
-      "battleEffect": "heal_lowest_300"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "heal",
+          "target": "lowestAlly",
+          "zone": "field",
+          "value": 330
+        }
+      ]
     },
     {
       "id": "tunnel_guard",
@@ -328,7 +487,18 @@
       "initiative": 5,
       "atk": 850,
       "def": 1150,
-      "maxHp": 1900
+      "maxHp": 1900,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "sameRaceAllies",
+          "value": 130,
+          "stat": "def",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "kobold_hauptmann",
@@ -345,7 +515,17 @@
       "atk": 1100,
       "def": 800,
       "maxHp": 2100,
-      "battleEffect": "rally_all_150"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 180,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "ork_rekrut",
@@ -357,7 +537,17 @@
       "atk": 590,
       "def": 370,
       "maxHp": 1220,
-      "battleEffect": "orc_bloodrage_180"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "self",
+          "value": 150,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "orc_tracker",
@@ -369,7 +559,14 @@
       "atk": 550,
       "def": 290,
       "maxHp": 1080,
-      "battleEffect": "orc_overrun_160"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 150
+        }
+      ]
     },
     {
       "id": "orc",
@@ -381,7 +578,17 @@
       "atk": 930,
       "def": 620,
       "maxHp": 1850,
-      "battleEffect": "orc_bloodrage_180"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "self",
+          "value": 220,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "skelett",
@@ -393,7 +600,15 @@
       "atk": 330,
       "def": 260,
       "maxHp": 900,
-      "battleEffect": "undead_reanimate_30"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "shield",
+          "target": "self",
+          "value": 30,
+          "valueMode": "percentMaxHp"
+        }
+      ]
     },
     {
       "id": "grave_archer",
@@ -404,7 +619,15 @@
       "initiative": 4,
       "atk": 760,
       "def": 500,
-      "maxHp": 1450
+      "maxHp": 1450,
+      "battleEffects": [
+        {
+          "trigger": "onAttack",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 220
+        }
+      ]
     },
     {
       "id": "restless_spirit",
@@ -416,7 +639,14 @@
       "atk": 650,
       "def": 650,
       "maxHp": 1000,
-      "battleEffect": "undead_drain_200"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "drain",
+          "target": "weakestEnemy",
+          "value": 130
+        }
+      ]
     },
     {
       "id": "soldier",
@@ -432,7 +662,18 @@
       "initiative": 5,
       "atk": 1050,
       "def": 1000,
-      "maxHp": 1900
+      "maxHp": 1900,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "self",
+          "value": 220,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "wache",
@@ -443,7 +684,18 @@
       "initiative": 5,
       "atk": 1000,
       "def": 1100,
-      "maxHp": 2100
+      "maxHp": 2100,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 180,
+          "stat": "def",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "bogenschutze",
@@ -460,7 +712,14 @@
       "initiative": 5,
       "atk": 1000,
       "def": 600,
-      "maxHp": 1500
+      "maxHp": 1500,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "draw",
+          "value": 1
+        }
+      ]
     },
     {
       "id": "priest",
@@ -477,7 +736,15 @@
       "atk": 800,
       "def": 1150,
       "maxHp": 1700,
-      "battleEffect": "heal_lowest_300"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "heal",
+          "target": "lowestAlly",
+          "zone": "field",
+          "value": 330
+        }
+      ]
     },
     {
       "id": "pikeman",
@@ -493,7 +760,15 @@
       "initiative": 5,
       "atk": 1050,
       "def": 1050,
-      "maxHp": 2050
+      "maxHp": 2050,
+      "battleEffects": [
+        {
+          "trigger": "onAttack",
+          "action": "damage",
+          "target": "strongestEnemy",
+          "value": 220
+        }
+      ]
     },
     {
       "id": "longbowman",
@@ -509,7 +784,15 @@
       "initiative": 7,
       "atk": 1050,
       "def": 620,
-      "maxHp": 1750
+      "maxHp": 1750,
+      "battleEffects": [
+        {
+          "trigger": "onAttack",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 220
+        }
+      ]
     },
     {
       "id": "battle_monk",
@@ -526,7 +809,15 @@
       "atk": 1050,
       "def": 1150,
       "maxHp": 2050,
-      "battleEffect": "heal_lowest_300"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "heal",
+          "target": "lowestAlly",
+          "zone": "field",
+          "value": 330
+        }
+      ]
     },
     {
       "id": "feuer_geist",
@@ -538,7 +829,14 @@
       "atk": 650,
       "def": 450,
       "maxHp": 1150,
-      "battleEffect": "burn_weakest_300"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 150
+        }
+      ]
     },
     {
       "id": "frost_wisp",
@@ -549,7 +847,18 @@
       "initiative": 7,
       "atk": 620,
       "def": 700,
-      "maxHp": 1150
+      "maxHp": 1150,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "strongestEnemy",
+          "value": 1,
+          "stat": "initiative",
+          "modifier": "decrease",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "storm_wisp",
@@ -561,7 +870,14 @@
       "atk": 650,
       "def": 380,
       "maxHp": 1050,
-      "battleEffect": "burn_weakest_300"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 150
+        }
+      ]
     },
     {
       "id": "riesenbat",
@@ -574,7 +890,14 @@
       "atk": 350,
       "def": 220,
       "maxHp": 800,
-      "battleEffect": "beast_first_strike_140"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 100
+        }
+      ]
     },
     {
       "id": "dire_wolf",
@@ -587,7 +910,17 @@
       "atk": 560,
       "def": 360,
       "maxHp": 1100,
-      "battleEffect": "beast_pack_120"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "sameRaceAllies",
+          "value": 90,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "swamp_serpent",
@@ -598,7 +931,18 @@
       "initiative": 7,
       "atk": 1050,
       "def": 900,
-      "maxHp": 2050
+      "maxHp": 2050,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "strongestEnemy",
+          "value": 220,
+          "stat": "atk",
+          "modifier": "decrease",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "eisenwachter",
@@ -610,7 +954,14 @@
       "atk": 800,
       "def": 1150,
       "maxHp": 2050,
-      "battleEffect": "shield_self_400"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "shield",
+          "target": "self",
+          "value": 420
+        }
+      ]
     },
     {
       "id": "clockwork_scout",
@@ -621,7 +972,14 @@
       "initiative": 2,
       "atk": 650,
       "def": 750,
-      "maxHp": 1450
+      "maxHp": 1450,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "draw",
+          "value": 1
+        }
+      ]
     },
     {
       "id": "brass_guardian",
@@ -633,7 +991,14 @@
       "atk": 1200,
       "def": 1650,
       "maxHp": 2700,
-      "battleEffect": "shield_self_400"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "shield",
+          "target": "self",
+          "value": 600
+        }
+      ]
     },
     {
       "id": "ember_raider",
@@ -644,7 +1009,15 @@
       "initiative": 5,
       "atk": 1500,
       "def": 850,
-      "maxHp": 2300
+      "maxHp": 2300,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 320
+        }
+      ]
     },
     {
       "id": "grave_warden",
@@ -655,7 +1028,15 @@
       "initiative": 2,
       "atk": 1300,
       "def": 1650,
-      "maxHp": 2600
+      "maxHp": 2600,
+      "battleEffects": [
+        {
+          "trigger": "onDeath",
+          "action": "shield",
+          "target": "allAllies",
+          "value": 180
+        }
+      ]
     },
     {
       "id": "kobold_jaeger",
@@ -671,7 +1052,16 @@
       "initiative": 6,
       "atk": 1000,
       "def": 800,
-      "maxHp": 2100
+      "maxHp": 2100,
+      "battleEffects": [
+        {
+          "trigger": "onAttack",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 320,
+          "condition": "enemyWounded"
+        }
+      ]
     },
     {
       "id": "cave_geomancer",
@@ -688,7 +1078,14 @@
       "atk": 1450,
       "def": 1600,
       "maxHp": 2850,
-      "battleEffect": "shield_self_400"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "shield",
+          "target": "self",
+          "value": 820
+        }
+      ]
     },
     {
       "id": "kobold_koenig",
@@ -704,7 +1101,23 @@
       "initiative": 7,
       "atk": 1700,
       "def": 1250,
-      "maxHp": 2850
+      "maxHp": 2850,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "draw",
+          "value": 2
+        },
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "sameRaceAllies",
+          "value": 240,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "ork_berserker",
@@ -716,7 +1129,17 @@
       "atk": 1020,
       "def": 500,
       "maxHp": 1700,
-      "battleEffect": "orc_bloodrage_180"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "self",
+          "value": 220,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "orc_wolf_rider",
@@ -727,7 +1150,25 @@
       "initiative": 6,
       "atk": 1500,
       "def": 800,
-      "maxHp": 2100
+      "maxHp": 2100,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "self",
+          "value": 300,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        },
+        {
+          "trigger": "onAttack",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 320,
+          "condition": "enemyWounded"
+        }
+      ]
     },
     {
       "id": "orc_ironhide",
@@ -738,7 +1179,15 @@
       "initiative": 4,
       "atk": 1500,
       "def": 1650,
-      "maxHp": 2850
+      "maxHp": 2850,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "shield",
+          "target": "self",
+          "value": 600
+        }
+      ]
     },
     {
       "id": "ork_kriegsherr",
@@ -749,7 +1198,23 @@
       "initiative": 5,
       "atk": 2050,
       "def": 1350,
-      "maxHp": 3100
+      "maxHp": 3100,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "sameRaceAllies",
+          "value": 240,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        },
+        {
+          "trigger": "onSummon",
+          "action": "draw",
+          "value": 1
+        }
+      ]
     },
     {
       "id": "knochenwachter",
@@ -760,7 +1225,16 @@
       "initiative": 3,
       "atk": 1050,
       "def": 1150,
-      "maxHp": 2050
+      "maxHp": 2050,
+      "battleEffects": [
+        {
+          "trigger": "onDeath",
+          "action": "returnToHand",
+          "target": "self",
+          "value": 30,
+          "limitPerBattle": 1
+        }
+      ]
     },
     {
       "id": "wraith",
@@ -771,7 +1245,15 @@
       "initiative": 3,
       "atk": 1350,
       "def": 850,
-      "maxHp": 2100
+      "maxHp": 2100,
+      "battleEffects": [
+        {
+          "trigger": "onDeath",
+          "action": "damage",
+          "target": "allEnemies",
+          "value": 160
+        }
+      ]
     },
     {
       "id": "bone_knight",
@@ -782,7 +1264,15 @@
       "initiative": 3,
       "atk": 1500,
       "def": 1650,
-      "maxHp": 2850
+      "maxHp": 2850,
+      "battleEffects": [
+        {
+          "trigger": "onAttack",
+          "action": "drain",
+          "target": "weakestEnemy",
+          "value": 270
+        }
+      ]
     },
     {
       "id": "banshee",
@@ -794,7 +1284,14 @@
       "atk": 1950,
       "def": 1250,
       "maxHp": 2850,
-      "battleEffect": "burn_weakest_300"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 450
+        }
+      ]
     },
     {
       "id": "lich",
@@ -805,7 +1302,22 @@
       "initiative": 3,
       "atk": 1650,
       "def": 1250,
-      "maxHp": 2850
+      "maxHp": 2850,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "allEnemies",
+          "value": 320
+        },
+        {
+          "trigger": "onDeath",
+          "action": "returnToHand",
+          "target": "self",
+          "value": 50,
+          "limitPerBattle": 1
+        }
+      ]
     },
     {
       "id": "knight",
@@ -816,7 +1328,24 @@
       "initiative": 5,
       "atk": 1500,
       "def": 1350,
-      "maxHp": 2850
+      "maxHp": 2850,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "shield",
+          "target": "self",
+          "value": 820
+        },
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 240,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "shieldguard",
@@ -827,7 +1356,24 @@
       "initiative": 3,
       "atk": 1450,
       "def": 2250,
-      "maxHp": 3100
+      "maxHp": 3100,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 240,
+          "stat": "def",
+          "modifier": "increase",
+          "duration": "round"
+        },
+        {
+          "trigger": "onSummon",
+          "action": "shield",
+          "target": "allAllies",
+          "value": 240
+        }
+      ]
     },
     {
       "id": "sniper",
@@ -838,7 +1384,15 @@
       "initiative": 7,
       "atk": 1500,
       "def": 1250,
-      "maxHp": 2850
+      "maxHp": 2850,
+      "battleEffects": [
+        {
+          "trigger": "onAttack",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 450
+        }
+      ]
     },
     {
       "id": "ranger",
@@ -854,7 +1408,16 @@
       "initiative": 6,
       "atk": 1250,
       "def": 900,
-      "maxHp": 2100
+      "maxHp": 2100,
+      "battleEffects": [
+        {
+          "trigger": "onAttack",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 320,
+          "condition": "enemyWounded"
+        }
+      ]
     },
     {
       "id": "banner_knight",
@@ -866,7 +1429,17 @@
       "atk": 1750,
       "def": 1750,
       "maxHp": 3000,
-      "battleEffect": "rally_all_150"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 240,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "royal_arbalest",
@@ -877,7 +1450,15 @@
       "initiative": 6,
       "atk": 1900,
       "def": 1250,
-      "maxHp": 2850
+      "maxHp": 2850,
+      "battleEffects": [
+        {
+          "trigger": "onAttack",
+          "action": "damage",
+          "target": "strongestEnemy",
+          "value": 450
+        }
+      ]
     },
     {
       "id": "crusader",
@@ -893,7 +1474,15 @@
       "initiative": 5,
       "atk": 1500,
       "def": 1600,
-      "maxHp": 2850
+      "maxHp": 2850,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "shield",
+          "target": "allAllies",
+          "value": 180
+        }
+      ]
     },
     {
       "id": "high_priest",
@@ -909,7 +1498,21 @@
       "initiative": 4,
       "atk": 1100,
       "def": 1650,
-      "maxHp": 2700
+      "maxHp": 2700,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "heal",
+          "target": "lowestAlly",
+          "zone": "fieldAndHand",
+          "value": 500
+        },
+        {
+          "trigger": "onSummon",
+          "action": "draw",
+          "value": 1
+        }
+      ]
     },
     {
       "id": "flame_elemental",
@@ -921,7 +1524,14 @@
       "atk": 980,
       "def": 540,
       "maxHp": 1650,
-      "battleEffect": "elemental_chain_160"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "allEnemies",
+          "value": 110
+        }
+      ]
     },
     {
       "id": "ice_elemental",
@@ -932,7 +1542,24 @@
       "initiative": 6,
       "atk": 1050,
       "def": 1150,
-      "maxHp": 2050
+      "maxHp": 2050,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allEnemies",
+          "value": 2,
+          "stat": "initiative",
+          "modifier": "decrease",
+          "duration": "round"
+        },
+        {
+          "trigger": "onSummon",
+          "action": "shield",
+          "target": "self",
+          "value": 130
+        }
+      ]
     },
     {
       "id": "storm_elemental",
@@ -944,7 +1571,14 @@
       "atk": 1500,
       "def": 950,
       "maxHp": 2450,
-      "battleEffect": "burn_weakest_300"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 320
+        }
+      ]
     },
     {
       "id": "phoenix",
@@ -955,7 +1589,22 @@
       "initiative": 8,
       "atk": 1500,
       "def": 1550,
-      "maxHp": 2850
+      "maxHp": 2850,
+      "battleEffects": [
+        {
+          "trigger": "onDeath",
+          "action": "damage",
+          "target": "allEnemies",
+          "value": 160
+        },
+        {
+          "trigger": "onDeath",
+          "action": "returnToHand",
+          "target": "self",
+          "value": 50,
+          "limitPerBattle": 1
+        }
+      ]
     },
     {
       "id": "blood_bat",
@@ -966,7 +1615,15 @@
       "initiative": 9,
       "atk": 1050,
       "def": 650,
-      "maxHp": 1700
+      "maxHp": 1700,
+      "battleEffects": [
+        {
+          "trigger": "onAttack",
+          "action": "drain",
+          "target": "weakestEnemy",
+          "value": 190
+        }
+      ]
     },
     {
       "id": "alpha_wolf",
@@ -978,7 +1635,17 @@
       "atk": 1050,
       "def": 780,
       "maxHp": 2050,
-      "battleEffect": "rally_all_150"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 130,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "cave_troll",
@@ -989,7 +1656,15 @@
       "initiative": 7,
       "atk": 1500,
       "def": 1550,
-      "maxHp": 2850
+      "maxHp": 2850,
+      "battleEffects": [
+        {
+          "trigger": "onAttack",
+          "action": "heal",
+          "target": "self",
+          "value": 470
+        }
+      ]
     },
     {
       "id": "nightwing",
@@ -1000,7 +1675,16 @@
       "initiative": 8,
       "atk": 1500,
       "def": 1050,
-      "maxHp": 2400
+      "maxHp": 2400,
+      "battleEffects": [
+        {
+          "trigger": "onAttack",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 320,
+          "condition": "enemyWounded"
+        }
+      ]
     },
     {
       "id": "wyvern",
@@ -1011,7 +1695,15 @@
       "initiative": 9,
       "atk": 1500,
       "def": 1350,
-      "maxHp": 2850
+      "maxHp": 2850,
+      "battleEffects": [
+        {
+          "trigger": "onAttack",
+          "action": "damage",
+          "target": "allEnemies",
+          "value": 160
+        }
+      ]
     },
     {
       "id": "golem",
@@ -1022,7 +1714,24 @@
       "initiative": 1,
       "atk": 2050,
       "def": 2250,
-      "maxHp": 3400
+      "maxHp": 3400,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "shield",
+          "target": "self",
+          "value": 820
+        },
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 240,
+          "stat": "def",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "siege_golem",
@@ -1033,7 +1742,15 @@
       "initiative": 1,
       "atk": 1500,
       "def": 1650,
-      "maxHp": 2850
+      "maxHp": 2850,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "allEnemies",
+          "value": 160
+        }
+      ]
     },
     {
       "id": "cannon_golem",
@@ -1044,7 +1761,15 @@
       "initiative": 2,
       "atk": 2050,
       "def": 2200,
-      "maxHp": 3700
+      "maxHp": 3700,
+      "battleEffects": [
+        {
+          "trigger": "onAttack",
+          "action": "damage",
+          "target": "allEnemies",
+          "value": 230
+        }
+      ]
     },
     {
       "id": "ash_warlord",
@@ -1055,7 +1780,15 @@
       "initiative": 6,
       "atk": 2050,
       "def": 1500,
-      "maxHp": 3500
+      "maxHp": 3500,
+      "battleEffects": [
+        {
+          "trigger": "onAttack",
+          "action": "damage",
+          "target": "allEnemies",
+          "value": 230
+        }
+      ]
     },
     {
       "id": "blood_chieftain",
@@ -1067,7 +1800,17 @@
       "atk": 2050,
       "def": 1900,
       "maxHp": 3800,
-      "battleEffect": "rally_all_150"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 240,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "necromancer",
@@ -1079,7 +1822,15 @@
       "atk": 2050,
       "def": 1700,
       "maxHp": 3100,
-      "battleEffect": "heal_lowest_300"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "heal",
+          "target": "lowestAlly",
+          "zone": "field",
+          "value": 850
+        }
+      ]
     },
     {
       "id": "death_paladin",
@@ -1090,7 +1841,22 @@
       "initiative": 3,
       "atk": 2050,
       "def": 2200,
-      "maxHp": 3600
+      "maxHp": 3600,
+      "battleEffects": [
+        {
+          "trigger": "onAttack",
+          "action": "drain",
+          "target": "weakestEnemy",
+          "value": 380
+        },
+        {
+          "trigger": "onDeath",
+          "action": "returnToHand",
+          "target": "self",
+          "value": 40,
+          "limitPerBattle": 1
+        }
+      ]
     },
     {
       "id": "swordsman",
@@ -1102,13 +1868,23 @@
         "y": 50
       },
       "race": "human",
-      "rarity": "uncommon",
+      "rarity": "common",
       "tier": 2,
       "initiative": 5,
       "atk": 610,
       "def": 330,
       "maxHp": 1080,
-      "battleEffect": "human_brace_160"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 90,
+          "stat": "def",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "noble_recruit",
@@ -1126,7 +1902,17 @@
       "atk": 520,
       "def": 480,
       "maxHp": 1200,
-      "battleEffect": "rally_all_150"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 90,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "mounted_squire",
@@ -1144,7 +1930,17 @@
       "atk": 850,
       "def": 750,
       "maxHp": 1800,
-      "battleEffect": "rally_all_150"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 130,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "lancer",
@@ -1157,7 +1953,14 @@
       "atk": 1450,
       "def": 900,
       "maxHp": 2450,
-      "battleEffect": "human_volley_120"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 320
+        }
+      ]
     },
     {
       "id": "royal_cavalier",
@@ -1170,7 +1973,17 @@
       "atk": 1900,
       "def": 1500,
       "maxHp": 3300,
-      "battleEffect": "rally_all_150"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 240,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "halberdier",
@@ -1188,7 +2001,17 @@
       "atk": 1400,
       "def": 1250,
       "maxHp": 2600,
-      "battleEffect": "human_brace_160"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 180,
+          "stat": "def",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "royal_guard",
@@ -1201,7 +2024,17 @@
       "atk": 1720,
       "def": 2150,
       "maxHp": 3500,
-      "battleEffect": "human_guard_all_180"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 240,
+          "stat": "def",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "orc_youngblood",
@@ -1214,7 +2047,17 @@
       "atk": 400,
       "def": 180,
       "maxHp": 900,
-      "battleEffect": "orc_bloodrage_180"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "self",
+          "value": 100,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "kobold_slinger",
@@ -1232,7 +2075,17 @@
       "atk": 340,
       "def": 140,
       "maxHp": 740,
-      "battleEffect": "kobold_trap_140"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "strongestEnemy",
+          "value": 100,
+          "stat": "atk",
+          "modifier": "decrease",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "scrap_automaton",
@@ -1245,7 +2098,14 @@
       "atk": 300,
       "def": 440,
       "maxHp": 1020,
-      "battleEffect": "shield_self_400"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "shield",
+          "target": "self",
+          "value": 180
+        }
+      ]
     },
     {
       "id": "maintenance_drone",
@@ -1258,7 +2118,15 @@
       "atk": 270,
       "def": 350,
       "maxHp": 820,
-      "battleEffect": "machine_repair_180"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "heal",
+          "target": "lowestAlly",
+          "zone": "field",
+          "value": 140
+        }
+      ]
     },
     {
       "id": "ember_spark",
@@ -1271,7 +2139,14 @@
       "atk": 410,
       "def": 140,
       "maxHp": 740,
-      "battleEffect": "burn_weakest_300"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 100
+        }
+      ]
     },
     {
       "id": "frost_spark",
@@ -1284,7 +2159,17 @@
       "atk": 310,
       "def": 260,
       "maxHp": 820,
-      "battleEffect": "elemental_frost_140"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "strongestEnemy",
+          "value": 1,
+          "stat": "initiative",
+          "modifier": "decrease",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "storm_spark",
@@ -1297,7 +2182,14 @@
       "atk": 380,
       "def": 160,
       "maxHp": 760,
-      "battleEffect": "elemental_chain_160"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "allEnemies",
+          "value": 50
+        }
+      ]
     },
     {
       "id": "stray_wolf",
@@ -1310,7 +2202,18 @@
       "atk": 390,
       "def": 230,
       "maxHp": 880,
-      "battleEffect": "beast_hunt_160"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "self",
+          "value": 100,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round",
+          "condition": "enemyWounded"
+        }
+      ]
     },
     {
       "id": "giant_rat",
@@ -1323,7 +2226,17 @@
       "atk": 330,
       "def": 180,
       "maxHp": 800,
-      "battleEffect": "beast_pack_120"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "sameRaceAllies",
+          "value": 60,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "cave_bat",
@@ -1336,7 +2249,14 @@
       "atk": 500,
       "def": 300,
       "maxHp": 980,
-      "battleEffect": "beast_first_strike_140"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 150
+        }
+      ]
     },
     {
       "id": "lost_soul",
@@ -1349,7 +2269,14 @@
       "atk": 300,
       "def": 220,
       "maxHp": 800,
-      "battleEffect": "undead_drain_200"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "drain",
+          "target": "weakestEnemy",
+          "value": 80
+        }
+      ]
     },
     {
       "id": "plague_rat",
@@ -1362,7 +2289,17 @@
       "atk": 500,
       "def": 280,
       "maxHp": 1000,
-      "battleEffect": "beast_pack_120"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "sameRaceAllies",
+          "value": 90,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
     },
     {
       "id": "alpha_rat",
@@ -1375,7 +2312,360 @@
       "atk": 820,
       "def": 560,
       "maxHp": 1600,
-      "battleEffect": "beast_hunt_160"
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "self",
+          "value": 220,
+          "stat": "atk",
+          "modifier": "increase",
+          "duration": "round",
+          "condition": "enemyWounded"
+        }
+      ]
+    },
+    {
+      "id": "caravan_guard",
+      "nameKey": "cards.caravan_guard.name",
+      "descriptionKey": "cards.caravan_guard.description",
+      "race": "human",
+      "rarity": "common",
+      "tier": 2,
+      "initiative": 5,
+      "atk": 520,
+      "def": 520,
+      "maxHp": 1180,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "self",
+          "value": 100,
+          "stat": "def",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
+    },
+    {
+      "id": "road_warden",
+      "nameKey": "cards.road_warden.name",
+      "descriptionKey": "cards.road_warden.description",
+      "race": "human",
+      "rarity": "uncommon",
+      "tier": 3,
+      "initiative": 6,
+      "atk": 780,
+      "def": 760,
+      "maxHp": 1720,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "self",
+          "value": 180,
+          "stat": "def",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
+    },
+    {
+      "id": "caravan_crossbowman",
+      "nameKey": "cards.caravan_crossbowman.name",
+      "descriptionKey": "cards.caravan_crossbowman.description",
+      "race": "human",
+      "rarity": "uncommon",
+      "tier": 3,
+      "initiative": 6,
+      "atk": 920,
+      "def": 520,
+      "maxHp": 1420,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "damage",
+          "target": "weakestEnemy",
+          "value": 140
+        }
+      ]
+    },
+    {
+      "id": "master_escort",
+      "nameKey": "cards.master_escort.name",
+      "descriptionKey": "cards.master_escort.description",
+      "race": "human",
+      "rarity": "rare",
+      "tier": 4,
+      "initiative": 6,
+      "atk": 1080,
+      "def": 1120,
+      "maxHp": 2380,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 170,
+          "stat": "def",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
+    },
+    {
+      "id": "wagon_captain",
+      "nameKey": "cards.wagon_captain.name",
+      "descriptionKey": "cards.wagon_captain.description",
+      "race": "human",
+      "rarity": "rare",
+      "tier": 4,
+      "initiative": 7,
+      "atk": 1240,
+      "def": 840,
+      "maxHp": 2050,
+      "battleEffects": [
+        {
+          "trigger": "onSummon",
+          "action": "modifyStat",
+          "target": "allAllies",
+          "value": 140,
+          "stat": "def",
+          "modifier": "increase",
+          "duration": "round"
+        }
+      ]
+    }
+  ],
+  "abilities": [
+    {
+      "id": "minor_heal",
+      "nameKey": "ability.minorHeal.name",
+      "descriptionKey": "ability.minorHeal.description",
+      "category": "magic",
+      "tier": 1,
+      "actionCost": 1,
+      "basePrice": 140,
+      "target": "ally",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 200
+        }
+      ],
+      "usesPerRound": 1,
+      "merchantTags": [
+        "divine",
+        "nature"
+      ],
+      "icon": "✚"
+    },
+    {
+      "id": "battle_focus",
+      "nameKey": "ability.battleFocus.name",
+      "descriptionKey": "ability.battleFocus.description",
+      "category": "skill",
+      "tier": 1,
+      "actionCost": 1,
+      "basePrice": 180,
+      "target": "ally",
+      "effects": [
+        {
+          "type": "modifyStat",
+          "value": 150,
+          "stat": "atk",
+          "durationRounds": 1
+        }
+      ],
+      "usesPerRound": 1,
+      "merchantTags": [
+        "martial"
+      ],
+      "icon": "▲"
+    },
+    {
+      "id": "brace",
+      "nameKey": "ability.brace.name",
+      "descriptionKey": "ability.brace.description",
+      "category": "skill",
+      "tier": 1,
+      "actionCost": 1,
+      "basePrice": 170,
+      "target": "ally",
+      "effects": [
+        {
+          "type": "modifyStat",
+          "value": 150,
+          "stat": "def",
+          "durationRounds": 1
+        }
+      ],
+      "usesPerRound": 1,
+      "merchantTags": [
+        "martial"
+      ],
+      "icon": "◆"
+    },
+    {
+      "id": "burning_mark",
+      "nameKey": "ability.burningMark.name",
+      "descriptionKey": "ability.burningMark.description",
+      "category": "magic",
+      "tier": 2,
+      "actionCost": 2,
+      "basePrice": 520,
+      "target": "enemy",
+      "effects": [
+        {
+          "type": "burn",
+          "value": 100,
+          "durationRounds": 3
+        }
+      ],
+      "usesPerRound": 1,
+      "merchantTags": [
+        "arcane",
+        "forbidden"
+      ],
+      "icon": "♨"
+    },
+    {
+      "id": "war_cry",
+      "nameKey": "ability.warCry.name",
+      "descriptionKey": "ability.warCry.description",
+      "category": "skill",
+      "tier": 2,
+      "actionCost": 2,
+      "basePrice": 480,
+      "target": "allAllies",
+      "effects": [
+        {
+          "type": "modifyStat",
+          "value": 100,
+          "stat": "atk",
+          "durationRounds": 1
+        }
+      ],
+      "usesPerRound": 1,
+      "merchantTags": [
+        "martial"
+      ],
+      "icon": "⚑"
+    },
+    {
+      "id": "mending_light",
+      "nameKey": "ability.mendingLight.name",
+      "descriptionKey": "ability.mendingLight.description",
+      "category": "magic",
+      "tier": 2,
+      "actionCost": 2,
+      "basePrice": 560,
+      "target": "ally",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 450
+        }
+      ],
+      "usesPerRound": 1,
+      "merchantTags": [
+        "divine"
+      ],
+      "icon": "✦"
+    },
+    {
+      "id": "haste",
+      "nameKey": "ability.haste.name",
+      "descriptionKey": "ability.haste.description",
+      "category": "magic",
+      "tier": 2,
+      "actionCost": 2,
+      "basePrice": 600,
+      "target": "ally",
+      "effects": [
+        {
+          "type": "modifyStat",
+          "value": 2,
+          "stat": "initiative",
+          "durationRounds": 99
+        }
+      ],
+      "usesPerRound": 1,
+      "merchantTags": [
+        "arcane",
+        "nature"
+      ],
+      "icon": "»"
+    },
+    {
+      "id": "flame_wave",
+      "nameKey": "ability.flameWave.name",
+      "descriptionKey": "ability.flameWave.description",
+      "category": "magic",
+      "tier": 3,
+      "actionCost": 3,
+      "basePrice": 1250,
+      "target": "allEnemies",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 180
+        }
+      ],
+      "usesPerRound": 1,
+      "merchantTags": [
+        "arcane"
+      ],
+      "icon": "☄"
+    },
+    {
+      "id": "aegis",
+      "nameKey": "ability.aegis.name",
+      "descriptionKey": "ability.aegis.description",
+      "category": "magic",
+      "tier": 4,
+      "actionCost": 4,
+      "basePrice": 3200,
+      "target": "allAllies",
+      "effects": [
+        {
+          "type": "shield",
+          "value": 500
+        }
+      ],
+      "usesPerRound": 1,
+      "merchantTags": [
+        "divine",
+        "arcane"
+      ],
+      "icon": "◈"
+    },
+    {
+      "id": "inferno",
+      "nameKey": "ability.inferno.name",
+      "descriptionKey": "ability.inferno.description",
+      "category": "magic",
+      "tier": 5,
+      "actionCost": 5,
+      "basePrice": 7500,
+      "target": "allEnemies",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 400
+        },
+        {
+          "type": "burn",
+          "value": 150,
+          "durationRounds": 3
+        }
+      ],
+      "usesPerRound": 1,
+      "merchantTags": [
+        "forbidden"
+      ],
+      "icon": "✹"
     }
   ],
   "items": [
@@ -1649,6 +2939,9 @@
       "weight": 2,
       "equipmentSlot": "rightHand",
       "weaponType": "club",
+      "tier": 1,
+      "rarity": "common",
+      "dropChance": 0.12,
       "statBonus": {
         "atk": 45
       }
@@ -1663,6 +2956,9 @@
       "weight": 2.2,
       "equipmentSlot": "rightHand",
       "weaponType": "sword",
+      "tier": 1,
+      "rarity": "common",
+      "dropChance": 0.1,
       "statBonus": {
         "atk": 95
       }
@@ -1677,6 +2973,9 @@
       "weight": 2.6,
       "equipmentSlot": "rightHand",
       "weaponType": "spear",
+      "tier": 1,
+      "rarity": "uncommon",
+      "dropChance": 0.07,
       "statBonus": {
         "atk": 125
       }
@@ -1691,6 +2990,9 @@
       "weight": 1.7,
       "equipmentSlot": "rightHand",
       "weaponType": "bow",
+      "tier": 1,
+      "rarity": "rare",
+      "dropChance": 0.04,
       "statBonus": {
         "atk": 140
       }
@@ -1705,6 +3007,9 @@
       "weight": 3.3,
       "equipmentSlot": "rightHand",
       "weaponType": "mace",
+      "tier": 2,
+      "rarity": "uncommon",
+      "dropChance": 0.07,
       "statBonus": {
         "atk": 210
       }
@@ -1719,6 +3024,9 @@
       "weight": 2.7,
       "equipmentSlot": "rightHand",
       "weaponType": "sword",
+      "tier": 3,
+      "rarity": "common",
+      "dropChance": 0.09,
       "statBonus": {
         "atk": 330
       }
@@ -1733,6 +3041,9 @@
       "weight": 3.8,
       "equipmentSlot": "rightHand",
       "weaponType": "axe",
+      "tier": 3,
+      "rarity": "rare",
+      "dropChance": 0.04,
       "statBonus": {
         "atk": 430
       }
@@ -1747,6 +3058,9 @@
       "weight": 3,
       "equipmentSlot": "rightHand",
       "weaponType": "sword",
+      "tier": 4,
+      "rarity": "rare",
+      "dropChance": 0.035,
       "statBonus": {
         "atk": 620
       }
@@ -1761,6 +3075,9 @@
       "weight": 2.4,
       "equipmentSlot": "rightHand",
       "weaponType": "sword",
+      "tier": 5,
+      "rarity": "legendary",
+      "dropChance": 0.008,
       "statBonus": {
         "atk": 920
       }
@@ -1775,6 +3092,9 @@
       "weight": 3,
       "equipmentSlot": "leftHand",
       "weaponType": "shield",
+      "tier": 1,
+      "rarity": "common",
+      "dropChance": 0.1,
       "statBonus": {
         "def": 100
       }
@@ -1789,6 +3109,9 @@
       "weight": 4.5,
       "equipmentSlot": "leftHand",
       "weaponType": "shield",
+      "tier": 2,
+      "rarity": "uncommon",
+      "dropChance": 0.065,
       "statBonus": {
         "def": 260
       }
@@ -1803,6 +3126,9 @@
       "weight": 7,
       "equipmentSlot": "leftHand",
       "weaponType": "shield",
+      "tier": 3,
+      "rarity": "uncommon",
+      "dropChance": 0.065,
       "statBonus": {
         "def": 460
       }
@@ -1817,6 +3143,9 @@
       "weight": 5.5,
       "equipmentSlot": "leftHand",
       "weaponType": "shield",
+      "tier": 5,
+      "rarity": "legendary",
+      "dropChance": 0.008,
       "statBonus": {
         "def": 760
       }
@@ -1830,6 +3159,9 @@
       "baseValue": 74,
       "weight": 1,
       "equipmentSlot": "accessory",
+      "tier": 1,
+      "rarity": "uncommon",
+      "dropChance": 0.065,
       "statBonus": {
         "atk": 100
       }
@@ -1843,8 +3175,458 @@
       "baseValue": 78,
       "weight": 0.8,
       "equipmentSlot": "accessory",
+      "tier": 1,
+      "rarity": "uncommon",
+      "dropChance": 0.06,
       "statBonus": {
         "def": 120
+      }
+    },
+    {
+      "id": "chipped_hatchet",
+      "nameKey": "item.chippedHatchet.name",
+      "descriptionKey": "item.chippedHatchet.description",
+      "itemImage": "/assets/items/chipped_hatchet/item.png",
+      "type": "equipment",
+      "baseValue": 28,
+      "weight": 2.1,
+      "equipmentSlot": "rightHand",
+      "weaponType": "axe",
+      "tier": 1,
+      "rarity": "common",
+      "dropChance": 0.1,
+      "statBonus": {
+        "atk": 70
+      }
+    },
+    {
+      "id": "recruit_dagger",
+      "nameKey": "item.recruitDagger.name",
+      "descriptionKey": "item.recruitDagger.description",
+      "itemImage": "/assets/items/recruit_dagger/item.png",
+      "type": "equipment",
+      "baseValue": 24,
+      "weight": 0.8,
+      "equipmentSlot": "rightHand",
+      "weaponType": "dagger",
+      "tier": 1,
+      "rarity": "common",
+      "dropChance": 0.11,
+      "statBonus": {
+        "atk": 60,
+        "def": 20
+      }
+    },
+    {
+      "id": "worn_buckler",
+      "nameKey": "item.wornBuckler.name",
+      "descriptionKey": "item.wornBuckler.description",
+      "itemImage": "/assets/items/worn_buckler/item.png",
+      "type": "equipment",
+      "baseValue": 36,
+      "weight": 2.2,
+      "equipmentSlot": "leftHand",
+      "weaponType": "shield",
+      "tier": 1,
+      "rarity": "uncommon",
+      "dropChance": 0.07,
+      "statBonus": {
+        "def": 80
+      }
+    },
+    {
+      "id": "legion_blade",
+      "nameKey": "item.legionBlade.name",
+      "descriptionKey": "item.legionBlade.description",
+      "itemImage": "/assets/items/legion_blade/item.png",
+      "type": "equipment",
+      "baseValue": 140,
+      "weight": 2.4,
+      "equipmentSlot": "rightHand",
+      "weaponType": "sword",
+      "tier": 2,
+      "rarity": "common",
+      "dropChance": 0.095,
+      "statBonus": {
+        "atk": 190
+      }
+    },
+    {
+      "id": "raider_axe",
+      "nameKey": "item.raiderAxe.name",
+      "descriptionKey": "item.raiderAxe.description",
+      "itemImage": "/assets/items/raider_axe/item.png",
+      "type": "equipment",
+      "baseValue": 185,
+      "weight": 3.4,
+      "equipmentSlot": "rightHand",
+      "weaponType": "axe",
+      "tier": 2,
+      "rarity": "uncommon",
+      "dropChance": 0.07,
+      "statBonus": {
+        "atk": 230
+      }
+    },
+    {
+      "id": "ashwood_bow",
+      "nameKey": "item.ashwoodBow.name",
+      "descriptionKey": "item.ashwoodBow.description",
+      "itemImage": "/assets/items/ashwood_bow/item.png",
+      "type": "equipment",
+      "baseValue": 225,
+      "weight": 1.8,
+      "equipmentSlot": "rightHand",
+      "weaponType": "bow",
+      "tier": 2,
+      "rarity": "rare",
+      "dropChance": 0.045,
+      "statBonus": {
+        "atk": 250
+      }
+    },
+    {
+      "id": "iron_round_shield",
+      "nameKey": "item.ironRoundShield.name",
+      "descriptionKey": "item.ironRoundShield.description",
+      "itemImage": "/assets/items/iron_round_shield/item.png",
+      "type": "equipment",
+      "baseValue": 165,
+      "weight": 4,
+      "equipmentSlot": "leftHand",
+      "weaponType": "shield",
+      "tier": 2,
+      "rarity": "uncommon",
+      "dropChance": 0.065,
+      "statBonus": {
+        "def": 230
+      }
+    },
+    {
+      "id": "soldier_medallion",
+      "nameKey": "item.soldierMedallion.name",
+      "descriptionKey": "item.soldierMedallion.description",
+      "itemImage": "/assets/items/soldier_medallion/item.png",
+      "type": "equipment",
+      "baseValue": 175,
+      "weight": 0.3,
+      "equipmentSlot": "accessory",
+      "tier": 2,
+      "rarity": "uncommon",
+      "dropChance": 0.06,
+      "statBonus": {
+        "atk": 95,
+        "def": 80
+      }
+    },
+    {
+      "id": "pale_ward",
+      "nameKey": "item.paleWard.name",
+      "descriptionKey": "item.paleWard.description",
+      "itemImage": "/assets/items/pale_ward/item.png",
+      "type": "equipment",
+      "baseValue": 240,
+      "weight": 0.4,
+      "equipmentSlot": "accessory",
+      "tier": 2,
+      "rarity": "rare",
+      "dropChance": 0.04,
+      "statBonus": {
+        "def": 190
+      }
+    },
+    {
+      "id": "executioner_axe",
+      "nameKey": "item.executionerAxe.name",
+      "descriptionKey": "item.executionerAxe.description",
+      "itemImage": "/assets/items/executioner_axe/item.png",
+      "type": "equipment",
+      "baseValue": 480,
+      "weight": 4.8,
+      "equipmentSlot": "rightHand",
+      "weaponType": "axe",
+      "tier": 3,
+      "rarity": "uncommon",
+      "dropChance": 0.06,
+      "statBonus": {
+        "atk": 380
+      }
+    },
+    {
+      "id": "war_crossbow",
+      "nameKey": "item.warCrossbow.name",
+      "descriptionKey": "item.warCrossbow.description",
+      "itemImage": "/assets/items/war_crossbow/item.png",
+      "type": "equipment",
+      "baseValue": 530,
+      "weight": 3.1,
+      "equipmentSlot": "rightHand",
+      "weaponType": "crossbow",
+      "tier": 3,
+      "rarity": "uncommon",
+      "dropChance": 0.055,
+      "statBonus": {
+        "atk": 400
+      }
+    },
+    {
+      "id": "storm_spear",
+      "nameKey": "item.stormSpear.name",
+      "descriptionKey": "item.stormSpear.description",
+      "itemImage": "/assets/items/storm_spear/item.png",
+      "type": "equipment",
+      "baseValue": 650,
+      "weight": 2.7,
+      "equipmentSlot": "rightHand",
+      "weaponType": "spear",
+      "tier": 3,
+      "rarity": "rare",
+      "dropChance": 0.035,
+      "statBonus": {
+        "atk": 420,
+        "def": 45
+      }
+    },
+    {
+      "id": "guardian_shield",
+      "nameKey": "item.guardianShield.name",
+      "descriptionKey": "item.guardianShield.description",
+      "itemImage": "/assets/items/guardian_shield/item.png",
+      "type": "equipment",
+      "baseValue": 610,
+      "weight": 5.2,
+      "equipmentSlot": "leftHand",
+      "weaponType": "shield",
+      "tier": 3,
+      "rarity": "rare",
+      "dropChance": 0.04,
+      "statBonus": {
+        "def": 490
+      }
+    },
+    {
+      "id": "bloodstone_medal",
+      "nameKey": "item.bloodstoneMedal.name",
+      "descriptionKey": "item.bloodstoneMedal.description",
+      "itemImage": "/assets/items/bloodstone_medal/item.png",
+      "type": "equipment",
+      "baseValue": 720,
+      "weight": 0.4,
+      "equipmentSlot": "accessory",
+      "tier": 3,
+      "rarity": "epic",
+      "dropChance": 0.02,
+      "statBonus": {
+        "atk": 190,
+        "def": 190
+      }
+    },
+    {
+      "id": "dusk_greatsword",
+      "nameKey": "item.duskGreatsword.name",
+      "descriptionKey": "item.duskGreatsword.description",
+      "itemImage": "/assets/items/dusk_greatsword/item.png",
+      "type": "equipment",
+      "baseValue": 900,
+      "weight": 5.4,
+      "equipmentSlot": "rightHand",
+      "weaponType": "greatsword",
+      "tier": 4,
+      "rarity": "uncommon",
+      "dropChance": 0.055,
+      "statBonus": {
+        "atk": 570
+      }
+    },
+    {
+      "id": "kings_halberd",
+      "nameKey": "item.kingsHalberd.name",
+      "descriptionKey": "item.kingsHalberd.description",
+      "itemImage": "/assets/items/kings_halberd/item.png",
+      "type": "equipment",
+      "baseValue": 1120,
+      "weight": 4.6,
+      "equipmentSlot": "rightHand",
+      "weaponType": "halberd",
+      "tier": 4,
+      "rarity": "rare",
+      "dropChance": 0.035,
+      "statBonus": {
+        "atk": 660,
+        "def": 60
+      }
+    },
+    {
+      "id": "arcane_staff",
+      "nameKey": "item.arcaneStaff.name",
+      "descriptionKey": "item.arcaneStaff.description",
+      "itemImage": "/assets/items/arcane_staff/item.png",
+      "type": "equipment",
+      "baseValue": 1280,
+      "weight": 2.3,
+      "equipmentSlot": "rightHand",
+      "weaponType": "staff",
+      "tier": 4,
+      "rarity": "epic",
+      "dropChance": 0.02,
+      "statBonus": {
+        "atk": 540,
+        "def": 220
+      }
+    },
+    {
+      "id": "royal_bulwark",
+      "nameKey": "item.royalBulwark.name",
+      "descriptionKey": "item.royalBulwark.description",
+      "itemImage": "/assets/items/royal_bulwark/item.png",
+      "type": "equipment",
+      "baseValue": 1080,
+      "weight": 6,
+      "equipmentSlot": "leftHand",
+      "weaponType": "shield",
+      "tier": 4,
+      "rarity": "rare",
+      "dropChance": 0.032,
+      "statBonus": {
+        "def": 650
+      }
+    },
+    {
+      "id": "conqueror_medal",
+      "nameKey": "item.conquerorMedal.name",
+      "descriptionKey": "item.conquerorMedal.description",
+      "itemImage": "/assets/items/conqueror_medal/item.png",
+      "type": "equipment",
+      "baseValue": 1030,
+      "weight": 0.4,
+      "equipmentSlot": "accessory",
+      "tier": 4,
+      "rarity": "rare",
+      "dropChance": 0.03,
+      "statBonus": {
+        "atk": 300,
+        "def": 240
+      }
+    },
+    {
+      "id": "runebound_medal",
+      "nameKey": "item.runeboundMedal.name",
+      "descriptionKey": "item.runeboundMedal.description",
+      "itemImage": "/assets/items/runebound_medal/item.png",
+      "type": "equipment",
+      "baseValue": 1320,
+      "weight": 0.3,
+      "equipmentSlot": "accessory",
+      "tier": 4,
+      "rarity": "epic",
+      "dropChance": 0.018,
+      "statBonus": {
+        "atk": 260,
+        "def": 330
+      }
+    },
+    {
+      "id": "void_reaver",
+      "nameKey": "item.voidReaver.name",
+      "descriptionKey": "item.voidReaver.description",
+      "itemImage": "/assets/items/void_reaver/item.png",
+      "type": "equipment",
+      "baseValue": 2100,
+      "weight": 4.2,
+      "equipmentSlot": "rightHand",
+      "weaponType": "greatsword",
+      "tier": 5,
+      "rarity": "epic",
+      "dropChance": 0.018,
+      "statBonus": {
+        "atk": 850,
+        "def": 100
+      }
+    },
+    {
+      "id": "sunforged_spear",
+      "nameKey": "item.sunforgedSpear.name",
+      "descriptionKey": "item.sunforgedSpear.description",
+      "itemImage": "/assets/items/sunforged_spear/item.png",
+      "type": "equipment",
+      "baseValue": 2350,
+      "weight": 3.2,
+      "equipmentSlot": "rightHand",
+      "weaponType": "spear",
+      "tier": 5,
+      "rarity": "epic",
+      "dropChance": 0.016,
+      "statBonus": {
+        "atk": 900,
+        "def": 120
+      }
+    },
+    {
+      "id": "dragonbone_bow",
+      "nameKey": "item.dragonboneBow.name",
+      "descriptionKey": "item.dragonboneBow.description",
+      "itemImage": "/assets/items/dragonbone_bow/item.png",
+      "type": "equipment",
+      "baseValue": 2850,
+      "weight": 2.1,
+      "equipmentSlot": "rightHand",
+      "weaponType": "bow",
+      "tier": 5,
+      "rarity": "legendary",
+      "dropChance": 0.01,
+      "statBonus": {
+        "atk": 980
+      }
+    },
+    {
+      "id": "eclipse_shield",
+      "nameKey": "item.eclipseShield.name",
+      "descriptionKey": "item.eclipseShield.description",
+      "itemImage": "/assets/items/eclipse_shield/item.png",
+      "type": "equipment",
+      "baseValue": 2500,
+      "weight": 6.4,
+      "equipmentSlot": "leftHand",
+      "weaponType": "shield",
+      "tier": 5,
+      "rarity": "epic",
+      "dropChance": 0.015,
+      "statBonus": {
+        "def": 900
+      }
+    },
+    {
+      "id": "crown_of_war",
+      "nameKey": "item.crownOfWar.name",
+      "descriptionKey": "item.crownOfWar.description",
+      "itemImage": "/assets/items/crown_of_war/item.png",
+      "type": "equipment",
+      "baseValue": 3100,
+      "weight": 0.8,
+      "equipmentSlot": "accessory",
+      "tier": 5,
+      "rarity": "legendary",
+      "dropChance": 0.008,
+      "statBonus": {
+        "atk": 450,
+        "def": 380
+      }
+    },
+    {
+      "id": "soulstone",
+      "nameKey": "item.soulstone.name",
+      "descriptionKey": "item.soulstone.description",
+      "itemImage": "/assets/items/soulstone/item.png",
+      "type": "equipment",
+      "baseValue": 3600,
+      "weight": 0.5,
+      "equipmentSlot": "accessory",
+      "tier": 5,
+      "rarity": "legendary",
+      "dropChance": 0.006,
+      "statBonus": {
+        "atk": 420,
+        "def": 460
       }
     }
   ],
@@ -2027,6 +3809,28 @@
       "requiredLevel": 5,
       "options": [
         "royal_cavalier"
+      ]
+    },
+    {
+      "fromCardId": "caravan_guard",
+      "requiredLevel": 3,
+      "options": [
+        "road_warden",
+        "caravan_crossbowman"
+      ]
+    },
+    {
+      "fromCardId": "road_warden",
+      "requiredLevel": 4,
+      "options": [
+        "master_escort"
+      ]
+    },
+    {
+      "fromCardId": "caravan_crossbowman",
+      "requiredLevel": 4,
+      "options": [
+        "wagon_captain"
       ]
     },
     {
@@ -2387,6 +4191,12 @@
       "requiredLevel": 4,
       "options": [
         "crusader"
+      ]
+    },
+    {
+      "fromCardId": "levy_spearman",
+      "options": [
+        "soldier"
       ]
     }
   ],
@@ -3172,37 +4982,290 @@
     }
   ],
   "nobles": [
-    { "id": "ember_king", "factionId": "ember_crown", "rank": "king", "displayName": "Edric Ashborne IV", "leaderCardId": "crusader", "leaderLevel": 6 },
-    { "id": "ember_baron_aldric", "factionId": "ember_crown", "rank": "baron", "displayName": "Aldric Vane", "leaderCardId": "mounted_squire", "leaderLevel": 4 },
-    { "id": "ember_baron_marwen", "factionId": "ember_crown", "rank": "baron", "displayName": "Marwen Ashford", "leaderCardId": "crusader", "leaderLevel": 4 },
-    { "id": "ember_baron_cedric", "factionId": "ember_crown", "rank": "baron", "displayName": "Cedric Brand", "leaderCardId": "noble_recruit", "leaderLevel": 4 },
-    { "id": "ember_baron_elayne", "factionId": "ember_crown", "rank": "baron", "displayName": "Elayne Pyre", "leaderCardId": "priest", "leaderLevel": 4 },
-    { "id": "ember_count_rowan", "factionId": "ember_crown", "rank": "count", "displayName": "Rowan Cinder", "leaderCardId": "noble_recruit", "leaderLevel": 3 },
-    { "id": "ember_count_talia", "factionId": "ember_crown", "rank": "count", "displayName": "Talia Hearth", "leaderCardId": "ranger", "leaderLevel": 3 },
-    { "id": "ember_count_gareth", "factionId": "ember_crown", "rank": "count", "displayName": "Gareth Ember", "leaderCardId": "mounted_squire", "leaderLevel": 3 },
-    { "id": "ember_count_sabine", "factionId": "ember_crown", "rank": "count", "displayName": "Sabine Rook", "leaderCardId": "priest", "leaderLevel": 3 },
-    { "id": "ember_count_lucan", "factionId": "ember_crown", "rank": "count", "displayName": "Lucan Bale", "leaderCardId": "noble_recruit", "leaderLevel": 3 },
-
-    { "id": "gloam_king", "factionId": "gloam_compact", "rank": "king", "displayName": "Vaelor Noct", "leaderCardId": "ranger", "leaderLevel": 6 },
-    { "id": "gloam_baron_orren", "factionId": "gloam_compact", "rank": "baron", "displayName": "Orren Vale", "leaderCardId": "ranger", "leaderLevel": 4 },
-    { "id": "gloam_baron_sable", "factionId": "gloam_compact", "rank": "baron", "displayName": "Sable Morcant", "leaderCardId": "priest", "leaderLevel": 4 },
-    { "id": "gloam_baron_theron", "factionId": "gloam_compact", "rank": "baron", "displayName": "Theron Dusk", "leaderCardId": "mounted_squire", "leaderLevel": 4 },
-    { "id": "gloam_baron_ysra", "factionId": "gloam_compact", "rank": "baron", "displayName": "Ysra Noct", "leaderCardId": "high_priest", "leaderLevel": 4 },
-    { "id": "gloam_count_corvin", "factionId": "gloam_compact", "rank": "count", "displayName": "Corvin Shade", "leaderCardId": "ranger", "leaderLevel": 3 },
-    { "id": "gloam_count_mara", "factionId": "gloam_compact", "rank": "count", "displayName": "Mara Vey", "leaderCardId": "priest", "leaderLevel": 3 },
-    { "id": "gloam_count_lucan", "factionId": "gloam_compact", "rank": "count", "displayName": "Lucan Gloam", "leaderCardId": "noble_recruit", "leaderLevel": 3 },
-    { "id": "gloam_count_neris", "factionId": "gloam_compact", "rank": "count", "displayName": "Neris Thorn", "leaderCardId": "mounted_squire", "leaderLevel": 3 },
-    { "id": "gloam_count_selene", "factionId": "gloam_compact", "rank": "count", "displayName": "Selene Morn", "leaderCardId": "ranger", "leaderLevel": 3 },
-
-    { "id": "iron_king", "factionId": "iron_concord", "rank": "king", "displayName": "Torren Voss", "leaderCardId": "high_priest", "leaderLevel": 6 },
-    { "id": "iron_baron_borin", "factionId": "iron_concord", "rank": "baron", "displayName": "Borin Holt", "leaderCardId": "crusader", "leaderLevel": 4 },
-    { "id": "iron_baron_helena", "factionId": "iron_concord", "rank": "baron", "displayName": "Helena Voss", "leaderCardId": "mounted_squire", "leaderLevel": 4 },
-    { "id": "iron_baron_garran", "factionId": "iron_concord", "rank": "baron", "displayName": "Garran Stone", "leaderCardId": "noble_recruit", "leaderLevel": 4 },
-    { "id": "iron_baron_mira", "factionId": "iron_concord", "rank": "baron", "displayName": "Mira Kest", "leaderCardId": "priest", "leaderLevel": 4 },
-    { "id": "iron_count_doran", "factionId": "iron_concord", "rank": "count", "displayName": "Doran Anvil", "leaderCardId": "crusader", "leaderLevel": 3 },
-    { "id": "iron_count_petra", "factionId": "iron_concord", "rank": "count", "displayName": "Petra Flint", "leaderCardId": "mounted_squire", "leaderLevel": 3 },
-    { "id": "iron_count_oskar", "factionId": "iron_concord", "rank": "count", "displayName": "Oskar Rime", "leaderCardId": "noble_recruit", "leaderLevel": 3 },
-    { "id": "iron_count_vera", "factionId": "iron_concord", "rank": "count", "displayName": "Vera Steel", "leaderCardId": "high_priest", "leaderLevel": 3 },
-    { "id": "iron_count_hakon", "factionId": "iron_concord", "rank": "count", "displayName": "Hakon Forge", "leaderCardId": "crusader", "leaderLevel": 3 }
+    {
+      "id": "ember_king",
+      "factionId": "ember_crown",
+      "rank": "king",
+      "displayName": "Edric Ashborne IV",
+      "leaderCardId": "crusader",
+      "leaderLevel": 6
+    },
+    {
+      "id": "ember_baron_aldric",
+      "factionId": "ember_crown",
+      "rank": "baron",
+      "displayName": "Aldric Vane",
+      "leaderCardId": "mounted_squire",
+      "leaderLevel": 4
+    },
+    {
+      "id": "ember_baron_marwen",
+      "factionId": "ember_crown",
+      "rank": "baron",
+      "displayName": "Marwen Ashford",
+      "leaderCardId": "crusader",
+      "leaderLevel": 4
+    },
+    {
+      "id": "ember_baron_cedric",
+      "factionId": "ember_crown",
+      "rank": "baron",
+      "displayName": "Cedric Brand",
+      "leaderCardId": "noble_recruit",
+      "leaderLevel": 4
+    },
+    {
+      "id": "ember_baron_elayne",
+      "factionId": "ember_crown",
+      "rank": "baron",
+      "displayName": "Elayne Pyre",
+      "leaderCardId": "priest",
+      "leaderLevel": 4
+    },
+    {
+      "id": "ember_count_rowan",
+      "factionId": "ember_crown",
+      "rank": "count",
+      "displayName": "Rowan Cinder",
+      "leaderCardId": "noble_recruit",
+      "leaderLevel": 3
+    },
+    {
+      "id": "ember_count_talia",
+      "factionId": "ember_crown",
+      "rank": "count",
+      "displayName": "Talia Hearth",
+      "leaderCardId": "ranger",
+      "leaderLevel": 3
+    },
+    {
+      "id": "ember_count_gareth",
+      "factionId": "ember_crown",
+      "rank": "count",
+      "displayName": "Gareth Ember",
+      "leaderCardId": "mounted_squire",
+      "leaderLevel": 3
+    },
+    {
+      "id": "ember_count_sabine",
+      "factionId": "ember_crown",
+      "rank": "count",
+      "displayName": "Sabine Rook",
+      "leaderCardId": "priest",
+      "leaderLevel": 3
+    },
+    {
+      "id": "ember_count_lucan",
+      "factionId": "ember_crown",
+      "rank": "count",
+      "displayName": "Lucan Bale",
+      "leaderCardId": "noble_recruit",
+      "leaderLevel": 3
+    },
+    {
+      "id": "gloam_king",
+      "factionId": "gloam_compact",
+      "rank": "king",
+      "displayName": "Vaelor Noct",
+      "leaderCardId": "ranger",
+      "leaderLevel": 6
+    },
+    {
+      "id": "gloam_baron_orren",
+      "factionId": "gloam_compact",
+      "rank": "baron",
+      "displayName": "Orren Vale",
+      "leaderCardId": "ranger",
+      "leaderLevel": 4
+    },
+    {
+      "id": "gloam_baron_sable",
+      "factionId": "gloam_compact",
+      "rank": "baron",
+      "displayName": "Sable Morcant",
+      "leaderCardId": "priest",
+      "leaderLevel": 4
+    },
+    {
+      "id": "gloam_baron_theron",
+      "factionId": "gloam_compact",
+      "rank": "baron",
+      "displayName": "Theron Dusk",
+      "leaderCardId": "mounted_squire",
+      "leaderLevel": 4
+    },
+    {
+      "id": "gloam_baron_ysra",
+      "factionId": "gloam_compact",
+      "rank": "baron",
+      "displayName": "Ysra Noct",
+      "leaderCardId": "high_priest",
+      "leaderLevel": 4
+    },
+    {
+      "id": "gloam_count_corvin",
+      "factionId": "gloam_compact",
+      "rank": "count",
+      "displayName": "Corvin Shade",
+      "leaderCardId": "ranger",
+      "leaderLevel": 3
+    },
+    {
+      "id": "gloam_count_mara",
+      "factionId": "gloam_compact",
+      "rank": "count",
+      "displayName": "Mara Vey",
+      "leaderCardId": "priest",
+      "leaderLevel": 3
+    },
+    {
+      "id": "gloam_count_lucan",
+      "factionId": "gloam_compact",
+      "rank": "count",
+      "displayName": "Lucan Gloam",
+      "leaderCardId": "noble_recruit",
+      "leaderLevel": 3
+    },
+    {
+      "id": "gloam_count_neris",
+      "factionId": "gloam_compact",
+      "rank": "count",
+      "displayName": "Neris Thorn",
+      "leaderCardId": "mounted_squire",
+      "leaderLevel": 3
+    },
+    {
+      "id": "gloam_count_selene",
+      "factionId": "gloam_compact",
+      "rank": "count",
+      "displayName": "Selene Morn",
+      "leaderCardId": "ranger",
+      "leaderLevel": 3
+    },
+    {
+      "id": "iron_king",
+      "factionId": "iron_concord",
+      "rank": "king",
+      "displayName": "Torren Voss",
+      "leaderCardId": "high_priest",
+      "leaderLevel": 6
+    },
+    {
+      "id": "iron_baron_borin",
+      "factionId": "iron_concord",
+      "rank": "baron",
+      "displayName": "Borin Holt",
+      "leaderCardId": "crusader",
+      "leaderLevel": 4
+    },
+    {
+      "id": "iron_baron_helena",
+      "factionId": "iron_concord",
+      "rank": "baron",
+      "displayName": "Helena Voss",
+      "leaderCardId": "mounted_squire",
+      "leaderLevel": 4
+    },
+    {
+      "id": "iron_baron_garran",
+      "factionId": "iron_concord",
+      "rank": "baron",
+      "displayName": "Garran Stone",
+      "leaderCardId": "noble_recruit",
+      "leaderLevel": 4
+    },
+    {
+      "id": "iron_baron_mira",
+      "factionId": "iron_concord",
+      "rank": "baron",
+      "displayName": "Mira Kest",
+      "leaderCardId": "priest",
+      "leaderLevel": 4
+    },
+    {
+      "id": "iron_count_doran",
+      "factionId": "iron_concord",
+      "rank": "count",
+      "displayName": "Doran Anvil",
+      "leaderCardId": "crusader",
+      "leaderLevel": 3
+    },
+    {
+      "id": "iron_count_petra",
+      "factionId": "iron_concord",
+      "rank": "count",
+      "displayName": "Petra Flint",
+      "leaderCardId": "mounted_squire",
+      "leaderLevel": 3
+    },
+    {
+      "id": "iron_count_oskar",
+      "factionId": "iron_concord",
+      "rank": "count",
+      "displayName": "Oskar Rime",
+      "leaderCardId": "noble_recruit",
+      "leaderLevel": 3
+    },
+    {
+      "id": "iron_count_vera",
+      "factionId": "iron_concord",
+      "rank": "count",
+      "displayName": "Vera Steel",
+      "leaderCardId": "high_priest",
+      "leaderLevel": 3
+    },
+    {
+      "id": "iron_count_hakon",
+      "factionId": "iron_concord",
+      "rank": "count",
+      "displayName": "Hakon Forge",
+      "leaderCardId": "crusader",
+      "leaderLevel": 3
+    }
+  ],
+  "heroes": [
+    {
+      "id": "wanderer",
+      "nameKey": "hero.wanderer.name",
+      "descriptionKey": "hero.wanderer.description",
+      "raceId": "human",
+      "heroCardId": "player_wanderer",
+      "startingDeck": [
+        "ember_spark",
+        "storm_spark",
+        "frost_spark"
+      ],
+      "startingGoldBonus": 0
+    },
+    {
+      "id": "vanguard",
+      "nameKey": "hero.vanguard.name",
+      "descriptionKey": "hero.vanguard.description",
+      "raceId": "human",
+      "heroCardId": "player_vanguard",
+      "startingDeck": [
+        "village_levy",
+        "village_levy",
+        "levy_spearman",
+        "militia_shieldbearer",
+        "shrine_acolyte"
+      ],
+      "startingGoldBonus": -10
+    },
+    {
+      "id": "wayfinder",
+      "nameKey": "hero.wayfinder.name",
+      "descriptionKey": "hero.wayfinder.description",
+      "raceId": "human",
+      "heroCardId": "player_wayfinder",
+      "startingDeck": [
+        "village_slinger",
+        "village_slinger",
+        "novice_archer",
+        "novice_archer",
+        "village_levy"
+      ],
+      "startingGoldBonus": 10
+    }
   ]
 }

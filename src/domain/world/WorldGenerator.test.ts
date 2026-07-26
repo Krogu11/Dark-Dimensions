@@ -79,7 +79,8 @@ describe("WorldGenerator", () => {
       expect(dungeonIds.has(enemy.sourceLocationId!)).toBe(true);
       expect(enemy.partySize).toBeGreaterThan(0);
       expect(enemy.inventoryWeight).toBeGreaterThan(0);
-      expect(enemy.speed).toBeLessThan(200);
+      expect(enemy.speed).toBeGreaterThanOrEqual(215);
+      expect(enemy.speed).toBeLessThanOrEqual(285);
     }
     const villages = world.locations.filter(
       (location) => location.type === "village",
@@ -119,7 +120,11 @@ describe("WorldGenerator", () => {
       expect(road.points[1].x).toBeCloseTo(village.x, 5);
       expect(road.points[1].y).toBeGreaterThan(village.y + 40);
     }
-    for (const road of villageRoads.filter((road) => cityIds.has(road.destinationId ?? ""))) {
+    for (const road of villageRoads.filter(
+      (road) =>
+        villagesById.has(road.originId ?? "") &&
+        cityIds.has(road.destinationId ?? ""),
+    )) {
       const city = citiesById.get(road.destinationId!)!;
       expect(road.points.at(-1)).not.toMatchObject({ x: city.x, y: city.y });
     }
@@ -128,6 +133,36 @@ describe("WorldGenerator", () => {
       x: world.start.x,
       y: world.start.y,
     });
+    const soulTempleRoads = world.terrainRoads.filter(
+      (road) => road.originId === "soul_temple",
+    );
+    expect(soulTempleRoads).toHaveLength(1);
+    const connectedMajorRoad = world.terrainRoads.find(
+      (road) => road.id === soulTempleRoads[0].destinationId,
+    );
+    expect(connectedMajorRoad?.width).toBeGreaterThanOrEqual(20);
+    const connectionPoint = soulTempleRoads[0].points.at(-1)!;
+    expect(isPositionNearPath(
+      connectedMajorRoad!.points,
+      connectedMajorRoad!.width,
+      connectionPoint.x,
+      connectionPoint.y,
+      soulTempleRoads[0].width / 2,
+    )).toBe(true);
+    for (let pointIndex = 0; pointIndex < soulTempleRoads[0].points.length - 1; pointIndex += 1) {
+      const start = soulTempleRoads[0].points[pointIndex];
+      const end = soulTempleRoads[0].points[pointIndex + 1];
+      const steps = Math.max(1, Math.ceil(Math.hypot(end.x - start.x, end.y - start.y) / 12));
+      for (let step = 0; step <= steps; step += 1) {
+        const progress = step / steps;
+        expect(isWorldPositionTraversable(
+          world,
+          start.x + (end.x - start.x) * progress,
+          start.y + (end.y - start.y) * progress,
+          30,
+        )).toBe(true);
+      }
+    }
   });
 
   it("generates varied terrain and keeps important positions traversable", () => {
@@ -161,6 +196,34 @@ describe("WorldGenerator", () => {
     expect(world.boundaryInset).toBeGreaterThan(100);
     for (let seed = 1; seed <= 20; seed += 1) {
       const generatedWorld = generateWorldMap(seed * 7919, contentPack.enemies);
+      const connector = generatedWorld.terrainRoads.find(
+        (road) => road.originId === "soul_temple",
+      );
+      const connectedMajorRoad = generatedWorld.terrainRoads.find(
+        (road) => road.id === connector?.destinationId,
+      );
+      expect(connectedMajorRoad?.width).toBeGreaterThanOrEqual(20);
+      expect(isPositionNearPath(
+        connectedMajorRoad!.points,
+        connectedMajorRoad!.width,
+        connector!.points.at(-1)!.x,
+        connector!.points.at(-1)!.y,
+        connector!.width / 2,
+      )).toBe(true);
+      for (let pointIndex = 0; pointIndex < connector!.points.length - 1; pointIndex += 1) {
+        const routeStart = connector!.points[pointIndex];
+        const routeEnd = connector!.points[pointIndex + 1];
+        const steps = Math.max(1, Math.ceil(Math.hypot(routeEnd.x - routeStart.x, routeEnd.y - routeStart.y) / 24));
+        for (let step = 0; step <= steps; step += 1) {
+          const progress = step / steps;
+          expect(isWorldPositionTraversable(
+            generatedWorld,
+            routeStart.x + (routeEnd.x - routeStart.x) * progress,
+            routeStart.y + (routeEnd.y - routeStart.y) * progress,
+            30,
+          )).toBe(true);
+        }
+      }
       for (const location of generatedWorld.locations) {
         expect(
           isWorldPositionTraversable(

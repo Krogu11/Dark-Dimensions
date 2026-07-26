@@ -8,6 +8,8 @@ interface CityMenuProps {
   city: MapLocation;
   message: string | null;
   onMarket: () => void;
+  onAbilities: () => void;
+  onInventory: () => void;
   onWarband: () => void;
   onCharacter: () => void;
   onQuests: () => void;
@@ -15,15 +17,17 @@ interface CityMenuProps {
   onLeave: () => void;
 }
 
-type ServiceId = "market" | "recruits" | "contracts" | "healers" | "character";
+type ServiceId = "market" | "abilities" | "inventory" | "recruits" | "contracts" | "healers" | "character";
 
-export function CityMenu({ city, message, onMarket, onWarband, onCharacter, onQuests, onHeal, onLeave }: CityMenuProps) {
+export function CityMenu({ city, message, onMarket, onAbilities, onInventory, onWarband, onCharacter, onQuests, onHeal, onLeave }: CityMenuProps) {
   const { t } = useTranslation();
   const [focusedService, setFocusedService] = useState<ServiceId>("market");
   const factionId = gameSession.currentFactionId;
   const state = gameSession.getCityState(city.id);
   const services = [
+    { id: "abilities" as const, icon: "✦", eyebrow: t("ability.merchantEyebrow"), title: t("ability.merchantTitle"), description: t("ability.cityDescription"), action: onAbilities, disabled: false },
     { id: "market" as const, icon: "◈", eyebrow: t("city.marketEyebrow"), title: t("city.market"), description: t("city.marketDescription"), action: onMarket, disabled: false },
+    { id: "inventory" as const, icon: "▣", eyebrow: "Warband stores", title: t("trade.inventory"), description: "Inspect cargo, compare equipment and manage the hero's loadout.", action: onInventory, disabled: false },
     { id: "recruits" as const, icon: "⚔", eyebrow: t("city.recruitEyebrow"), title: t("city.recruit"), description: t("city.recruitDescription"), action: onWarband, disabled: false },
     { id: "contracts" as const, icon: "✦", eyebrow: t("city.contractEyebrow"), title: t("city.contracts"), description: t("city.contractDescription"), action: onQuests, disabled: false },
     { id: "healers" as const, icon: "✚", eyebrow: t("city.healerEyebrow"), title: t("city.healers"), description: t("city.healerDescription", { cost: gameSession.healCost }), action: onHeal, disabled: gameSession.healCost === 0 || gameSession.gold < gameSession.healCost },

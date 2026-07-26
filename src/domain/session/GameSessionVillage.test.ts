@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { getCardDefinition } from "../cards/CardInstance";
+import {
+  createCardInstance,
+  getCardDefinition,
+} from "../cards/CardInstance";
 import { GameSession } from "./GameSession";
 import { getRecruitmentCost } from "../world/Recruitment";
 import { addToInventory, inventoryQuantity } from "../economy/Economy";
@@ -50,6 +53,8 @@ describe("GameSession villages", () => {
   it("removes defeated villager groups and applies village, city, faction, and morale penalties", () => {
     const session = new GameSession(61616);
     const villager = session.economyState.villagers[0];
+    const cargoBeforeBattle = structuredClone(villager.inventory);
+    const inventoryBeforeBattle = new Map(cargoBeforeBattle.map((entry) => [entry.itemId, inventoryQuantity(session.inventory, entry.itemId)]));
     session.world.state.x = villager.x; session.world.state.y = villager.y;
     session.updateEconomy(0);
     const village = session.getVillageState(villager.originId)!;
@@ -65,7 +70,12 @@ describe("GameSession villages", () => {
     expect(session.cityStates[city.id].prosperity).toBe(before.cityProsperity - 2);
     vi.spyOn(session.battle!, "rollReward").mockReturnValue({ gold: 0, cardId: null, items: [] });
     session.battle!.outcome = "victory";
+    const visibleReward = session.prepareVictoryReward();
+    expect(visibleReward?.items).toEqual(expect.arrayContaining(cargoBeforeBattle));
     session.claimVictoryReward({ continueDungeon: false, takeCard: false, itemIds: [] });
+    for (const entry of cargoBeforeBattle) {
+      expect(inventoryQuantity(session.inventory, entry.itemId)).toBe(inventoryBeforeBattle.get(entry.itemId));
+    }
     expect(session.economyState.villagers.some((candidate) => candidate.id === villager.id)).toBe(false);
     expect(village.prosperity).toBeLessThan(before.prosperity - 6);
     expect(session.world.state.battleSites).toEqual([
@@ -77,6 +87,39 @@ describe("GameSession villages", () => {
       elder: true,
       help: false,
     });
+  });
+
+  it("lets the player attack, loot, and destroy a faction caravan", () => {
+    const session = new GameSession(71717);
+    const caravan = session.economyState.caravans[0];
+    const cargo = structuredClone(caravan.inventory);
+    const factionId = caravan.factionId!;
+    session.world.state.x = caravan.x;
+    session.world.state.y = caravan.y;
+    session.updateEconomy(0);
+
+    expect(caravan.unitIds?.every((cardId) => getCardDefinition(cardId).tier >= 2)).toBe(true);
+    expect(session.attackNearbyCaravan()).toBe(true);
+    expect(session.mode).toBe("battle");
+    expect(session.factionState.reputation[factionId]).toBe(-20);
+    expect(session.factionState.wanted[factionId]).toBe(35);
+
+    vi.spyOn(session.battle!, "rollReward").mockReturnValue({
+      gold: 0,
+      cardId: null,
+      items: [],
+    });
+    session.battle!.outcome = "victory";
+    expect(session.prepareVictoryReward()?.items).toEqual(expect.arrayContaining(cargo));
+    session.claimVictoryReward({
+      continueDungeon: false,
+      takeCard: false,
+      itemIds: cargo.map((entry) => entry.itemId),
+    });
+
+    expect(caravan.state).toBe("destroyed");
+    expect(caravan.inventory).toHaveLength(0);
+    expect(caravan.respawnHoursRemaining).toBeGreaterThan(35);
   });
 
   it("raises local prices and eventually closes hostile village markets", () => {
@@ -184,7 +227,7 @@ describe("GameSession villages", () => {
   it("activates faction bounty hunters at 25 wanted", () => {
     const session = new GameSession(101010);
     const hunter = session.world.state.warbands.find((warband) => warband.bountyHunter)!;
-    hunter.x = session.world.state.x + 120;
+    hunter.x = session.world.state.x + hunter.allowedRadius + 2_000;
     hunter.y = session.world.state.y;
     hunter.spawnX = hunter.x;
     hunter.spawnY = hunter.y;
@@ -192,6 +235,163 @@ describe("GameSession villages", () => {
     session.world.updateWarbands(0.2, session.factionState);
     expect(hunter.targetPlayer).toBe(true);
     expect(hunter.state).toBe("chasing");
+    expect(hunter.bountyHunterDeployed).toBe(true);
+    const friendlyCityIds = new Set(
+      session.world.map.locations
+        .filter(
+          (location) =>
+            location.type === "city" &&
+            session.factionState.locationFactions[location.id] ===
+              hunter.factionId,
+        )
+        .map((location) => location.id),
+    );
+    expect(friendlyCityIds.has(hunter.homeLocationId ?? "")).toBe(true);
+    const homeCity = session.world.map.locations.find(
+      (location) => location.id === hunter.homeLocationId,
+    )!;
+    expect(
+      Math.hypot(
+        hunter.spawnX - homeCity.x,
+        hunter.spawnY - homeCity.y,
+      ),
+    ).toBeLessThanOrEqual(80);
+  });
+
+  it("re-homes stranded bounty hunters at a faction city before they pursue", () => {
+    const session = new GameSession(101013);
+    const hunter = session.world.state.warbands.find((warband) => warband.bountyHunter)!;
+    const edgePosition = {
+      x: session.world.map.boundaryInset + 30,
+      y: session.world.map.height - session.world.map.boundaryInset - 30,
+    };
+    hunter.x = edgePosition.x;
+    hunter.y = edgePosition.y;
+    hunter.spawnX = edgePosition.x;
+    hunter.spawnY = edgePosition.y;
+    hunter.roster = Array.from({ length: 4 }, () => createCardInstance("village_levy"));
+    hunter.unitIds = hunter.roster.map((unit) => unit.cardId);
+    hunter.hpRatio = 1;
+    hunter.bountyHunterDeployed = true;
+    hunter.targetPlayer = true;
+    hunter.state = "chasing";
+    for (const enemy of session.world.state.enemies) enemy.active = false;
+    session.factionState.wanted[hunter.factionId] = 25;
+
+    session.world.updateWarbands(0.2, session.factionState, {
+      playerMovementSpeed: 420,
+    });
+
+    expect(hunter.homeLocationId).toBeTruthy();
+    const home = session.world.map.locations.find(
+      (location) => location.id === hunter.homeLocationId,
+    )!;
+    expect(home.type).toBe("city");
+    expect(session.factionState.locationFactions[home.id]).toBe(hunter.factionId);
+    expect(
+      Math.hypot(hunter.spawnX - home.x, hunter.spawnY - home.y),
+    ).toBeLessThanOrEqual(80);
+    expect(hunter.targetPlayer).toBe(true);
+    expect(hunter.state).toBe("chasing");
+  });
+
+  it("returns wounded bounty hunters to their faction city to heal and recruit", () => {
+    const session = new GameSession(101014);
+    const hunter = session.world.state.warbands.find((warband) => warband.bountyHunter)!;
+    session.factionState.wanted[hunter.factionId] = 25;
+    session.world.updateWarbands(0.2, session.factionState);
+    hunter.roster = hunter.roster.slice(0, 2);
+    for (const unit of hunter.roster) {
+      unit.currentHp = Math.max(
+        1,
+        Math.floor(getCardDefinition(unit.cardId).maxHp * 0.25),
+      );
+    }
+    hunter.gold = 1_000;
+    hunter.rations = 100;
+    hunter.hpRatio = 0.25;
+    hunter.x = session.world.state.x + 600;
+    hunter.y = session.world.state.y;
+    hunter.targetPlayer = true;
+    hunter.state = "chasing";
+
+    session.world.updateWarbands(0.2, session.factionState);
+    expect(hunter.state).toBe("returning");
+    expect(hunter.targetPlayer).toBe(false);
+    expect(hunter.targetX).toBe(hunter.spawnX);
+    expect(hunter.targetY).toBe(hunter.spawnY);
+
+    hunter.x = hunter.spawnX;
+    hunter.y = hunter.spawnY;
+    const hpBefore = hunter.roster.reduce((sum, unit) => sum + unit.currentHp, 0);
+    const rosterBefore = hunter.roster.length;
+    session.world.updateWarbands(24, session.factionState);
+
+    expect(
+      hunter.roster.reduce((sum, unit) => sum + unit.currentHp, 0),
+    ).toBeGreaterThan(hpBefore);
+    expect(hunter.roster.length).toBeGreaterThan(rosterBefore);
+  });
+
+  it("recalls defeated bounty hunters and only redeploys them after their cooldown while hostility remains", () => {
+    const session = new GameSession(101011);
+    const hunter = session.world.state.warbands.find((warband) => warband.bountyHunter)!;
+    const factionId = hunter.factionId;
+    session.factionState.wanted[factionId] = 25;
+    session.world.updateWarbands(0.2, session.factionState);
+
+    session.world.defeatWarband(hunter.id);
+    expect(hunter.state).toBe("destroyed");
+    expect(hunter.respawnRemainingHours).toBe(72);
+    expect(hunter.bountyHunterDeployed).toBe(false);
+
+    session.factionState.wanted[factionId] = 0;
+    session.factionState.reputation[factionId] = 0;
+    session.world.updateWarbands(73, session.factionState);
+    expect(hunter.state).toBe("destroyed");
+    expect(hunter.respawnRemainingHours).toBe(0);
+
+    session.factionState.reputation[factionId] = -25;
+    session.world.updateWarbands(0.2, session.factionState);
+    expect(hunter.state).toBe("chasing");
+    expect(hunter.targetPlayer).toBe(true);
+    expect(hunter.bountyHunterDeployed).toBe(true);
+    expect(hunter.roster.every((unit) => getCardDefinition(unit.cardId).tier === 1)).toBe(true);
+  });
+
+  it("lets deployed bounty hunters attack weak roaming enemies before hunting or recovering", () => {
+    const session = new GameSession(101012);
+    const hunter = session.world.state.warbands.find((warband) => warband.bountyHunter)!;
+    session.factionState.wanted[hunter.factionId] = 25;
+    session.world.updateWarbands(0.2, session.factionState);
+    hunter.roster = Array.from({ length: 6 }, () => createCardInstance("knight"));
+    hunter.hpRatio = 1;
+    const enemy = session.world.state.enemies.find((candidate) => candidate.active)!;
+    enemy.roster = [createCardInstance("village_levy")];
+    enemy.partySize = 1;
+    enemy.threat = 1;
+    enemy.x = hunter.x + 70;
+    enemy.y = hunter.y;
+    enemy.spawnX = enemy.x;
+    enemy.spawnY = enemy.y;
+    enemy.activeBattleId = null;
+    enemy.sourceLocationId = undefined;
+
+    session.world.updateWarbands(0.2, session.factionState);
+    expect(hunter.targetPlayer).toBe(false);
+    expect(hunter.targetEnemyId).toBe(enemy.id);
+
+    const experienceBefore = hunter.experience;
+    session.world.updateWarbands(3.1, session.factionState);
+    session.world.updateWarbands(3.1, session.factionState);
+    expect(hunter.experience).toBeGreaterThan(experienceBefore);
+    expect(hunter.victories).toBeGreaterThan(0);
+    if (hunter.hpRatio < 0.34) {
+      expect(hunter.state).toBe("returning");
+      expect(hunter.targetPlayer).toBe(false);
+    } else {
+      expect(hunter.targetPlayer || Boolean(hunter.targetEnemyId)).toBe(true);
+    }
   });
 
   it("orders faction lords to hunt the player at the second-villager threshold", () => {

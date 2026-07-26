@@ -36,12 +36,20 @@ export interface NpcRecoveryOptions {
   prosperity?: number;
   canRecruit?: boolean;
   prisonerPolicy?: NpcPrisonerPolicy;
+  supportGoldPerDay?: number;
+  supportRationsPerDay?: number;
 }
 
 export interface NpcRecoveryResult {
   healed: boolean;
   recruited: number;
   ransomed: number;
+}
+
+export interface NpcPrisonerSettlementResult {
+  recruited: number;
+  ransomed: number;
+  gold: number;
 }
 
 export function createTierOneNpcRoster(
@@ -109,6 +117,26 @@ export function estimateNpcRosterStrength(roster: CardInstance[]): number {
   }, 0);
 }
 
+export function getUnitThreatPoints(cardId: string): number {
+  const tier = Math.max(1, getCardDefinition(cardId).tier);
+  return tier * tier;
+}
+
+export function getNpcRosterThreatPoints(roster: CardInstance[]): number {
+  return roster.reduce(
+    (total, unit) => total + getUnitThreatPoints(unit.cardId),
+    0,
+  );
+}
+
+export function getNpcThreatRatingFromPoints(points: number): number {
+  if (points <= 5) return 1;
+  if (points <= 12) return 2;
+  if (points <= 24) return 3;
+  if (points <= 44) return 4;
+  return 5;
+}
+
 export function npcRosterHpRatio(roster: CardInstance[]): number {
   const maximum = roster.reduce((sum, unit) => sum + getCardDefinition(unit.cardId).maxHp, 0);
   if (maximum <= 0) return 0;
@@ -172,22 +200,25 @@ export function processNpcRecovery(
   const canRecruit = options.canRecruit ?? true;
   const prisonerPolicy = options.prisonerPolicy ?? "hold";
   party.logisticsHours += deltaHours;
-  if (atHome) {
-    for (const unit of party.roster) {
-      const definition = getCardDefinition(unit.cardId);
-      if (unit.currentHp >= definition.maxHp || party.gold <= 0) continue;
-      const healingRate = 0.018 + prosperity * 0.00014;
-      const healing = Math.min(definition.maxHp - unit.currentHp, Math.max(1, Math.round(definition.maxHp * healingRate * deltaHours)));
-      const cost = Math.max(1, Math.ceil(healing / 100) * 2);
-      if (party.gold < cost) continue;
-      party.gold -= cost;
-      unit.currentHp += healing;
-      result.healed = true;
-    }
-  }
   while (party.logisticsHours >= 24) {
     party.logisticsHours -= 24;
     const requiredRations = Math.max(1, party.roster.length);
+    const needsSupport =
+      party.roster.length < capacity ||
+      party.rations < requiredRations ||
+      party.roster.some(
+        (unit) => unit.currentHp < getCardDefinition(unit.cardId).maxHp,
+      );
+    if (atHome && needsSupport) {
+      party.gold += Math.max(
+        0,
+        Math.floor(options.supportGoldPerDay ?? 0),
+      );
+      party.rations += Math.max(
+        0,
+        Math.floor(options.supportRationsPerDay ?? 0),
+      );
+    }
     if (atHome && party.rations < requiredRations && party.gold > 0) {
       const bought = Math.min(requiredRations - party.rations, party.gold);
       party.gold -= bought;
@@ -231,6 +262,25 @@ export function processNpcRecovery(
     }
     if (atHome) for (const unit of party.roster) promoteNpcUnit(unit, `${partyId}:daily`, party);
   }
+  if (atHome) {
+    for (const unit of party.roster) {
+      const definition = getCardDefinition(unit.cardId);
+      if (unit.currentHp >= definition.maxHp || party.gold <= 0) continue;
+      const healingRate = 0.018 + prosperity * 0.00014;
+      const healing = Math.min(
+        definition.maxHp - unit.currentHp,
+        Math.max(
+          1,
+          Math.round(definition.maxHp * healingRate * deltaHours),
+        ),
+      );
+      const cost = Math.max(1, Math.ceil(healing / 100) * 2);
+      if (party.gold < cost) continue;
+      party.gold -= cost;
+      unit.currentHp += healing;
+      result.healed = true;
+    }
+  }
   return result;
 }
 
@@ -246,6 +296,34 @@ export function resetNpcParty(
   party.prisoners = [];
   party.victories = 0;
   party.logisticsHours = 0;
+}
+
+export function settleNpcPrisoners(
+  partyId: string,
+  party: NpcPartyProgress,
+  sourceCardIds: string[],
+  capacity: number,
+): NpcPrisonerSettlementResult {
+  let recruited = 0;
+  while (
+    party.roster.length < capacity &&
+    recruitMatchingPrisoner(partyId, party, sourceCardIds)
+  ) {
+    recruited += 1;
+  }
+  const ransomed = party.prisoners.reduce(
+    (sum, stack) => sum + stack.quantity,
+    0,
+  );
+  const gold = party.prisoners.reduce(
+    (sum, stack) =>
+      sum +
+      stack.quantity * (4 + getCardDefinition(stack.cardId).tier * 3),
+    0,
+  );
+  party.gold += gold;
+  party.prisoners = [];
+  return { recruited, ransomed, gold };
 }
 
 function promoteNpcUnit(unit: CardInstance, seed: string, party: NpcPartyProgress): void {

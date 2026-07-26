@@ -28,6 +28,7 @@ export interface RaceOption extends CharacterOriginOption<RaceId> {
 }
 
 export interface RunProfile {
+  heroId?: string;
   name: string;
   raceId: RaceId;
   originId: OriginId;

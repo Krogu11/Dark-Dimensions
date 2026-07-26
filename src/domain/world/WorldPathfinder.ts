@@ -1,6 +1,7 @@
 import type { WorldMapDefinition } from "../content/schemas";
 import {
   findNearestTraversablePosition,
+  getTerrainAt,
   getTerrainMovementMultiplier,
   isWorldPositionTraversable,
 } from "./WorldTerrain";
@@ -10,67 +11,127 @@ export interface WorldPoint {
   y: number;
 }
 
-const CELL_SIZE = 64;
-const UNIT_RADIUS = 30;
+const DEFAULT_CELL_SIZE = 64;
+const DEFAULT_UNIT_RADIUS = 30;
+
+export interface WorldPathOptions {
+  cellSize?: number;
+  unitRadius?: number;
+  roadPreference?: number;
+  directPathMaxDistance?: number;
+  searchMargin?: number;
+}
 
 export function findWorldPath(
   map: WorldMapDefinition,
   start: WorldPoint,
   target: WorldPoint,
+  options: WorldPathOptions = {},
 ): WorldPoint[] {
+  const cellSize = Math.max(24, options.cellSize ?? DEFAULT_CELL_SIZE);
+  const unitRadius = Math.max(0, options.unitRadius ?? DEFAULT_UNIT_RADIUS);
+  const roadPreference = Math.max(1, options.roadPreference ?? 1);
+  const directPathMaxDistance =
+    options.directPathMaxDistance ?? Number.POSITIVE_INFINITY;
+  const searchMargin = options.searchMargin ?? Number.POSITIVE_INFINITY;
   const destination = findNearestTraversablePosition(
     map,
     target.x,
     target.y,
-    UNIT_RADIUS,
+    unitRadius,
   );
-  if (hasTraversableLine(map, start, destination)) return [destination];
+  if (
+    Math.hypot(destination.x - start.x, destination.y - start.y) <=
+      directPathMaxDistance &&
+    hasTraversableLine(map, start, destination, unitRadius)
+  ) {
+    return [destination];
+  }
 
-  const columns = Math.ceil(map.width / CELL_SIZE);
-  const rows = Math.ceil(map.height / CELL_SIZE);
-  const startCell = nearestTraversableCell(map, start, columns, rows);
-  const targetCell = nearestTraversableCell(map, destination, columns, rows);
+  const columns = Math.ceil(map.width / cellSize);
+  const rows = Math.ceil(map.height / cellSize);
+  const startCell = nearestTraversableCell(
+    map,
+    start,
+    columns,
+    rows,
+    cellSize,
+    unitRadius,
+  );
+  const targetCell = nearestTraversableCell(
+    map,
+    destination,
+    columns,
+    rows,
+    cellSize,
+    unitRadius,
+  );
   if (!startCell || !targetCell) return [destination];
 
   const startKey = cellKey(startCell.column, startCell.row);
   const targetKey = cellKey(targetCell.column, targetCell.row);
-  const open = new Set([startKey]);
+  const open = new MinPriorityQueue();
+  open.push(startKey, 0);
+  const closed = new Set<string>();
   const cameFrom = new Map<string, string>();
   const costFromStart = new Map([[startKey, 0]]);
   const estimatedCost = new Map([
-    [startKey, cellDistance(startCell, targetCell)],
+    [
+      startKey,
+      cellDistance(startCell, targetCell) /
+        Math.max(1, 1.22 * roadPreference),
+    ],
   ]);
 
   while (open.size > 0) {
-    const currentKey = lowestCostKey(open, estimatedCost);
+    const currentKey = open.pop();
+    if (!currentKey || closed.has(currentKey)) continue;
     if (currentKey === targetKey) {
       const cells = reconstructCells(cameFrom, currentKey);
       const points = cells
         .slice(1)
-        .map((cell) => cellCenter(cell.column, cell.row));
+        .map((cell) => cellCenter(cell.column, cell.row, cellSize));
       points.push(destination);
-      return simplifyPath(map, start, points);
+      return simplifyPath(
+        map,
+        start,
+        points,
+        unitRadius,
+        roadPreference > 1 ? cellSize * 3 : Number.POSITIVE_INFINITY,
+      );
     }
 
-    open.delete(currentKey);
+    closed.add(currentKey);
     const current = parseCellKey(currentKey);
     for (const neighbor of neighbors(current, columns, rows)) {
-      const point = cellCenter(neighbor.column, neighbor.row);
-      if (!isWorldPositionTraversable(map, point.x, point.y, UNIT_RADIUS)) {
+      const point = cellCenter(neighbor.column, neighbor.row, cellSize);
+      if (
+        point.x < Math.min(start.x, destination.x) - searchMargin ||
+        point.x > Math.max(start.x, destination.x) + searchMargin ||
+        point.y < Math.min(start.y, destination.y) - searchMargin ||
+        point.y > Math.max(start.y, destination.y) + searchMargin
+      ) {
+        continue;
+      }
+      if (!isWorldPositionTraversable(map, point.x, point.y, unitRadius)) {
         continue;
       }
       if (
         neighbor.column !== current.column &&
         neighbor.row !== current.row &&
-        !canTraverseDiagonal(map, current, neighbor)
+        !canTraverseDiagonal(map, current, neighbor, cellSize, unitRadius)
       ) {
         continue;
       }
 
       const neighborKey = cellKey(neighbor.column, neighbor.row);
+      if (closed.has(neighborKey)) continue;
+      const roadMultiplier = getTerrainAt(map, point.x, point.y) === "road"
+        ? roadPreference
+        : 1;
       const movementMultiplier = Math.max(
         0.2,
-        getTerrainMovementMultiplier(map, point.x, point.y),
+        getTerrainMovementMultiplier(map, point.x, point.y) * roadMultiplier,
       );
       const tentativeCost =
         (costFromStart.get(currentKey) ?? Number.POSITIVE_INFINITY) +
@@ -86,9 +147,11 @@ export function findWorldPath(
       costFromStart.set(neighborKey, tentativeCost);
       estimatedCost.set(
         neighborKey,
-        tentativeCost + cellDistance(neighbor, targetCell),
+        tentativeCost +
+          cellDistance(neighbor, targetCell) /
+            Math.max(1, 1.22 * roadPreference),
       );
-      open.add(neighborKey);
+      open.push(neighborKey, estimatedCost.get(neighborKey)!);
     }
   }
 
@@ -99,6 +162,8 @@ function simplifyPath(
   map: WorldMapDefinition,
   start: WorldPoint,
   points: WorldPoint[],
+  unitRadius: number,
+  maximumShortcutDistance: number,
 ): WorldPoint[] {
   const simplified: WorldPoint[] = [];
   let anchor = start;
@@ -106,7 +171,15 @@ function simplifyPath(
   while (index < points.length) {
     let furthest = index;
     for (let candidate = index + 1; candidate < points.length; candidate += 1) {
-      if (!hasTraversableLine(map, anchor, points[candidate])) break;
+      if (
+        Math.hypot(
+          points[candidate].x - anchor.x,
+          points[candidate].y - anchor.y,
+        ) > maximumShortcutDistance ||
+        !hasTraversableLine(map, anchor, points[candidate], unitRadius)
+      ) {
+        break;
+      }
       furthest = candidate;
     }
     simplified.push(points[furthest]);
@@ -120,6 +193,7 @@ function hasTraversableLine(
   map: WorldMapDefinition,
   start: WorldPoint,
   target: WorldPoint,
+  unitRadius: number,
 ): boolean {
   const distance = Math.hypot(target.x - start.x, target.y - start.y);
   const steps = Math.max(1, Math.ceil(distance / 18));
@@ -130,7 +204,7 @@ function hasTraversableLine(
         map,
         start.x + (target.x - start.x) * progress,
         start.y + (target.y - start.y) * progress,
-        UNIT_RADIUS,
+        unitRadius,
       )
     ) {
       return false;
@@ -143,12 +217,14 @@ function canTraverseDiagonal(
   map: WorldMapDefinition,
   current: GridCell,
   neighbor: GridCell,
+  cellSize: number,
+  unitRadius: number,
 ): boolean {
-  const horizontal = cellCenter(neighbor.column, current.row);
-  const vertical = cellCenter(current.column, neighbor.row);
+  const horizontal = cellCenter(neighbor.column, current.row, cellSize);
+  const vertical = cellCenter(current.column, neighbor.row, cellSize);
   return (
-    isWorldPositionTraversable(map, horizontal.x, horizontal.y, UNIT_RADIUS) &&
-    isWorldPositionTraversable(map, vertical.x, vertical.y, UNIT_RADIUS)
+    isWorldPositionTraversable(map, horizontal.x, horizontal.y, unitRadius) &&
+    isWorldPositionTraversable(map, vertical.x, vertical.y, unitRadius)
   );
 }
 
@@ -162,22 +238,28 @@ function nearestTraversableCell(
   point: WorldPoint,
   columns: number,
   rows: number,
+  cellSize: number,
+  unitRadius: number,
 ): GridCell | null {
   const origin = {
-    column: Math.max(0, Math.min(columns - 1, Math.floor(point.x / CELL_SIZE))),
-    row: Math.max(0, Math.min(rows - 1, Math.floor(point.y / CELL_SIZE))),
+    column: Math.max(0, Math.min(columns - 1, Math.floor(point.x / cellSize))),
+    row: Math.max(0, Math.min(rows - 1, Math.floor(point.y / cellSize))),
   };
-  for (let radius = 0; radius <= 8; radius += 1) {
+  for (
+    let radius = 0;
+    radius <= Math.max(8, Math.ceil(640 / cellSize));
+    radius += 1
+  ) {
     for (let column = origin.column - radius; column <= origin.column + radius; column += 1) {
       for (let row = origin.row - radius; row <= origin.row + radius; row += 1) {
         if (column < 0 || row < 0 || column >= columns || row >= rows) continue;
-        const candidate = cellCenter(column, row);
+        const candidate = cellCenter(column, row, cellSize);
         if (
           isWorldPositionTraversable(
             map,
             candidate.x,
             candidate.y,
-            UNIT_RADIUS,
+            unitRadius,
           )
         ) {
           return { column, row };
@@ -219,20 +301,54 @@ function reconstructCells(
   return result.reverse();
 }
 
-function lowestCostKey(
-  keys: Set<string>,
-  costs: Map<string, number>,
-): string {
-  let result = "";
-  let lowest = Number.POSITIVE_INFINITY;
-  for (const key of keys) {
-    const cost = costs.get(key) ?? Number.POSITIVE_INFINITY;
-    if (cost < lowest) {
-      lowest = cost;
-      result = key;
-    }
+interface PriorityQueueEntry {
+  key: string;
+  priority: number;
+}
+
+class MinPriorityQueue {
+  private readonly entries: PriorityQueueEntry[] = [];
+
+  get size(): number {
+    return this.entries.length;
   }
-  return result;
+
+  push(key: string, priority: number): void {
+    const entry = { key, priority };
+    this.entries.push(entry);
+    let index = this.entries.length - 1;
+    while (index > 0) {
+      const parentIndex = Math.floor((index - 1) / 2);
+      if (this.entries[parentIndex].priority <= entry.priority) break;
+      this.entries[index] = this.entries[parentIndex];
+      index = parentIndex;
+    }
+    this.entries[index] = entry;
+  }
+
+  pop(): string | null {
+    if (this.entries.length === 0) return null;
+    const root = this.entries[0];
+    const tail = this.entries.pop()!;
+    if (this.entries.length > 0) {
+      let index = 0;
+      while (true) {
+        const leftIndex = index * 2 + 1;
+        if (leftIndex >= this.entries.length) break;
+        const rightIndex = leftIndex + 1;
+        const childIndex =
+          rightIndex < this.entries.length &&
+          this.entries[rightIndex].priority < this.entries[leftIndex].priority
+            ? rightIndex
+            : leftIndex;
+        if (this.entries[childIndex].priority >= tail.priority) break;
+        this.entries[index] = this.entries[childIndex];
+        index = childIndex;
+      }
+      this.entries[index] = tail;
+    }
+    return root.key;
+  }
 }
 
 function cellDistance(first: GridCell, second: GridCell): number {
@@ -242,10 +358,14 @@ function cellDistance(first: GridCell, second: GridCell): number {
   );
 }
 
-function cellCenter(column: number, row: number): WorldPoint {
+function cellCenter(
+  column: number,
+  row: number,
+  cellSize: number,
+): WorldPoint {
   return {
-    x: column * CELL_SIZE + CELL_SIZE / 2,
-    y: row * CELL_SIZE + CELL_SIZE / 2,
+    x: column * cellSize + cellSize / 2,
+    y: row * cellSize + cellSize / 2,
   };
 }
 

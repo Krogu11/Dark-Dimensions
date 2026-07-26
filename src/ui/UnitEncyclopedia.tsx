@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { contentPack, upgradesByCardId } from "../content/content";
 import type { CardDefinition } from "../domain/content/schemas";
 import type { MetaProgressionState } from "../domain/progression/MetaProgression";
+import { describeCardEffects } from "../domain/battle/CardEffects";
 
 type DiscoveryFilter = "all" | "seen" | "owned" | "unknown";
 
@@ -72,7 +73,7 @@ function UnitDossier({ card, seen, owned }: { card: CardDefinition; seen: boolea
       <div className="dossier-owned">◆ {t("encyclopedia.commanded")}</div>
       <p>{card.descriptionKey ? t(card.descriptionKey) : t("encyclopedia.noDescription")}</p>
       <dl className="dossier-stats"><div><dt>ATK</dt><dd>{card.atk}</dd></div><div><dt>DEF</dt><dd>{card.def}</dd></div><div><dt>HP</dt><dd>{card.maxHp}</dd></div><div><dt>INI</dt><dd>{card.initiative}</dd></div></dl>
-      <section><span>{t("encyclopedia.ability")}</span><strong>{t(`battle.effects.${card.battleEffect ?? "none"}`)}</strong></section>
+      <section><span>{t("encyclopedia.ability")}</span>{describeCardEffects(card).map((description, index) => <strong key={index}>{description}</strong>)}{!describeCardEffects(card).length ? <strong>{t("battle.effects.none")}</strong> : null}</section>
       <section><span>{t("encyclopedia.upgrades")}</span>{upgrade ? <div className="dossier-upgrades">{upgrade.options.map((id) => { const target = contentPack.cards.find((candidate) => candidate.id === id); return target ? <strong className={`rarity-name ${target.rarity}`} key={id}>{t(target.nameKey)}</strong> : null; })}</div> : <strong>{t("encyclopedia.finalTier")}</strong>}</section>
     </> : <div className="dossier-observed"><strong>{t("encyclopedia.observed")}</strong><p>{t("encyclopedia.observedText")}</p></div>}
   </aside>;

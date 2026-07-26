@@ -5,6 +5,7 @@ import {
   getTerrainAt,
   type TerrainType,
 } from "../world/WorldTerrain";
+import { getPartyInitiativeMultiplier } from "../world/PartySpeed";
 import type { CityState } from "../world/Cities";
 
 export interface InventoryStack {
@@ -39,12 +40,20 @@ export interface CaravanState {
   y: number;
   originId: string;
   destinationId: string;
+  homeLocationId?: string;
+  waitHoursRemaining?: number;
+  despawnAfterWait?: boolean;
   progress: number;
   speed: number;
   inventory: InventoryStack[];
   leaderCardId?: string;
   leaderLevel?: number;
   unitIds?: string[];
+  factionId?: "ember_crown" | "gloam_compact" | "iron_concord";
+  state?: "traveling" | "fighting" | "destroyed";
+  respawnHoursRemaining?: number;
+  attackerWarbandId?: string | null;
+  battleHoursRemaining?: number;
 }
 
 export interface EconomyState {
@@ -53,7 +62,13 @@ export interface EconomyState {
   caravans: CaravanState[];
   villagers: CaravanState[];
   restockHours: number;
+  villagerSpawnHours: number;
+  villagerSerial: number;
 }
+
+const MAX_DAILY_VILLAGER_DEPARTURES_PER_VILLAGE = 1;
+const CARAVAN_SETTLEMENT_DWELL_HOURS = 4;
+const VILLAGER_SETTLEMENT_DWELL_HOURS = 2;
 
 const RESOURCE_IDS = [
   "wood",
@@ -151,13 +166,9 @@ export function createEconomyState(
           location.id ===
           (direction === 0 ? road.destinationId : road.originId),
       )!;
-      const progress = (index * 0.17) % 0.82;
-      const position = getRoutePosition(
-        map,
-        origin.id,
-        destination.id,
-        progress,
-      );
+      const progress = 0;
+      const position = { x: origin.x, y: origin.y };
+      const escort = createCaravanEscort(seed, `caravan:${index}`);
       return {
         id: `caravan_${index}`,
         kind: "caravan" as const,
@@ -166,10 +177,15 @@ export function createEconomyState(
         originId: origin.id,
         destinationId: destination.id,
         progress,
-        speed: 55 + (hashValue(`${seed}:caravan:${index}`) % 20),
-        leaderCardId: "wache",
-        leaderLevel: 2,
-        unitIds: ["village_levy", "militia_shieldbearer"],
+        waitHoursRemaining: CARAVAN_SETTLEMENT_DWELL_HOURS,
+        speed: 220 + (hashValue(`${seed}:caravan:${index}`) % 35),
+        leaderCardId: escort.leaderCardId,
+        leaderLevel: escort.leaderLevel,
+        unitIds: escort.unitIds,
+        state: "traveling" as const,
+        respawnHoursRemaining: 0,
+        attackerWarbandId: null,
+        battleHoursRemaining: 0,
         inventory: selectSeededItems(
           CITY_TRADE_IDS,
           seed,
@@ -185,8 +201,8 @@ export function createEconomyState(
   const villagers = villages.map((village, index) => {
     const city = nearestLocation(village, cities);
     const productionItemId = getLocationResource(seed, village.id, map);
-    const progress = (index * 0.11) % 0.76;
-    const position = getRoutePosition(map, village.id, city.id, progress);
+    const progress = 0;
+    const position = { x: village.x, y: village.y };
     return {
       id: `villager_${index}`,
       kind: "villager" as const,
@@ -194,8 +210,10 @@ export function createEconomyState(
       y: position.y,
       originId: village.id,
       destinationId: city.id,
+      homeLocationId: village.id,
       progress,
-      speed: 36 + (hashValue(`${seed}:villager:${index}`) % 14),
+      waitHoursRemaining: VILLAGER_SETTLEMENT_DWELL_HOURS,
+      speed: 175 + (hashValue(`${seed}:villager:${index}`) % 30),
       leaderCardId: "village_levy",
       leaderLevel: 1,
       unitIds: ["village_slinger"],
@@ -214,7 +232,15 @@ export function createEconomyState(
         : 180 + (hashValue(`${seed}:${location.id}:gold`) % 260),
     ]),
   );
-  return { markets, merchantGold, caravans, villagers, restockHours: 0 };
+  return {
+    markets,
+    merchantGold,
+    caravans,
+    villagers,
+    restockHours: 0,
+    villagerSpawnHours: 0,
+    villagerSerial: villagers.length,
+  };
 }
 
 export function normalizeEconomyState(
@@ -227,6 +253,8 @@ export function normalizeEconomyState(
   const legacyState = state as EconomyState & {
     restockSeconds?: number;
     villagers?: CaravanState[];
+    villagerSpawnHours?: number;
+    villagerSerial?: number;
   };
   const cityIds = new Set(
     map.locations
@@ -249,19 +277,40 @@ export function normalizeEconomyState(
     markets,
     merchantGold: { ...fresh.merchantGold, ...(state.merchantGold ?? {}) },
     caravans: hasCurrentRoutes
-      ? state.caravans.map((caravan) => ({
-          ...caravan,
-          kind: "caravan" as const,
-          leaderCardId: caravan.leaderCardId ?? "wache",
-          leaderLevel: caravan.leaderLevel ?? 2,
-          unitIds: caravan.unitIds ?? ["village_levy", "militia_shieldbearer"],
-          inventory: normalizeStacks(caravan.inventory),
-        }))
+      ? state.caravans.map((caravan) => {
+          const origin = map.locations.find(
+            (location) => location.id === caravan.originId,
+          );
+          const needsDwellMigration =
+            typeof caravan.waitHoursRemaining !== "number";
+          return {
+            ...caravan,
+            kind: "caravan" as const,
+            x: needsDwellMigration && origin ? origin.x : caravan.x,
+            y: needsDwellMigration && origin ? origin.y : caravan.y,
+            progress: needsDwellMigration ? 0 : caravan.progress,
+            waitHoursRemaining: needsDwellMigration
+              ? CARAVAN_SETTLEMENT_DWELL_HOURS
+              : caravan.waitHoursRemaining,
+            leaderCardId: caravan.leaderCardId ?? "wache",
+            leaderLevel: caravan.leaderLevel ?? 3,
+            unitIds: caravan.unitIds ?? createCaravanEscort(seed, caravan.id).unitIds,
+            state: caravan.state ?? "traveling",
+            respawnHoursRemaining: caravan.respawnHoursRemaining ?? 0,
+            attackerWarbandId: caravan.attackerWarbandId ?? null,
+            battleHoursRemaining: caravan.battleHoursRemaining ?? 0,
+            inventory: normalizeStacks(caravan.inventory),
+          };
+        })
       : fresh.caravans,
     villagers: hasCurrentRoutes
       ? legacyState.villagers!.map((villager) => ({
           ...villager,
           kind: "villager" as const,
+          homeLocationId:
+            villager.homeLocationId ??
+            inferVillagerHomeLocationId(villager, map),
+          waitHoursRemaining: villager.waitHoursRemaining ?? 0,
           leaderCardId: villager.leaderCardId ?? "village_levy",
           leaderLevel: villager.leaderLevel ?? 1,
           unitIds: villager.unitIds ?? ["village_slinger"],
@@ -272,6 +321,14 @@ export function normalizeEconomyState(
       typeof state.restockHours === "number"
         ? state.restockHours
         : (legacyState.restockSeconds ?? 0) / 3600,
+    villagerSpawnHours:
+      typeof legacyState.villagerSpawnHours === "number"
+        ? legacyState.villagerSpawnHours
+        : 0,
+    villagerSerial:
+      typeof legacyState.villagerSerial === "number"
+        ? legacyState.villagerSerial
+        : fresh.villagerSerial + (legacyState.villagers?.length ?? 0),
   };
 }
 
@@ -287,19 +344,85 @@ export function updateEconomyState(
     restockMarkets(state, seed, map);
   }
 
+  state.villagerSpawnHours += deltaHours;
+  const elapsedVillagerDays = Math.floor(state.villagerSpawnHours / 24);
+  state.villagerSpawnHours %= 24;
+  const completedVillagerIds = new Set<string>();
+
   for (const trader of [...state.caravans, ...state.villagers]) {
     const origin = map.locations.find((location) => location.id === trader.originId);
     const destination = map.locations.find(
       (location) => location.id === trader.destinationId,
     );
     if (!origin || !destination) continue;
+    if (trader.state === "destroyed") {
+      trader.respawnHoursRemaining = Math.max(
+        0,
+        (trader.respawnHoursRemaining ?? 24) - deltaHours,
+      );
+      trader.x = origin.x;
+      trader.y = origin.y;
+      if (trader.respawnHoursRemaining > 0) continue;
+      const escort = createCaravanEscort(seed, trader.id);
+      trader.state = "traveling";
+      trader.attackerWarbandId = null;
+      trader.battleHoursRemaining = 0;
+      trader.leaderCardId = escort.leaderCardId;
+      trader.leaderLevel = escort.leaderLevel;
+      trader.unitIds = escort.unitIds;
+      trader.inventory = selectSeededItems(
+        CITY_TRADE_IDS,
+        seed,
+        `${trader.id}:respawn:${Math.floor(state.restockHours / 24)}`,
+        5,
+      ).map((itemId, index) => ({
+        itemId,
+        quantity: 3 + ((hashValue(`${trader.id}:${itemId}:respawn`) + index) % 5),
+      }));
+      trader.waitHoursRemaining = CARAVAN_SETTLEMENT_DWELL_HOURS;
+      continue;
+    }
+    if (trader.state === "fighting") continue;
+    let travelHours = deltaHours;
+    if ((trader.waitHoursRemaining ?? 0) > 0) {
+      const waitedHours = Math.min(travelHours, trader.waitHoursRemaining!);
+      trader.waitHoursRemaining = Math.max(
+        0,
+        trader.waitHoursRemaining! - waitedHours,
+      );
+      travelHours -= waitedHours;
+      trader.x = origin.x;
+      trader.y = origin.y;
+      if (trader.waitHoursRemaining > 0) continue;
+      if (trader.kind === "villager" && trader.despawnAfterWait) {
+        completedVillagerIds.add(trader.id);
+        continue;
+      }
+    }
+    if (travelHours <= 0) continue;
     const distance = getRouteLength(map, origin.id, destination.id);
-    trader.progress += (trader.speed * deltaHours) / distance;
+    const initiativeSpeed = getPartyInitiativeMultiplier([
+      ...(trader.leaderCardId ? [trader.leaderCardId] : []),
+      ...(trader.unitIds ?? []),
+    ]);
+    trader.progress += (trader.speed * initiativeSpeed * travelHours) / distance;
     if (trader.progress >= 1) {
       trader.progress = 0;
       trader.originId = destination.id;
       trader.destinationId = origin.id;
       serviceTraderAtSettlement(state, trader, destination, seed, map);
+      if (trader.kind === "villager" && destination.type === "village") {
+        trader.waitHoursRemaining = VILLAGER_SETTLEMENT_DWELL_HOURS;
+        trader.despawnAfterWait = true;
+        trader.x = destination.x;
+        trader.y = destination.y;
+        continue;
+      }
+      trader.waitHoursRemaining =
+        trader.kind === "caravan"
+          ? CARAVAN_SETTLEMENT_DWELL_HOURS
+          : VILLAGER_SETTLEMENT_DWELL_HOURS;
+      trader.despawnAfterWait = false;
     }
     const nextOrigin = map.locations.find(
       (location) => location.id === trader.originId,
@@ -316,6 +439,35 @@ export function updateEconomyState(
     trader.x = position.x;
     trader.y = position.y;
   }
+
+  if (completedVillagerIds.size > 0) {
+    state.villagers = state.villagers.filter(
+      (villager) => !completedVillagerIds.has(villager.id),
+    );
+  }
+  for (let day = 0; day < elapsedVillagerDays; day += 1) {
+    spawnDailyVillagers(state, seed, map);
+  }
+}
+
+export function createCaravanEscort(
+  seed: number,
+  key: string,
+): { leaderCardId: string; leaderLevel: number; unitIds: string[] } {
+  const branches = [
+    ["caravan_guard", "caravan_guard", "road_warden", "caravan_crossbowman"],
+    ["caravan_guard", "road_warden", "caravan_crossbowman", "caravan_crossbowman"],
+    ["caravan_guard", "road_warden", "road_warden", "wagon_captain"],
+  ];
+  const branch = branches[hashValue(`${seed}:${key}:escort-branch`) % branches.length];
+  const extra = hashValue(`${seed}:${key}:escort-size`) % 3;
+  return {
+    leaderCardId: hashValue(`${seed}:${key}:escort-captain`) % 2
+      ? "master_escort"
+      : "wagon_captain",
+    leaderLevel: 3 + (hashValue(`${seed}:${key}:escort-leader`) % 2),
+    unitIds: [...branch, ...branch.slice(0, extra)],
+  };
 }
 
 export function createMarketProfile(
@@ -688,6 +840,64 @@ function serviceTraderAtSettlement(
   }
 }
 
+function spawnDailyVillagers(
+  economy: EconomyState,
+  seed: number,
+  map: WorldMapDefinition,
+): void {
+  const cities = map.locations.filter((location) => location.type === "city");
+  const villages = map.locations.filter((location) => location.type === "village");
+
+  for (const village of villages) {
+    if (cities.length === 0) continue;
+
+    const city = nearestLocation(village, cities);
+    const productionItemId = getLocationResource(seed, village.id, map);
+    for (
+      let index = 0;
+      index < MAX_DAILY_VILLAGER_DEPARTURES_PER_VILLAGE;
+      index += 1
+    ) {
+      const serial = economy.villagerSerial;
+      economy.villagerSerial += 1;
+      economy.villagers.push({
+        id: `villager_${village.id}_${serial}`,
+        kind: "villager",
+        x: village.x,
+        y: village.y,
+        originId: village.id,
+        destinationId: city.id,
+        homeLocationId: village.id,
+        progress: 0,
+        waitHoursRemaining: VILLAGER_SETTLEMENT_DWELL_HOURS,
+        speed: 175 + (hashValue(`${seed}:villager:${serial}`) % 30),
+        leaderCardId: "village_levy",
+        leaderLevel: 1,
+        unitIds: ["village_slinger"],
+        inventory: [
+          { itemId: productionItemId, quantity: 6 + (serial % 5) },
+          { itemId: "bread", quantity: 2 + (serial % 2) },
+        ],
+      });
+    }
+  }
+}
+
+function inferVillagerHomeLocationId(
+  villager: CaravanState,
+  map: WorldMapDefinition,
+): string {
+  const origin = map.locations.find(
+    (location) => location.id === villager.originId,
+  );
+  if (origin?.type === "village") return origin.id;
+  const destination = map.locations.find(
+    (location) => location.id === villager.destinationId,
+  );
+  if (destination?.type === "village") return destination.id;
+  return villager.originId;
+}
+
 function calculateBuyPrice(
   itemId: string,
   currentStock: number,
@@ -917,6 +1127,29 @@ function getRoutePoints(
   originId: string,
   destinationId: string,
 ): Array<{ x: number; y: number }> {
+  const origin = map.locations.find((location) => location.id === originId)!;
+  const destination = map.locations.find(
+    (location) => location.id === destinationId,
+  )!;
+  const village =
+    origin.type === "village"
+      ? origin
+      : destination.type === "village"
+        ? destination
+        : null;
+  const city =
+    origin.type === "city"
+      ? origin
+      : destination.type === "city"
+        ? destination
+        : null;
+  if (village && city) {
+    const villageToCity = getVillageCityRoutePoints(map, village, city);
+    return origin.id === village.id
+      ? villageToCity
+      : [...villageToCity].reverse();
+  }
+
   const road = map.terrainRoads.find(
     (candidate) =>
       (candidate.originId === originId &&
@@ -927,14 +1160,142 @@ function getRoutePoints(
   if (road) {
     return road.originId === originId ? road.points : [...road.points].reverse();
   }
-  const origin = map.locations.find((location) => location.id === originId)!;
-  const destination = map.locations.find(
-    (location) => location.id === destinationId,
-  )!;
   return [
     { x: origin.x, y: origin.y },
     { x: destination.x, y: destination.y },
   ];
+}
+
+function getVillageCityRoutePoints(
+  map: WorldMapDefinition,
+  village: MapLocation,
+  city: MapLocation,
+): Array<{ x: number; y: number }> {
+  const villageRoad = map.terrainRoads.find(
+    (road) =>
+      (road.originId === village.id && road.destinationId === city.id) ||
+      (road.originId === city.id && road.destinationId === village.id),
+  );
+  if (!villageRoad || villageRoad.points.length < 2) {
+    return [
+      { x: village.x, y: village.y },
+      { x: city.x, y: city.y },
+    ];
+  }
+
+  const firstDistance = Math.hypot(
+    villageRoad.points[0].x - village.x,
+    villageRoad.points[0].y - village.y,
+  );
+  const lastVillagePoint = villageRoad.points[villageRoad.points.length - 1];
+  const lastDistance = Math.hypot(
+    lastVillagePoint.x - village.x,
+    lastVillagePoint.y - village.y,
+  );
+  const spurPoints =
+    firstDistance <= lastDistance
+      ? villageRoad.points
+      : [...villageRoad.points].reverse();
+  const junction = spurPoints[spurPoints.length - 1];
+  if (Math.hypot(junction.x - city.x, junction.y - city.y) <= 180) {
+    return appendDistinctPoints(spurPoints, [{ x: city.x, y: city.y }]);
+  }
+
+  let bestContinuation:
+    | {
+        points: Array<{ x: number; y: number }>;
+        segmentIndex: number;
+        projection: { x: number; y: number };
+        distance: number;
+      }
+    | undefined;
+
+  for (const road of map.terrainRoads) {
+    if (road === villageRoad || road.points.length < 2) continue;
+    const first = road.points[0];
+    const last = road.points[road.points.length - 1];
+    const reachesCity =
+      road.originId === city.id ||
+      road.destinationId === city.id ||
+      Math.min(
+        Math.hypot(first.x - city.x, first.y - city.y),
+        Math.hypot(last.x - city.x, last.y - city.y),
+      ) <= 180;
+    if (!reachesCity) continue;
+
+    const points =
+      Math.hypot(last.x - city.x, last.y - city.y) <=
+      Math.hypot(first.x - city.x, first.y - city.y)
+        ? road.points
+        : [...road.points].reverse();
+    for (let segmentIndex = 0; segmentIndex < points.length - 1; segmentIndex += 1) {
+      const projection = projectPointToSegment(
+        junction,
+        points[segmentIndex],
+        points[segmentIndex + 1],
+      );
+      const distance = Math.hypot(
+        projection.x - junction.x,
+        projection.y - junction.y,
+      );
+      if (!bestContinuation || distance < bestContinuation.distance) {
+        bestContinuation = {
+          points,
+          segmentIndex,
+          projection,
+          distance,
+        };
+      }
+    }
+  }
+
+  if (!bestContinuation || bestContinuation.distance > 200) {
+    return appendDistinctPoints(spurPoints, [{ x: city.x, y: city.y }]);
+  }
+  return appendDistinctPoints(
+    spurPoints,
+    [
+      bestContinuation.projection,
+      ...bestContinuation.points.slice(bestContinuation.segmentIndex + 1),
+      { x: city.x, y: city.y },
+    ],
+  );
+}
+
+function appendDistinctPoints(
+  base: Array<{ x: number; y: number }>,
+  additions: Array<{ x: number; y: number }>,
+): Array<{ x: number; y: number }> {
+  const result = [...base];
+  for (const point of additions) {
+    const previous = result[result.length - 1];
+    if (!previous || Math.hypot(point.x - previous.x, point.y - previous.y) > 1) {
+      result.push(point);
+    }
+  }
+  return result;
+}
+
+function projectPointToSegment(
+  point: { x: number; y: number },
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+): { x: number; y: number } {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const lengthSquared = dx * dx + dy * dy;
+  if (lengthSquared === 0) return { ...start };
+  const position = Math.max(
+    0,
+    Math.min(
+      1,
+      ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared,
+    ),
+  );
+  return {
+    x: start.x + dx * position,
+    y: start.y + dy * position,
+  };
 }
 
 function getRouteLength(

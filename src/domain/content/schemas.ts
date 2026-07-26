@@ -88,6 +88,16 @@ export const nobleProfileSchema = z.object({
   leaderLevel: z.number().int().positive().default(1),
 });
 
+export const heroDefinitionSchema = z.object({
+  id: z.string().min(1),
+  nameKey: z.string().min(1),
+  descriptionKey: z.string().min(1),
+  raceId: z.enum(["human", "kobold", "orc", "revenant"]),
+  heroCardId: z.string().min(1),
+  startingDeck: z.array(z.string().min(1)).min(1).max(30),
+  startingGoldBonus: z.number().int().default(0),
+});
+
 export const warbandTemplateSchema = z.object({
   id: z.string().min(1),
   nameKey: z.string().min(1),
@@ -227,7 +237,10 @@ export const worldMapSchema = z.object({
 });
 
 export const combatRulesSchema = z.object({
-  summonsPerTurn: z.literal(3),
+  fieldSlots: z.literal(7),
+  startingStrategicActions: z.literal(3),
+  strategicActionsPerRound: z.literal(1),
+  maximumStrategicActions: z.literal(9),
   rewards: z.object({
     baseGold: z.number().int().nonnegative(),
     goldPerThreat: z.number().int().nonnegative(),
@@ -252,6 +265,49 @@ export const terrainBattlefieldSchema = z.object({
   }).default({ x: 50, y: 50 }),
 });
 
+export const cardEffectTriggerSchema = z.enum(["onSummon", "onAttack", "onDeath"]);
+export const cardEffectActionSchema = z.enum(["heal", "damage", "drain", "shield", "modifyStat", "draw", "returnToHand"]);
+export const cardEffectTargetSchema = z.enum(["self", "lowestAlly", "weakestEnemy", "strongestEnemy", "allAllies", "allEnemies", "sameRaceAllies", "randomEnemy"]);
+export const cardEffectZoneSchema = z.enum(["field", "hand", "fieldAndHand"]);
+export const cardEffectDurationSchema = z.enum(["round", "battle"]);
+export const cardEffectConditionSchema = z.enum(["enemyWounded", "selfBelowHalf", "allyRaceCount"]);
+export const cardEffectStatSchema = z.enum(["atk", "def", "initiative"]);
+
+export const cardEffectSchema = z.object({
+  trigger: cardEffectTriggerSchema,
+  action: cardEffectActionSchema,
+  target: cardEffectTargetSchema.optional(),
+  zone: cardEffectZoneSchema.optional(),
+  value: z.number().int().positive(),
+  valueMode: z.enum(["flat", "percentMaxHp"]).optional(),
+  stat: cardEffectStatSchema.optional(),
+  modifier: z.enum(["increase", "decrease"]).optional(),
+  duration: cardEffectDurationSchema.optional(),
+  condition: cardEffectConditionSchema.optional(),
+  conditionValue: z.number().int().positive().optional(),
+  limitPerBattle: z.number().int().min(1).max(9).optional(),
+}).superRefine((effect, context) => {
+  if (effect.valueMode === "percentMaxHp" && effect.action !== "shield" && effect.action !== "heal") context.addIssue({ code: "custom", path: ["valueMode"], message: "Percent maximum HP is only valid for healing and shields" });
+  if (effect.action === "draw") {
+    if (effect.value > 3) context.addIssue({ code: "custom", path: ["value"], message: "Draw must be between 1 and 3" });
+    if (effect.target || effect.zone || effect.stat || effect.duration) context.addIssue({ code: "custom", message: "Draw cannot define target, zone, stat, or duration" });
+    return;
+  }
+  if (!effect.target) context.addIssue({ code: "custom", path: ["target"], message: "This action requires a target" });
+  if (effect.action === "returnToHand") {
+    if (effect.trigger !== "onDeath") context.addIssue({ code: "custom", path: ["trigger"], message: "Return to hand requires On death" });
+    if (effect.target !== "self") context.addIssue({ code: "custom", path: ["target"], message: "Return to hand must target self" });
+    if (effect.value > 100) context.addIssue({ code: "custom", path: ["value"], message: "Return health must be a percentage from 1 to 100" });
+  }
+  if (effect.action === "modifyStat") {
+    if (!effect.stat) context.addIssue({ code: "custom", path: ["stat"], message: "Stat modifier requires a stat" });
+    if (!effect.modifier) context.addIssue({ code: "custom", path: ["modifier"], message: "Stat modifier requires increase or decrease" });
+    if (!effect.duration) context.addIssue({ code: "custom", path: ["duration"], message: "Stat modifier requires a duration" });
+  } else if (effect.stat || effect.modifier || effect.duration) context.addIssue({ code: "custom", message: "Only stat modifiers use stat, modifier, and duration" });
+  if (effect.zone && effect.action !== "heal") context.addIssue({ code: "custom", path: ["zone"], message: "Only healing can select a zone" });
+  if (effect.condition === "allyRaceCount" && !effect.conditionValue) context.addIssue({ code: "custom", path: ["conditionValue"], message: "Race-count condition requires a minimum" });
+});
+
 export const cardDefinitionSchema = z.object({
   id: z.string().min(1),
   nameKey: z.string().min(1),
@@ -272,6 +328,7 @@ export const cardDefinitionSchema = z.object({
   def: z.number().nonnegative(),
   maxHp: z.number().positive(),
   recruitCost: z.number().int().positive().optional(),
+  battleEffects: z.array(cardEffectSchema).max(3).optional(),
   battleEffect: z
     .enum([
       "heal_lowest_300",
@@ -306,6 +363,28 @@ export const unitUpgradeSchema = z.object({
   options: z.array(z.string().min(1)).min(1).max(3),
 });
 
+export const abilityEffectSchema = z.object({
+  type: z.enum(["heal", "damage", "burn", "modifyStat", "shield"]),
+  value: z.number().int().positive(),
+  stat: z.enum(["atk", "def", "initiative"]).optional(),
+  durationRounds: z.number().int().min(1).max(99).optional(),
+});
+
+export const abilityDefinitionSchema = z.object({
+  id: z.string().min(1),
+  nameKey: z.string().min(1),
+  descriptionKey: z.string().min(1),
+  category: z.enum(["skill", "magic"]),
+  tier: z.number().int().min(1).max(5),
+  actionCost: z.number().int().min(1).max(5),
+  basePrice: z.number().int().nonnegative(),
+  target: z.enum(["enemy", "ally", "allEnemies", "allAllies"]),
+  effects: z.array(abilityEffectSchema).min(1),
+  usesPerRound: z.number().int().min(1).max(9).default(1),
+  merchantTags: z.array(z.enum(["martial", "arcane", "divine", "nature", "forbidden"])).default([]),
+  icon: z.string().min(1).default("✦"),
+});
+
 export const itemDefinitionSchema = z.object({
   id: z.string().min(1),
   nameKey: z.string().min(1),
@@ -324,8 +403,24 @@ export const itemDefinitionSchema = z.object({
   effect: z.enum(["heal_300"]).optional(),
   equipmentSlot: z.enum(["rightHand", "leftHand", "accessory"]).optional(),
   weaponType: z
-    .enum(["club", "sword", "axe", "mace", "spear", "bow", "shield"])
+    .enum([
+      "club",
+      "sword",
+      "axe",
+      "mace",
+      "spear",
+      "bow",
+      "shield",
+      "dagger",
+      "greatsword",
+      "crossbow",
+      "staff",
+      "halberd",
+    ])
     .optional(),
+  tier: z.number().int().min(1).max(5).optional(),
+  rarity: z.enum(["common", "uncommon", "rare", "epic", "legendary"]).optional(),
+  dropChance: z.number().min(0).max(1).optional(),
   statBonus: z
     .object({
       atk: z.number().int().nonnegative().optional(),
@@ -372,18 +467,41 @@ export const contentPackSchema = z.object({
   combatRules: combatRulesSchema,
   terrainBattlefields: z.record(z.string(), terrainBattlefieldSchema).default({}),
   cards: z.array(cardDefinitionSchema),
+  abilities: z.array(abilityDefinitionSchema).default([]),
   items: z.array(itemDefinitionSchema),
   tradeRecipes: z.array(tradeRecipeSchema),
   unitUpgrades: z.array(unitUpgradeSchema),
   enemies: z.array(enemyArchetypeSchema),
   nobles: z.array(nobleProfileSchema).default([]),
+  heroes: z.array(heroDefinitionSchema).default([]),
+}).superRefine((pack, context) => {
+  pack.cards.forEach((card, index) => {
+    if (card.tier >= 3 && !card.battleEffects?.length && !card.battleEffect) {
+      context.addIssue({ code: "custom", path: ["cards", index, "battleEffects"], message: `Tier ${card.tier} cards require at least one battle effect` });
+    }
+  });
+  pack.items.forEach((item, index) => {
+    if (item.type !== "equipment") return;
+    if (!item.tier) {
+      context.addIssue({ code: "custom", path: ["items", index, "tier"], message: "Equipment requires a Tier from 1 to 5" });
+    }
+    if (!item.rarity) {
+      context.addIssue({ code: "custom", path: ["items", index, "rarity"], message: "Equipment requires a rarity" });
+    }
+    if (!item.dropChance) {
+      context.addIssue({ code: "custom", path: ["items", index, "dropChance"], message: "Equipment requires a positive drop chance" });
+    }
+  });
 });
 
 export type ContentPack = z.infer<typeof contentPackSchema>;
 export type WorldMapDefinition = z.infer<typeof worldMapSchema>;
 export type MapLocation = z.infer<typeof mapLocationSchema>;
 export type CardDefinition = z.infer<typeof cardDefinitionSchema>;
+export type CardEffect = z.infer<typeof cardEffectSchema>;
 export type ItemDefinition = z.infer<typeof itemDefinitionSchema>;
+export type AbilityDefinition = z.infer<typeof abilityDefinitionSchema>;
+export type AbilityEffect = z.infer<typeof abilityEffectSchema>;
 export type TradeRecipe = z.infer<typeof tradeRecipeSchema>;
 export type EnemyArchetype = z.infer<typeof enemyArchetypeSchema>;
 export type WorldEnemySpawn = z.infer<typeof worldEnemySpawnSchema>;
@@ -393,6 +511,7 @@ export type WarbandType = z.infer<typeof warbandTypeSchema>;
 export type WarbandState = z.infer<typeof warbandStateSchema>;
 export type NobleRank = z.infer<typeof nobleRankSchema>;
 export type NobleProfile = z.infer<typeof nobleProfileSchema>;
+export type HeroDefinition = z.infer<typeof heroDefinitionSchema>;
 export type TerrainZoneType = z.infer<typeof terrainZoneTypeSchema>;
 export type TerrainZone = z.infer<typeof terrainZoneSchema>;
 export type TerrainCell = z.infer<typeof terrainCellSchema>;

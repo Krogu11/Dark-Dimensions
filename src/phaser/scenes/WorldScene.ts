@@ -6,16 +6,21 @@ import type { MapLocation, TerrainCell } from "../../domain/content/schemas";
 import {
   getFactionRelation,
   PLAYER_FACTION_ID,
+  shouldDispatchBountyHunters,
   type FactionId,
 } from "../../domain/quests/Factions";
 import { isPositionNearPath } from "../../domain/world/WorldTerrain";
-import { estimateWarbandStrength, getLordPersonalityLabel, getNobleRankLabel, getNpcActivityLabel } from "../../domain/world/WorldWarbands";
+import { getLordPersonalityLabel, getNobleRankLabel, getNpcActivityLabel } from "../../domain/world/WorldWarbands";
 import i18n from "../../localization/i18n";
 import {
   WORLD_CAMERA_FOCUS_EVENT,
   type WorldCameraFocusDetail,
 } from "../WorldCameraEvents";
-import { consumeWorldZoom, requestWorldZoom } from "../input/WorldInput";
+import {
+  consumeWorldZoom,
+  getWorldTimeScale,
+  requestWorldZoom,
+} from "../input/WorldInput";
 
 const LOCATION_COLORS = {
   city: 0xd9b66f,
@@ -259,6 +264,7 @@ export class WorldScene extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private centerCameraKey!: Phaser.Input.Keyboard.Key;
   private waitKey!: Phaser.Input.Keyboard.Key;
+  private controlKey!: Phaser.Input.Keyboard.Key;
   private lastLocationId: string | null = null;
   private lastCaravanId: string | null = null;
   private lastTimeBucket = -1;
@@ -303,6 +309,7 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor("#111613");
     this.cameras.main.roundPixels = true;
     this.defineWorldBaseSetFrames();
+    this.createWorldNpcTextures();
     this.drawTerrain();
     this.drawLocations();
     this.createEnemies();
@@ -319,6 +326,7 @@ export class WorldScene extends Phaser.Scene {
     document.addEventListener(WORLD_CAMERA_FOCUS_EVENT, this.handleCameraFocus);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       document.removeEventListener(WORLD_CAMERA_FOCUS_EVENT, this.handleCameraFocus);
+      gameSession.setWorldTimeScale(1);
     });
 
     this.cameras.main
@@ -342,6 +350,7 @@ export class WorldScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     if (gameSession.mode !== "world" || gameSession.uiBlocked) {
+      gameSession.setWorldTimeScale(1);
       gameSession.stopWaiting();
       return;
     }
@@ -362,6 +371,10 @@ export class WorldScene extends Phaser.Scene {
       Number(this.keys.right.isDown) - Number(this.keys.left.isDown);
     const vertical =
       Number(this.keys.down.isDown) - Number(this.keys.up.isDown);
+    const deltaSeconds = Math.min(delta, 40) / 1000;
+    const timeScale = getWorldTimeScale(this.controlKey.isDown);
+    const simulationDeltaSeconds = deltaSeconds * timeScale;
+    gameSession.setWorldTimeScale(timeScale);
 
     if (horizontal !== 0 || vertical !== 0) {
       gameSession.stopWaiting();
@@ -369,18 +382,18 @@ export class WorldScene extends Phaser.Scene {
       gameSession.moveWorld(
         horizontal,
         vertical,
-        Math.min(delta, 40) / 1000,
+        simulationDeltaSeconds,
       );
     } else if (this.waitKey.isDown) {
       if (gameSession.waypoint) gameSession.cancelNavigation();
-      gameSession.waitWorld(Math.min(delta, 40) / 1000);
+      gameSession.waitWorld(simulationDeltaSeconds);
     } else {
       gameSession.stopWaiting();
-      gameSession.advanceNavigation(Math.min(delta, 40) / 1000);
+      gameSession.advanceNavigation(simulationDeltaSeconds);
     }
     this.player.setPosition(gameSession.world.state.x, gameSession.world.state.y);
-    this.updateCamera(Math.min(delta, 40) / 1000);
-    this.interpolateVisibleNpcMarkers(Math.min(delta, 40) / 1000);
+    this.updateCamera(deltaSeconds);
+    this.interpolateVisibleNpcMarkers(deltaSeconds);
 
     this.markerUpdateElapsed += delta;
     this.visibilityUpdateElapsed += delta;
@@ -856,30 +869,38 @@ export class WorldScene extends Phaser.Scene {
 
   private createEnemies(): void {
     for (const enemy of gameSession.world.state.enemies) {
-      const glow = this.add.circle(0, 0, 25, 0xe34f45, 0.12);
-      const ring = this.add
-        .circle(0, 0, 12, 0x160807, 0.96)
-        .setStrokeStyle(2, 0xe55b50, 0.95);
-      const core = this.add.circle(0, 0, 5, 0xd84b43, 1);
-      const banner = this.add.triangle(5, -17, 0, 9, 13, 4, 0, -2, 0xc33c35);
-      const threat = enemiesById.get(enemy.archetypeId)?.threat ?? 1;
+      const glow = this.add.circle(0, 0, 27, 0xe34f45, 0.12);
+      const shadow = this.add.ellipse(0, 11, 30, 9, 0x000000, 0.42);
+      const sprite = this.add.image(
+        0,
+        -8,
+        this.getEnemyWorldSpriteKey(enemy.archetypeId),
+      );
+      const troopCount = this.createTroopCountLabel(enemy.roster.length, 22);
       const threatLabel = this.add
-        .text(0, 20, "◆".repeat(threat), {
+        .text(
+          0,
+          34,
+          "◆".repeat(gameSession.world.getEnemyThreatRating(enemy)),
+          {
           color: "#dc766b",
           fontFamily: "Arial",
           fontSize: "7px",
-        })
+          },
+        )
         .setOrigin(0.5);
       const marker = this.add.container(enemy.x, enemy.y, [
         glow,
-        ring,
-        core,
-        banner,
+        shadow,
+        sprite,
+        troopCount,
         threatLabel,
       ]);
+      marker.setData("troopCountLabel", troopCount);
+      marker.setData("threatLabel", threatLabel);
       marker.setDepth(8);
       marker
-        .setSize(58, 66)
+        .setSize(62, 78)
         .setInteractive({ cursor: "pointer" })
         .on(
           Phaser.Input.Events.POINTER_OVER,
@@ -919,6 +940,16 @@ export class WorldScene extends Phaser.Scene {
       const marker = this.enemyMarkers.get(enemy.id);
       if (!marker) continue;
       this.setMarkerTarget(marker, enemy.x, enemy.y);
+      const troopCount = marker.getData("troopCountLabel") as
+        | Phaser.GameObjects.Text
+        | undefined;
+      troopCount?.setText(String(enemy.roster.length));
+      const threatLabel = marker.getData("threatLabel") as
+        | Phaser.GameObjects.Text
+        | undefined;
+      threatLabel?.setText(
+        "◆".repeat(gameSession.world.getEnemyThreatRating(enemy)),
+      );
       this.setMarkerVisible(marker, enemy.active && this.isWithinSight(enemy.x, enemy.y));
     }
   }
@@ -949,9 +980,7 @@ export class WorldScene extends Phaser.Scene {
     if (!enemy || !archetype) return;
 
     const cards = new Map<string, number>();
-    const visibleRoster = enemy.sourceLocationId
-      ? enemy.roster.map((unit) => unit.cardId)
-      : archetype.deck;
+    const visibleRoster = enemy.roster.map((unit) => unit.cardId);
     for (const cardId of visibleRoster) {
       cards.set(cardId, (cards.get(cardId) ?? 0) + 1);
     }
@@ -963,7 +992,7 @@ export class WorldScene extends Phaser.Scene {
       .join(", ");
     this.enemyTooltipText.setText([
       i18n.t(archetype.nameKey).toUpperCase(),
-      `${i18n.t("world.enemyTooltip.threat")}: ${"◆".repeat(gameSession.world.getEnemyThreatRating(enemy))}`,
+      `${i18n.t("world.enemyTooltip.threat")}: ${"◆".repeat(gameSession.world.getEnemyThreatRating(enemy))} · ${gameSession.world.getEnemyThreatPoints(enemy)} points`,
       `${i18n.t("world.enemyTooltip.troops")}: ${enemy.partySize}   ${i18n.t("world.enemyTooltip.speed")}: ${Math.round(enemy.speed)}`,
       `Activity: ${getNpcActivityLabel(enemy.activity)}`,
       enemy.sourceLocationId ? `Loot: ${enemy.gold}   Supplies: ${enemy.rations}   Prisoners: ${enemy.prisoners.reduce((sum, stack) => sum + stack.quantity, 0)}` : `${i18n.t("world.enemyTooltip.load")}: ${enemy.inventoryWeight.toFixed(1)}`,
@@ -1009,26 +1038,42 @@ export class WorldScene extends Phaser.Scene {
   private createWarbands(): void {
     for (const warband of gameSession.world.state.warbands) {
       const color = FACTION_COLORS[warband.factionId] ?? 0xb8a46b;
-      const glow = this.add.circle(0, 0, 24, color, 0.11);
-      const ring = this.add
-        .circle(0, 0, 12, 0x0b0d0b, 0.96)
-        .setStrokeStyle(2, color, 0.95);
-      const core = this.add.circle(0, 0, 5, color, 1);
-      const banner = this.add.rectangle(8, -15, 13, 18, color, 0.92).setAngle(12);
-      const icon = this.add
-        .text(0, 18, this.getWarbandIcon(warband.type), {
-          color: "#eadfca",
-          fontFamily: "Arial",
-          fontSize: "11px",
-        })
+      const glow = this.add.circle(0, 0, 28, color, 0.11);
+      const shadow = this.add.ellipse(0, 11, 34, 10, 0x000000, 0.44);
+      const sprite = this.add.image(
+        0,
+        -8,
+        this.getWarbandWorldSpriteKey(
+          warband.factionId,
+          warband.bountyHunter
+            ? "hunter"
+            : warband.type === "lord"
+              ? "lord"
+              : "patrol",
+        ),
+      );
+      const troopCount = this.createTroopCountLabel(warband.roster.length, 23);
+      const threatLabel = this.add
+        .text(
+          0,
+          35,
+          "◆".repeat(gameSession.world.getWarbandThreatRating(warband)),
+          {
+            color: "#d7b866",
+            fontFamily: "Arial",
+            fontSize: "7px",
+          },
+        )
         .setOrigin(0.5);
       const marker = this.add.container(warband.x, warband.y, [
         glow,
-        ring,
-        core,
-        banner,
-        icon,
+        shadow,
+        sprite,
+        troopCount,
+        threatLabel,
       ]);
+      marker.setData("troopCountLabel", troopCount);
+      marker.setData("threatLabel", threatLabel);
       marker.setDepth(8);
       marker
         .setSize(58, 66)
@@ -1056,7 +1101,7 @@ export class WorldScene extends Phaser.Scene {
               warband.activeBattleId &&
               distanceToPlayer <= WARBAND_INTERACTION_RANGE
             ) {
-              gameSession.joinWarbandBattle(warband.activeBattleId);
+              gameSession.requestWarbandBattleJoin(warband.activeBattleId);
               return;
             }
             if (distanceToPlayer <= WARBAND_INTERACTION_RANGE) {
@@ -1083,10 +1128,26 @@ export class WorldScene extends Phaser.Scene {
       const marker = this.warbandMarkers.get(warband.id);
       if (!marker) continue;
       this.setMarkerTarget(marker, warband.x, warband.y);
+      const troopCount = marker.getData("troopCountLabel") as
+        | Phaser.GameObjects.Text
+        | undefined;
+      troopCount?.setText(String(warband.roster.length));
+      const threatLabel = marker.getData("threatLabel") as
+        | Phaser.GameObjects.Text
+        | undefined;
+      threatLabel?.setText(
+        "◆".repeat(gameSession.world.getWarbandThreatRating(warband)),
+      );
+      const activeBountyHunter =
+        Boolean(warband.bountyHunter) &&
+        shouldDispatchBountyHunters(
+          warband.factionId,
+          gameSession.factionState,
+        );
       this.setMarkerVisible(marker,
         warband.state !== "destroyed" &&
-          (!warband.bountyHunter || (gameSession.factionState.wanted[warband.factionId] ?? 0) >= 25) &&
-          this.isWithinSight(warband.x, warband.y, 80),
+          (!warband.bountyHunter || activeBountyHunter) &&
+          (activeBountyHunter || this.isWithinSight(warband.x, warband.y, 80)),
       );
     }
   }
@@ -1136,7 +1197,7 @@ export class WorldScene extends Phaser.Scene {
               battle.y - gameSession.world.state.y,
             ) <= 86
           ) {
-            gameSession.joinWarbandBattle(battle.id);
+            gameSession.requestWarbandBattleJoin(battle.id);
           } else {
             gameSession.setWaypoint(battle.x, battle.y, "world.warbandBattle");
           }
@@ -1191,8 +1252,8 @@ export class WorldScene extends Phaser.Scene {
       `${i18n.t("world.warbandTooltip.relation")}: ${i18n.t(`world.relation.${relation}`)}`,
       `${i18n.t("world.warbandTooltip.type")}: ${i18n.t(`world.warbandType.${warband.type}`)}`,
       `${warband.type === "lord" ? `Rank: ${getNobleRankLabel(warband.nobleRank)}   Personality: ${getLordPersonalityLabel(warband.personality)}   ` : ""}Activity: ${getNpcActivityLabel(warband.activity)}`,
-      `${i18n.t("world.warbandTooltip.strength")}: ${Math.round(estimateWarbandStrength(warband))}`,
-      `${i18n.t("world.warbandTooltip.troops")}: ${warband.unitIds.length}   ${i18n.t("world.warbandTooltip.state")}: ${i18n.t(`world.warbandState.${warband.state}`)}`,
+      `${i18n.t("world.enemyTooltip.threat")}: ${"◆".repeat(gameSession.world.getWarbandThreatRating(warband))} · ${gameSession.world.getWarbandThreatPoints(warband)} points`,
+      `${i18n.t("world.warbandTooltip.troops")}: ${warband.roster.length}   ${i18n.t("world.warbandTooltip.state")}: ${i18n.t(`world.warbandState.${warband.state}`)}`,
       `Gold: ${warband.gold}   Supplies: ${warband.rations}   Prisoners: ${warband.prisoners.reduce((sum, stack) => sum + stack.quantity, 0)}`,
       `${i18n.t("world.warbandTooltip.target")}: ${target ? i18n.t(target.nameKey) : enemyTarget ? i18n.t("world.enemyTooltip.warband") : "—"}`,
       warband.activeBattleId
@@ -1205,14 +1266,159 @@ export class WorldScene extends Phaser.Scene {
     this.enemyTooltip.setPosition(warband.x + 34, warband.y - 190);
   }
 
-  private getWarbandIcon(type: string): string {
-    if (type === "lord") return "♛";
-    if (type === "scout") return "S";
-    if (type === "merchantEscort") return "M";
-    if (type === "militia") return "L";
-    if (type === "army") return "A";
-    if (type === "elite") return "E";
-    return "P";
+  private createWorldNpcTextures(): void {
+    const enemyPalettes = {
+      human: { body: 0x7b6852, accent: 0xc45b4e },
+      kobold: { body: 0x72844c, accent: 0xd4ad52 },
+      orc: { body: 0x647848, accent: 0xa94135 },
+      undead: { body: 0x9aa49b, accent: 0x6e5b87 },
+      elemental: { body: 0xd4773d, accent: 0x70d4d0 },
+      beast: { body: 0x6f5942, accent: 0xb99a62 },
+      machine: { body: 0x697274, accent: 0xb8793f },
+    } as const;
+    for (const [race, palette] of Object.entries(enemyPalettes)) {
+      this.createEnemyWorldTexture(
+        `world-enemy-${race}`,
+        race,
+        palette.body,
+        palette.accent,
+      );
+    }
+    for (const [factionId, color] of Object.entries(FACTION_COLORS) as Array<
+      [FactionId, number]
+    >) {
+      for (const role of ["lord", "hunter", "patrol"] as const) {
+        this.createWarbandWorldTexture(
+          this.getWarbandWorldSpriteKey(factionId, role),
+          color,
+          role,
+        );
+      }
+    }
+    this.createCaravanWorldTexture();
+  }
+
+  private createEnemyWorldTexture(
+    key: string,
+    race: string,
+    bodyColor: number,
+    accentColor: number,
+  ): void {
+    if (this.textures.exists(key)) return;
+    const graphics = this.make.graphics({ x: 0, y: 0 }, false);
+    graphics.fillStyle(0x000000, 0).fillRect(0, 0, 48, 52);
+    if (race === "beast") {
+      graphics.fillStyle(bodyColor, 1).fillEllipse(23, 29, 29, 16);
+      graphics.fillCircle(36, 23, 8);
+      graphics.fillTriangle(32, 18, 34, 10, 38, 18);
+      graphics.fillTriangle(38, 18, 42, 11, 43, 21);
+      graphics.lineStyle(4, 0x3b3026, 1);
+      graphics.lineBetween(14, 34, 11, 44);
+      graphics.lineBetween(29, 35, 31, 44);
+      graphics.fillStyle(accentColor, 1).fillCircle(39, 22, 2);
+    } else if (race === "elemental") {
+      graphics.fillStyle(accentColor, 0.9).fillCircle(24, 24, 15);
+      graphics.fillStyle(bodyColor, 1).fillTriangle(24, 5, 12, 37, 36, 37);
+      graphics.fillStyle(0xf1d28a, 1).fillTriangle(24, 14, 18, 33, 30, 33);
+      graphics.fillStyle(0x17211f, 1).fillCircle(20, 22, 2).fillCircle(28, 22, 2);
+    } else if (race === "machine") {
+      graphics.fillStyle(bodyColor, 1).fillRoundedRect(11, 15, 27, 25, 4);
+      graphics.lineStyle(2, accentColor, 1).strokeRoundedRect(11, 15, 27, 25, 4);
+      graphics.fillStyle(0x171a18, 1).fillRect(16, 21, 17, 7);
+      graphics.fillStyle(accentColor, 1).fillCircle(20, 24, 2).fillCircle(29, 24, 2);
+      graphics.lineStyle(4, 0x454b4b, 1);
+      graphics.lineBetween(16, 39, 14, 47);
+      graphics.lineBetween(33, 39, 35, 47);
+    } else {
+      graphics.lineStyle(4, 0x332b23, 1);
+      graphics.lineBetween(20, 38, 17, 48);
+      graphics.lineBetween(28, 38, 31, 48);
+      graphics.fillStyle(bodyColor, 1).fillRoundedRect(14, 20, 20, 22, 4);
+      graphics.fillStyle(accentColor, 1).fillTriangle(12, 22, 36, 22, 24, 42);
+      graphics.fillStyle(race === "undead" ? 0xbfc7ba : 0x9a7352, 1).fillCircle(24, 14, 8);
+      graphics.fillStyle(0x171a16, 1).fillCircle(21, 13, 2).fillCircle(27, 13, 2);
+      graphics.lineStyle(3, accentColor, 1).lineBetween(35, 17, 41, 43);
+      if (race === "kobold") {
+        graphics.fillStyle(bodyColor, 1).fillTriangle(16, 11, 9, 7, 17, 18);
+        graphics.fillTriangle(31, 11, 39, 7, 31, 18);
+      }
+    }
+    graphics.generateTexture(key, 48, 52);
+    graphics.destroy();
+  }
+
+  private createWarbandWorldTexture(
+    key: string,
+    factionColor: number,
+    role: "lord" | "hunter" | "patrol",
+  ): void {
+    if (this.textures.exists(key)) return;
+    const graphics = this.make.graphics({ x: 0, y: 0 }, false);
+    graphics.fillStyle(0x000000, 0).fillRect(0, 0, 54, 56);
+    graphics.fillStyle(0x4c4031, 1).fillEllipse(26, 35, 34, 17);
+    graphics.fillCircle(42, 29, 7);
+    graphics.lineStyle(4, 0x332a21, 1);
+    graphics.lineBetween(16, 40, 13, 51);
+    graphics.lineBetween(34, 40, 36, 51);
+    graphics.fillStyle(0x777d79, 1).fillRoundedRect(20, 13, 15, 22, 4);
+    graphics.fillStyle(0xc2b194, 1).fillCircle(27, 10, 6);
+    graphics.fillStyle(factionColor, 1).fillTriangle(18, 18, 36, 18, 27, 35);
+    graphics.lineStyle(3, 0x292820, 1).lineBetween(39, 7, 39, 40);
+    graphics.fillStyle(factionColor, 1).fillRect(39, 7, 12, 16);
+    if (role === "lord") {
+      graphics.fillStyle(0xd6b861, 1).fillTriangle(21, 7, 24, 1, 27, 7);
+      graphics.fillTriangle(27, 7, 30, 1, 33, 7);
+    } else if (role === "hunter") {
+      graphics.lineStyle(2, 0xd96253, 1).strokeCircle(27, 10, 9);
+      graphics.lineBetween(21, 4, 33, 16);
+      graphics.lineBetween(33, 4, 21, 16);
+    }
+    graphics.generateTexture(key, 54, 56);
+    graphics.destroy();
+  }
+
+  private createCaravanWorldTexture(): void {
+    const key = "world-npc-caravan";
+    if (this.textures.exists(key)) return;
+    const graphics = this.make.graphics({ x: 0, y: 0 }, false);
+    graphics.fillStyle(0x000000, 0).fillRect(0, 0, 56, 50);
+    graphics.fillStyle(0x5c4529, 1).fillRoundedRect(14, 24, 31, 15, 3);
+    graphics.lineStyle(2, 0xd4ad63, 1).strokeRoundedRect(14, 24, 31, 15, 3);
+    graphics.fillStyle(0xc79b4d, 1).fillTriangle(14, 24, 29, 9, 45, 24);
+    graphics.fillStyle(0x171712, 1).fillCircle(20, 41, 6).fillCircle(40, 41, 6);
+    graphics.lineStyle(2, 0xb68c49, 1).strokeCircle(20, 41, 6).strokeCircle(40, 41, 6);
+    graphics.fillStyle(0x6f5d43, 1).fillEllipse(8, 32, 13, 9);
+    graphics.generateTexture(key, 56, 50);
+    graphics.destroy();
+  }
+
+  private createTroopCountLabel(count: number, y: number): Phaser.GameObjects.Text {
+    return this.add
+      .text(0, y, String(count), {
+        color: "#f3e7ca",
+        fontFamily: "Arial",
+        fontSize: "10px",
+        fontStyle: "bold",
+        backgroundColor: "rgba(7, 9, 8, 0.88)",
+        padding: { x: 5, y: 2 },
+      })
+      .setOrigin(0.5)
+      .setStroke("#050606", 2);
+  }
+
+  private getEnemyWorldSpriteKey(archetypeId: string): string {
+    const leaderCardId = enemiesById.get(archetypeId)?.leaderCardId;
+    const race = leaderCardId
+      ? getCardDefinition(leaderCardId).race
+      : "human";
+    return `world-enemy-${race}`;
+  }
+
+  private getWarbandWorldSpriteKey(
+    factionId: FactionId,
+    role: "lord" | "hunter" | "patrol",
+  ): string {
+    return `world-warband-${factionId}-${role}`;
   }
 
   private hexColor(color: number): string {
@@ -1226,18 +1432,17 @@ export class WorldScene extends Phaser.Scene {
   private createCaravans(): void {
     for (const caravan of gameSession.economyState.caravans) {
       const glow = this.add.circle(0, 0, 24, 0xd5aa55, 0.11);
-      const cart = this.add
-        .rectangle(0, 0, 20, 11, 0x2a2113, 0.96)
-        .setStrokeStyle(2, 0xd4ad63, 0.95);
-      const canopy = this.add.triangle(0, -10, -10, 5, 10, 5, 0, -6, 0xc79b4d);
-      const wheelLeft = this.add.circle(-7, 8, 3, 0x0c0d0b).setStrokeStyle(1, 0xb68c49);
-      const wheelRight = this.add.circle(7, 8, 3, 0x0c0d0b).setStrokeStyle(1, 0xb68c49);
+      const shadow = this.add.ellipse(0, 11, 35, 9, 0x000000, 0.4);
+      const sprite = this.add.image(0, -7, "world-npc-caravan");
+      const troopCount = this.createTroopCountLabel(
+        1 + (caravan.unitIds?.length ?? 0),
+        23,
+      );
       const marker = this.add.container(caravan.x, caravan.y, [
         glow,
-        cart,
-        canopy,
-        wheelLeft,
-        wheelRight,
+        shadow,
+        sprite,
+        troopCount,
       ]);
       marker.setDepth(7);
       this.caravanMarkers.set(caravan.id, marker);
@@ -1256,24 +1461,49 @@ export class WorldScene extends Phaser.Scene {
     for (const caravan of gameSession.economyState.caravans) {
       const marker = this.caravanMarkers.get(caravan.id);
       if (marker) this.setMarkerTarget(marker, caravan.x, caravan.y);
-      if (marker) this.setMarkerVisible(marker, this.isWithinSight(caravan.x, caravan.y));
+      if (marker) this.setMarkerVisible(
+        marker,
+        caravan.state !== "destroyed" && this.isWithinSight(caravan.x, caravan.y),
+      );
     }
   }
 
   private createVillagers(): void {
     for (const villager of gameSession.economyState.villagers) {
-      const shadow = this.add.ellipse(0, 10, 29, 8, 0x000000, 0.38);
-      const sprite = this.add.sprite(0, -4, "villager-trader-0").play("villager-trader-walk");
-      const origin = gameSession.world.map.locations.find((location) => location.id === villager.originId);
-      const destination = gameSession.world.map.locations.find((location) => location.id === villager.destinationId);
-      sprite.setScale(destination && origin && destination.x < origin.x ? -1 : 1, 1);
-      const marker = this.add.container(villager.x, villager.y, [
-        shadow,
-        sprite,
-      ]);
-      marker.setDepth(6);
-      this.villagerMarkers.set(villager.id, marker);
+      this.createVillagerMarker(villager);
     }
+  }
+
+  private createVillagerMarker(
+    villager: (typeof gameSession.economyState.villagers)[number],
+  ): Phaser.GameObjects.Container {
+    const shadow = this.add.ellipse(0, 10, 29, 8, 0x000000, 0.38);
+    const sprite = this.add
+      .sprite(0, -4, "villager-trader-0")
+      .play("villager-trader-walk");
+    const troopCount = this.createTroopCountLabel(
+      1 + (villager.unitIds?.length ?? 0),
+      22,
+    );
+    const origin = gameSession.world.map.locations.find(
+      (location) => location.id === villager.originId,
+    );
+    const destination = gameSession.world.map.locations.find(
+      (location) => location.id === villager.destinationId,
+    );
+    sprite.setScale(
+      destination && origin && destination.x < origin.x ? -1 : 1,
+      1,
+    );
+    const marker = this.add.container(villager.x, villager.y, [
+      shadow,
+      sprite,
+      troopCount,
+    ]);
+    marker.setDepth(6);
+    marker.setData("traderSprite", sprite);
+    this.villagerMarkers.set(villager.id, marker);
+    return marker;
   }
 
   private createVillagerAnimation(): void {
@@ -1300,9 +1530,30 @@ export class WorldScene extends Phaser.Scene {
   private updateVillagerMarkers(): void {
     const activeIds = new Set(gameSession.economyState.villagers.map((villager) => villager.id));
     for (const villager of gameSession.economyState.villagers) {
-      const marker = this.villagerMarkers.get(villager.id);
-      if (marker) this.setMarkerTarget(marker, villager.x, villager.y);
-      if (marker) this.setMarkerVisible(marker, this.isWithinSight(villager.x, villager.y));
+      const marker =
+        this.villagerMarkers.get(villager.id) ??
+        this.createVillagerMarker(villager);
+      const sprite = marker.getData(
+        "traderSprite",
+      ) as Phaser.GameObjects.Sprite | undefined;
+      if (sprite) {
+        const origin = gameSession.world.map.locations.find(
+          (location) => location.id === villager.originId,
+        );
+        const destination = gameSession.world.map.locations.find(
+          (location) => location.id === villager.destinationId,
+        );
+        sprite.setFlipX(
+          Boolean(destination && origin && destination.x < origin.x),
+        );
+        if ((villager.waitHoursRemaining ?? 0) > 0) {
+          sprite.anims.pause();
+        } else {
+          sprite.anims.resume();
+        }
+      }
+      this.setMarkerTarget(marker, villager.x, villager.y);
+      this.setMarkerVisible(marker, this.isWithinSight(villager.x, villager.y));
     }
     for (const [villagerId, marker] of this.villagerMarkers) {
       if (activeIds.has(villagerId)) continue;
@@ -1461,6 +1712,7 @@ export class WorldScene extends Phaser.Scene {
     };
     this.centerCameraKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
     this.waitKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.controlKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL);
     this.input.on(
       Phaser.Input.Events.POINTER_WHEEL,
       (
@@ -1628,55 +1880,43 @@ export class WorldScene extends Phaser.Scene {
     entry: { x: number; y: number },
     exit: { x: number; y: number },
   ): void {
-        const bridgeLength = Math.hypot(exit.x - entry.x, exit.y - entry.y);
-        const directionX = (exit.x - entry.x) / Math.max(1, bridgeLength);
-        const directionY = (exit.y - entry.y) / Math.max(1, bridgeLength);
-        const bridgeStart = {
-          x: entry.x - directionX * 24,
-          y: entry.y - directionY * 24,
-        };
-        const bridgeEnd = {
-          x: exit.x + directionX * 24,
-          y: exit.y + directionY * 24,
-        };
+    const bridgeLength = Math.hypot(exit.x - entry.x, exit.y - entry.y);
+    const directionX = (exit.x - entry.x) / Math.max(1, bridgeLength);
+    const directionY = (exit.y - entry.y) / Math.max(1, bridgeLength);
+    const bridgeStart = {
+      x: entry.x - directionX * 24,
+      y: entry.y - directionY * 24,
+    };
+    const bridgeEnd = {
+      x: exit.x + directionX * 24,
+      y: exit.y + directionY * 24,
+    };
+    const spanLength = Math.hypot(
+      bridgeEnd.x - bridgeStart.x,
+      bridgeEnd.y - bridgeStart.y,
+    );
+    const centerX = (bridgeStart.x + bridgeEnd.x) / 2;
+    const centerY = (bridgeStart.y + bridgeEnd.y) / 2;
+    const bridgeAngle = Phaser.Math.RadToDeg(
+      Math.atan2(directionY, directionX),
+    );
 
-        graphics.lineStyle(roadWidth + 14, 0x17140f, 1);
-        graphics.beginPath();
-        graphics.moveTo(bridgeStart.x, bridgeStart.y);
-        graphics.lineTo(bridgeEnd.x, bridgeEnd.y);
-        graphics.strokePath();
-        graphics.lineStyle(roadWidth + 5, 0x8f7549, 1);
-        graphics.beginPath();
-        graphics.moveTo(bridgeStart.x, bridgeStart.y);
-        graphics.lineTo(bridgeEnd.x, bridgeEnd.y);
-        graphics.strokePath();
+    graphics.lineStyle(roadWidth + 14, 0x17140f, 1);
+    graphics.beginPath();
+    graphics.moveTo(bridgeStart.x, bridgeStart.y);
+    graphics.lineTo(bridgeEnd.x, bridgeEnd.y);
+    graphics.strokePath();
+    graphics.lineStyle(roadWidth + 5, 0x8f7549, 1);
+    graphics.beginPath();
+    graphics.moveTo(bridgeStart.x, bridgeStart.y);
+    graphics.lineTo(bridgeEnd.x, bridgeEnd.y);
+    graphics.strokePath();
 
-        const plankCount = Math.max(2, Math.floor((bridgeLength + 48) / 14));
-        const normalX = -directionY;
-        const normalY = directionX;
-        const plankAngle = Phaser.Math.RadToDeg(Math.atan2(normalY, normalX));
-        for (let plank = 0; plank <= plankCount; plank += 1) {
-          const progress = plank / plankCount;
-          const centerX = bridgeStart.x + (bridgeEnd.x - bridgeStart.x) * progress;
-          const centerY = bridgeStart.y + (bridgeEnd.y - bridgeStart.y) * progress;
-          const halfWidth = roadWidth * 0.48;
-          this.add
-            .image(centerX, centerY, WORLD_BASESET_TEXTURE, "bridge-plank")
-            .setDisplaySize(Math.max(18, roadWidth * 1.05), 9)
-            .setAngle(plankAngle)
-            .setDepth(4)
-            .setAlpha(0.86);
-          graphics.lineStyle(2, 0x3b2e1d, 1);
-          graphics.beginPath();
-          graphics.moveTo(
-            centerX - normalX * halfWidth,
-            centerY - normalY * halfWidth,
-          );
-          graphics.lineTo(
-            centerX + normalX * halfWidth,
-            centerY + normalY * halfWidth,
-          );
-          graphics.strokePath();
-        }
+    this.add
+      .image(centerX, centerY, WORLD_BASESET_TEXTURE, "bridge-plank")
+      .setDisplaySize(spanLength, Math.max(16, roadWidth + 10))
+      .setAngle(bridgeAngle)
+      .setDepth(4)
+      .setAlpha(0.94);
   }
 }

@@ -39,8 +39,8 @@ export function getCardDefinition(cardId: string): CardDefinition {
   return definition;
 }
 
-export function createPlayerCard(): CardInstance {
-  return createCardInstance("player_wanderer", { isHero: true });
+export function createPlayerCard(cardId = "player_wanderer"): CardInstance {
+  return createCardInstance(cardId, { isHero: true });
 }
 
 export function createCardInstances(cardIds: string[]): CardInstance[] {

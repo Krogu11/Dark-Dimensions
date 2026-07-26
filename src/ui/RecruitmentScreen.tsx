@@ -5,6 +5,7 @@ import { getTierBaseWeeklyWage } from "../domain/cards/UnitUpkeep";
 import { gameSession, type RosterActionResult } from "../domain/session/GameSession";
 import { getGameDay } from "../domain/time/GameClock";
 import { getRecruitmentCost } from "../domain/world/Recruitment";
+import { describeCardEffects } from "../domain/battle/CardEffects";
 
 interface RecruitmentScreenProps {
   onClose: () => void;
@@ -103,7 +104,7 @@ function RecruitDetail({ cardId }: { cardId: string }) {
     <div className="recruit-detail-art">{image ? <img src={image} alt="" style={{ objectPosition: `${card.imageFocus?.x ?? 50}% ${card.imageFocus?.y ?? 50}%` }} /> : <b>{t(card.nameKey).slice(0, 1)}</b>}<span>Tier {card.tier}</span></div>
     <div className="recruit-detail-copy"><p className="eyebrow">Candidate dossier</p><h2 className={`rarity-name ${card.rarity}`}>{t(card.nameKey)}</h2><span>{card.race} · {card.rarity}</span>
       <dl><div><dt>ATK</dt><dd>{card.atk}</dd></div><div><dt>DEF</dt><dd>{card.def}</dd></div><div><dt>INI</dt><dd>{card.initiative}</dd></div><div><dt>HP</dt><dd>{card.maxHp}</dd></div></dl>
-      <div className="recruit-effect"><small>Battle effect</small><strong>{card.battleEffect ? t(`battle.effects.${card.battleEffect}`) : t("battle.effects.none")}</strong></div>
+      <div className="recruit-effect"><small>Battle effect</small>{describeCardEffects(card).map((description, index) => <strong key={index}>{description}</strong>)}{!describeCardEffects(card).length ? <strong>{t("battle.effects.none")}</strong> : null}</div>
       <p className="recruit-lore">{card.descriptionKey ? t(card.descriptionKey) : t(`battle.raceIdentity.${card.race}`)}</p>
     </div>
   </>;

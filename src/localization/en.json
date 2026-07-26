@@ -91,16 +91,44 @@
     "awakenedMessage": "{{upgrade}} was awakened.",
     "hiddenPathsHint": "Further paths reveal themselves only after the preceding node awakens.",
     "services": {
-      "sacrifice": { "eyebrow": "The price of eternity", "title": "Sacrificial Altar", "description": "Offer living prisoners and bind their souls to progression that survives the death of a run." },
-      "tree": { "eyebrow": "Legacy between worlds", "title": "Soul Constellation", "description": "Awaken connected nodes and uncover hidden paths through the darkness beyond the veil." },
-      "altar": { "eyebrow": "Oaths beyond blood", "title": "Foreign Banners", "description": "Call warriors from peoples whose covenants your soul has secured." },
-      "restoration": { "eyebrow": "Mercy at a price", "title": "Restoration", "description": "Spend mortal gold to mend the bodies of those who still live." }
+      "sacrifice": {
+        "eyebrow": "The price of eternity",
+        "title": "Sacrificial Altar",
+        "description": "Offer living prisoners and bind their souls to progression that survives the death of a run."
+      },
+      "tree": {
+        "eyebrow": "Legacy between worlds",
+        "title": "Soul Constellation",
+        "description": "Awaken connected nodes and uncover hidden paths through the darkness beyond the veil."
+      },
+      "altar": {
+        "eyebrow": "Oaths beyond blood",
+        "title": "Foreign Banners",
+        "description": "Call warriors from peoples whose covenants your soul has secured."
+      },
+      "restoration": {
+        "eyebrow": "Mercy at a price",
+        "title": "Restoration",
+        "description": "Spend mortal gold to mend the bodies of those who still live."
+      }
     },
     "branches": {
-      "wanderer": { "name": "The Wanderer", "subtitle": "Body, will and survival" },
-      "warband": { "name": "The Banner", "subtitle": "Troops, supplies and command" },
-      "fortune": { "name": "Grave Fortune", "subtitle": "Loot, trade and captives" },
-      "peoples": { "name": "The Covenants", "subtitle": "Foreign peoples and forbidden allies" }
+      "wanderer": {
+        "name": "The Wanderer",
+        "subtitle": "Body, will and survival"
+      },
+      "warband": {
+        "name": "The Banner",
+        "subtitle": "Troops, supplies and command"
+      },
+      "fortune": {
+        "name": "Grave Fortune",
+        "subtitle": "Loot, trade and captives"
+      },
+      "peoples": {
+        "name": "The Covenants",
+        "subtitle": "Foreign peoples and forbidden allies"
+      }
     },
     "recruitResult": {
       "success": "{{unit}} answered the call and joined your Warband.",
@@ -113,35 +141,122 @@
       "notEnoughXp": "Your Wanderer lacks the experience to command this soul."
     },
     "upgrades": {
-      "soulVitality": { "name": "Undying Spark", "description": "+5% maximum Wanderer HP per rank." },
-      "soulMight": { "name": "Soulforged Might", "description": "+3% base Wanderer ATK per rank." },
-      "soulGuard": { "name": "Soulbound Aegis", "description": "+3% base Wanderer DEF per rank." },
-      "soulReflex": { "name": "Quickened Soul", "description": "+1 Wanderer initiative per rank." },
-      "soulRecovery": { "name": "Echoes of Renewal", "description": "+10% Warband healing on the world map per rank." },
-      "deathDefiance": { "name": "Death's Refusal", "description": "+3% chance for defeated units to survive wounded per rank." },
-      "startingAttributes": { "name": "Ascendant Vessel", "description": "+1 unspent attribute point at the beginning of every run per rank." },
-      "startingGold": { "name": "Tithe of the Road", "description": "+25 starting gold per rank." },
-      "roadRations": { "name": "Provisioned Passage", "description": "+1 full ration stack at the beginning of every run per rank." },
-      "startingTroops": { "name": "Called Banners", "description": "+1 random starting unit from your chosen people per rank." },
-      "deepPockets": { "name": "Burdened Souls", "description": "+15 maximum cargo weight per rank." },
-      "warbandCapacity": { "name": "Greater Warband", "description": "+2 maximum Warband size per rank." },
-      "bannerMorale": { "name": "Banner of Remembrance", "description": "+5 starting morale per rank." },
-      "frugalHost": { "name": "Oaths Before Coin", "description": "Reduces weekly Warband wages by 5% per rank." },
-      "drillmaster": { "name": "Memory of Battle", "description": "+10% combat XP for deployed units per rank." },
-      "resilientRanks": { "name": "The Unbroken Host", "description": "+2% wounded-survival chance for Warband units per rank." },
-      "fieldSlots": { "name": "Widened Formation", "description": "+1 battlefield unit slot per rank, up to the battle limit." },
-      "graveTithe": { "name": "Grave Tithe", "description": "+10% gold gained from victories per rank." },
-      "scavenger": { "name": "Hands Among Ashes", "description": "+4 percentage points to every enemy item drop roll per rank." },
-      "merchantFavor": { "name": "Whispered Bargains", "description": "Improves buying and selling prices by 2% per rank." },
-      "captor": { "name": "Chains of the Victor", "description": "+2.5 percentage points to capture rolls per rank." },
-      "soulHarvest": { "name": "Deep Harvest", "description": "+10% souls gained from sacrifice per rank." },
-      "foreignWhispers": { "name": "Voices Beyond Mankind", "description": "Reveals the first covenants with foreign peoples." },
-      "kobold": { "name": "Kobold Covenant", "description": "Unlocks Kobolds as Wanderers and Foreign Banner recruits." },
-      "orc": { "name": "Orcish Oath", "description": "Unlocks Orcs as Wanderers and Foreign Banner recruits." },
-      "revenant": { "name": "Revenant Passage", "description": "Unlocks Revenants as Wanderers and Undead altar recruits." },
-      "beastPact": { "name": "Pact of Fang and Claw", "description": "Allows Beast units to answer the Foreign Banners." },
-      "machinePact": { "name": "Covenant of Iron", "description": "Allows Machine units to answer the Foreign Banners." },
-      "elementalPact": { "name": "Elemental Concord", "description": "Allows Elemental units to answer the Foreign Banners." }
+      "soulVitality": {
+        "name": "Undying Spark",
+        "description": "+5% maximum Wanderer HP per rank."
+      },
+      "soulMight": {
+        "name": "Soulforged Might",
+        "description": "+3% base Wanderer ATK per rank."
+      },
+      "soulGuard": {
+        "name": "Soulbound Aegis",
+        "description": "+3% base Wanderer DEF per rank."
+      },
+      "soulReflex": {
+        "name": "Quickened Soul",
+        "description": "+1 Wanderer initiative per rank."
+      },
+      "soulRecovery": {
+        "name": "Echoes of Renewal",
+        "description": "+10% Warband healing on the world map per rank."
+      },
+      "deathDefiance": {
+        "name": "Death's Refusal",
+        "description": "+3% chance for defeated units to survive wounded per rank."
+      },
+      "startingAttributes": {
+        "name": "Ascendant Vessel",
+        "description": "+1 unspent attribute point at the beginning of every run per rank."
+      },
+      "startingGold": {
+        "name": "Tithe of the Road",
+        "description": "+25 starting gold per rank."
+      },
+      "roadRations": {
+        "name": "Provisioned Passage",
+        "description": "+1 full ration stack at the beginning of every run per rank."
+      },
+      "startingTroops": {
+        "name": "Called Banners",
+        "description": "+1 random starting unit from your chosen people per rank."
+      },
+      "deepPockets": {
+        "name": "Burdened Souls",
+        "description": "+15 maximum cargo weight per rank."
+      },
+      "warbandCapacity": {
+        "name": "Greater Warband",
+        "description": "+2 maximum Warband size per rank."
+      },
+      "bannerMorale": {
+        "name": "Banner of Remembrance",
+        "description": "+5 starting morale per rank."
+      },
+      "frugalHost": {
+        "name": "Oaths Before Coin",
+        "description": "Reduces weekly Warband wages by 5% per rank."
+      },
+      "drillmaster": {
+        "name": "Memory of Battle",
+        "description": "+10% combat XP for deployed units per rank."
+      },
+      "resilientRanks": {
+        "name": "The Unbroken Host",
+        "description": "+2% wounded-survival chance for Warband units per rank."
+      },
+      "fieldSlots": {
+        "name": "Widened Formation",
+        "description": "+1 battlefield unit slot per rank, up to the battle limit."
+      },
+      "graveTithe": {
+        "name": "Grave Tithe",
+        "description": "+10% gold gained from victories per rank."
+      },
+      "scavenger": {
+        "name": "Hands Among Ashes",
+        "description": "+4 percentage points to every enemy item drop roll per rank."
+      },
+      "merchantFavor": {
+        "name": "Whispered Bargains",
+        "description": "Improves buying and selling prices by 2% per rank."
+      },
+      "captor": {
+        "name": "Chains of the Victor",
+        "description": "+2.5 percentage points to capture rolls per rank."
+      },
+      "soulHarvest": {
+        "name": "Deep Harvest",
+        "description": "+10% souls gained from sacrifice per rank."
+      },
+      "foreignWhispers": {
+        "name": "Voices Beyond Mankind",
+        "description": "Reveals the first covenants with foreign peoples."
+      },
+      "kobold": {
+        "name": "Kobold Covenant",
+        "description": "Unlocks Kobolds as Wanderers and Foreign Banner recruits."
+      },
+      "orc": {
+        "name": "Orcish Oath",
+        "description": "Unlocks Orcs as Wanderers and Foreign Banner recruits."
+      },
+      "revenant": {
+        "name": "Revenant Passage",
+        "description": "Unlocks Revenants as Wanderers and Undead altar recruits."
+      },
+      "beastPact": {
+        "name": "Pact of Fang and Claw",
+        "description": "Allows Beast units to answer the Foreign Banners."
+      },
+      "machinePact": {
+        "name": "Covenant of Iron",
+        "description": "Allows Machine units to answer the Foreign Banners."
+      },
+      "elementalPact": {
+        "name": "Elemental Concord",
+        "description": "Allows Elemental units to answer the Foreign Banners."
+      }
     }
   },
   "hud": {
@@ -150,7 +265,7 @@
     "save": "Save in city",
     "saved": "Journey saved",
     "saveBlocked": "Progress is saved automatically in Ironman mode.",
-    "controls": "WASD move · Arrow keys pan camera · Hold Space to wait · R recenters",
+    "controls": "WASD move · Hold Ctrl for 4× speed · Arrow keys pan camera · Hold Space to wait · R recenters",
     "waiting": "Waiting",
     "waitingHint": "Time passes · wounded units recover",
     "danger": "Danger",
@@ -166,6 +281,18 @@
     "time": "Time",
     "day": "Day {{day}}",
     "speed": "Travel",
+    "speedBreakdown": "Travel speed breakdown",
+    "speedBase": "Base",
+    "speedCharacter": "Agility and skills",
+    "speedLoad": "Cargo load",
+    "speedMorale": "Morale",
+    "speedInitiative": "Average initiative {{initiative}}",
+    "speedFormation": "Formation size {{units}}",
+    "speedTerrain": "Terrain",
+    "speedFinal": "Effective travel",
+    "fastForward": "World speed ×{{scale}}",
+    "fastForwardActive": "Release Ctrl for normal speed",
+    "fastForwardHint": "Hold Ctrl on the world map for 4× real-time speed.",
     "terrain": "Terrain",
     "terrainFood": "Travel rations",
     "cargo": "Load",
@@ -217,6 +344,15 @@
       "talkResult": "{{name}} greets you briefly and keeps one eye on the road.",
       "infoResult": "{{name}} reports movement near hostile camps and trade roads.",
       "helpResult": "{{name}} is not taking requests yet."
+    },
+    "fieldBattleChoice": {
+      "eyebrow": "Field battle",
+      "title": "Choose your side",
+      "description": "Your warband cards will reinforce every group already fighting for the chosen host.",
+      "sideA": "First host",
+      "sideB": "Second host",
+      "alliedCards": "{{count}} allied cards",
+      "leave": "Stay out of the battle"
     },
     "relation": {
       "allied": "Allied",
@@ -482,7 +618,7 @@
       },
       "charisma": {
         "name": "Charisma",
-        "effect": "Supports larger parties through skills"
+        "effect": "+2 maximum Warband size per point"
       }
     },
     "skill": {
@@ -524,7 +660,7 @@
       },
       "leadership": {
         "name": "Leadership",
-        "description": "+1 active Warband slot per rank."
+        "description": "+3 maximum Warband size per rank."
       },
       "trade": {
         "name": "Trade",
@@ -546,7 +682,16 @@
     "enemyLeader": "Enemy leader",
     "yourLeader": "Your leader",
     "leaderAction": "Leader action",
+    "combatLog": "Combat log",
+    "combatLogEmpty": "No actions recorded yet.",
+    "unknownTarget": "Unknown target",
     "leaderCommands": "Leader commands",
+    "abilities": "Skills & Magic",
+    "abilityLoadout": "Prepared abilities",
+    "abilityCost": "{{cost}} actions",
+    "strategicAttack": "Strategic Attack",
+    "strategicAttackDescription": "The Wanderer attacks at their Initiative.",
+    "invalidAbilityTarget": "Choose a valid target for this ability.",
     "commandCost": "1 action",
     "commandCommitted": "Committed",
     "commandChooseTarget": "Choose target",
@@ -598,7 +743,18 @@
       "elementalSurge": "Elemental surge",
       "elementalWard": "Elemental ward",
       "beastHunt": "Call the hunt",
-      "beastPackGuard": "Pack guard"
+      "beastPackGuard": "Pack guard",
+      "strategic_attack": "Strategic Attack",
+      "minor_heal": "Minor Heal",
+      "battle_focus": "Battle Focus",
+      "brace": "Brace",
+      "burning_mark": "Burning Mark",
+      "war_cry": "War Cry",
+      "mending_light": "Mending Light",
+      "haste": "Haste",
+      "flame_wave": "Flame Wave",
+      "aegis": "Aegis",
+      "inferno": "Inferno"
     },
     "raceIdentity": {
       "hero": "A leader whose commands shape the formation and decide when to strike.",
@@ -643,7 +799,7 @@
     "simultaneousAttack": "Initiative {{initiative}}: simultaneous strike.",
     "animation": {
       "draw": "{{card}} is drawn.",
-      "summon": "{{card}} enters the field.",
+      "summon": "{{card}} enters the field and prepares to attack next round.",
       "recall": "{{card}} returns to hand.",
       "destroyed": "{{card}} is destroyed."
     },
@@ -660,10 +816,11 @@
     "collectRewards": "Continue to spoils",
     "unitsEyebrow": "Warband Decisions",
     "unitsTitle": "Units & Prisoners",
-    "unitsInstruction": "Recruit captured enemies if there is room, upgrade veterans, or dismiss units before carrying loot.",
+    "unitsInstruction": "Choose prisoners one at a time. The right side shows only captives already held or selected.",
     "continueToLoot": "Continue to loot",
-    "availableUnits": "Available Units",
-    "yourUnits": "Your Units",
+    "availableUnits": "Captured after battle",
+    "yourUnits": "Your prisoners",
+    "existingPrisoner": "Already held",
     "pendingRecruit": "Joining your warband",
     "recruit": "Recruit",
     "returnToRewards": "Return",
@@ -676,8 +833,18 @@
     "returnToLoot": "Return",
     "noCarriedLoot": "No items chosen yet.",
     "damageDone": "Damage",
+    "kills": "Kills",
     "healthLost": "HP lost",
     "loss": "Loss",
+    "reportUnits": "Units fielded",
+    "reportSurvivors": "{{count}} survived",
+    "reportTotal": "Total",
+    "reportConfirmed": "Confirmed",
+    "reportCasualties": "Casualties",
+    "reportWounded": "{{count}} wounded",
+    "reportNoWounded": "No wounded",
+    "reportStatus": "Status",
+    "reportStanding": "Standing",
     "yes": "Yes",
     "no": "No",
     "spoilsEyebrow": "Spoils",
@@ -697,6 +864,9 @@
     "continue": "Return to world",
     "retreat": "End Run",
     "goldReward": "+{{gold}} gold",
+    "unitXpReward": "+{{xp}} shared XP per deployed survivor",
+    "killXpReward": "Personal kill bonus: up to +{{xp}} XP",
+    "wandererXpReward": "+{{xp}} Wanderer XP",
     "cardReward": "Captured card: {{card}}",
     "prisonerReward": "Prisoner taken: {{card}}",
     "itemReward": "{{item}} ×{{quantity}}",
@@ -1028,6 +1198,110 @@
     "wardingCharm": {
       "name": "Warding Charm",
       "description": "Hero equipment: grants +120 DEF."
+    },
+    "chippedHatchet": {
+      "name": "Chipped Hatchet",
+      "description": "Tier 1 axe: a battered woodcutter's tool repurposed for the road."
+    },
+    "recruitDagger": {
+      "name": "Recruit Dagger",
+      "description": "Tier 1 dagger: light enough to keep a desperate fighter mobile."
+    },
+    "wornBuckler": {
+      "name": "Worn Buckler",
+      "description": "Tier 1 shield: scarred wood and hide that can still turn a weak blow."
+    },
+    "legionBlade": {
+      "name": "Legion Blade",
+      "description": "Tier 2 sword: dependable military steel recovered from a fallen formation."
+    },
+    "raiderAxe": {
+      "name": "Raider Axe",
+      "description": "Tier 2 axe: a broad, brutal head made for breaking a wavering line."
+    },
+    "ashwoodBow": {
+      "name": "Ashwood Bow",
+      "description": "Tier 2 bow: seasoned limbs and a taut string give it a vicious draw."
+    },
+    "ironRoundShield": {
+      "name": "Iron Round Shield",
+      "description": "Tier 2 shield: compact iron protection favored by seasoned skirmishers."
+    },
+    "soldierMedallion": {
+      "name": "Soldier's Medallion",
+      "description": "Tier 2 accessory: a campaign token that strengthens resolve and striking power."
+    },
+    "paleWard": {
+      "name": "Pale Ward",
+      "description": "Tier 2 accessory: a cold silver seal that blunts hostile force."
+    },
+    "executionerAxe": {
+      "name": "Executioner Axe",
+      "description": "Tier 3 axe: top-heavy, merciless and built to end a fight in one descent."
+    },
+    "warCrossbow": {
+      "name": "War Crossbow",
+      "description": "Tier 3 crossbow: a reinforced siege-stock weapon with punishing impact."
+    },
+    "stormSpear": {
+      "name": "Storm Spear",
+      "description": "Tier 3 spear: its balanced head hums when a battle front begins to break."
+    },
+    "guardianShield": {
+      "name": "Guardian Shield",
+      "description": "Tier 3 shield: layered metal and greenwood made for holding impossible ground."
+    },
+    "bloodstoneMedal": {
+      "name": "Bloodstone Medal",
+      "description": "Tier 3 accessory: a warm crimson stone that feeds courage and endurance."
+    },
+    "duskGreatsword": {
+      "name": "Dusk Greatsword",
+      "description": "Tier 4 greatsword: dark steel with a long reach and a headsman's balance."
+    },
+    "kingsHalberd": {
+      "name": "King's Halberd",
+      "description": "Tier 4 halberd: ceremonial gold conceals a battlefield weapon of royal quality."
+    },
+    "arcaneStaff": {
+      "name": "Arcane Staff",
+      "description": "Tier 4 staff: bound runes turn its bearer into both weapon and ward."
+    },
+    "royalBulwark": {
+      "name": "Royal Bulwark",
+      "description": "Tier 4 shield: a blue-steel guard once carried before a crowned warlord."
+    },
+    "conquerorMedal": {
+      "name": "Conqueror's Medal",
+      "description": "Tier 4 accessory: proof of a victory few commanders survived to claim."
+    },
+    "runeboundMedal": {
+      "name": "Runebound Medal",
+      "description": "Tier 4 accessory: interlocked wards reinforce both aggression and defense."
+    },
+    "voidReaver": {
+      "name": "Void Reaver",
+      "description": "Tier 5 greatsword: a black edge that seems to drink the light around it."
+    },
+    "sunforgedSpear": {
+      "name": "Sunforged Spear",
+      "description": "Tier 5 spear: its white-hot point was quenched in elemental glass."
+    },
+    "dragonboneBow": {
+      "name": "Dragonbone Bow",
+      "description": "Tier 5 bow: carved from an ancient wing-bone and strung with wyvern sinew."
+    },
+    "eclipseShield": {
+      "name": "Eclipse Shield",
+      "description": "Tier 5 shield: a radiant disk whose shadow swallows the force of incoming blows."
+    },
+    "crownOfWar": {
+      "name": "Crown of War",
+      "description": "Tier 5 accessory: a burning circlet that marks a conqueror feared by entire armies."
+    },
+    "soulstone": {
+      "name": "Soulstone",
+      "description": "Tier 5 accessory: a forbidden crimson core carrying the strength of the fallen."
     }
   },
   "generatedLocation": {
@@ -1122,9 +1396,98 @@
       "description": "A fortress-town watching the volcanic road to the east."
     }
   },
+  "hero": {
+    "wanderer": {
+      "name": "Erick Thundercock",
+      "description": "A storm-marked wanderer bound to three elemental sparks. Erick seeks the power that fractured his fate."
+    },
+    "vanguard": {
+      "name": "Ser Aldren Voss",
+      "description": "A stubborn shield captain supported by disciplined frontline troops."
+    },
+    "wayfinder": {
+      "name": "Mirelle Ashstep",
+      "description": "A swift pathfinder commanding a lightly armored ranged company."
+    }
+  },
+  "ability": {
+    "learned": "Ability learned and equipped.",
+    "merchantEyebrow": "Arcane instruction",
+    "merchantTitle": "Skills & Magic",
+    "merchantRestock": "New teachings arrive each week.",
+    "merchantEmpty": "This teacher has nothing new to offer.",
+    "cityDescription": "Seek out masters, hedge mages and forbidden tutors to learn permanent combat abilities.",
+    "shopSubtitle": "The Hall of Instruction",
+    "availableTeachings": "Available teachings",
+    "weeklySelection": "This week's masters",
+    "returnNextWeek": "Return next week when new teachers reach the city.",
+    "actions": "Actions",
+    "tier": "Tier",
+    "actionCost": "Action cost",
+    "target": "Target",
+    "price": "Price",
+    "costExplanation": "Consumes {{count}} tactical actions when prepared in battle.",
+    "learnFor": "Learn ability · {{price}}g",
+    "allKnown": "Every teaching is already known",
+    "allKnownDescription": "No master in this city can teach the Wanderer anything new.",
+    "targets": {
+      "ally": "One ally",
+      "enemy": "One enemy",
+      "allAllies": "All allies",
+      "allEnemies": "All enemies"
+    },
+    "loadoutEyebrow": "Prepared techniques",
+    "loadoutTitle": "Ability Loadout",
+    "minorHeal": {
+      "name": "Minor Heal",
+      "description": "Restore 200 HP to one ally."
+    },
+    "battleFocus": {
+      "name": "Battle Focus",
+      "description": "Grant one ally +150 ATK for this round."
+    },
+    "brace": {
+      "name": "Brace",
+      "description": "Grant one ally +150 DEF for this round."
+    },
+    "burningMark": {
+      "name": "Burning Mark",
+      "description": "Deal 100 damage now and 100 more for three rounds."
+    },
+    "warCry": {
+      "name": "War Cry",
+      "description": "Grant all allies +100 ATK for this round."
+    },
+    "mendingLight": {
+      "name": "Mending Light",
+      "description": "Restore 450 HP to one ally."
+    },
+    "haste": {
+      "name": "Haste",
+      "description": "Grant one ally +2 Initiative for the battle."
+    },
+    "flameWave": {
+      "name": "Flame Wave",
+      "description": "Deal 180 damage to every enemy on the field."
+    },
+    "aegis": {
+      "name": "Aegis",
+      "description": "Grant every ally a 500-point shield."
+    },
+    "inferno": {
+      "name": "Inferno",
+      "description": "Scorch every enemy for 400 damage and lasting fire."
+    }
+  },
   "card": {
     "playerWanderer": {
       "name": "The Wanderer"
+    },
+    "playerVanguard": {
+      "name": "Ser Aldren Voss"
+    },
+    "playerWayfinder": {
+      "name": "Mirelle Ashstep"
     },
     "villageLevy": {
       "name": "Village Levy"
@@ -1454,6 +1817,26 @@
     "frost_spark": {
       "name": "Frost Spark",
       "description": "A shard of cold that slows enemy aggression."
+    },
+    "caravan_guard": {
+      "name": "Caravan Guard",
+      "description": "A professional road escort trained to protect wagons rather than walls."
+    },
+    "road_warden": {
+      "name": "Road Warden",
+      "description": "A hardened escort who holds narrow roads and bridge approaches."
+    },
+    "caravan_crossbowman": {
+      "name": "Caravan Crossbowman",
+      "description": "A mobile marksman who watches the flanks from among the wagons."
+    },
+    "master_escort": {
+      "name": "Master Escort",
+      "description": "A veteran guardian trusted with the richest and most dangerous routes."
+    },
+    "wagon_captain": {
+      "name": "Wagon Captain",
+      "description": "A battle-tested convoy commander who keeps the escort fighting as one."
     },
     "storm_spark": {
       "name": "Storm Spark",

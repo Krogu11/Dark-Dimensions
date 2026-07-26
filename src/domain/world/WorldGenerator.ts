@@ -13,7 +13,8 @@ import type {
   WorldMapDefinition,
 } from "../content/schemas";
 import { assignSettlementFactions, type FactionId } from "../quests/Factions";
-import { distanceToSegment, isPositionNearPath } from "./WorldTerrain";
+import { findWorldPath } from "./WorldPathfinder";
+import { distanceToSegment, isPositionNearPath, isWorldPositionTraversable } from "./WorldTerrain";
 import { generateUniqueCityName } from "./CityNames";
 
 const LOCATION_NAMES = {
@@ -280,6 +281,19 @@ export function generateWorldMap(
     width,
     height,
   );
+  const soulTemple = locations.find((location) => location.type === "soulTemple");
+  if (soulTemple) {
+    terrainRoads.push(
+      createSoulTempleRoad(
+        soulTemple,
+        terrainRoads,
+        terrainZones,
+        terrainCells,
+        width,
+        height,
+      ),
+    );
+  }
   const villagesByCity = new Map<string, MapLocation[]>();
   let villageIndex = 0;
   for (const city of cities) {
@@ -348,16 +362,11 @@ export function generateWorldMap(
 
   const enemies = createEnemySpawns(
     random,
-    createRandom(seed ^ 0x1b873593),
     width,
     height,
     start,
     locations,
     enemyArchetypes,
-    terrainZones,
-    terrainCells,
-    terrainRivers,
-    terrainRoads,
   );
   const { warbandTemplates, warbandSpawns } = createFactionWarbands(
     random,
@@ -494,10 +503,10 @@ function createFactionWarbands(
         ),
       );
     }
-    const hunterHome = [...cities, ...ownedLocations.filter((location) => location.type === "castle")].sort(
+    const hunterHome = [...cities].sort(
       (left, right) =>
-        Math.hypot(right.x - start.x, right.y - start.y) -
-        Math.hypot(left.x - start.x, left.y - start.y),
+        Math.hypot(left.x - start.x, left.y - start.y) -
+        Math.hypot(right.x - start.x, right.y - start.y),
     )[0];
     if (hunterHome) {
       pushWarbandSpawn(
@@ -533,7 +542,7 @@ function createFactionWarbandTemplates(factionId: FactionId): WarbandTemplate[] 
       type: "lord",
       factionId,
       unitIds: ["soldier", "wache", "pikeman", "longbowman", "knight"],
-      speed: 138,
+      speed: 270,
       detectionRadius: 860,
       aggressionRadius: 720,
       aggression: 0.82,
@@ -551,7 +560,7 @@ function createFactionWarbandTemplates(factionId: FactionId): WarbandTemplate[] 
       type: "elite",
       factionId,
       unitIds: ["wache", "pikeman", "longbowman", "knight"],
-      speed: 176,
+      speed: 295,
       detectionRadius: 1180,
       aggressionRadius: 1040,
       aggression: 1,
@@ -727,6 +736,50 @@ function createTerrainRoads(
   }
 
   return roads;
+}
+
+function createSoulTempleRoad(
+  soulTemple: MapLocation,
+  majorRoads: TerrainRoad[],
+  terrainZones: TerrainZone[],
+  terrainCells: TerrainCell[],
+  worldWidth: number,
+  worldHeight: number,
+): TerrainRoad {
+  const routingMap: WorldMapDefinition = {
+    id: "soul_temple_route",
+    width: worldWidth,
+    height: worldHeight,
+    boundaryInset: WORLD_BOUNDARY_INSET,
+    start: { x: soulTemple.x, y: soulTemple.y },
+    terrainZones,
+    terrainCells,
+    terrainRivers: [],
+    terrainRoads: [],
+    locations: [soulTemple],
+    encounterZones: [],
+    enemies: [],
+  };
+  const connection = findNearbyRoadConnection(
+    soulTemple,
+    majorRoads,
+    (point) => isWorldPositionTraversable(routingMap, point.x, point.y, 30),
+  );
+  if (!connection) {
+    throw new Error("Cannot connect the Soul Temple without a major road.");
+  }
+  const route = findWorldPath(
+    routingMap,
+    soulTemple,
+    connection.point,
+  );
+  return {
+    id: `road_${soulTemple.id}_${connection.road.id}`,
+    originId: soulTemple.id,
+    destinationId: connection.road.id,
+    width: 12,
+    points: [{ x: soulTemple.x, y: soulTemple.y }, ...route],
+  };
 }
 
 function createRoad(
@@ -1144,8 +1197,9 @@ function createVillageRoadHub(
 function findNearbyRoadConnection(
   point: { x: number; y: number },
   roads: TerrainRoad[],
-): { point: { x: number; y: number }; distance: number } | null {
-  let nearest: { point: { x: number; y: number }; distance: number } | null = null;
+  acceptsPoint: (point: { x: number; y: number }) => boolean = () => true,
+): { point: { x: number; y: number }; distance: number; road: TerrainRoad } | null {
+  let nearest: { point: { x: number; y: number }; distance: number; road: TerrainRoad } | null = null;
   for (const road of roads) {
     for (let index = 0; index < road.points.length - 1; index += 1) {
       const projection = projectPointToSegment(point, road.points[index], road.points[index + 1]);
@@ -1156,9 +1210,11 @@ function findNearbyRoadConnection(
         x: projection.point.x + (directionX / directionLength) * (road.width / 2),
         y: projection.point.y + (directionY / directionLength) * (road.width / 2),
       };
+      if (!acceptsPoint(edgePoint)) continue;
       const connection = {
         point: edgePoint,
         distance: Math.max(0, projection.distance - road.width / 2),
+        road,
       };
       if (!nearest || connection.distance < nearest.distance) nearest = connection;
     }
@@ -2055,16 +2111,11 @@ function countLakeCrossings(
 
 function createEnemySpawns(
   random: () => number,
-  fallbackRandom: () => number,
   width: number,
   height: number,
   start: { x: number; y: number },
   locations: MapLocation[],
   archetypes: EnemyArchetype[],
-  terrainZones: TerrainZone[],
-  terrainCells: TerrainCell[],
-  terrainRivers: TerrainRiver[],
-  terrainRoads: TerrainRoad[],
 ) {
   const archetypesById = new Map(archetypes.map((enemy) => [enemy.id, enemy]));
   const camps = locations.filter(
@@ -2081,16 +2132,7 @@ function createEnemySpawns(
       : randomInteger(random, 2, 4);
 
     for (let localIndex = 0; localIndex < patrolCount; localIndex += 1) {
-      const position = findEnemyPosition(
-        fallbackRandom,
-        width,
-        height,
-        camp,
-        terrainZones,
-        terrainCells,
-        terrainRivers,
-        terrainRoads,
-      );
+      const position = { x: camp.x, y: camp.y };
       const distanceRatio =
         Math.hypot(position.x - start.x, position.y - start.y) /
         Math.hypot(width, height);
@@ -2118,7 +2160,7 @@ function createEnemySpawns(
         sourceLocationId: camp.id,
         x: position.x,
         y: position.y,
-        aggroRadius: 320 + archetype.threat * 35,
+        aggroRadius: 420 + archetype.threat * 45,
         ...createPatrolBurden(random, archetype),
       });
     }
@@ -2214,10 +2256,7 @@ function createPatrolBurden(
   const partySize = archetype.deck.length;
   const inventoryWeight =
     12 + archetype.threat * 8 + randomInteger(random, 0, 18);
-  const speed = Math.max(
-    85,
-    Math.round(250 - partySize * 15 - inventoryWeight * 1.8),
-  );
+  const speed = Math.max(205, Math.round(250 - inventoryWeight * 0.4));
   return {
     speed,
     partySize,

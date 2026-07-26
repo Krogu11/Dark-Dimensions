@@ -72,6 +72,21 @@ export interface FactionState {
   quests: QuestState[];
 }
 
+export const BOUNTY_HUNTER_WANTED_THRESHOLD = 25;
+export const BOUNTY_HUNTER_REPUTATION_THRESHOLD = -25;
+
+export function shouldDispatchBountyHunters(
+  factionId: FactionId,
+  state?: FactionState,
+): boolean {
+  if (!state) return false;
+  return (
+    Boolean(state.atWar[factionId]) ||
+    state.wanted[factionId] >= BOUNTY_HUNTER_WANTED_THRESHOLD ||
+    state.reputation[factionId] <= BOUNTY_HUNTER_REPUTATION_THRESHOLD
+  );
+}
+
 const RESOURCE_IDS = [
   "wood",
   "iron",

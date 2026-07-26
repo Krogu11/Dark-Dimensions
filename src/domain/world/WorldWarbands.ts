@@ -17,6 +17,7 @@ import {
   type NpcActivity,
   type NpcPrisonerStack,
 } from "./NpcParty";
+import { getPartyInitiativeMultiplier } from "./PartySpeed";
 
 export type WorldWarbandType = WarbandType;
 export type WorldWarbandStatus = WarbandState;
@@ -62,12 +63,14 @@ export interface WorldWarbandState {
   allowedRadius: number;
   targetWarbandId: string | null;
   targetEnemyId: string | null;
+  targetTraderId?: string | null;
   activeBattleId: string | null;
   hpRatio: number;
   experience: number;
   lootItemIds: string[];
   displayName?: string;
   bountyHunter?: boolean;
+  bountyHunterDeployed?: boolean;
   targetPlayer?: boolean;
   lastAidDay?: number;
 }
@@ -77,12 +80,19 @@ export interface WorldWarbandBattleState {
   attackerId: string;
   defenderId: string | null;
   enemyId: string | null;
+  sideA: WorldWarbandBattleSide;
+  sideB: WorldWarbandBattleSide;
   x: number;
   y: number;
   remainingHours: number;
   state: "fighting" | "resolved";
   victorId: string | null;
   playerJoined: boolean;
+}
+
+export interface WorldWarbandBattleSide {
+  warbandIds: string[];
+  enemyIds: string[];
 }
 
 export interface WarbandAiResult {
@@ -117,6 +127,7 @@ export function normalizeWorldWarbands(
     )
     .map((warband) => ({
       ...warband,
+      speed: warband.speed < 220 ? Math.round(warband.speed * 2.1) : warband.speed,
       leaderCardId: warband.leaderCardId ?? selectWarbandLeader(warband.unitIds),
       leaderLevel: warband.leaderLevel ?? 1,
       equipmentItemIds: [...(warband.equipmentItemIds ?? [])],
@@ -132,6 +143,7 @@ export function normalizeWorldWarbands(
         warband.state === "retreating"
           ? warband.targetEnemyId
           : null,
+      targetTraderId: warband.targetTraderId ?? null,
       activeBattleId: warband.state === "fighting" ? warband.activeBattleId : null,
       patrolIndex: warband.patrolIndex ?? 0,
       allowedRadius: warband.allowedRadius ?? warband.maxPursuitDistance * 1.25,
@@ -140,7 +152,7 @@ export function normalizeWorldWarbands(
         warband.id,
         warband.roster,
         warband.unitIds,
-        Math.max(4, warband.unitIds.length),
+        Math.max(8, warband.unitIds.length * 2),
       ),
       gold: warband.gold ?? (warband.type === "lord" ? 120 : 45),
       rations: warband.rations ?? Math.max(8, warband.unitIds.length * 3),
@@ -155,6 +167,7 @@ export function normalizeWorldWarbands(
       unitIds: [...warband.unitIds],
       displayName: warband.displayName ?? createWarbandDisplayName(warband.id, warband.factionId, warband.type, warband.bountyHunter),
       bountyHunter: warband.bountyHunter ?? warband.id.startsWith("bounty_hunters_"),
+      bountyHunterDeployed: warband.bountyHunterDeployed ?? false,
       targetPlayer: false,
       lastAidDay: warband.lastAidDay ?? 0,
     }))
@@ -176,6 +189,14 @@ export function normalizeWarbandBattles(
       ...battle,
       defenderId: battle.defenderId ?? null,
       enemyId: battle.enemyId ?? null,
+      sideA: battle.sideA ?? {
+        warbandIds: [battle.attackerId],
+        enemyIds: [],
+      },
+      sideB: battle.sideB ?? {
+        warbandIds: battle.defenderId ? [battle.defenderId] : [],
+        enemyIds: battle.enemyId ? [battle.enemyId] : [],
+      },
       playerJoined: battle.playerJoined ?? false,
     }));
 }
@@ -186,8 +207,8 @@ export function createWarbandFromSpawn(
 ): WorldWarbandState | null {
   if (!template) return null;
   const firstPatrolPoint = spawn.patrolPoints?.[0];
-  const nobleStarterSize = spawn.nobleRank === "king" ? 8 : spawn.nobleRank === "baron" ? 6 : spawn.nobleRank === "count" ? 4 : 0;
-  const roster = normalizeNpcRoster(spawn.id, undefined, template.unitIds, Math.max(4, nobleStarterSize || template.unitIds.length));
+  const nobleStarterSize = spawn.nobleRank === "king" ? 40 : spawn.nobleRank === "baron" ? 30 : spawn.nobleRank === "count" ? 20 : 0;
+  const roster = normalizeNpcRoster(spawn.id, undefined, template.unitIds, Math.max(8, nobleStarterSize || template.unitIds.length * 2));
   return {
     id: spawn.id,
     nameKey: template.nameKey,
@@ -201,7 +222,7 @@ export function createWarbandFromSpawn(
     recruitmentCardIds: [...template.unitIds],
     roster,
     gold: spawn.nobleRank === "king" ? 250 : spawn.nobleRank === "baron" ? 150 : spawn.nobleRank === "count" ? 90 : template.type === "lord" ? 120 : 45,
-    rations: Math.max(8, template.unitIds.length * 3),
+    rations: Math.max(16, roster.length * 3),
     prisoners: [],
     victories: 0,
     logisticsHours: 0,
@@ -228,12 +249,14 @@ export function createWarbandFromSpawn(
     allowedRadius: spawn.allowedRadius ?? template.maxPursuitDistance * 1.25,
     targetWarbandId: null,
     targetEnemyId: null,
+    targetTraderId: null,
     activeBattleId: null,
     hpRatio: 1,
     experience: 0,
     lootItemIds: [...template.lootItemIds],
     displayName: spawn.displayName ?? createWarbandDisplayName(spawn.id, template.factionId as FactionId, template.type, template.bountyHunter, spawn.nobleRank),
     bountyHunter: template.bountyHunter,
+    bountyHunterDeployed: false,
     targetPlayer: false,
     lastAidDay: 0,
   } satisfies WorldWarbandState;
@@ -373,7 +396,9 @@ export function decideWarbandResponse(
   const ownStrength = estimateWarbandStrength(warband);
   const targetStrength = estimateWarbandStrength(target);
   const distance = Math.hypot(target.x - warband.x, target.y - warband.y);
-  const speedFactor = warband.speed >= target.speed ? 0.9 : 1.08;
+  const ownSpeed = warband.speed * getPartyInitiativeMultiplier(warband.roster.length ? warband.roster : warband.unitIds);
+  const targetSpeed = target.speed * getPartyInitiativeMultiplier(target.roster.length ? target.roster : target.unitIds);
+  const speedFactor = ownSpeed >= targetSpeed ? 0.9 : 1.08;
   const typeAggression =
     warband.type === "lord" || warband.type === "army" || warband.type === "elite"
       ? 0.16

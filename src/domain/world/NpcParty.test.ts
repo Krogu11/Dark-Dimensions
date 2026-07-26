@@ -3,6 +3,8 @@ import { getCardDefinition } from "../cards/CardInstance";
 import {
   applyNpcAttrition,
   createTierOneNpcRoster,
+  getNpcRosterThreatPoints,
+  getNpcThreatRatingFromPoints,
   processNpcRecovery,
   resetNpcParty,
   rewardNpcVictory,
@@ -21,6 +23,21 @@ function createParty(id = "party_test"): NpcPartyProgress {
 }
 
 describe("persistent NPC parties", () => {
+  it("derives transparent threat ratings from unit count and squared tiers", () => {
+    const tierOneRoster = createTierOneNpcRoster(
+      "tier_one_threat",
+      ["village_levy"],
+      8,
+    );
+
+    expect(getNpcRosterThreatPoints(tierOneRoster)).toBe(8);
+    expect(getNpcThreatRatingFromPoints(5)).toBe(1);
+    expect(getNpcThreatRatingFromPoints(8)).toBe(2);
+    expect(getNpcThreatRatingFromPoints(24)).toBe(3);
+    expect(getNpcThreatRatingFromPoints(36)).toBe(4);
+    expect(getNpcThreatRatingFromPoints(50)).toBe(5);
+  });
+
   it("starts camp and lord reinforcements as real Tier 1 units", () => {
     const roster = createTierOneNpcRoster("kobold_camp", ["kobold_jung", "kobold_trapper"], 6);
 
@@ -57,6 +74,33 @@ describe("persistent NPC parties", () => {
     expect(party.roster).toHaveLength(4);
     expect(party.gold).toBeLessThan(goldBefore);
     expect(party.rations).toBeLessThan(20);
+  });
+
+  it("uses home support to recover a broke and starving NPC party", () => {
+    const party = createParty("supported_recovery");
+    party.gold = 0;
+    party.rations = 0;
+    party.roster[0].currentHp = Math.floor(
+      getCardDefinition(party.roster[0].cardId).maxHp * 0.25,
+    );
+    const hpBefore = party.roster[0].currentHp;
+
+    const result = processNpcRecovery(
+      "supported_recovery",
+      party,
+      ["village_levy"],
+      party.roster.length,
+      24,
+      true,
+      {
+        supportGoldPerDay: party.roster.length * 5,
+        supportRationsPerDay: party.roster.length,
+      },
+    );
+
+    expect(result.healed).toBe(true);
+    expect(party.roster[0].currentHp).toBeGreaterThan(hpBefore);
+    expect(party.rations).toBe(0);
   });
 
   it("respawns with a fresh Tier 1 roster and loses prisoners", () => {

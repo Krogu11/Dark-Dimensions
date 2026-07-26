@@ -9,6 +9,7 @@ import {
   type CardInstance,
 } from "../domain/cards/CardInstance";
 import { getWeeklyUnitWage } from "../domain/cards/UnitUpkeep";
+import { describeCardEffects } from "../domain/battle/CardEffects";
 import {
   gameSession,
   getPrisonerRecruitGoldCost,
@@ -185,7 +186,7 @@ function UnitInspector({
         </div>
       </dl>
       <div className="warband-xp"><span>Upgrade experience <b>{card.xp}/{requiredXp}</b></span><i><b style={{ width: `${Math.min(100, card.xp / requiredXp * 100)}%` }} /></i></div>
-      <div className="warband-effect"><small>Battle effect</small><strong>{definition.battleEffect ? t(`battle.effects.${definition.battleEffect}`) : t("battle.effects.none")}</strong></div>
+      <div className="warband-effect"><small>Battle effect</small>{describeCardEffects(definition).map((description, index) => <strong key={index}>{description}</strong>)}{!describeCardEffects(definition).length ? <strong>{t("battle.effects.none")}</strong> : null}</div>
       <p className="warband-lore">{definition.descriptionKey ? t(definition.descriptionKey) : t(`battle.raceIdentity.${definition.race}`)}</p>
       </div>
       <div className="upgrade-branches warband-upgrades">
@@ -344,7 +345,7 @@ function PrisonerInspector({
         <div><dt>INI</dt><dd>{definition.initiative}</dd></div><div><dt>HP</dt><dd>{definition.maxHp}</dd></div>
         <div><dt>{t("warband.tierLabel")}</dt><dd>{definition.tier}</dd></div><div><dt>Captives</dt><dd>{prisoner.quantity}</dd></div>
       </dl>
-      <div className="warband-effect"><small>Battle effect</small><strong>{definition.battleEffect ? t(`battle.effects.${definition.battleEffect}`) : t("battle.effects.none")}</strong></div>
+      <div className="warband-effect"><small>Battle effect</small>{describeCardEffects(definition).map((description, index) => <strong key={index}>{description}</strong>)}{!describeCardEffects(definition).length ? <strong>{t("battle.effects.none")}</strong> : null}</div>
       <p className="warband-lore">{definition.descriptionKey ? t(definition.descriptionKey) : t(`battle.raceIdentity.${definition.race}`)}</p>
     </div>
     <div className="upgrade-branches warband-upgrades prisoner-actions">

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { SaveGame } from "../infrastructure/save/SaveRepository";
 import { characterXpNeededForNextLevel } from "../domain/character/CharacterProgression";
 import type { MetaProgressionState } from "../domain/progression/MetaProgression";
 import { UnitEncyclopedia } from "./UnitEncyclopedia";
+import { subscribeMusicTitle } from "./MusicPlaylist";
 
 interface StartMenuProps {
   canContinue: boolean;
@@ -22,6 +23,7 @@ export function StartMenu({ canContinue, activeRun, save, activeGold, activeWarb
   const { t } = useTranslation();
   const [confirmingNewRun, setConfirmingNewRun] = useState(false);
   const [encyclopediaOpen, setEncyclopediaOpen] = useState(false);
+  const [musicTitle, setMusicTitle] = useState("");
   const profile = activeRun ? undefined : save?.runProfile;
   const character = activeRun ? undefined : save?.characterState;
   const level = character?.level ?? 1;
@@ -29,7 +31,9 @@ export function StartMenu({ canContinue, activeRun, save, activeGold, activeWarb
   const xpPercent = Math.min(100, ((character?.xp ?? 0) / xpTarget) * 100);
   const runGold = activeRun ? activeGold : (save?.gold ?? 0);
   const runWarbandCount = activeRun ? activeWarbandCount : (save?.warband?.length ?? 0);
-  const runWarbandCapacity = activeRun ? activeWarbandCapacity : Math.max(5, 5 + ((save?.characterState?.attributes.charisma ?? 1) * 2) + ((save?.characterState?.skills.leadership ?? 0) * 3));
+  const runWarbandCapacity = activeRun ? activeWarbandCapacity : Math.max(14, 14 + ((save?.characterState?.attributes.charisma ?? 1) * 2) + ((save?.characterState?.skills.leadership ?? 0) * 3));
+
+  useEffect(() => subscribeMusicTitle(setMusicTitle), []);
 
   function requestNewRun(): void {
     if (canContinue && !confirmingNewRun) {
@@ -84,7 +88,7 @@ export function StartMenu({ canContinue, activeRun, save, activeGold, activeWarb
           </div>
         </aside>
       </div>
-      <div className="start-menu-footer"><span>v0.1 · The Shattered Realms</span><span>Music: Ashen Keep</span></div>
+      <div className="start-menu-footer"><span>v0.1 · The Shattered Realms</span><span>{musicTitle ? `Music: ${musicTitle}` : "Music playlist unavailable"}</span></div>
       {encyclopediaOpen ? <UnitEncyclopedia meta={metaProgression} onClose={() => setEncyclopediaOpen(false)} /> : null}
     </section>
   );

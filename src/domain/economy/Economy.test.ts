@@ -73,6 +73,27 @@ describe("procedural markets", () => {
     expect(economy.markets[village.id][0].quantity).toBe(villageStock + 1);
   });
 
+  it("moves fast-initiative NPC caravans farther than slow formations", () => {
+    const world = generateWorldMap(123124, contentPack.enemies);
+    const slowEconomy = createEconomyState(123124, world);
+    const fastEconomy = structuredClone(slowEconomy);
+    const slow = slowEconomy.caravans[0];
+    const fast = fastEconomy.caravans[0];
+    slow.progress = 0;
+    fast.progress = 0;
+    slow.waitHoursRemaining = 0;
+    fast.waitHoursRemaining = 0;
+    slow.leaderCardId = "cannon_golem";
+    slow.unitIds = ["cannon_golem", "cannon_golem"];
+    fast.leaderCardId = "dire_wolf";
+    fast.unitIds = ["dire_wolf", "dire_wolf"];
+
+    updateEconomyState(slowEconomy, 123124, world, 0.1);
+    updateEconomyState(fastEconomy, 123124, world, 0.1);
+
+    expect(fast.progress).toBeGreaterThan(slow.progress);
+  });
+
   it("uses villagers for village routes and caravans only between cities", () => {
     const world = generateWorldMap(456456, contentPack.enemies);
     const economy = createEconomyState(456456, world);
@@ -94,7 +115,95 @@ describe("procedural markets", () => {
     for (const caravan of economy.caravans) {
       expect(locationsById.get(caravan.originId)?.type).toBe("city");
       expect(locationsById.get(caravan.destinationId)?.type).toBe("city");
+      expect(caravan.progress).toBe(0);
+      expect(caravan.waitHoursRemaining).toBe(4);
       expect(isPositionOnRoad(world, caravan.x, caravan.y, 8)).toBe(true);
+    }
+  });
+
+  it("keeps traders at settlements while they load and sell goods", () => {
+    const world = generateWorldMap(456459, contentPack.enemies);
+    const economy = createEconomyState(456459, world);
+    const caravan = economy.caravans[0];
+    const villager = economy.villagers[0];
+    const caravanOrigin = world.locations.find(
+      (location) => location.id === caravan.originId,
+    )!;
+    const villageOrigin = world.locations.find(
+      (location) => location.id === villager.originId,
+    )!;
+
+    updateEconomyState(economy, 456459, world, 1);
+
+    expect(caravan.progress).toBe(0);
+    expect(caravan.waitHoursRemaining).toBe(3);
+    expect(Math.hypot(caravan.x - caravanOrigin.x, caravan.y - caravanOrigin.y)).toBeLessThan(5);
+    expect(villager.progress).toBe(0);
+    expect(villager.waitHoursRemaining).toBe(1);
+    expect(Math.hypot(villager.x - villageOrigin.x, villager.y - villageOrigin.y)).toBeLessThan(5);
+
+    updateEconomyState(economy, 456459, world, 1.5);
+
+    expect(caravan.progress).toBe(0);
+    expect(caravan.waitHoursRemaining).toBe(1.5);
+    expect(villager.progress).toBeGreaterThan(0);
+  });
+
+  it("takes villagers from their village road all the way into the destination city", () => {
+    const world = generateWorldMap(456457, contentPack.enemies);
+    const economy = createEconomyState(456457, world);
+    const destinations = new Map(
+      economy.villagers.map((villager) => [
+        villager.id,
+        world.locations.find(
+          (location) => location.id === villager.destinationId,
+        )!,
+      ]),
+    );
+    for (const villager of economy.villagers) {
+      villager.progress = 0.999;
+      villager.waitHoursRemaining = 0;
+    }
+
+    updateEconomyState(economy, 456457, world, 1);
+
+    for (const villager of economy.villagers) {
+      const city = destinations.get(villager.id)!;
+      expect(villager.originId).toBe(city.id);
+      expect(villager.waitHoursRemaining).toBe(2);
+      expect(Math.hypot(villager.x - city.x, villager.y - city.y)).toBeLessThan(5);
+    }
+  });
+
+  it("limits daily villager departures to one group per village", () => {
+    const world = generateWorldMap(456458, contentPack.enemies);
+    const economy = createEconomyState(456458, world);
+    const villages = world.locations.filter(
+      (location) => location.type === "village",
+    );
+    let existingIds = new Set(economy.villagers.map((villager) => villager.id));
+
+    updateEconomyState(economy, 456458, world, 24);
+    for (const village of villages) {
+      expect(
+        economy.villagers.filter(
+          (villager) =>
+            !existingIds.has(villager.id) &&
+            villager.homeLocationId === village.id,
+        ),
+      ).toHaveLength(1);
+    }
+
+    existingIds = new Set(economy.villagers.map((villager) => villager.id));
+    updateEconomyState(economy, 456458, world, 24);
+    for (const village of villages) {
+      expect(
+        economy.villagers.filter(
+          (villager) =>
+            !existingIds.has(villager.id) &&
+            villager.homeLocationId === village.id,
+        ),
+      ).toHaveLength(1);
     }
   });
 

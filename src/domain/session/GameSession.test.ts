@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { contentPack, enemiesById } from "../../content/content";
 import {
   createCardInstance,
+  createCardInstances,
   getCardDefinition,
 } from "../cards/CardInstance";
 import { getWeeklyUnitWage } from "../cards/UnitUpkeep";
@@ -12,8 +13,56 @@ import type {
 } from "../../infrastructure/save/SaveRepository";
 import { BattleSimulation } from "../battle/BattleSimulation";
 import { GameSession } from "./GameSession";
+import { getPartyInitiativeMultiplier } from "../world/PartySpeed";
+import type { WorldWarbandState } from "../world/WorldWarbands";
 
 describe("GameSession roster", () => {
+  it("uses the selected hero card and configured starting deck", () => {
+    const session = new GameSession(314158);
+    const hero = contentPack.heroes.find((entry) => entry.id === "wayfinder")!;
+
+    session.beginNewRun({ heroId: hero.id, name: "Mirelle Ashstep", raceId: hero.raceId, originId: "cityWard", upbringingId: "artisan", turningPointId: "oath", portraitId: hero.heroCardId, startedAt: new Date(0).toISOString() });
+
+    expect(session.hero.cardId).toBe(hero.heroCardId);
+    expect(session.warband.map((unit) => unit.cardId)).toEqual(hero.startingDeck);
+  });
+
+  it("starts the default warband near 350 road travel speed", () => {
+    const session = new GameSession(314157);
+    const hero = contentPack.heroes.find((entry) => entry.id === "wanderer")!;
+    session.beginNewRun({ heroId: hero.id, name: "Speed Tester", raceId: hero.raceId, originId: "cityWard", upbringingId: "artisan", turningPointId: "oath", portraitId: hero.heroCardId, startedAt: new Date(0).toISOString() });
+
+    expect(session.currentTerrain).toBe("road");
+    expect(session.effectiveMovementSpeed).toBeGreaterThanOrEqual(335);
+    expect(session.effectiveMovementSpeed).toBeLessThanOrEqual(365);
+  });
+
+  it("keeps the faster Wanderer starting formation ahead of Desperate Militia", () => {
+    const session = new GameSession(314156);
+    const hero = contentPack.heroes.find((entry) => entry.id === "wanderer")!;
+    session.beginNewRun({ heroId: hero.id, name: "Speed Tester", raceId: hero.raceId, originId: "cityWard", upbringingId: "artisan", turningPointId: "oath", portraitId: hero.heroCardId, startedAt: new Date(0).toISOString() });
+    const militia = session.world.state.enemies.find(
+      (enemy) => enemy.archetypeId === "desperate_militia",
+    )!;
+    const militiaSpeed = militia.speed * getPartyInitiativeMultiplier(militia.roster);
+
+    expect(militiaSpeed).toBeLessThan(session.partyMovementSpeed);
+  });
+
+  it("keeps a loaded fourteen-unit company at a playable travel speed", () => {
+    const session = new GameSession(314155);
+    session.warband = createCardInstances(
+      Array.from({ length: 14 }, () => "village_levy"),
+    );
+    session.inventory = [];
+    addToInventory(session.inventory, "stone", 20);
+
+    expect(session.movementSpeedBreakdown.formationSize).toBe(15);
+    expect(session.movementSpeedBreakdown.sizeMultiplier).toBeCloseTo(0.9);
+    expect(session.movementSpeedBreakdown.cargoMultiplier).toBeLessThan(1);
+    expect(session.partyMovementSpeed).toBeGreaterThan(175);
+  });
+
   it("applies persistent supply, capacity, and morale upgrades to a new run", () => {
     const session = new GameSession(314159);
     session.metaProgression.upgrades.roadRations = 2;
@@ -60,6 +109,7 @@ describe("GameSession roster", () => {
   it("starts with only the immortal hero", () => {
     const session = new GameSession();
 
+    expect(session.warbandCapacity).toBe(16);
     expect(session.warband).toHaveLength(0);
     expect(session.reserve).toHaveLength(0);
     expect(session.hero.isHero).toBe(true);
@@ -124,12 +174,26 @@ describe("GameSession roster", () => {
     const reserve = session.warband[1];
     session.beginBattle(session.world.state.enemies[0].id);
     session.battle!.deployedUnitUids.add(recruit.uid);
+    session.battle!.unitStats.set(recruit.uid, {
+      damageDealt: 900,
+      hpLost: 0,
+      destroyed: false,
+      wounded: false,
+      kills: 1,
+      killXp: 10,
+    });
+    session.battle!.defeatedEnemyCardIds.push(
+      "village_levy",
+      "village_levy",
+      "village_levy",
+      "village_levy",
+    );
     session.battle!.outcome = "victory";
     session.hero.currentHp = 0;
 
     session.finishVictory();
 
-    expect(recruit.xp).toBe(60);
+    expect(recruit.xp).toBe(41);
     expect(reserve.xp).toBe(0);
     expect(session.hero.currentHp).toBe(session.heroMaxHp);
   });
@@ -148,11 +212,12 @@ describe("GameSession roster", () => {
     expect(session.enterDungeon(dungeon.id)).toBe(true);
     expect(session.dungeonRun).toMatchObject({ stage: 1, totalStages: 3 });
 
-    session.hero.currentHp = 1200;
+    session.hero.currentHp = session.heroMaxHp;
     session.battle!.outcome = "victory";
     session.finishVictory(true);
     expect(session.dungeonRun?.stage).toBe(2);
-    expect(session.hero.currentHp).toBe(1200);
+    expect(session.hero.currentHp).toBeGreaterThan(0);
+    expect(session.hero.currentHp).toBeLessThanOrEqual(session.heroMaxHp);
 
     session.battle!.outcome = "victory";
     session.finishVictory(true);
@@ -354,7 +419,16 @@ describe("GameSession roster", () => {
     expect(session.spendSkill("pathfinding")).toBe(true);
     expect(session.spendSkill("leadership")).toBe(true);
     expect(session.partyMovementSpeed).toBeGreaterThan(baseSpeed);
-    expect(session.warbandCapacity).toBe(10);
+    expect(session.warbandCapacity).toBe(19);
+  });
+
+  it("derives player travel speed from the initiative of the whole warband", () => {
+    const session = new GameSession(123124);
+    session.warband = createCardInstances(["cannon_golem", "cannon_golem", "cannon_golem"]);
+    const slowSpeed = session.partyMovementSpeed;
+    session.warband = createCardInstances(["dire_wolf", "dire_wolf", "dire_wolf"]);
+
+    expect(session.partyMovementSpeed).toBeGreaterThan(slowSpeed);
   });
 
   it("persists character progression in city saves", async () => {
@@ -380,7 +454,7 @@ describe("GameSession roster", () => {
 
     expect(restored.characterState.attributes.charisma).toBe(2);
     expect(restored.characterState.skills.leadership).toBe(1);
-    expect(restored.warbandCapacity).toBe(12);
+    expect(restored.warbandCapacity).toBe(21);
   });
 
   it("completes delivery quests and awards faction reputation", () => {
@@ -578,6 +652,70 @@ describe("GameSession roster", () => {
     expect(storedSave!.player.nearbyLocationId).toBeNull();
   });
 
+  it("does not overwrite an Ironman save from an unhydrated preview session", async () => {
+    const session = new GameSession(272626, false);
+    let writes = 0;
+    const repository: SaveRepository = {
+      read: async () => null,
+      write: async () => { writes += 1; },
+      delete: async () => undefined,
+    };
+
+    expect(session.canPersistRun).toBe(false);
+    expect(session.canPersistMeta).toBe(false);
+    expect(await session.save(repository)).toBe(false);
+    expect(writes).toBe(0);
+
+    session.setMetaProgression(null);
+    expect(session.canPersistMeta).toBe(true);
+  });
+
+  it("applies development grants through the session boundary", () => {
+    const session = new GameSession(272627);
+    const initialWarbandSize = session.warband.length;
+
+    session.devGrantGold(500);
+    session.devGrantSouls(25);
+    session.devGrantCharacterXp(100);
+    expect(session.devGrantCard("village_levy")).toBe(true);
+    const grantedUnit = session.warband.at(-1)!;
+    expect(session.devGrantUnitXp(grantedUnit.uid, 150)).toBe(true);
+
+    expect(session.gold).toBe(580);
+    expect(session.metaProgression.souls).toBe(25);
+    expect(session.characterState.xp).toBeGreaterThanOrEqual(0);
+    expect(session.warband).toHaveLength(initialWarbandSize + 1);
+    expect(grantedUnit.xp).toBe(150);
+    expect(session.metaProgression.ownedUnitIds).toContain("village_levy");
+  });
+
+  it("emits soul quest completion only when completed during the active session", async () => {
+    const session = new GameSession(272628);
+    session.prisoners = [{ cardId: "village_levy", quantity: 3 }];
+    session.world.state.nearbyLocationId = session.world.map.locations.find(
+      (location) => location.type === "soulTemple",
+    )!.id;
+
+    const goldBeforeCompletion = session.gold;
+    expect(session.sacrificePrisoner("village_levy", 3)).toBeGreaterThan(0);
+    expect(session.soulQuestCompleted).toBe(true);
+    expect(session.soulQuestCompletionRevision).toBe(1);
+    expect(session.gold).toBe(goldBeforeCompletion + 100);
+
+    let storedSave: SaveGame | null = null;
+    const repository: SaveRepository = {
+      read: async () => storedSave,
+      write: async (save) => { storedSave = structuredClone(save); },
+      delete: async () => { storedSave = null; },
+    };
+    expect(await session.save(repository)).toBe(true);
+
+    const restored = new GameSession(1);
+    restored.restore(storedSave!);
+    expect(restored.soulQuestCompleted).toBe(true);
+    expect(restored.soulQuestCompletionRevision).toBe(0);
+  });
+
   it("persists generated city population, garrison, and prosperity", async () => {
     const session = new GameSession(282828);
     const cityId = Object.keys(session.cityStates)[0];
@@ -717,6 +855,8 @@ describe("GameSession roster", () => {
       hpLost: 900,
       destroyed: true,
       wounded: true,
+      kills: 0,
+      killXp: 0,
     });
     vi.spyOn(session.battle, "rollReward").mockReturnValue({ gold: 0, cardId: null, items: [] });
     session.battle.outcome = "victory";
@@ -826,6 +966,29 @@ describe("GameSession roster", () => {
     expect(session.prisonerCount).toBe(0);
   });
 
+  it("claims captured enemies individually when duplicate prisoners are offered", () => {
+    const session = new GameSession(202022);
+    session.beginBattle(session.world.state.enemies[0].id);
+    if (!session.battle) throw new Error("Expected battle");
+    vi.spyOn(session.battle, "rollReward").mockReturnValue({
+      gold: 0,
+      cardId: "village_levy",
+      capturedCardIds: ["village_levy", "village_levy", "village_slinger"],
+      items: [],
+    });
+    session.battle.outcome = "victory";
+
+    const claimed = session.claimVictoryReward({
+      continueDungeon: true,
+      takeCard: true,
+      capturedCardIndexes: [1],
+      itemIds: [],
+    });
+
+    expect(claimed?.capturedCardIds).toEqual(["village_levy"]);
+    expect(session.prisoners).toEqual([{ cardId: "village_levy", quantity: 1 }]);
+  });
+
   it("consumes food from partially filled Mount-and-Blade-style stacks", () => {
     const session = new GameSession(929292);
     session.inventory = [];
@@ -900,6 +1063,87 @@ describe("GameSession roster", () => {
     expect(session.joinWarbandBattle(battle.id, battle.attackerId)).toBe(true);
     expect(session.mode).toBe("battle");
     expect(session.battle?.enemy.deck).toEqual(["village_levy"]);
+    expect(session.battle?.playerDeck).toHaveLength(
+      session.warband.length + session.world.state.warbands[0].roster.length,
+    );
+  });
+
+  it("requires a side choice and combines every NPC group in a field battle", () => {
+    const session = new GameSession(949495);
+    session.world.state.x = 1000;
+    session.world.state.y = 1000;
+    const lord = createSessionWarband(
+      "ember_field_lord",
+      "ember_crown",
+      1000,
+      1000,
+      ["soldier", "wache"],
+    );
+    lord.type = "lord";
+    lord.nobleRank = "count";
+    const [firstBandits, secondBandits] = session.world.state.enemies;
+    firstBandits.active = true;
+    firstBandits.roster = [
+      createCardInstance("village_levy"),
+      createCardInstance("village_slinger"),
+    ];
+    firstBandits.partySize = firstBandits.roster.length;
+    secondBandits.active = true;
+    secondBandits.roster = [
+      createCardInstance("kobold_jung"),
+      createCardInstance("kobold_speer"),
+      createCardInstance("kobold_trapper"),
+    ];
+    secondBandits.partySize = secondBandits.roster.length;
+    session.world.state.warbands = [lord];
+    session.world.updateWarbands(0, session.factionState);
+    session.world.state.warbandBattles = [{
+      id: "combined_field_battle",
+      attackerId: lord.id,
+      defenderId: null,
+      enemyId: firstBandits.id,
+      sideA: { warbandIds: [lord.id], enemyIds: [] },
+      sideB: {
+        warbandIds: [],
+        enemyIds: [firstBandits.id, secondBandits.id],
+      },
+      x: 1000,
+      y: 1000,
+      remainingHours: 6,
+      state: "fighting",
+      victorId: null,
+      playerJoined: false,
+    }];
+
+    expect(session.joinWarbandBattle("combined_field_battle")).toBe(false);
+    expect(session.pendingWarbandBattleId).toBe("combined_field_battle");
+    expect(
+      session.getWarbandBattleSideOptions("combined_field_battle")[1],
+    ).toMatchObject({
+      side: "sideB",
+      unitCount:
+        firstBandits.roster.length + secondBandits.roster.length,
+    });
+
+    expect(
+      session.joinWarbandBattle("combined_field_battle", "sideA"),
+    ).toBe(true);
+    expect(session.battle?.playerDeck).toHaveLength(
+      session.warband.length + lord.roster.length,
+    );
+    expect(
+      (session.battle?.enemyDrawPile.length ?? 0) +
+        (session.battle?.enemyHand.length ?? 0) +
+        (session.battle?.enemyField.length ?? 0),
+    ).toBe(firstBandits.roster.length + secondBandits.roster.length);
+
+    session.world.resolveWarbandBattleWithPlayerSide(
+      "combined_field_battle",
+      "sideA",
+    );
+    expect(firstBandits.active).toBe(false);
+    expect(secondBandits.active).toBe(false);
+    expect(lord.state).toBe("patrolling");
   });
 
   it("persists faction warband AI state in city saves", async () => {
@@ -936,11 +1180,11 @@ function createSessionWarband(
   x: number,
   y: number,
   unitIds: string[],
-) {
+): WorldWarbandState {
   return {
     id,
     nameKey: `test.${id}`,
-    type: "patrol" as const,
+    type: "patrol",
     factionId,
     x,
     y,
@@ -956,13 +1200,13 @@ function createSessionWarband(
     logisticsHours: 0,
     nobleRank: null,
     nobleProfileId: null,
-    personality: "just" as const,
-    activity: "patrolling" as const,
+    personality: "just",
+    activity: "patrolling",
     speed: 180,
     detectionRadius: 600,
     aggressionRadius: 520,
     aggression: 0.7,
-    state: "patrolling" as const,
+    state: "patrolling",
     homeLocationId: null,
     spawnX: x,
     spawnY: y,

@@ -3,7 +3,7 @@ import type {
   EconomyState,
   InventoryStack,
 } from "../../domain/economy/Economy";
-import type { FactionState } from "../../domain/quests/Factions";
+import type { FactionId, FactionState } from "../../domain/quests/Factions";
 import type { GameTimeState } from "../../domain/time/GameClock";
 import type { SurvivalState } from "../../domain/survival/Survival";
 import type { CharacterState } from "../../domain/character/CharacterProgression";
@@ -64,12 +64,14 @@ export interface SaveGame {
     warbandAllyId: string | null;
     warbandEnemyId: string | null;
     dungeonRun: { locationId: string; stage: number; totalStages: number; enemyIds: string[] } | null;
-    villageContext?: { kind: "defense" | "raid" | "villager"; locationId: string; villagerId?: string; cargo?: InventoryStack[] } | null;
+    villageContext?: { kind: "defense" | "raid" | "villager" | "caravan"; locationId: string; villagerId?: string; caravanId?: string; factionId?: FactionId; cargo?: InventoryStack[] } | null;
   } | null;
   completedLocationIds?: string[];
   equippedItemId?: string | null;
   rightHandItemId?: string | null;
   leftHandItemId?: string | null;
+  learnedAbilityIds?: string[];
+  equippedAbilityIds?: string[];
   economyState?: EconomyState;
   factionState?: FactionState;
   timeState?: GameTimeState;
