@@ -21,6 +21,7 @@ import {
   getWorldTimeScale,
   requestWorldZoom,
 } from "../input/WorldInput";
+import { publicAssetUrl } from "../../infrastructure/assets/publicAssetUrl";
 
 const LOCATION_COLORS = {
   city: 0xd9b66f,
@@ -47,17 +48,17 @@ const LOCATION_TEXTURES = {
 } as const;
 
 const LOCATION_ASSETS = {
-  city: "/assets/world/locations/town-red-map.png",
-  village: "/assets/world/locations/village-red-map.png",
-  kobold: "/assets/world/locations/kobold-warren-map.png",
-  beast: "/assets/world/locations/beast-den-map.png",
-  swamp: "/assets/world/locations/sunken-nest-map.png",
-  undead: "/assets/world/locations/bone-crypt-map.png",
-  orc: "/assets/world/locations/orc-warcamp-map.png",
-  elemental: "/assets/world/locations/ash-rift-map.png",
-  machine: "/assets/world/locations/rusted-vault-map.png",
-  outlaw: "/assets/world/locations/outlaw-hideout-map.png",
-  soulTemple: "/assets/world/locations/soul-temple-map.png",
+  city: publicAssetUrl("/assets/world/locations/town-red-map.png"),
+  village: publicAssetUrl("/assets/world/locations/village-red-map.png"),
+  kobold: publicAssetUrl("/assets/world/locations/kobold-warren-map.png"),
+  beast: publicAssetUrl("/assets/world/locations/beast-den-map.png"),
+  swamp: publicAssetUrl("/assets/world/locations/sunken-nest-map.png"),
+  undead: publicAssetUrl("/assets/world/locations/bone-crypt-map.png"),
+  orc: publicAssetUrl("/assets/world/locations/orc-warcamp-map.png"),
+  elemental: publicAssetUrl("/assets/world/locations/ash-rift-map.png"),
+  machine: publicAssetUrl("/assets/world/locations/rusted-vault-map.png"),
+  outlaw: publicAssetUrl("/assets/world/locations/outlaw-hideout-map.png"),
+  soulTemple: publicAssetUrl("/assets/world/locations/soul-temple-map.png"),
 } as const;
 
 type LocationTextureKey = keyof typeof LOCATION_TEXTURES;
@@ -170,21 +171,21 @@ const TERRAIN_COLORS = {
 } as const;
 
 const WORLD_BASESET_TEXTURE = "world-baseset";
-const WORLD_BASESET_ASSET = "/assets/world/environment/base-set.png";
+const WORLD_BASESET_ASSET = publicAssetUrl("/assets/world/environment/base-set.png");
 const TERRAIN_DECOR_REVISION = 4;
 const TERRAIN_CHUNK_SIZE = 1200;
 const TERRAIN_CHUNK_VISIBILITY_MARGIN = 700;
 
 const VEGETATION_ASSETS = {
-  forestOak: "/assets/world/vegetation/forest-oak-cluster.svg",
-  forestPines: "/assets/world/vegetation/forest-pine-group.svg",
-  forestDeadTree: "/assets/world/vegetation/forest-dead-tree.svg",
-  plainsGrass: "/assets/world/vegetation/plains-grass.svg",
-  plainsShrub: "/assets/world/vegetation/plains-shrub.svg",
-  plainsStones: "/assets/world/vegetation/plains-standing-stones.svg",
-  mountainCrag: "/assets/world/vegetation/mountain-crag.svg",
-  mountainRidge: "/assets/world/vegetation/mountain-ridge.svg",
-  mountainBoulders: "/assets/world/vegetation/mountain-boulders.svg",
+  forestOak: publicAssetUrl("/assets/world/vegetation/forest-oak-cluster.svg"),
+  forestPines: publicAssetUrl("/assets/world/vegetation/forest-pine-group.svg"),
+  forestDeadTree: publicAssetUrl("/assets/world/vegetation/forest-dead-tree.svg"),
+  plainsGrass: publicAssetUrl("/assets/world/vegetation/plains-grass.svg"),
+  plainsShrub: publicAssetUrl("/assets/world/vegetation/plains-shrub.svg"),
+  plainsStones: publicAssetUrl("/assets/world/vegetation/plains-standing-stones.svg"),
+  mountainCrag: publicAssetUrl("/assets/world/vegetation/mountain-crag.svg"),
+  mountainRidge: publicAssetUrl("/assets/world/vegetation/mountain-ridge.svg"),
+  mountainBoulders: publicAssetUrl("/assets/world/vegetation/mountain-boulders.svg"),
 } as const;
 
 type VegetationTextureKey = keyof typeof VEGETATION_ASSETS;

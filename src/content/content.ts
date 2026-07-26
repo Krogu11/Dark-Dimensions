@@ -1,8 +1,11 @@
 import rawContentPack from "./content-pack.json";
 import { contentPackSchema } from "../domain/content/schemas";
 import { normalizeLegacyCardEffects } from "../domain/battle/CardEffects";
+import { resolvePublicAssetUrls } from "../infrastructure/assets/publicAssetUrl";
 
-export const contentPack = contentPackSchema.parse(normalizeLegacyCardEffects(rawContentPack));
+export const contentPack = contentPackSchema.parse(
+  resolvePublicAssetUrls(normalizeLegacyCardEffects(rawContentPack)),
+);
 export const cardsById = new Map(
   contentPack.cards.map((card) => [card.id, card]),
 );

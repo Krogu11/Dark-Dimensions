@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { publicAssetUrl } from "../infrastructure/assets/publicAssetUrl";
 
 export type UiSoundId =
   | "buy-sell"
@@ -14,15 +15,15 @@ export type UiSoundId =
 const PLAY_UI_SOUND_EVENT = "dark-dimensions:play-ui-sound";
 
 const UI_SOUND_PATHS: Record<UiSoundId, string> = {
-  "buy-sell": "/assets/audio/gameplay/buy-sell.wav",
-  "cancel-1": "/assets/audio/ui/wood-cancel-1.wav",
-  "cancel-2": "/assets/audio/ui/wood-cancel-2.wav",
-  claw: "/assets/audio/gameplay/claw.wav",
-  confirm: "/assets/audio/ui/wood-confirm.wav",
-  cursor: "/assets/audio/ui/wood-cursor.wav",
-  "enemy-death": "/assets/audio/gameplay/enemy-death.wav",
-  error: "/assets/audio/ui/wood-error.wav",
-  select: "/assets/audio/ui/wood-select.wav",
+  "buy-sell": publicAssetUrl("/assets/audio/gameplay/buy-sell.wav"),
+  "cancel-1": publicAssetUrl("/assets/audio/ui/wood-cancel-1.wav"),
+  "cancel-2": publicAssetUrl("/assets/audio/ui/wood-cancel-2.wav"),
+  claw: publicAssetUrl("/assets/audio/gameplay/claw.wav"),
+  confirm: publicAssetUrl("/assets/audio/ui/wood-confirm.wav"),
+  cursor: publicAssetUrl("/assets/audio/ui/wood-cursor.wav"),
+  "enemy-death": publicAssetUrl("/assets/audio/gameplay/enemy-death.wav"),
+  error: publicAssetUrl("/assets/audio/ui/wood-error.wav"),
+  select: publicAssetUrl("/assets/audio/ui/wood-select.wav"),
 };
 
 const UI_SOUND_VOLUMES: Record<UiSoundId, number> = {
